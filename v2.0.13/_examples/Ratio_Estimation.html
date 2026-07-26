@@ -1,0 +1,1497 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>12. Neural Ratio Estimation with BayesFlow and PyMC &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Ratio_Estimation';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Ratio_Estimation.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="13. Compositional Amortized Inference for Hierarchical Bayesian Models" href="Compositional_Diffusion.html" />
+    <link rel="prev" title="11. Ensembles" href="Ensembles.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.13" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion Models In Simulation-Based Inference: A Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">2. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">3. Image data: Inference on Spatial Data and Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">4. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">5. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">7. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">8. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">9. Likelihood Estimation for the g-and-k Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">11. Ensembles</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">12. Neural Ratio Estimation with BayesFlow and PyMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">13. Compositional Amortized Inference for Hierarchical Bayesian Models</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">12. </span>Neural Ratio Estimation with BayesFlow and PyMC</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="neural-ratio-estimation-with-bayesflow-and-pymc">
+<h1><span class="section-number">12. </span>Neural Ratio Estimation with BayesFlow and PyMC<a class="headerlink" href="#neural-ratio-estimation-with-bayesflow-and-pymc" title="Link to this heading">#</a></h1>
+<p>This notebook demonstrates <strong>Neural Ratio Estimation (NRE)</strong> — a simulation-based inference method that replaces the intractable likelihood with a learned log-density ratio.</p>
+<section id="the-core-idea">
+<h2><span class="section-number">12.1. </span>The Core Idea<a class="headerlink" href="#the-core-idea" title="Link to this heading">#</a></h2>
+<p>Our implementation follows closely the paper <a class="reference external" href="https://arxiv.org/abs/2210.06170">Contrastive Neural Ratio Estimation for Simulation-Based Inference</a>. The ratio estimator learns a single-observation log-ratio</p>
+<div class="math notranslate nohighlight">
+\[\log r(\theta, x) = \log \frac{p(x \mid \theta)}{p(x)}\]</div>
+<p>Because observations are <strong>i.i.d.</strong> given <span class="math notranslate nohighlight">\(\theta\)</span>, the joint posterior factorizes:</p>
+<div class="math notranslate nohighlight">
+\[\log p(\theta \mid x_{1:n}) = \underbrace{\sum_{i=1}^{n} \log r(\theta, x_i)}_{\text{sum of single-trial ratios}} + \log p(\theta) + \text{const}\]</div>
+<p>This means we can:</p>
+<ol class="arabic simple">
+<li><p><strong>Train</strong> on <em>individual</em> simulated observations (cheap, parallelizeable)</p></li>
+<li><p><strong>Aggregate</strong> at inference by summing <span class="math notranslate nohighlight">\(n\)</span> log-ratios — no retraining needed</p></li>
+</ol>
+<p>Currently, integration with PyMC is only supported with the JAX backend.</p>
+</section>
+<section id="structure">
+<h2><span class="section-number">12.2. </span>Structure<a class="headerlink" href="#structure" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Part</p></th>
+<th class="head"><p>Topic</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><strong>1</strong></p></td>
+<td><p>Normal model — train, investigate, and run NUTS on a simple 2-parameter Gaussian</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>2</strong></p></td>
+<td><p>Regression — per-trial mean via a linear predictor</p></td>
+</tr>
+<tr class="row-even"><td><p><strong>3</strong></p></td>
+<td><p>Drift-Diffusion Model (DDM) — realistic cognitive model with (RT, choice) data</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy.stats</span><span class="w"> </span><span class="kn">import</span> <span class="n">norm</span> <span class="k">as</span> <span class="n">sp_norm</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.wrappers.pymc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuralDistribution</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend &#39;jax&#39;
+INFO:arviz:Found &#39;auto&#39; as default backend, checking available backends
+INFO:arviz:Matplotlib is available, defining as default backend
+INFO:arviz.preview:arviz_base available, exposing its functions as part of arviz.preview
+INFO:arviz.preview:arviz_stats available, exposing its functions as part of arviz.preview
+INFO:arviz.preview:arviz_plots available, exposing its functions as part of arviz.preview
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="part-1-normal-model">
+<h2><span class="section-number">12.3. </span>Part 1: Normal Model<a class="headerlink" href="#part-1-normal-model" title="Link to this heading">#</a></h2>
+<section id="generative-model">
+<h3><span class="section-number">12.3.1. </span>Generative Model<a class="headerlink" href="#generative-model" title="Link to this heading">#</a></h3>
+<p>We use a 2-parameter Gaussian with <strong>one observation per simulation</strong>:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}
+\begin{align}
+\mu &amp;\sim \text{Uniform}(-5, 5)\\
+\sigma &amp;\sim \text{Uniform}(0.5, 3.0)\\
+x \mid \mu, \sigma &amp;\sim \mathcal{N}(\mu, \sigma^2)
+\end{align}
+\end{split}\]</div>
+<p>The likelihood function produces exactly <strong>one draw</strong> <span class="math notranslate nohighlight">\(x_i\)</span> per call. At inference time the wrapper sums the per-trial log-ratios automatically.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="n">sigma</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">sigma</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">()}</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+
+<span class="c1"># Sanity check: each simulation returns one x</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+<span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;mu&#39;: (4, 1), &#39;sigma&#39;: (4, 1), &#39;x&#39;: (4, 1)}
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="build-adapter-and-train">
+<h3><span class="section-number">12.3.2. </span>Build Adapter and Train<a class="headerlink" href="#build-adapter-and-train" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">inference_variables</span></code> → the parameters <span class="math notranslate nohighlight">\(\theta\)</span>; <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code> → the observation <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">ratio_approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">RatioApproximator</span><span class="p">(</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">(),</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">CosineDecay</span><span class="p">(</span><span class="mf">5e-4</span><span class="p">,</span> <span class="n">decay_steps</span><span class="o">=</span><span class="mi">5000</span><span class="p">)</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+<span class="n">ratio_approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Training on a fast simulator is cheap on both GPU and CPU, expect ~ 30 seconds.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">ratio_approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">num_batches</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3b193259094b026f5260cf986c686385663ce6b17fea0563156c03288c816697.png" src="../_images/3b193259094b026f5260cf986c686385663ce6b17fea0563156c03288c816697.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="the-neuraldistribution-wrapper">
+<h2><span class="section-number">12.4. </span>The <code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> Wrapper<a class="headerlink" href="#the-neuraldistribution-wrapper" title="Link to this heading">#</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> is a thin bridge that turns a trained <code class="docutils literal notranslate"><span class="pre">RatioApproximator</span></code> or a <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> into a PyMC custom distribution usable with any gradient-based (NUTS, HMC) or gradient-free sampler (Slice).</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ratio_approximator</span></code></p></td>
+<td><p>The trained estimator</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">param_names</span></code></p></td>
+<td><p>Names of the parameters (must match <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>)</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">exchangeable=True</span></code></p></td>
+<td><p>Assume i.i.d. observations → <code class="docutils literal notranslate"><span class="pre">jax.vmap</span></code> the network over observations</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ratio_dist</span> <span class="o">=</span> <span class="n">NeuralDistribution</span><span class="p">(</span>
+    <span class="n">approximator</span><span class="o">=</span><span class="n">ratio_approximator</span><span class="p">,</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+    <span class="n">exchangeable</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="log-ratio-landscape">
+<h3><span class="section-number">12.4.1. </span>Log-Ratio Landscape<a class="headerlink" href="#log-ratio-landscape" title="Link to this heading">#</a></h3>
+<p>Fix <span class="math notranslate nohighlight">\(x_{obs} = 2.0\)</span> and sweep <span class="math notranslate nohighlight">\((\mu, \sigma)\)</span>.  The learned log-ratio should match the analytic log-likelihood up to a <strong>constant offset</strong> — the log model evidence <span class="math notranslate nohighlight">\(\log p(x_{obs})\)</span>, which is independent of <span class="math notranslate nohighlight">\(\theta\)</span>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_obs_val</span> <span class="o">=</span> <span class="mf">2.0</span>
+<span class="n">mu_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">4.5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">,</span> <span class="mi">80</span><span class="p">)</span>
+<span class="n">sigma_grid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.6</span><span class="p">,</span> <span class="mf">2.9</span><span class="p">,</span> <span class="mi">60</span><span class="p">)</span>
+<span class="n">MU</span><span class="p">,</span> <span class="n">SIGMA</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">mu_grid</span><span class="p">,</span> <span class="n">sigma_grid</span><span class="p">)</span>
+
+<span class="n">mu_flat</span>   <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">MU</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+<span class="n">sigma_flat</span> <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">SIGMA</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+<span class="n">x_flat</span>    <span class="o">=</span> <span class="n">jnp</span><span class="o">.</span><span class="n">full_like</span><span class="p">(</span><span class="n">mu_flat</span><span class="p">,</span> <span class="n">x_obs_val</span><span class="p">)</span>
+
+<span class="n">vmap_fn_all</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">ratio_dist</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">log_prob</span><span class="p">,</span> <span class="n">in_axes</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+<span class="n">LR</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">vmap_fn_all</span><span class="p">(</span><span class="n">x_flat</span><span class="p">,</span> <span class="n">mu_flat</span><span class="p">,</span> <span class="n">sigma_flat</span><span class="p">))</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">MU</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">LL</span> <span class="o">=</span> <span class="n">sp_norm</span><span class="o">.</span><span class="n">logpdf</span><span class="p">(</span><span class="n">x_obs_val</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">MU</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">SIGMA</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">cmap</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">LR</span><span class="p">,</span> <span class="n">LL</span><span class="p">,</span> <span class="n">LL</span> <span class="o">-</span> <span class="n">LR</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;Log Ratio (learned)&quot;</span><span class="p">,</span> <span class="s2">&quot;Analytic Log Likelihood&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;LL $-$ LR $\approx$ const&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;viridis&quot;</span><span class="p">,</span> <span class="s2">&quot;viridis&quot;</span><span class="p">,</span> <span class="s2">&quot;RdBu_r&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">pcolormesh</span><span class="p">(</span><span class="n">MU</span><span class="p">,</span> <span class="n">SIGMA</span><span class="p">,</span> <span class="n">Z</span><span class="p">,</span> <span class="n">shading</span><span class="o">=</span><span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\mu$&quot;</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\sigma$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">title</span><span class="si">}</span><span class="se">\n</span><span class="s2">($x_</span><span class="se">{{</span><span class="s2">obs</span><span class="se">}}</span><span class="s2">=</span><span class="si">{</span><span class="n">x_obs_val</span><span class="si">}</span><span class="s2">$)&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
+    
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/f74363d22d868928be6aee43a702ae87641c94bdf2b7f781a3a09b82b5c2bdd9.png" src="../_images/f74363d22d868928be6aee43a702ae87641c94bdf2b7f781a3a09b82b5c2bdd9.png" />
+</div>
+</div>
+</section>
+<section id="scalar-parameter-inference-with-nuts">
+<h3><span class="section-number">12.4.2. </span>Scalar Parameter Inference with NUTS<a class="headerlink" href="#scalar-parameter-inference-with-nuts" title="Link to this heading">#</a></h3>
+<p>Simulate <span class="math notranslate nohighlight">\(n = 50\)</span> observations from the true model and recover <span class="math notranslate nohighlight">\((\mu, \sigma)\)</span>. Both parameters are <strong>scalars</strong> shared across all trials.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">SEED</span> <span class="o">=</span> <span class="mi">42</span>
+<span class="n">RNG</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">SEED</span><span class="p">)</span>
+
+<span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">,</span> <span class="n">n_obs</span> <span class="o">=</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mi">50</span>
+<span class="n">x_observed</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">,</span> <span class="n">n_obs</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">nre_model</span><span class="p">:</span>
+
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">ratio_dist</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_observed</span><span class="p">)</span>
+
+    <span class="n">trace_nre</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># need to use spawn context on Linux to avoid fork()</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [mu, sigma]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "b332ac39eedd4a29ba6f5c3fce6f8293", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 16 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="n">trace_nre</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0a0d64570cd37f89ef1d7c8d93e2e1bad3f6b45ffdd2083eb0283b802ecb165f.png" src="../_images/0a0d64570cd37f89ef1d7c8d93e2e1bad3f6b45ffdd2083eb0283b802ecb165f.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">true_model</span><span class="p">:</span>
+
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_observed</span><span class="p">)</span>
+
+    <span class="n">trace_true</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># need to use spawn context on Linux to avoid fork()</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [mu, sigma]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "e4bb69a9a353456d9daf9712cb8c6832", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 1 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">true_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">],</span> <span class="p">[</span><span class="n">mu_true</span><span class="p">,</span> <span class="n">sigma_true</span><span class="p">]):</span>
+
+    <span class="n">samples_nre</span> <span class="o">=</span> <span class="n">trace_nre</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">samples_true</span> <span class="o">=</span> <span class="n">trace_true</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples_nre</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS Posterior (NRE)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;darkblue&#39;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples_true</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS Posterior (True)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;gray&#39;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">true_val</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">);</span> <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;Posterior for $</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/044f6f1fc3babfcd7103e580cc72d2298f5a3662bc75d84c59c8b3d1d0c3fbf0.png" src="../_images/044f6f1fc3babfcd7103e580cc72d2298f5a3662bc75d84c59c8b3d1d0c3fbf0.png" />
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="part-2-regression-per-trial-parameters">
+<h2><span class="section-number">12.5. </span>Part 2: Regression - Per-Trial Parameters<a class="headerlink" href="#part-2-regression-per-trial-parameters" title="Link to this heading">#</a></h2>
+<p>The same trained ratio estimator can be used for <strong>regressed parameters</strong> without any retraining.  For example, when <span class="math notranslate nohighlight">\(\mu_i = \beta_0 + \beta_1 \cdot c_i\)</span> varies per trial, we can pass a per-trial vector <code class="docutils literal notranslate"><span class="pre">mu_reg</span></code> to <code class="docutils literal notranslate"><span class="pre">ratio_dist</span></code>.  The wrapper vmaps over trials and each call uses the matching <span class="math notranslate nohighlight">\(\mu_i\)</span>.</p>
+<section id="data-generating-process">
+<h3><span class="section-number">12.5.1. </span>Data-Generating Process<a class="headerlink" href="#data-generating-process" title="Link to this heading">#</a></h3>
+<p>$$</p>
+<div class="amsmath math notranslate nohighlight" id="equation-526e554a-d87d-455a-a400-56bda6b81726">
+<span class="eqno">(1)<a class="headerlink" href="#equation-526e554a-d87d-455a-a400-56bda6b81726" title="Permalink to this equation">#</a></span>\[\begin{align}
+\beta_0 &amp;\sim \mathcal{U}(-4, 4)\\
+\beta_1 &amp;\sim \mathcal{U}(-4, 4)\\
+\sigma &amp;\sim \mathcal{U}(0.5, 3.0)\\
+\mu_i &amp;= \beta_0 + \beta_1 \cdot c_i, \quad c_i \in \{0, 1\}\\
+x_i \mid \mu_i, \sigma &amp;\sim \mathcal{N}(\mu_i, \sigma^2)
+\end{align}\]</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">beta_0_true</span><span class="p">,</span> <span class="n">beta_1_true</span><span class="p">,</span> <span class="n">sigma_reg_true</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">,</span> <span class="mf">1.0</span>
+<span class="n">n_obs_reg</span> <span class="o">=</span> <span class="mi">100</span>
+
+<span class="n">condition_data</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="n">n_obs_reg</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">mu_per_trial</span>   <span class="o">=</span> <span class="n">beta_0_true</span> <span class="o">+</span> <span class="n">beta_1_true</span> <span class="o">*</span> <span class="n">condition_data</span>
+<span class="n">x_reg_observed</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu_per_trial</span><span class="p">,</span> <span class="n">sigma_reg_true</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">regression_model</span><span class="p">:</span>
+    <span class="n">beta_0</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;beta_0&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">4</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">beta_1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;beta_1&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">4</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">sigma</span>  <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span>  <span class="n">mu</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+
+    <span class="c1"># Per-trial mu — no model changes needed, just pass the vector</span>
+    <span class="n">mu_reg</span> <span class="o">=</span> <span class="n">beta_0</span> <span class="o">+</span> <span class="n">beta_1</span> <span class="o">*</span> <span class="n">condition_data</span>
+
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">ratio_dist</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_reg</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_reg_observed</span><span class="p">)</span>
+
+    <span class="n">trace_reg</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;beta_0&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;beta_1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [beta_0, beta_1, sigma]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "2e6d271197994c44b38658555299247b", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 24 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ax</span> <span class="o">=</span> <span class="n">az</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="n">trace_reg</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;beta_0&quot;</span><span class="p">,</span> <span class="s2">&quot;beta_1&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/2487195ef68893f8ef4cbf1d7bfeb754c41e367a590e47186b4ec54a70428f82.png" src="../_images/2487195ef68893f8ef4cbf1d7bfeb754c41e367a590e47186b4ec54a70428f82.png" />
+</div>
+</div>
+<p>Now, let’s fit the same model with the <strong>true</strong> Gaussian likelihood.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">regression_model_true</span><span class="p">:</span>
+
+    <span class="n">beta_0</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;beta_0&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">4</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">beta_1</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;beta_1&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mi">4</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="n">sigma</span>  <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;sigma&quot;</span><span class="p">,</span>  <span class="n">mu</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+
+    <span class="n">mu_reg</span> <span class="o">=</span> <span class="n">beta_0</span> <span class="o">+</span> <span class="n">beta_1</span> <span class="o">*</span> <span class="n">condition_data</span>
+
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="n">mu_reg</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_reg_observed</span><span class="p">)</span>
+
+    <span class="n">trace_reg_true</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>   <span class="c1"># need to use spawn context on Linux to avoid fork()</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;beta_0&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;beta_1&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="mf">1.5</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [beta_0, beta_1, sigma]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ad10f38581b34d618948692bbfa25762", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 2 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">14</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">true_val</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">,</span>
+    <span class="p">[</span><span class="s2">&quot;beta_0&quot;</span><span class="p">,</span> <span class="s2">&quot;beta_1&quot;</span><span class="p">,</span> <span class="s2">&quot;sigma&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="n">beta_0_true</span><span class="p">,</span> <span class="n">beta_1_true</span><span class="p">,</span> <span class="n">sigma_reg_true</span><span class="p">]</span>
+<span class="p">):</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">trace_reg</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">samples_true</span> <span class="o">=</span> <span class="n">trace_reg_true</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS Posterior (NRE)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;darkblue&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples_true</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS Posterior (True)&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">true_val</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;True&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior for </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/52013cabe1e84f779add4e18496e5c02187f336ee64c8f565a1f620884b6abbc.png" src="../_images/52013cabe1e84f779add4e18496e5c02187f336ee64c8f565a1f620884b6abbc.png" />
+</div>
+</div>
+</section>
+</section>
+<hr class="docutils" />
+<section id="part-3-drift-diffusion-model-ddm">
+<h2><span class="section-number">12.6. </span>Part 3: Drift-Diffusion Model (DDM)<a class="headerlink" href="#part-3-drift-diffusion-model-ddm" title="Link to this heading">#</a></h2>
+<section id="the-model">
+<h3><span class="section-number">12.6.1. </span>The Model<a class="headerlink" href="#the-model" title="Link to this heading">#</a></h3>
+<p>The <strong>Drift-Diffusion Model</strong> (Ratcliff, 1978) is the canonical model of two-alternative forced-choice (2AFC) decision-making.  Evidence accumulates as a Wiener diffusion process with drift <span class="math notranslate nohighlight">\(v\)</span> until it hits one of two absorbing boundaries separated by <span class="math notranslate nohighlight">\(a\)</span>.  Each trial produces an observable pair:</p>
+<div class="math notranslate nohighlight">
+\[(RT_i,\ \text{choice}_i), \quad \text{choice}_i \in \{-1, +1\}\]</div>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Symbol</p></th>
+<th class="head"><p>Range</p></th>
+<th class="head"><p>Role</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Drift rate</p></td>
+<td><p><span class="math notranslate nohighlight">\(v\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\([-3, 3]\)</span></p></td>
+<td><p>Speed and direction of evidence accumulation</p></td>
+</tr>
+<tr class="row-odd"><td><p>Boundary separation</p></td>
+<td><p><span class="math notranslate nohighlight">\(a\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\([0.3, 2.5]\)</span></p></td>
+<td><p>Speed-accuracy trade-off</p></td>
+</tr>
+<tr class="row-even"><td><p>Starting point</p></td>
+<td><p><span class="math notranslate nohighlight">\(z\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\([0.1, 0.9]\)</span></p></td>
+<td><p>Prior bias toward a boundary</p></td>
+</tr>
+<tr class="row-odd"><td><p>Non-decision time</p></td>
+<td><p><span class="math notranslate nohighlight">\(t\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\([0, 2]\)</span></p></td>
+<td><p>Sensory + motor latency</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The analytic Wiener first-passage time (WFPT) likelihood exists but can only be approximated numerically, allowing us to compare facotirzed NRE against a gold standard. For more complex model variants, the likelihood may not exist and NRE is among the only viable choices (along with amortized NPE).</p>
+</section>
+<section id="why-nre-works-here">
+<h3><span class="section-number">12.6.2. </span>Why NRE Works Here<a class="headerlink" href="#why-nre-works-here" title="Link to this heading">#</a></h3>
+<p>DDM trials are conditionally i.i.d. given <span class="math notranslate nohighlight">\(\theta = (v, a, z, t)\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[
+\log p(\theta \mid \text{RT}_{1:n},\,\text{choice}_{1:n}) =
+\sum_{i=1}^{n} \log r\!\left(\theta,\; RT_i,\, \text{choice}_i\right)
++ \log p(\theta) + \text{const}
+\]</div>
+<p>We train on <strong>single trials</strong> and aggregate at inference — identical workflow to Parts 1 &amp; 2, just with a 2-dimensional observation space <span class="math notranslate nohighlight">\((RT, \text{choice})\)</span> instead of a scalar <span class="math notranslate nohighlight">\(x\)</span>.</p>
+<p>The below workflow assumed that you have installed the following libraries:</p>
+<ol class="arabic simple">
+<li><p><a class="reference external" href="https://github.com/lnccbrown/ssm-simulators">Sequential Sampling Model Simulators (SSMS)</a> - a library for fast simulation of diffusion-like models.</p></li>
+<li><p><a class="reference external" href="https://lnccbrown.github.io/HSSM/">Hierarchical Sequential Sampling Models(HSSM)</a> - a library for Bayesian (hierarchical) modeling with diffusion-like models.</p></li>
+</ol>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">hssm.distribution_utils</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_distribution_for_supported_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ssms.basic_simulators.simulator</span><span class="w"> </span><span class="kn">import</span> <span class="n">simulator</span> <span class="k">as</span> <span class="n">ssm_simulator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ssms.config</span><span class="w"> </span><span class="kn">import</span> <span class="n">model_config</span> <span class="k">as</span> <span class="n">ssms_model_config</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ddm_cfg</span> <span class="o">=</span> <span class="n">ssms_model_config</span><span class="p">[</span><span class="s2">&quot;ddm&quot;</span><span class="p">]</span>
+<span class="n">param_names_ddm</span> <span class="o">=</span> <span class="n">ddm_cfg</span><span class="p">[</span><span class="s2">&quot;params&quot;</span><span class="p">]</span>
+<span class="n">param_lower</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ddm_cfg</span><span class="p">[</span><span class="s2">&quot;param_bounds&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+<span class="n">param_upper</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">ddm_cfg</span><span class="p">[</span><span class="s2">&quot;param_bounds&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;DDM parameter bounds (from ssm-simulators config):&quot;</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names_ddm</span><span class="p">,</span> <span class="n">param_lower</span><span class="p">,</span> <span class="n">param_upper</span><span class="p">):</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;  </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">:  [</span><span class="si">{</span><span class="n">lo</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">hi</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">]&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>DDM parameter bounds (from ssm-simulators config):
+  v:  [-3.00, 3.00]
+  a:  [0.30, 2.50]
+  z:  [0.10, 0.90]
+  t:  [0.00, 2.00]
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="simulator-one-trial-per-call">
+<h3><span class="section-number">12.6.3. </span>Simulator: One Trial per Call<a class="headerlink" href="#simulator-one-trial-per-call" title="Link to this heading">#</a></h3>
+<p>The likelihood function returns <strong>exactly one</strong> <span class="math notranslate nohighlight">\((RT, \text{choice})\)</span> pair. This is the unit the ratio estimator learns on; the wrapper converts it into a bayesflow-friendly generator.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">ddm_prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">lo</span><span class="p">,</span> <span class="n">hi</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">lo</span><span class="p">,</span> <span class="n">hi</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">param_names_ddm</span><span class="p">,</span> <span class="n">param_lower</span><span class="p">,</span> <span class="n">param_upper</span><span class="p">)</span>
+    <span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">ddm_likelihood</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Simulate ONE (RT, choice) trial — the NRE building block.&quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">ssm_simulator</span><span class="p">(</span>
+        <span class="n">theta</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">v</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">z</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t</span><span class="p">},</span>
+        <span class="n">model</span><span class="o">=</span><span class="s2">&quot;ddm&quot;</span><span class="p">,</span>
+        <span class="n">n_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">delta_t</span><span class="o">=</span><span class="mf">0.001</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;rts&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;obs&quot;</span><span class="p">:</span> <span class="n">obs</span><span class="p">}</span>
+
+<span class="n">ddm_simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">ddm_prior</span><span class="p">,</span> <span class="n">ddm_likelihood</span><span class="p">])</span>
+
+<span class="c1"># Sanity check: one batch of 3</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">ddm_simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keys:&quot;</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;obs shape:&quot;</span><span class="p">,</span> <span class="n">batch</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Keys: [&#39;v&#39;, &#39;a&#39;, &#39;z&#39;, &#39;t&#39;, &#39;obs&#39;]
+obs shape: (3, 2)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="train-the-ddm-ratio-estimator">
+<h3><span class="section-number">12.6.4. </span>Train the DDM Ratio Estimator<a class="headerlink" href="#train-the-ddm-ratio-estimator" title="Link to this heading">#</a></h3>
+<p>Each observation is a 2-vector <span class="math notranslate nohighlight">\((RT_i, \text{choice}_i)\)</span>, so the network input
+dimension grows by 2 compared to the normal model.  Everything else is identical.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter_ddm</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">RatioApproximator</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">(</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">],</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;obs&quot;</span><span class="p">]</span>
+<span class="p">)</span>
+
+<span class="n">ratio_approximator_ddm</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">RatioApproximator</span><span class="p">(</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter_ddm</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">(</span><span class="n">widths</span><span class="o">=</span><span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">),</span>
+    <span class="n">K</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="kc">None</span>
+<span class="p">)</span>
+
+<span class="n">learning_rate</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">schedules</span><span class="o">.</span><span class="n">CosineDecay</span><span class="p">(</span><span class="mf">5e-4</span><span class="p">,</span> <span class="n">decay_steps</span><span class="o">=</span><span class="mi">45_000</span><span class="p">)</span>
+<span class="n">optimizer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Adam</span><span class="p">(</span><span class="n">learning_rate</span><span class="o">=</span><span class="n">learning_rate</span><span class="p">)</span>
+<span class="n">ratio_approximator_ddm</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Training will take around 15 minutes on a GPU.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history_ddm</span> <span class="o">=</span> <span class="n">ratio_approximator_ddm</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">ddm_simulator</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+    <span class="n">num_batches</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span>
+    <span class="n">workers</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history_ddm</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3419ec2df5a32713b956e5f66a9af2396da4fa90eefb4c6655f35d585d030791.png" src="../_images/3419ec2df5a32713b956e5f66a9af2396da4fa90eefb4c6655f35d585d030791.png" />
+</div>
+</div>
+</section>
+<section id="nuts-sampling-for-the-ddm">
+<h3><span class="section-number">12.6.5. </span>NUTS Sampling for the DDM<a class="headerlink" href="#nuts-sampling-for-the-ddm" title="Link to this heading">#</a></h3>
+<p>We generate <span class="math notranslate nohighlight">\(n = 200\)</span> (RT, choice) trials from known ground-truth parameters and try to recover them with NUTS.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">v_true</span><span class="p">,</span> <span class="n">a_true</span><span class="p">,</span> <span class="n">z_true</span><span class="p">,</span> <span class="n">t_true</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span>
+<span class="n">n_obs_ddm</span> <span class="o">=</span> <span class="mi">200</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">ssm_simulator</span><span class="p">(</span>
+    <span class="n">theta</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">v_true</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a_true</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">z_true</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_true</span><span class="p">},</span>
+    <span class="n">model</span><span class="o">=</span><span class="s2">&quot;ddm&quot;</span><span class="p">,</span> 
+    <span class="n">n_samples</span><span class="o">=</span><span class="n">n_obs_ddm</span><span class="p">,</span> 
+    <span class="n">random_state</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span> 
+    <span class="n">delta_t</span><span class="o">=</span><span class="mf">0.001</span>
+<span class="p">)</span>
+
+<span class="n">x_observed_ddm</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">c_</span><span class="p">[</span><span class="n">result</span><span class="p">[</span><span class="s2">&quot;rts&quot;</span><span class="p">],</span> <span class="n">result</span><span class="p">[</span><span class="s2">&quot;choices&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">squeeze</span><span class="p">()</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ratio_dist_ddm</span> <span class="o">=</span> <span class="n">NeuralDistribution</span><span class="p">(</span>
+    <span class="n">approximator</span><span class="o">=</span><span class="n">ratio_approximator_ddm</span><span class="p">,</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">],</span>
+    <span class="n">exchangeable</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">ddm_model</span><span class="p">:</span>
+
+    <span class="n">v</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>   <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">ratio_dist_ddm</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_observed_ddm</span><span class="p">)</span>
+
+    <span class="n">trace_ddm</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>  <span class="c1"># use cores=4 in a &quot;spawn context&quot; (will fork on Linux and die)</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [v, a, z, t]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "df7ade03461b4f23883b17faefcbd83a", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 42 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_trace</span><span class="p">(</span><span class="n">trace_ddm</span><span class="p">,</span> <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/ae9dc0b707555785673dc92262819c0dd845b170aaeeac8b91ea602fc0f6663e.png" src="../_images/ae9dc0b707555785673dc92262819c0dd845b170aaeeac8b91ea602fc0f6663e.png" />
+</div>
+</div>
+</section>
+<section id="comparison-with-the-analytic-wfpt-likelihood">
+<h3><span class="section-number">12.6.6. </span>Comparison with the Analytic WFPT Likelihood<a class="headerlink" href="#comparison-with-the-analytic-wfpt-likelihood" title="Link to this heading">#</a></h3>
+<p>HSSM provides the exact Wiener first-passage time density as a reference. We fit the <strong>same observed data</strong> with <strong>identical priors</strong> to see how closely the NRE posterior matches the gold standard.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">AnalyticalDDM</span> <span class="o">=</span> <span class="n">make_distribution_for_supported_model</span><span class="p">(</span>
+    <span class="s2">&quot;ddm&quot;</span><span class="p">,</span> <span class="n">loglik_kind</span><span class="o">=</span><span class="s2">&quot;analytical&quot;</span><span class="p">,</span> <span class="n">backend</span><span class="o">=</span><span class="s2">&quot;pytensor&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">analytical_model</span><span class="p">:</span>
+    <span class="n">v_a</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>   <span class="n">sigma</span><span class="o">=</span><span class="mf">1.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">3.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">3.0</span><span class="p">)</span>
+    <span class="n">a_a</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">2.5</span><span class="p">)</span>
+    <span class="n">z_a</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    <span class="n">t_a</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">2.0</span><span class="p">)</span>
+
+    <span class="n">obs_a</span> <span class="o">=</span> <span class="n">AnalyticalDDM</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">v</span><span class="o">=</span><span class="n">v_a</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="n">a_a</span><span class="p">,</span> <span class="n">z</span><span class="o">=</span><span class="n">z_a</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t_a</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">x_observed_ddm</span><span class="p">)</span>
+
+    <span class="n">trace_analytical</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> 
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+        <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="n">SEED</span><span class="p">,</span>
+        <span class="n">initvals</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+INFO:pymc.sampling.mcmc:Sequential sampling (4 chains in 1 job)
+INFO:pymc.sampling.mcmc:NUTS: [v, a, z, t]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "094db79433444586995da59b1094ad83", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 13 seconds.
+ERROR:pymc.stats.convergence:There were 2 divergences after tuning. Increase `target_accept` or reparameterize.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">true_vals</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;v&quot;</span><span class="p">:</span> <span class="n">v_true</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">:</span> <span class="n">a_true</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">z_true</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">:</span> <span class="n">t_true</span><span class="p">}</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">18</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;v&quot;</span><span class="p">,</span> <span class="s2">&quot;a&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">,</span> <span class="s2">&quot;t&quot;</span><span class="p">]):</span>
+
+    <span class="n">bf_samples</span> <span class="o">=</span> <span class="n">trace_ddm</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+    <span class="n">an_samples</span> <span class="o">=</span> <span class="n">trace_analytical</span><span class="o">.</span><span class="n">posterior</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">bf_samples</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;darkblue&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS (NRE)&quot;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">an_samples</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;gray&quot;</span><span class="p">,</span>     <span class="n">label</span><span class="o">=</span><span class="s2">&quot;NUTS (WFPT)&quot;</span><span class="p">,</span>  <span class="n">edgecolor</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">true_vals</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">ls</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;True = </span><span class="si">{</span><span class="n">true_vals</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Posterior of $</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;NRE vs. WFPT Posteriors&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/72bc54e113eb5edd8c55ac2b2d0e810c4ffad452eca754ae2d39931471a5ce3a.png" src="../_images/72bc54e113eb5edd8c55ac2b2d0e810c4ffad452eca754ae2d39931471a5ce3a.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Ensembles.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">11. </span>Ensembles</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Compositional_Diffusion.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">13. </span>Compositional Amortized Inference for Hierarchical Bayesian Models</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-core-idea">12.1. The Core Idea</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structure">12.2. Structure</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#part-1-normal-model">12.3. Part 1: Normal Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#generative-model">12.3.1. Generative Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#build-adapter-and-train">12.3.2. Build Adapter and Train</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-neuraldistribution-wrapper">12.4. The <code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> Wrapper</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#log-ratio-landscape">12.4.1. Log-Ratio Landscape</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scalar-parameter-inference-with-nuts">12.4.2. Scalar Parameter Inference with NUTS</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#part-2-regression-per-trial-parameters">12.5. Part 2: Regression - Per-Trial Parameters</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#data-generating-process">12.5.1. Data-Generating Process</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#part-3-drift-diffusion-model-ddm">12.6. Part 3: Drift-Diffusion Model (DDM)</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-model">12.6.1. The Model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-nre-works-here">12.6.2. Why NRE Works Here</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#simulator-one-trial-per-call">12.6.3. Simulator: One Trial per Call</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#train-the-ddm-ratio-estimator">12.6.4. Train the DDM Ratio Estimator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#nuts-sampling-for-the-ddm">12.6.5. NUTS Sampling for the DDM</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comparison-with-the-analytic-wfpt-likelihood">12.6.6. Comparison with the Analytic WFPT Likelihood</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.13/docsrc/source/_examples/Ratio_Estimation.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

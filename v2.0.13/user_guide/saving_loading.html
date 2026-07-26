@@ -1,0 +1,955 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>8. Saving &amp; Loading Models &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/saving_loading';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/user_guide/saving_loading.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="9. Diagnostics and Visualizations" href="diagnostics.html" />
+    <link rel="prev" title="7. Workflows" href="workflows.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.13" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulators.html">2. Simulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_processing.html">3. Data Processing: Adapters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="approximators.html">4. Approximators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary_networks.html">5. Summary Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_networks.html">6. Inference Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">7. Workflows</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">8. Saving &amp; Loading Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnostics.html">9. Diagnostics and Visualizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">10. Using Datasets in BayesFlow</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">8. </span>Saving &amp; Loading Models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="saving-loading-models">
+<h1><span class="section-number">8. </span>Saving &amp; Loading Models<a class="headerlink" href="#saving-loading-models" title="Link to this heading">#</a></h1>
+<p>BayesFlow models are saved and loaded through <a class="reference external" href="https://keras.io/">Keras 3</a>, which handles serialization of the full model graph — architecture, weights, and configuration — into a single <code class="docutils literal notranslate"><span class="pre">.keras</span></code> file.</p>
+<p><strong>What is saved?</strong> When you save an approximator, the entire object is persisted: the inference network, the summary network (if any), and the <strong>adapter</strong> that defines how your data is preprocessed. You do not need to recreate or re-attach anything after loading.</p>
+<p>This page covers:</p>
+<ol class="arabic simple">
+<li><p><strong>Automatic checkpointing</strong> — saving after every training epoch via the workflow API</p></li>
+<li><p><strong>Manual saving</strong> — explicitly saving a trained approximator to disk</p></li>
+<li><p><strong>Loading via the workflow</strong> — <code class="docutils literal notranslate"><span class="pre">workflow.load_approximator()</span></code> and the <code class="docutils literal notranslate"><span class="pre">restore=True</span></code> constructor flag</p></li>
+<li><p><strong>Loading via Keras directly</strong> — <code class="docutils literal notranslate"><span class="pre">keras.saving.load_model</span></code> for standalone approximator use</p></li>
+</ol>
+<p>For custom networks, see <a class="reference internal" href="#custom-networks-serialization"><span class="xref myst">Custom Networks &amp; Serialization</span></a> below.</p>
+<section id="saving-models">
+<h2><span class="section-number">8.1. </span>Saving Models<a class="headerlink" href="#saving-models" title="Link to this heading">#</a></h2>
+<section id="during-training-automatic-checkpointing">
+<h3><span class="section-number">8.1.1. </span>During training: automatic checkpointing<a class="headerlink" href="#during-training-automatic-checkpointing" title="Link to this heading">#</a></h3>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">checkpoint_filepath</span></code> and <code class="docutils literal notranslate"><span class="pre">checkpoint_name</span></code> when constructing a workflow. BayesFlow will then save the model automatically at the end of every training epoch.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+
+<span class="c1"># Minimal simulator used throughout this notebook</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">theta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">theta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">))</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)}</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">checkpoint_filepath</span><span class="o">=</span><span class="s2">&quot;checkpoints&quot;</span><span class="p">,</span>  <span class="c1"># directory to write into</span>
+    <span class="n">checkpoint_name</span><span class="o">=</span><span class="s2">&quot;my_model&quot;</span><span class="p">,</span>         <span class="c1"># file will be: checkpoints/my_model.keras</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="saving-only-the-best-checkpoint">
+<h4><span class="section-number">8.1.1.1. </span>Saving only the best checkpoint<a class="headerlink" href="#saving-only-the-best-checkpoint" title="Link to this heading">#</a></h4>
+<p>Set <code class="docutils literal notranslate"><span class="pre">save_best_only=True</span></code> to keep only the checkpoint with the lowest validation loss, discarding worse epochs automatically.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">checkpoint_filepath</span><span class="o">=</span><span class="s2">&quot;checkpoints&quot;</span><span class="p">,</span>
+    <span class="n">checkpoint_name</span><span class="o">=</span><span class="s2">&quot;my_model&quot;</span><span class="p">,</span>
+    <span class="n">save_best_only</span><span class="o">=</span><span class="kc">True</span>   <span class="c1"># keeps the epoch with the lowest validation loss (not recommended)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>When to avoid <code class="docutils literal notranslate"><span class="pre">save_best_only</span></code>:</strong> Some loss functions — such as flow matching — produce inherently noisy per-epoch estimates. In those cases the “best” checkpoint may simply be a lucky noise fluctuation rather than the best-trained model. Prefer <code class="docutils literal notranslate"><span class="pre">save_best_only=False</span></code> (the default) unless you have a reliable validation signal.</p>
+</div></blockquote>
+</section>
+<section id="weights-only-checkpoints">
+<h4><span class="section-number">8.1.1.2. </span>Weights-only checkpoints<a class="headerlink" href="#weights-only-checkpoints" title="Link to this heading">#</a></h4>
+<p>By default, BayesFlow saves the <strong>full model</strong> (architecture + weights) as a single <code class="docutils literal notranslate"><span class="pre">.keras</span></code> file. If you only want to save the weights — for example to reduce file size or when full serialization is not needed — set <code class="docutils literal notranslate"><span class="pre">save_weights_only=True</span></code>. The checkpoint is then written as a <code class="docutils literal notranslate"><span class="pre">.weights.h5</span></code> file.</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># File saved: checkpoints/my_model.weights.h5</span>
+</pre></div>
+</div>
+<p>When loading a weights-only checkpoint, the model <strong>architecture must already exist</strong> before loading (the weights are applied on top of an existing model object). See <a class="reference internal" href="#loading-models"><span class="xref myst">Loading Models</span></a> below for the recommended <code class="docutils literal notranslate"><span class="pre">workflow.load_approximator()</span></code> approach that handles this automatically.</p>
+</section>
+</section>
+<section id="after-training-manual-save">
+<h3><span class="section-number">8.1.2. </span>After training: manual save<a class="headerlink" href="#after-training-manual-save" title="Link to this heading">#</a></h3>
+<p>If you did not configure checkpointing upfront, or if you are working with the lower-level approximator API directly, you can save at any point:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">checkpoint_filepath</span><span class="o">=</span><span class="s2">&quot;checkpoints&quot;</span><span class="p">,</span>
+    <span class="n">checkpoint_name</span><span class="o">=</span><span class="s2">&quot;my_model&quot;</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Save via the workflow</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;checkpoints/my_model.keras&quot;</span><span class="p">)</span>
+
+<span class="c1"># Or if you have an approximator directly (no workflow)</span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;checkpoints/my_model.keras&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="loading-models">
+<h2><span class="section-number">8.2. </span>Loading Models<a class="headerlink" href="#loading-models" title="Link to this heading">#</a></h2>
+<section id="via-the-workflow-load-approximator">
+<h3><span class="section-number">8.2.1. </span>Via the workflow: <code class="docutils literal notranslate"><span class="pre">load_approximator()</span></code><a class="headerlink" href="#via-the-workflow-load-approximator" title="Link to this heading">#</a></h3>
+<p>The simplest way to restore a checkpoint when using the workflow API is <code class="docutils literal notranslate"><span class="pre">workflow.load_approximator()</span></code>. When called with no arguments, it reads the path from the workflow’s own <code class="docutils literal notranslate"><span class="pre">checkpoint_filepath</span></code> and <code class="docutils literal notranslate"><span class="pre">checkpoint_name</span></code> attributes and handles both full-model (<code class="docutils literal notranslate"><span class="pre">.keras</span></code>) and weights-only (<code class="docutils literal notranslate"><span class="pre">.weights.h5</span></code>) checkpoints automatically.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Restore the checkpoint saved to checkpoint_filepath/checkpoint_name.keras</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">load_approximator</span><span class="p">()</span>
+
+<span class="c1"># Or provide an explicit path (useful when loading a checkpoint from a different run)</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">load_approximator</span><span class="p">(</span><span class="n">path</span><span class="o">=</span><span class="s2">&quot;checkpoints/my_model.keras&quot;</span><span class="p">)</span>
+
+<span class="c1"># Held-out observations for the examples below</span>
+<span class="n">new_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># The workflow is fully ready for inference</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">new_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="automatic-restore-on-construction-restore-true">
+<h4><span class="section-number">8.2.1.1. </span>Automatic restore on construction: <code class="docutils literal notranslate"><span class="pre">restore=True</span></code><a class="headerlink" href="#automatic-restore-on-construction-restore-true" title="Link to this heading">#</a></h4>
+<p>Pass <code class="docutils literal notranslate"><span class="pre">restore=True</span></code> to the workflow constructor to load the checkpoint automatically, without a separate <code class="docutils literal notranslate"><span class="pre">load_approximator()</span></code> call. This is convenient when you want to resume inference or evaluation immediately after constructing the workflow.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">checkpoint_filepath</span><span class="o">=</span><span class="s2">&quot;checkpoints&quot;</span><span class="p">,</span>
+    <span class="n">checkpoint_name</span><span class="o">=</span><span class="s2">&quot;my_model&quot;</span><span class="p">,</span>
+    <span class="n">restore</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>  <span class="c1"># loads checkpoints/my_model.keras immediately</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="via-keras-directly-lower-level-api">
+<h3><span class="section-number">8.2.2. </span>Via Keras directly (lower-level API)<a class="headerlink" href="#via-keras-directly-lower-level-api" title="Link to this heading">#</a></h3>
+<p>You can also load a saved approximator with <a class="reference external" href="https://keras.io/api/models/model_saving_apis/model_saving_and_loading/#load_model-function"><code class="docutils literal notranslate"><span class="pre">keras.saving.load_model</span></code></a> without using a workflow at all. Always <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">bayesflow</span></code> before loading — BayesFlow registers its custom objects with Keras on import, and without this the load will fail.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Important: import bayesflow before keras so custom objects are registered</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;checkpoints/my_model.keras&quot;</span><span class="p">)</span>
+
+<span class="c1"># Held-out observations for the examples below</span>
+<span class="n">new_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+
+<span class="c1"># The approximator is fully ready for inference — adapter included</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">new_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="attaching-a-keras-loaded-model-to-a-workflow">
+<h4><span class="section-number">8.2.2.1. </span>Attaching a Keras-loaded model to a workflow<a class="headerlink" href="#attaching-a-keras-loaded-model-to-a-workflow" title="Link to this heading">#</a></h4>
+<p>If you loaded an approximator directly via <code class="docutils literal notranslate"><span class="pre">keras.saving.load_model</span></code> and want access to the high-level workflow utilities (e.g., <code class="docutils literal notranslate"><span class="pre">workflow.sample</span></code>, <code class="docutils literal notranslate"><span class="pre">workflow.plot_default_diagnostics</span></code>), assign the approximator to an existing workflow instance. For checkpoints that were created through a workflow, prefer <code class="docutils literal notranslate"><span class="pre">workflow.load_approximator()</span></code> shown above — it is more ergonomic and avoids this manual wiring.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Assign the Keras-loaded approximator to the workflow</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;checkpoints/my_model.keras&quot;</span><span class="p">)</span>
+
+<span class="c1"># All workflow-level methods work as normal</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">new_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<blockquote>
+<div><p><strong>Sanity check after loading:</strong> Changes to model architectures across BayesFlow versions can occasionally cause a model to load without error but produce incorrect outputs. After loading, always run a quick check — for example, verify output shapes or compare a few samples against known-good results from before saving.</p>
+</div></blockquote>
+</section>
+</section>
+</section>
+<section id="what-gets-saved">
+<h2><span class="section-number">8.3. </span>What Gets Saved?<a class="headerlink" href="#what-gets-saved" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">.keras</span></code> format serializes the <strong>full approximator object</strong>: its architecture (layer graph and configuration), trained weights, and the <strong>adapter</strong> (your data-preprocessing pipeline). When you load a model, you get back an identical, ready-to-use object — no need to rebuild the adapter or rewire anything.</p>
+<p>Under the hood, Keras converts the object to a JSON config and stores it alongside the weights in an HDF5-like archive. For this to work, every component of your approximator (networks, layers, the adapter) must be <em>serializable</em> — meaning it can be fully described by its class plus a dictionary of constructor arguments.</p>
+<p>All built-in BayesFlow networks and adapters are serializable by default. If you write a <strong>custom network</strong>, you need to take one extra step to make it serializable — see <a class="reference internal" href="#custom-networks-serialization"><span class="xref myst">Custom Networks &amp; Serialization</span></a> below.</p>
+<section id="version-pinning">
+<h3><span class="section-number">8.3.1. </span>Version pinning<a class="headerlink" href="#version-pinning" title="Link to this heading">#</a></h3>
+<p>BayesFlow is under active development. Occasionally, a change to a model’s internal architecture can break loading of old checkpoints — sometimes silently, without raising an error. To protect against this:</p>
+<ul class="simple">
+<li><p><strong>Pin your BayesFlow version</strong> per project (<code class="docutils literal notranslate"><span class="pre">pip</span> <span class="pre">install</span> <span class="pre">bayesflow==x.y.z</span></code>).</p></li>
+<li><p>Always run a sanity check on model outputs immediately after loading.</p></li>
+</ul>
+</section>
+</section>
+<section id="custom-networks-serialization">
+<h2><span class="section-number">8.4. </span>Custom Networks &amp; Serialization<a class="headerlink" href="#custom-networks-serialization" title="Link to this heading">#</a></h2>
+<p>If you implement a custom summary network (or any custom layer), you must make it serializable so BayesFlow can save and load it. This requires two things:</p>
+<ol class="arabic simple">
+<li><p><strong>Decorate the class with <code class="docutils literal notranslate"><span class="pre">&#64;serializable</span></code></strong> — registers the class under a unique name in Keras’s object registry.</p></li>
+<li><p><strong>Override <code class="docutils literal notranslate"><span class="pre">get_config()</span></code></strong> — returns the constructor arguments needed to reconstruct the object from scratch.</p></li>
+</ol>
+<section id="minimal-example">
+<h3><span class="section-number">8.4.1. </span>Minimal example<a class="headerlink" href="#minimal-example" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span><span class="p">,</span> <span class="n">serialize</span>
+
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;my_project&quot;</span><span class="p">)</span>  <span class="c1"># unique namespace, e.g. your project name</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">GRUBottleneck</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary_dim</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gru</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="mi">64</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dense</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compress (batch, T, d) time series into (batch, summary_dim) summaries.&quot;&quot;&quot;</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">dense</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;summary_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">}</span>
+        <span class="k">return</span> <span class="n">base</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>After this, <code class="docutils literal notranslate"><span class="pre">approximator.save(...)</span></code> and <code class="docutils literal notranslate"><span class="pre">keras.saving.load_model(...)</span></code> will work exactly as with built-in networks — as long as <code class="docutils literal notranslate"><span class="pre">import</span> <span class="pre">bayesflow</span></code> (which triggers registration) appears before the load call.</p>
+</section>
+<section id="the-serializable-decorator">
+<h3><span class="section-number">8.4.2. </span>The <code class="docutils literal notranslate"><span class="pre">&#64;serializable</span></code> decorator<a class="headerlink" href="#the-serializable-decorator" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">&#64;serializable(name)</span></code> registers the class in Keras’s global object registry under the given name. Choose a <em>namespaced</em> string — something like <code class="docutils literal notranslate"><span class="pre">&quot;my_project.networks&quot;</span></code> — to avoid collisions with other packages that might register a class under the same name.</p>
+</section>
+<section id="the-get-config-method">
+<h3><span class="section-number">8.4.3. </span>The <code class="docutils literal notranslate"><span class="pre">get_config()</span></code> method<a class="headerlink" href="#the-get-config-method" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">get_config()</span></code> must return a plain dictionary that contains all constructor arguments needed to recreate the object. Call <code class="docutils literal notranslate"><span class="pre">serialize(config)</span></code> on any values that are themselves Keras objects or BayesFlow components (e.g., a sub-layer passed as <code class="docutils literal notranslate"><span class="pre">__init__</span></code> argument) — this recursively converts them to their config dicts so they can be round-tripped through JSON.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="n">base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>          <span class="c1"># picks up parent class arguments</span>
+    <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;summary_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">}</span>
+    <span class="k">return</span> <span class="n">base</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span>      <span class="c1"># serialize() handles nested Keras objects</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>If all your constructor arguments are plain Python primitives (<code class="docutils literal notranslate"><span class="pre">int</span></code>, <code class="docutils literal notranslate"><span class="pre">float</span></code>, <code class="docutils literal notranslate"><span class="pre">str</span></code>, <code class="docutils literal notranslate"><span class="pre">bool</span></code>, <code class="docutils literal notranslate"><span class="pre">None</span></code>), you do not need to call <code class="docutils literal notranslate"><span class="pre">serialize</span></code> — just merge the dicts directly.</p>
+</section>
+</section>
+<section id="further-reading">
+<h2><span class="section-number">8.5. </span>Further Reading<a class="headerlink" href="#further-reading" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://keras.io/guides/serialization_and_saving/">Keras: Serialization &amp; Saving guide</a> — in-depth coverage of the <code class="docutils literal notranslate"><span class="pre">.keras</span></code> format, custom objects, and <code class="docutils literal notranslate"><span class="pre">SavedModel</span></code></p></li>
+<li><p><a class="reference external" href="https://keras.io/api/models/model_saving_apis/model_saving_and_loading/#load_model-function"><code class="docutils literal notranslate"><span class="pre">keras.saving.load_model</span></code> API reference</a></p></li>
+</ul>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="workflows.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">7. </span>Workflows</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="diagnostics.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">9. </span>Diagnostics and Visualizations</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-models">8.1. Saving Models</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#during-training-automatic-checkpointing">8.1.1. During training: automatic checkpointing</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-only-the-best-checkpoint">8.1.1.1. Saving only the best checkpoint</a></li>
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#weights-only-checkpoints">8.1.1.2. Weights-only checkpoints</a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#after-training-manual-save">8.1.2. After training: manual save</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#loading-models">8.2. Loading Models</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#via-the-workflow-load-approximator">8.2.1. Via the workflow: <code class="docutils literal notranslate"><span class="pre">load_approximator()</span></code></a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#automatic-restore-on-construction-restore-true">8.2.1.1. Automatic restore on construction: <code class="docutils literal notranslate"><span class="pre">restore=True</span></code></a></li>
+</ul>
+</li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#via-keras-directly-lower-level-api">8.2.2. Via Keras directly (lower-level API)</a><ul class="nav section-nav flex-column">
+<li class="toc-h4 nav-item toc-entry"><a class="reference internal nav-link" href="#attaching-a-keras-loaded-model-to-a-workflow">8.2.2.1. Attaching a Keras-loaded model to a workflow</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-gets-saved">8.3. What Gets Saved?</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#version-pinning">8.3.1. Version pinning</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-networks-serialization">8.4. Custom Networks &amp; Serialization</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#minimal-example">8.4.1. Minimal example</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-serializable-decorator">8.4.2. The <code class="docutils literal notranslate"><span class="pre">@serializable</span></code> decorator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-get-config-method">8.4.3. The <code class="docutils literal notranslate"><span class="pre">get_config()</span></code> method</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#further-reading">8.5. Further Reading</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.13/docsrc/source/user_guide/saving_loading.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

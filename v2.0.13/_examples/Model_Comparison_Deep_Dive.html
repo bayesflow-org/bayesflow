@@ -1,0 +1,1250 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>A Deep Dive into Bayesian Model Comparison with BayesFlow &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Model_Comparison_Deep_Dive';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Model_Comparison_Deep_Dive.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.13" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+        
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar hide-on-wide">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis">A Deep Dive into Bayesian Model Comparison with BayesFlow</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="a-deep-dive-into-bayesian-model-comparison-with-bayesflow">
+<h1>A Deep Dive into Bayesian Model Comparison with BayesFlow<a class="headerlink" href="#a-deep-dive-into-bayesian-model-comparison-with-bayesflow" title="Link to this heading">#</a></h1>
+<p><em>Author: Jerry M. Huang</em></p>
+<p>In this notebook, we take a deep dive into Bayesian model comparison by demonstrating the <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code> in BayesFlow. We will demonstrate two capabilities that the workflow has to offer: Bayes factor (BF) and posterior model probability (PMP) estimation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">seaborn</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">sns</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">numba</span><span class="w"> </span><span class="kn">import</span> <span class="n">njit</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Multiple Keras-compatible backends detected (JAX, PyTorch, TensorFlow). Defaulting to JAX.
+To override, set the KERAS_BACKEND environment variable before importing bayesflow.
+See: https://keras.io/getting_started/#configuring-your-backend
+INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend &#39;jax&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="o">=</span><span class="mi">2026</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="categorical-scoring-rules">
+<h2>Categorical Scoring Rules<a class="headerlink" href="#categorical-scoring-rules" title="Link to this heading">#</a></h2>
+<p>At the heart of any model comparison workflow is a <strong>scoring rule</strong> — a loss function that determines how the network learns to distinguish models. The scoring rule shapes the training dynamics, while BayesFlow derives posterior model probabilities and Bayes factors from the corresponding network outputs.</p>
+<section id="what-the-scores-learn">
+<h3>What the scores learn<a class="headerlink" href="#what-the-scores-learn" title="Link to this heading">#</a></h3>
+<p>All categorical scoring rules in <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code> use length-<span class="math notranslate nohighlight">\(M\)</span> estimation heads for the <span class="math notranslate nohighlight">\(M\)</span> candidate models. The returned evidence quantity is called <code class="docutils literal notranslate"><span class="pre">log_odds</span></code>, not because these values are log posterior odds. They equal log Bayes factors only when the model prior is uniform.</p>
+<p>Let <span class="math notranslate nohighlight">\(\ell(\mathbf{x}) = (\ell_1(\mathbf{x}), \ldots, \ell_M(\mathbf{x}))\)</span> denote the model logits learned for a dataset <span class="math notranslate nohighlight">\(\mathbf{x}\)</span>. Note, that statisticians do not like to call these “logits”, so we side withe ML community on this terminological debate. Posterior model probabilities (PMPs) are obtained by softmax-normalizing these logits:</p>
+<div class="math notranslate nohighlight">
+\[
+\hat p_k(\mathbf{x}) = P(\mathcal{M}_k \mid \mathbf{x}) = \frac{\exp(\ell_k(\mathbf{x}))}{\sum_{j=1}^{M} \exp(\ell_j(\mathbf{x}))}.
+\]</div>
+<p>Log odds are then reported relative to a reference model, usually <span class="math notranslate nohighlight">\(\mathcal{M}_0\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[
+\widehat{\log O}_{k,0}(\mathbf{x}) = \log \frac{\hat p_k(\mathbf{x})}{\hat p_0(\mathbf{x})} = \ell_k(\mathbf{x}) - \ell_0(\mathbf{x}), \qquad k = 0, \ldots, M-1,
+\]</div>
+<p>so the reference entry is zero by construction. If the model prior probabilities <span class="math notranslate nohighlight">\(\pi_k = P(\mathcal{M}_k)\)</span> are known, posterior odds decompose into prior odds and Bayes factors:</p>
+<div class="math notranslate nohighlight">
+\[
+\log \frac{P(\mathcal{M}_k \mid \mathbf{x})}{P(\mathcal{M}_0 \mid \mathbf{x})} = \log \mathrm{BF}_{k,0}(\mathbf{x}) + \log \frac{\pi_k}{\pi_0}.
+\]</div>
+<p>BayesFlow therefore derives prior-adjusted log Bayes factors as</p>
+<div class="math notranslate nohighlight">
+\[
+\widehat{\log \mathrm{BF}}_{k,0}(\mathbf{x}) = \widehat{\log O}_{k,0}(\mathbf{x}) - \log \frac{\pi_k}{\pi_0}.
+\]</div>
+<p>With uniform priors, the prior-odds correction vanishes, so log odds and log Bayes factors coincide. With non-uniform priors, they do not. Prior model weights come from the simulator when available; otherwise BayesFlow assumes equal model priors.</p>
+<p>The scoring rules mainly differ in how they train this same length-<span class="math notranslate nohighlight">\(M\)</span> object. Probability-space rules such as <code class="docutils literal notranslate"><span class="pre">BrierScore</span></code> and <code class="docutils literal notranslate"><span class="pre">PolynomialScore</span></code> attach a softmax link, which maps the head pre-activation logits to probabilities before the loss sees them. <code class="docutils literal notranslate"><span class="pre">LogisticScore</span></code> and <code class="docutils literal notranslate"><span class="pre">ExponentialScore</span></code> use the default identity link, so the loss acts directly on raw, unnormalized logits/log odds. <code class="docutils literal notranslate"><span class="pre">CrossEntropyScore</span></code> can be used with either input space. In other words, the rules change the geometry and numerical behavior of optimization; they do not change the fact that <code class="docutils literal notranslate"><span class="pre">estimate()</span></code> exposes the same derived quantities.</p>
+</section>
+</section>
+<section id="simple-example-normal-normal-model">
+<h2>Simple Example: Normal-Normal Model<a class="headerlink" href="#simple-example-normal-normal-model" title="Link to this heading">#</a></h2>
+<p>To illustrate, we start with the simplest possible setting. We will compare four Gaussian models that differ only in their prior on the mean. The observation model is identical across all four, and the conjugate structure gives <strong>closed-form marginal likelihoods</strong>, so ground-truth log Bayes factors are available for every test dataset.</p>
+<p>We will train the network with a Bayes factor scoring rule, then immediately check how well it recovers the analytic truth using <code class="docutils literal notranslate"><span class="pre">bayes_factor_recovery</span></code>.</p>
+<section id="model-specification">
+<h3>Model specification<a class="headerlink" href="#model-specification" title="Link to this heading">#</a></h3>
+<p>The four models are intentionally minimal: they share the same observation model:</p>
+<div class="amsmath math notranslate nohighlight" id="equation-9c1a5842-b315-4ddc-ac23-f57887c4555d">
+<span class="eqno">(1)<a class="headerlink" href="#equation-9c1a5842-b315-4ddc-ac23-f57887c4555d" title="Permalink to this equation">#</a></span>\[\begin{equation}
+x_i \mid \mu \sim \mathcal{N}(\mu, 1) 
+\end{equation}\]</div>
+<p>and differ only in the prior placed on <span class="math notranslate nohighlight">\(\mu\)</span> which varies its mean and width.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Prior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(M_1\)</span> (ref.)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu \sim \mathcal{N}(0,\ 1)\)</span> — wide, centered</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(M_2\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu \sim \mathcal{N}(0,\ 0.25)\)</span> — narrow, centered</p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(M_3\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu \sim \mathcal{N}(1,\ 1)\)</span> — wide, shifted</p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(M_4\)</span></p></td>
+<td><p><span class="math notranslate nohighlight">\(\mu \sim \mathcal{N}(1,\ 0.25)\)</span> — narrow, shifted</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_OBS</span> <span class="o">=</span> <span class="mi">50</span>
+
+<span class="c1"># (mu0, tau) for each model&#39;s prior mu ~ N(mu0, tau^2)</span>
+<span class="n">PRIOR_PARAMS</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>   <span class="c1"># M1 (ref): wide, centered</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>   <span class="c1"># M2: narrow, centered</span>
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>   <span class="c1"># M3: wide, shifted</span>
+    <span class="p">(</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">)</span>    <span class="c1"># M4: narrow, shifted</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior_1</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_2</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_3</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior_4</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">mu</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">))</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="n">mu</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N_OBS</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+
+<span class="c1"># Bundling everything together</span>
+<span class="n">simulators</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_1</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">]),</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_2</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">]),</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_3</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">]),</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_4</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Because <span class="math notranslate nohighlight">\(\sigma=1\)</span> is fixed and each prior is conjugate Gaussian, integrating out <span class="math notranslate nohighlight">\(\mu\)</span> gives a closed-form marginal likelihood:</p>
+<div class="math notranslate nohighlight">
+\[
+\log p(\mathbf{x} \mid M_k) =
+  -\frac{n}{2}\log(2\pi)
+  - \frac{1}{2}\log\!\left(1 + n\tau_k^2\right)
+  - \frac{1}{2}\!\left[
+      \sum_i x_i^2
+      + \frac{\mu_{0,k}^2}{\tau_k^2}
+      - \frac{\displaystyle\left(n\bar{x} + \frac{\mu_{0,k}}{\tau_k^2}\right)^2}{\displaystyle n + \frac{1}{\tau_k^2}}
+    \right]
+\]</div>
+<p>Ground-truth log Bayes factors <span class="math notranslate nohighlight">\(\log \mathrm{BF}_{k,1} = \log p(\mathbf{x}\mid M_k) - \log p(\mathbf{x}\mid M_1)\)</span> are computed analytically per dataset and used to validate the network via <code class="docutils literal notranslate"><span class="pre">bayes_factor_recovery</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">log_marginal_likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu0</span><span class="p">,</span> <span class="n">tau</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Analytic log marginal likelihood: x_i | mu ~ N(mu, 1), mu ~ N(mu0, tau^2).&quot;&quot;&quot;</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">x_bar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="n">ss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">x</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">prec_prior</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">/</span> <span class="n">tau</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">n</span> <span class="o">*</span> <span class="n">x_bar</span> <span class="o">+</span> <span class="n">mu0</span> <span class="o">*</span> <span class="n">prec_prior</span>
+    <span class="n">A</span> <span class="o">=</span> <span class="n">n</span> <span class="o">+</span> <span class="n">prec_prior</span>
+    <span class="k">return</span> <span class="p">(</span>
+        <span class="o">-</span><span class="n">n</span> <span class="o">/</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">n</span> <span class="o">*</span> <span class="n">tau</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="p">(</span><span class="n">ss</span> <span class="o">+</span> <span class="n">mu0</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">prec_prior</span> <span class="o">-</span> <span class="n">B</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">A</span><span class="p">)</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_true_log_bfs</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="n">reference</span><span class="o">=</span><span class="mi">0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute analytic log BFs of shape (B, num_models-1) from simulated test data.&quot;&quot;&quot;</span>
+    <span class="n">x_batch</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">B</span> <span class="o">=</span> <span class="n">x_batch</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">mu0_ref</span><span class="p">,</span> <span class="n">tau_ref</span> <span class="o">=</span> <span class="n">PRIOR_PARAMS</span><span class="p">[</span><span class="n">reference</span><span class="p">]</span>
+    <span class="n">competing</span> <span class="o">=</span> <span class="p">[</span><span class="n">k</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">PRIOR_PARAMS</span><span class="p">))</span> <span class="k">if</span> <span class="n">k</span> <span class="o">!=</span> <span class="n">reference</span><span class="p">]</span>
+    <span class="n">log_bfs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">B</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">competing</span><span class="p">)))</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">competing</span><span class="p">):</span>
+        <span class="n">mu0_k</span><span class="p">,</span> <span class="n">tau_k</span> <span class="o">=</span> <span class="n">PRIOR_PARAMS</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">b</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">B</span><span class="p">):</span>
+            <span class="n">x</span> <span class="o">=</span> <span class="n">x_batch</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="n">log_bfs</span><span class="p">[</span><span class="n">b</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+                <span class="n">log_marginal_likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu0_k</span><span class="p">,</span> <span class="n">tau_k</span><span class="p">)</span>
+                <span class="o">-</span> <span class="n">log_marginal_likelihood</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">mu0_ref</span><span class="p">,</span> <span class="n">tau_ref</span><span class="p">)</span>
+            <span class="p">)</span>
+    <span class="k">return</span> <span class="n">log_bfs</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="workflow-setup">
+<h3>Workflow setup<a class="headerlink" href="#workflow-setup" title="Link to this heading">#</a></h3>
+<p>The only addition compared to <code class="docutils literal notranslate"><span class="pre">BasicWorkflow</span></code> is the <code class="docutils literal notranslate"><span class="pre">scoring_rules</span></code> argument. Here we use the exponential score. Swapping in <code class="docutils literal notranslate"><span class="pre">ExponentialScore(leaky=2.0)</span></code> or any other rule requires no other changes to the workflow.</p>
+<p>There is no need to pass <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>. Within <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code>, they will automatically be named <code class="docutils literal notranslate"><span class="pre">model_indices</span></code> if no custom <code class="docutils literal notranslate"><span class="pre">Adapter</span></code> is provided.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ModelComparisonWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulators</span><span class="p">,</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(),</span>
+    <span class="n">scoring_rules</span><span class="o">=</span><span class="s2">&quot;exponential&quot;</span><span class="p">,</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Training uses the same interface as any other BayesFlow workflow. Below, we demonstrate online training, as our models are trivial to simulate.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can inspect how our <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code> performs by looking at the default diagnostics:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figures</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span> <span class="n">true_log_bfs_fn</span><span class="o">=</span><span class="n">compute_true_log_bfs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "f53ab9f126b24486986708aaff8ceadf", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Estimating completed in 0.04 seconds.
+</pre></div>
+</div>
+<img alt="../_images/b0715b012e5ca5bcbd56d1802bee15bf8c60a475b8d0c7a9c53cb46f6fb146e0.png" src="../_images/b0715b012e5ca5bcbd56d1802bee15bf8c60a475b8d0c7a9c53cb46f6fb146e0.png" />
+<img alt="../_images/1f3534cba9e123a132ac9459d1c1b57419d02ca6e8f70b9b8d1dfbba2745ae54.png" src="../_images/1f3534cba9e123a132ac9459d1c1b57419d02ca6e8f70b9b8d1dfbba2745ae54.png" />
+<img alt="../_images/78fb9f34cb9c1047bea5ae120265c2dfbd605eab41843e5d3aeba200b8cda315.png" src="../_images/78fb9f34cb9c1047bea5ae120265c2dfbd605eab41843e5d3aeba200b8cda315.png" />
+<img alt="../_images/20fefd6214b1def90f897ad37779cb6ec2e3458bbf968c3e1e3984e55f4994bc.png" src="../_images/20fefd6214b1def90f897ad37779cb6ec2e3458bbf968c3e1e3984e55f4994bc.png" />
+</div>
+</div>
+<p>Because we supplied <code class="docutils literal notranslate"><span class="pre">true_log_bfs_fn</span></code>, the workflow produces <strong>four</strong> diagnostic plots for BF rules:</p>
+<ul class="simple">
+<li><p><strong>Loss trajectory</strong> — the training loss of the Bayes factor scoring rule (here <code class="docutils literal notranslate"><span class="pre">ExponentialScore</span></code>) across epochs, shown both as the raw per-epoch value and as an exponential moving average. Because the exponential rule targets a real-valued likelihood ratio, the loss is inherently noisy from epoch to epoch and a single batch can be dominated by a few datasets with extreme Bayes factors. In addition, our models are simple enough for the loss trajectory to flatten quickly.</p></li>
+<li><p><strong>Calibration curves</strong> — reliability diagrams that assess whether the PMPs derived from the network’s log BFs are trustworthy as probability estimates. Each panel bins the predicted PMP <span class="math notranslate nohighlight">\(\hat{P}(\mathcal{M}_k \mid \mathbf{x})\)</span> on the x-axis and shows the empirical fraction of datasets in that bin that truly came from <span class="math notranslate nohighlight">\(\mathcal{M}_k\)</span> on the y-axis; the ECE is the weighted mean absolute deviation from the diagonal. A well-calibrated network tracks the diagonal closely. Curves bowing above indicate underconfidence, curves bowing below indicate overconfidence — and either can occur independently of how sharp the BF recovery looks.</p></li>
+<li><p><strong>Pairwise log Bayes factors</strong> — heatmap of the mean <span class="math notranslate nohighlight">\(\log \mathrm{BF}_{m,j}\)</span> stratified by true model. Each row <span class="math notranslate nohighlight">\(m\)</span> shows the average predicted log BF favoring model <span class="math notranslate nohighlight">\(m\)</span> over each competitor <span class="math notranslate nohighlight">\(j\)</span>, averaged over all test datasets truly generated from <span class="math notranslate nohighlight">\(\mathcal{M}_m\)</span>. Diagonal entries are zero by construction (<span class="math notranslate nohighlight">\(\mathrm{BF}_{m,m} = 1\)</span>). If the models are easily distinguishable, a well-trained network produces large positive off-diagonal entries in every row, confirming that the predicted evidence consistently favors the correct model over alternatives.</p></li>
+<li><p><strong>Bayes factor recovery</strong> — scatter plot of predicted <span class="math notranslate nohighlight">\(\log \mathrm{BF}_{k,0}\)</span> against the analytic truth, colored by the true generating model. Points should cluster tightly around the diagonal. The background is shaded into quadrants by the <strong>sign</strong> of the true and predicted log BF, because the sign is what determines the model-selection decision: a positive <span class="math notranslate nohighlight">\(\log \mathrm{BF}\)</span> favors the competing model, a negative one favors the reference. The green quadrants (lower-left and upper-right) are therefore the <strong>agreement</strong> regions, where the true and predicted Bayes factors point to the same model — i.e. the decision is correct — while the red quadrants (upper-left and lower-right) are <strong>disagreement</strong> regions, where the network would select the wrong model. This shading makes decision errors visible at a glance and separates them from mere magnitude errors: a point can sit far from the diagonal yet still land in a green quadrant (right decision, wrong strength), or hug the axes yet cross into red (a sign flip near <span class="math notranslate nohighlight">\(\log \mathrm{BF} = 0\)</span>, where the evidence is weak anyway). The Pearson correlation <span class="math notranslate nohighlight">\(r\)</span> annotated on each panel quantifies overall recovery quality.</p></li>
+</ul>
+</section>
+<section id="what-do-the-diagnostics-tell-us-here">
+<h3>What do the diagnostics tell us here?<a class="headerlink" href="#what-do-the-diagnostics-tell-us-here" title="Link to this heading">#</a></h3>
+<ul class="simple">
+<li><p>The network recovers the analytic Bayes factors well: <span class="math notranslate nohighlight">\(r \approx 0.97\)</span>–<span class="math notranslate nohighlight">\(0.99\)</span>, with points hugging the diagonal inside the green agreement quadrants and the only strays near <span class="math notranslate nohighlight">\(\log \mathrm{BF} = 0\)</span>, where a sign flip barely matters. The calibration curves also indicate that the estimated posterior model probabilities are well-calibrated (ECE <span class="math notranslate nohighlight">\(&lt; 0.02\)</span>).</p></li>
+<li><p>The <strong>confusion matrix</strong> shows, for each true generating model, how often the network’s top prediction (argmax of the PMPs) agrees with it. Rows are the true model, columns are the predicted model, and diagonal mass indicates correct classification; off-diagonal entries tend to accumulate between structurally similar model pairs.</p></li>
+<li><p>The <strong>log Bayes factor matrix</strong> further implies that separations are largest between models that differ in <strong>both</strong> prior location and width (<span class="math notranslate nohighlight">\(M_1\)</span> vs. <span class="math notranslate nohighlight">\(M_4\)</span>, <span class="math notranslate nohighlight">\(\approx 2.4\)</span> log units) and smallest between models that differ in only a <strong>single</strong> aspect — <span class="math notranslate nohighlight">\(M_1\)</span> vs. <span class="math notranslate nohighlight">\(M_2\)</span> (same mean, different width, <span class="math notranslate nohighlight">\(\approx 0.6\)</span>) or <span class="math notranslate nohighlight">\(M_1\)</span> vs. <span class="math notranslate nohighlight">\(M_3\)</span> (same width, shifted mean, <span class="math notranslate nohighlight">\(\approx 0.5\)</span>). Detecting a single changed feature from <span class="math notranslate nohighlight">\(n = 50\)</span> observations yields only modest evidence, and the network reproduces this faithfully.</p></li>
+</ul>
+</section>
+</section>
+<section id="real-world-example-garch-volatility-models">
+<h2>Real-World Example: GARCH Volatility Models<a class="headerlink" href="#real-world-example-garch-volatility-models" title="Link to this heading">#</a></h2>
+<p>The normal-normal example gave us a clean sandbox — conjugate structure, closed-form ground truth, fully controlled discrimination difficulty. But the central premise of amortized inference is that the Bayesian workflow can also be applied to much more complex models, even with intractable likelihoods.</p>
+<p>We now discriminate between four models from the <strong>Generalized Autoregressive Conditional Heteroscedasticity (GARCH) model family</strong>, the workhorse of volatility modeling in computational finance. All four share the same return-generating mechanism but differ in how they model the evolution of conditional variance: one captures only short-memory shocks (ARCH), one adds persistent volatility clustering (GARCH), one introduces an asymmetric leverage effect (GJR-GARCH), and one allows for heavy-tailed innovations (GARCH-t). These are genuinely hard to tell apart from a finite return series — they are nested or near-nested, and the distinguishing features manifest most clearly under extreme market conditions.</p>
+<p>Here we estimate the PMPs directly via a PMP scoring rule. We could equally have estimated Bayes factors via a BF scoring rule: because BayesFlow is fully <strong>simulation-based</strong>, the network never evaluates a likelihood, so <em>both</em> families of scoring rules are available whether or not the likelihood — or the marginal likelihood — is analytically tractable.</p>
+<p>We nonetheless prefer PMPs here, for three reasons. First, they are exactly the quantity we want — a probability for each of the four models, ready for ranking or selection. Second, their outputs are bounded by the softmax function, making them easier and more stable to learn than a real-valued, potentially large log Bayes factor. This is beneficial because the models we are comparing are near-nested, and the return series is long, where marginal-likelihood ratios can grow extreme. And finally, PMPs can be validated with no ground truth at all, through the confusion matrix and calibration curves. Choosing BFs would forfeit this last advantage: since GARCH marginal likelihoods have no closed form, there would be no ground-truth Bayes factors to feed <code class="docutils literal notranslate"><span class="pre">bayes_factor_recovery</span></code> — though the calibration and pairwise-BF diagnostics would remain available either way.</p>
+<section id="id1">
+<h3>Model specification<a class="headerlink" href="#id1" title="Link to this heading">#</a></h3>
+<p>The four models form a progression of increasing complexity, each adding one structural feature: volatility persistence, an asymmetric leverage effect, and heavy-tailed innovations.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p>Key feature</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ARCH(1)</p></td>
+<td><p>Short-memory ARCH: volatility shocks decay in one step</p></td>
+</tr>
+<tr class="row-odd"><td><p>GARCH(1,1)</p></td>
+<td><p>Persistent volatility clustering, Gaussian innovations</p></td>
+</tr>
+<tr class="row-even"><td><p>GJR-GARCH(1,1)</p></td>
+<td><p>Leverage effect: negative shocks inflate variance more</p></td>
+</tr>
+<tr class="row-odd"><td><p>GARCH-t</p></td>
+<td><p>GARCH(1,1) with Student-t innovations; heavier tails</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>Here, we unify them into a single simulator that contains all four models as special cases.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@njit</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_garch</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">nu</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;JIT-compiled GARCH recursion. nu=inf selects Gaussian innovations.&quot;&quot;&quot;</span>
+    <span class="n">T_total</span> <span class="o">=</span> <span class="n">T</span> <span class="o">+</span> <span class="n">burn_in</span>
+    <span class="n">returns</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">T_total</span><span class="p">)</span>
+    <span class="n">eps</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="n">sigma2</span> <span class="o">=</span> <span class="n">omega</span> <span class="o">/</span> <span class="nb">max</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">-</span> <span class="n">gamma</span> <span class="o">*</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="n">beta</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">)</span>
+    <span class="n">use_gaussian</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span>
+
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">T_total</span><span class="p">):</span>
+        <span class="n">I_neg</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="k">if</span> <span class="n">eps</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="k">else</span> <span class="mf">0.0</span>
+        <span class="n">sigma2</span> <span class="o">=</span> <span class="n">omega</span> <span class="o">+</span> <span class="p">(</span><span class="n">alpha</span> <span class="o">+</span> <span class="n">gamma</span> <span class="o">*</span> <span class="n">I_neg</span><span class="p">)</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">*</span> <span class="n">eps</span> <span class="o">+</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">sigma2</span>
+        <span class="k">if</span> <span class="n">sigma2</span> <span class="o">&lt;</span> <span class="mf">1e-10</span><span class="p">:</span>
+            <span class="n">sigma2</span> <span class="o">=</span> <span class="mf">1e-10</span>
+        <span class="k">elif</span> <span class="n">sigma2</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">sigma2</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="n">use_gaussian</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randn</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">z</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_t</span><span class="p">(</span><span class="n">nu</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">((</span><span class="n">nu</span> <span class="o">-</span> <span class="mf">2.0</span><span class="p">)</span> <span class="o">/</span> <span class="n">nu</span><span class="p">)</span>
+        <span class="n">eps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">sigma2</span><span class="p">)</span> <span class="o">*</span> <span class="n">z</span>
+        <span class="n">returns</span><span class="p">[</span><span class="n">t</span><span class="p">]</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">eps</span>
+
+    <span class="n">out</span> <span class="o">=</span> <span class="n">returns</span><span class="p">[</span><span class="n">burn_in</span><span class="p">:]</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">out</span><span class="p">)):</span>
+        <span class="k">if</span> <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+        <span class="k">elif</span> <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="n">out</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">return</span> <span class="n">out</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">garch_model</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">gamma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">nu</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span> <span class="n">burn_in</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shared GARCH model for all variants.</span>
+
+<span class="sd">    beta=0, gamma=0, nu=None/inf  →  ARCH(1)</span>
+<span class="sd">    gamma=0, nu=None/inf          →  GARCH(1,1)</span>
+<span class="sd">    nu=None/inf                   →  GJR-GARCH(1,1)</span>
+<span class="sd">    nu provided and finite        →  GARCH-t (Student-t innovations scaled to unit variance)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">nu_val</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span> <span class="k">if</span> <span class="p">(</span><span class="n">nu</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">np</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">nu</span><span class="p">))</span> <span class="k">else</span> <span class="n">nu</span>
+    <span class="n">out</span> <span class="o">=</span> <span class="n">simulate_garch</span><span class="p">(</span><span class="n">omega</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">,</span> <span class="n">nu_val</span><span class="p">,</span> <span class="n">T</span><span class="p">,</span> <span class="n">burn_in</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;returns&quot;</span><span class="p">:</span> <span class="n">out</span><span class="p">[:,</span> <span class="n">np</span><span class="o">.</span><span class="n">newaxis</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)}</span>
+
+
+<span class="c1"># Warm up both JIT branches (Gaussian and Student-t) to pay compile cost once.</span>
+<span class="n">simulate_garch</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="n">simulate_garch</span><span class="p">(</span><span class="mf">1e-5</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">5.0</span><span class="p">,</span>    <span class="mi">60</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;JIT warmup complete.&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>JIT warmup complete.
+</pre></div>
+</div>
+</div>
+</div>
+<p>Each model is defined by a prior function that draws parameters, with all four sharing a single likelihood that runs the GARCH recursion. <code class="docutils literal notranslate"><span class="pre">bf.make_simulator</span></code> chains them so the prior’s output dict is forwarded automatically as keyword arguments to the likelihood. The unified likelihood covers all four variants via its optional parameters:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Model</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">beta</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">gamma</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">nu</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>ARCH(1)</p></td>
+<td><p>0 (default)</p></td>
+<td><p>0 (default)</p></td>
+<td><p>None (default)</p></td>
+</tr>
+<tr class="row-odd"><td><p>GARCH(1,1)</p></td>
+<td><p>sampled</p></td>
+<td><p>0 (default)</p></td>
+<td><p>None (default)</p></td>
+</tr>
+<tr class="row-even"><td><p>GJR-GARCH(1,1)</p></td>
+<td><p>sampled</p></td>
+<td><p>sampled</p></td>
+<td><p>None (default)</p></td>
+</tr>
+<tr class="row-odd"><td><p>GARCH-t</p></td>
+<td><p>sampled</p></td>
+<td><p>0 (default)</p></td>
+<td><p>sampled</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">arch_prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">omega</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">5e-5</span><span class="p">,</span> <span class="mf">2e-4</span><span class="p">),</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">),</span>
+        <span class="n">beta</span> <span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">gamma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">nu</span>   <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+        <span class="n">mu</span>   <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-4</span><span class="p">,</span> <span class="mf">5e-4</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">garch_prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">omega</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">5e-5</span><span class="p">),</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">),</span>
+        <span class="n">beta</span> <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.91</span><span class="p">,</span> <span class="mf">0.96</span><span class="p">),</span>
+        <span class="n">gamma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">nu</span>   <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+        <span class="n">mu</span>   <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-4</span><span class="p">,</span> <span class="mf">5e-4</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gjr_prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">omega</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">5e-5</span><span class="p">),</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">),</span>
+        <span class="n">gamma</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.10</span><span class="p">,</span> <span class="mf">0.16</span><span class="p">),</span>
+        <span class="n">beta</span> <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.83</span><span class="p">,</span> <span class="mf">0.88</span><span class="p">),</span>
+        <span class="n">nu</span>   <span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span>
+        <span class="n">mu</span>   <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-4</span><span class="p">,</span> <span class="mf">5e-4</span><span class="p">),</span>
+    <span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">garcht_prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">omega</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">,</span> <span class="mf">5e-5</span><span class="p">),</span>
+        <span class="n">alpha</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">),</span>
+        <span class="n">beta</span> <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.91</span><span class="p">,</span> <span class="mf">0.96</span><span class="p">),</span>
+        <span class="n">gamma</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>
+        <span class="n">nu</span>   <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">2.5</span><span class="p">,</span> <span class="mf">4.5</span><span class="p">),</span>
+        <span class="n">mu</span>   <span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">5e-4</span><span class="p">,</span> <span class="mf">5e-4</span><span class="p">),</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">arch_simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">arch_prior</span><span class="p">,</span> <span class="n">garch_model</span><span class="p">])</span>
+<span class="n">garch_simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">garch_prior</span><span class="p">,</span> <span class="n">garch_model</span><span class="p">])</span>
+<span class="n">gjr_simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">gjr_prior</span><span class="p">,</span> <span class="n">garch_model</span><span class="p">])</span>
+<span class="n">garcht_simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">garcht_prior</span><span class="p">,</span> <span class="n">garch_model</span><span class="p">])</span>
+
+<span class="n">simulators</span> <span class="o">=</span> <span class="p">[</span><span class="n">arch_simulator</span><span class="p">,</span> <span class="n">garch_simulator</span><span class="p">,</span> <span class="n">gjr_simulator</span><span class="p">,</span> <span class="n">garcht_simulator</span><span class="p">]</span>
+<span class="n">model_names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;ARCH&quot;</span><span class="p">,</span> <span class="s2">&quot;GARCH&quot;</span><span class="p">,</span> <span class="s2">&quot;GJR&quot;</span><span class="p">,</span> <span class="s2">&quot;GARCH-t&quot;</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="prior-predictive-check">
+<h3>Prior predictive check<a class="headerlink" href="#prior-predictive-check" title="Link to this heading">#</a></h3>
+<p>A single draw from each simulator illustrates what the network is up against. At least the first three series look deceptively similar. Yet, as we will see, their statistical fingerprints are distinct enough for a well-trained network to tell them apart reliably.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">16</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">simulators</span><span class="p">,</span> <span class="n">model_names</span><span class="p">):</span>
+    <span class="n">path</span> <span class="o">=</span> <span class="n">sim</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">5</span><span class="p">,))[</span><span class="s2">&quot;returns&quot;</span><span class="p">][</span><span class="mi">4</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">lineplot</span><span class="p">(</span><span class="n">path</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">legend</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;purple&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Day&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">12</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">axhline</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0a983226ac6e587fd6489d7287fee515075983030e4b8f9e36bbdfcc17766619.png" src="../_images/0a983226ac6e587fd6489d7287fee515075983030e4b8f9e36bbdfcc17766619.png" />
+</div>
+</div>
+</section>
+<section id="id2">
+<h3>Workflow Setup<a class="headerlink" href="#id2" title="Link to this heading">#</a></h3>
+<p>Next, we define our <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code> for the GARCH models. As summary network, we choose a <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code>, which is well suited to summarize sequential data. We train with the default <code class="docutils literal notranslate"><span class="pre">CrossEntropyScore</span></code>. Swapping in <code class="docutils literal notranslate"><span class="pre">BrierScore()</span></code> or <code class="docutils literal notranslate"><span class="pre">PolynomialScore(alpha=3.0)</span></code> would require no change to the workflow other than the <code class="docutils literal notranslate"><span class="pre">scoring_rules</span></code> argument.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ModelComparisonWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulators</span><span class="p">,</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="s2">&quot;returns&quot;</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(),</span>
+    <span class="n">scoring_rules</span><span class="o">=</span><span class="s2">&quot;logistic&quot;</span><span class="p">,</span>
+    <span class="n">model_names</span><span class="o">=</span><span class="n">model_names</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">train_data</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">20_000</span><span class="p">)</span>
+<span class="n">val_data</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">train_data</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">val_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="diagnostics">
+<h3>Diagnostics<a class="headerlink" href="#diagnostics" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">plot_default_diagnostics</span></code> works for both scoring rule families — it detects the active rule and automatically selects the appropriate plots. Here, with a PMP rule, it produces a loss curve, a confusion matrix, and calibration curves.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figures</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "c6014013302846f4a08e18690fde0dad", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Estimating completed in 0.11 seconds.
+</pre></div>
+</div>
+<img alt="../_images/5badbb6e654dad4e99bd62831be41b8d3afd887747f3fbb81def3dfe1d206a79.png" src="../_images/5badbb6e654dad4e99bd62831be41b8d3afd887747f3fbb81def3dfe1d206a79.png" />
+<img alt="../_images/48f44b592f54264b63fee058c3c28328deb31ad2a1d825cf824cfcd232b2192f.png" src="../_images/48f44b592f54264b63fee058c3c28328deb31ad2a1d825cf824cfcd232b2192f.png" />
+<img alt="../_images/e0592529044477a38b0d22285420b27e735020d95b37c544cf6628d6ae91cd1f.png" src="../_images/e0592529044477a38b0d22285420b27e735020d95b37c544cf6628d6ae91cd1f.png" />
+</div>
+</div>
+<p>Let us read the three diagnostics in turn.</p>
+<ul class="simple">
+<li><p><strong>Loss.</strong> Unlike the noisy exponential loss in the normal-normal example, the cross-entropy loss here descends smoothly, indicating that training has converged and the classifier has learned to extract discriminative structure from the return series.</p></li>
+<li><p><strong>Confusion matrix.</strong> The results largely reflect the structural relationships between the models — though not in the way one might naively guess. <strong>ARCH</strong> and <strong>GARCH-t</strong> are both identified reliably: ARCH stands out because its zero-persistence dynamics produce a qualitatively different volatility profile, and GARCH-t is betrayed by its heavy-tailed innovations (<span class="math notranslate nohighlight">\(\nu \in [2.5, 4.5]\)</span>), whose occasional extreme returns leave an unmistakable fingerprint. The genuinely difficult pair is not GARCH vs. GARCH-t but <strong>GJR vs. GARCH</strong>: GJR is most often mistaken for plain GARCH. This makes sense — the only thing separating them is the leverage effect, an <em>asymmetric</em> response to negative shocks that reveals itself just during large downward moves, which are rare in a 500-step series with these priors. A residual smear of ARCH ↔ GARCH/GJR confusion appears for the same reason in reverse: datasets in which the persistent models happen to show little volatility clustering look ARCH-like.</p></li>
+<li><p><strong>Calibration.</strong> All four reliability curves stay close to the diagonal, with ECEs between <span class="math notranslate nohighlight">\(\approx 0.02\)</span> and <span class="math notranslate nohighlight">\(0.05\)</span> — so despite the GJR/GARCH confusion, the reported probabilities are honest: when the network says a series is 60% likely to be GJR, it is right about 60% of the time. The largest wobbles sit in the high-probability bins, where confident predictions are common but individual bins hold few datasets, making the empirical frequency noisier. Overall, the network expresses its uncertainty about the leverage effect as graded probabilities rather than overconfident misclassifications.</p></li>
+</ul>
+</section>
+</section>
+<section id="combining-multiple-scoring-rules-at-once">
+<h2>Combining Multiple Scoring Rules at Once<a class="headerlink" href="#combining-multiple-scoring-rules-at-once" title="Link to this heading">#</a></h2>
+<p>Every workflow so far has used a <em>single</em> scoring rule. But <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code> accepts <strong>several at once</strong> — pass a list (or a <code class="docutils literal notranslate"><span class="pre">{name:</span> <span class="pre">rule}</span></code> dict) and it attaches one prediction head per rule on top of the shared summary network, trains them jointly, and <strong>pools</strong> their outputs into a single set of estimates (a log opinion pool over the model log-odds).</p>
+<p>Why reach for more than one rule? Three reasons:</p>
+<ul class="simple">
+<li><p><strong>Robustness through ensembling.</strong> Every proper scoring rule is minimized <em>in expectation</em> by the true posterior, but on finite data and finite optimization each settles in a slightly different place, with its own bias–variance profile. <code class="docutils literal notranslate"><span class="pre">CrossEntropyScore</span></code> penalizes wrong probabilities logarithmically, <code class="docutils literal notranslate"><span class="pre">BrierScore</span></code> quadratically, <code class="docutils literal notranslate"><span class="pre">PolynomialScore</span></code> with a tunable exponent. Averaging several proper rules cancels part of that idiosyncratic error, much as an ensemble of classifiers beats its individual members.</p></li>
+<li><p><strong>Two target quantities from one network.</strong> Mixing a <em>PMP</em> rule with a <em>Bayes factor</em> rule yields both quantities simultaneously — bounded, ready-to-rank posterior model probabilities <strong>and</strong> interpretable pairwise log Bayes factors — from a single training run. You no longer have to commit to one representation before training.</p></li>
+<li><p><strong>A richer, self-consistent diagnostic picture.</strong> With both families present, the default diagnostics report <em>both</em> the PMP confusion matrix and the pairwise-BF heatmap, so the two views can be cross-checked against each other.</p></li>
+</ul>
+<p>We reuse the GARCH simulators, priors, summary network, and <code class="docutils literal notranslate"><span class="pre">model_names</span></code> from the previous section <strong>unchanged</strong> — the only thing that changes is the <code class="docutils literal notranslate"><span class="pre">scoring_rules</span></code> argument, now a list combining a PMP rule (<code class="docutils literal notranslate"><span class="pre">CrossEntropyScore</span></code>) and a Bayes factor rule (<code class="docutils literal notranslate"><span class="pre">LogisticScore</span></code>).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">multi_rule_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ModelComparisonWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulators</span><span class="p">,</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="s2">&quot;returns&quot;</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(),</span>
+    <span class="n">scoring_rules</span><span class="o">=</span><span class="p">[</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">CrossEntropyScore</span><span class="p">(),</span>
+        <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">LogisticScore</span><span class="p">(),</span>
+    <span class="p">],</span>
+    <span class="n">model_names</span><span class="o">=</span><span class="n">model_names</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">multi_rule_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">train_data</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">val_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="diagnostics-with-multiple-scoring-rules">
+<h3>Diagnostics with multiple scoring rules<a class="headerlink" href="#diagnostics-with-multiple-scoring-rules" title="Link to this heading">#</a></h3>
+<p>With <strong>both</strong> families active, <code class="docutils literal notranslate"><span class="pre">plot_default_diagnostics</span></code> detects that a PMP rule <em>and</em> a Bayes factor rule are present and draws the confusion matrix (from the pooled PMPs) and the pairwise log-Bayes-factor heatmap (from the pooled log-BFs) <strong>side by side in a single figure</strong>, followed by the calibration curves. Every plot runs on the <em>pooled</em> estimates, so it reflects the ensemble rather than any single head.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figures</span> <span class="o">=</span> <span class="n">multi_rule_workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "ef53a0e4ebe3454aafe4d82dc0d2b9c5", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Estimating completed in 0.12 seconds.
+</pre></div>
+</div>
+<img alt="../_images/0ced5400f54e441c874695fc5f435a21a4c6ffabe977e6439788f1dafb14d886.png" src="../_images/0ced5400f54e441c874695fc5f435a21a4c6ffabe977e6439788f1dafb14d886.png" />
+<img alt="../_images/1efd628d81047d04bd759a5d8fca3f8f98ad4f5a3fe8e24023dc1e57558d75a5.png" src="../_images/1efd628d81047d04bd759a5d8fca3f8f98ad4f5a3fe8e24023dc1e57558d75a5.png" />
+<img alt="../_images/99b00cb739ba77f61e07a8411ef04149da9260124f56e11cfadd19ba79382bb8.png" src="../_images/99b00cb739ba77f61e07a8411ef04149da9260124f56e11cfadd19ba79382bb8.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">multi_rule_workflow</span><span class="o">.</span><span class="n">compute_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="n">val_data</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "3f6c81ef0a8e4236a953f78e50367276", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Estimating completed in 6.23 seconds.
+</pre></div>
+</div>
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>ARCH</th>
+      <th>GARCH</th>
+      <th>GJR</th>
+      <th>GARCH-t</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>Accuracy</th>
+      <td>0.921739</td>
+      <td>0.585821</td>
+      <td>0.422481</td>
+      <td>0.823770</td>
+    </tr>
+    <tr>
+      <th>Expected Calibration Error</th>
+      <td>0.030022</td>
+      <td>0.016770</td>
+      <td>0.022013</td>
+      <td>0.023065</td>
+    </tr>
+    <tr>
+      <th>Brier Score</th>
+      <td>0.104729</td>
+      <td>0.125692</td>
+      <td>0.147793</td>
+      <td>0.046388</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>Congratulations! Through this deep-dive notebook, you have seen all the central aspects of BayesFlow’s <code class="docutils literal notranslate"><span class="pre">ModelComparisonWorkflow</span></code>. Now, go ahead and compare your models!</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#categorical-scoring-rules">Categorical Scoring Rules</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-the-scores-learn">What the scores learn</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simple-example-normal-normal-model">Simple Example: Normal-Normal Model</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#model-specification">Model specification</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow-setup">Workflow setup</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-do-the-diagnostics-tell-us-here">What do the diagnostics tell us here?</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#real-world-example-garch-volatility-models">Real-World Example: GARCH Volatility Models</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id1">Model specification</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prior-predictive-check">Prior predictive check</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#id2">Workflow Setup</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#diagnostics">Diagnostics</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#combining-multiple-scoring-rules-at-once">Combining Multiple Scoring Rules at Once</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#diagnostics-with-multiple-scoring-rules">Diagnostics with multiple scoring rules</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.13/docsrc/source/_examples/Model_Comparison_Deep_Dive.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

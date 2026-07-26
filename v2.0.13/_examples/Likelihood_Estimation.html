@@ -1,0 +1,1123 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>9. Likelihood Estimation for the g-and-k Distribution &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Likelihood_Estimation';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Likelihood_Estimation.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="10. Posterior Estimation With Multimodal Data" href="Multimodal_Data.html" />
+    <link rel="prev" title="8. Bayesian Experimental Design (BED) with BayesFlow and PyTorch" href="Bayesian_Experimental_Design.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.13" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion Models In Simulation-Based Inference: A Tutorial</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Linear_Regression_Starter.html">2. Bayesian Linear Regression Starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">3. Image data: Inference on Spatial Data and Parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">4. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">5. Simple Model Comparison - One Sample T-Test</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">6. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">7. Posterior Estimation for SIR-like Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">8. Bayesian Experimental Design (BED) with BayesFlow and PyTorch</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">9. Likelihood Estimation for the g-and-k Distribution</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">10. Posterior Estimation With Multimodal Data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">11. Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">12. Neural Ratio Estimation with BayesFlow and PyMC</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">13. Compositional Amortized Inference for Hierarchical Bayesian Models</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">9. </span>Likelihood Estimation for the g-and-k Distribution</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="likelihood-estimation-for-the-g-and-k-distribution">
+<h1><span class="section-number">9. </span>Likelihood Estimation for the g-and-k Distribution<a class="headerlink" href="#likelihood-estimation-for-the-g-and-k-distribution" title="Link to this heading">#</a></h1>
+<p><em>Author: Stefan T. Radev</em></p>
+<p>In most BayesFlow workflows the target of learning is the <strong>posterior</strong> <span class="math notranslate nohighlight">\(p(\theta \mid x)\)</span>. Differently, in this tutorial we learn the <strong>likelihood</strong> <span class="math notranslate nohighlight">\(p(x \mid \theta)\)</span> - the distribution of observations <em>given</em> parameters. We demonstrate how to easily plug the learned likelihood into a PyMC workflow.</p>
+<section id="a-real-challenge-intractable-likelihoods">
+<h2><span class="section-number">9.1. </span>A Real Challenge: Intractable Likelihoods<a class="headerlink" href="#a-real-challenge-intractable-likelihoods" title="Link to this heading">#</a></h2>
+<p>Many quantities in science are defined through simulation rather than a closed-form density. The <strong>g-and-k distribution</strong> is a textbook example: it is flexible enough to model arbitrary skewness and kurtosis, but its probability density function <strong>has no closed-form expression</strong>.</p>
+<p>For traditional MCMC (e.g., via PyMC) this creates a problem, since <code class="docutils literal notranslate"><span class="pre">pm.CustomDist</span></code> requires a <code class="docutils literal notranslate"><span class="pre">logp</span></code> function. BayesFlow solves this by <em>learning</em> the likelihood from simulations with a generative network, after which the learned <em>differentiable</em> density plugs directly into NUTS or any other sampler.</p>
+</section>
+<section id="the-model">
+<h2><span class="section-number">9.2. </span>The Model<a class="headerlink" href="#the-model" title="Link to this heading">#</a></h2>
+<p>We observe <span class="math notranslate nohighlight">\(n\)</span> <strong>bivariate</strong> samples from a g-and-k model with Gaussian-copula dependence:</p>
+<div class="math notranslate nohighlight">
+\[x_i \overset{\text{i.i.d.}}{\sim} \text{g-and-k}(g,\,k,\,\rho), \qquad i = 1, \ldots, n\]</div>
+<p>Each marginal follows a g-and-k distribution with shared shape parameters <span class="math notranslate nohighlight">\((g, k)\)</span>, and the two dimensions are coupled through a Gaussian copula with correlation <span class="math notranslate nohighlight">\(\rho\)</span>. The parameters are summarized in the table below:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Parameter</p></th>
+<th class="head"><p>Meaning</p></th>
+<th class="head"><p>Prior</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(g\)</span></p></td>
+<td><p>asymmetry (<span class="math notranslate nohighlight">\(g&gt;0\)</span> → right-skewed)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Uniform}(-1.5,\;1.5)\)</span></p></td>
+</tr>
+<tr class="row-odd"><td><p><span class="math notranslate nohighlight">\(k\)</span></p></td>
+<td><p>tail weight (<span class="math notranslate nohighlight">\(k&gt;0\)</span> → heavier tails)</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Uniform}(0,\;1.5)\)</span></p></td>
+</tr>
+<tr class="row-even"><td><p><span class="math notranslate nohighlight">\(\rho\)</span></p></td>
+<td><p>copula correlation</p></td>
+<td><p><span class="math notranslate nohighlight">\(\text{Uniform}(-0.9,\;0.9)\)</span></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">scipy</span><span class="w"> </span><span class="kn">import</span> <span class="n">special</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:Multiple Keras-compatible backends detected (JAX, PyTorch, TensorFlow).
+Defaulting to JAX.
+To override, set the KERAS_BACKEND environment variable before importing bayesflow.
+See: https://keras.io/getting_started/#configuring-your-backend
+INFO:2026-05-08 11:16:27,965:jax._src.xla_bridge:834: Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:bayesflow:Using backend &#39;jax&#39;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">2026</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gnk_quantile</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.8</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quantile (percent-point) function of the g-and-k distribution.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    u : array-like, values in (0, 1)</span>
+<span class="sd">    a : location</span>
+<span class="sd">    b : scale  (&gt; 0)</span>
+<span class="sd">    g : asymmetry  (g &gt; 0 -&gt; right-skewed, g &lt; 0 -&gt; left-skewed)</span>
+<span class="sd">    k : tail weight  (k &gt; 0 -&gt; heavier tails than Gaussian)</span>
+<span class="sd">    c : standard constant, default 0.8 per Rayner &amp; MacGillivray (2002)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">special</span><span class="o">.</span><span class="n">ndtri</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">g</span> <span class="o">*</span> <span class="n">z</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="n">k</span> <span class="o">*</span> <span class="n">z</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rng_inst</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw n bivariate samples from the g-and-k Gaussian-copula model.</span>
+
+<span class="sd">    Both marginals share the same (g, k) shape parameters.</span>
+<span class="sd">    Dependence is introduced via a Gaussian copula with correlation rho.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">],</span> <span class="p">[</span><span class="n">rho</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">rng_inst</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-4</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">gnk_quantile</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-g-and-k-distribution-family">
+<h2><span class="section-number">9.3. </span>1. The g-and-k Distribution Family<a class="headerlink" href="#the-g-and-k-distribution-family" title="Link to this heading">#</a></h2>
+<p>The g-and-k distribution is defined entirely through its <strong>quantile function</strong>:</p>
+<div class="math notranslate nohighlight">
+\[Q(p \mid a, b, g, k) = a + b\!\left(1 + c \cdot \tanh\!\left(\tfrac{g\,z(p)}{2}\right)\right)(1 + z(p)^2)^k\,z(p)\]</div>
+<p>where <span class="math notranslate nohighlight">\(z(p) = \Phi^{-1}(p)\)</span> is the standard-normal quantile and <span class="math notranslate nohighlight">\(c = 0.8\)</span>.</p>
+<ul class="simple">
+<li><p><strong><span class="math notranslate nohighlight">\(g = 0,\;k = 0\)</span></strong> → reduces to a Gaussian</p></li>
+<li><p><strong><span class="math notranslate nohighlight">\(g &gt; 0\)</span></strong> → right-skewed; <strong><span class="math notranslate nohighlight">\(g &lt; 0\)</span></strong> → left-skewed</p></li>
+<li><p><strong><span class="math notranslate nohighlight">\(k &gt; 0\)</span></strong> → heavier tails than Gaussian</p></li>
+</ul>
+<section id="why-the-likelihood-is-intractable">
+<h3><span class="section-number">9.3.1. </span>Why the Likelihood is Intractable?<a class="headerlink" href="#why-the-likelihood-is-intractable" title="Link to this heading">#</a></h3>
+<p>Computing the PDF requires <em>inverting</em> <span class="math notranslate nohighlight">\(Q\)</span> numerically:</p>
+<div class="math notranslate nohighlight">
+\[p(x \mid a,b,g,k) = \frac{1}{Q'\!\left(Q^{-1}(F(x))\right)}\]</div>
+<p>There is no closed form for <span class="math notranslate nohighlight">\(Q^{-1}\)</span>, so evaluating the log-likelihood for <span class="math notranslate nohighlight">\(n\)</span> observations requires solving <span class="math notranslate nohighlight">\(n\)</span> scalar root-finding problems. Computing gradients through them for NUTS is an additional challenge.</p>
+<p>Simulation-based inference with BayesFlow sidesteps this entirely. We <strong>simulate</strong> from the model and train a neural network to approximate <span class="math notranslate nohighlight">\(p(x \mid g,k,\rho)\)</span> directly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vis_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
+
+<span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Gaussian  ($g=0,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Right-skewed  ($g=1.5,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Left-skewed  ($g=-1.5,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">1.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Heavy-tailed  ($g=0,\,k=1,\,\rho=0$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Skewed + heavy  ($g=1.5,\,k=0.8,\,\rho=0$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.7</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Correlated  ($g=1.5,\,k=0.8,\,\rho=0.7$)&quot;</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">configs</span><span class="p">):</span>
+    <span class="n">samp</span> <span class="o">=</span> <span class="n">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="n">vis_rng</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#132a70&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;The g-and-k Bivariate Distribution Family&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.01</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4bec4396af6c9982be1e5321e01a0d3ead2d516dec3102589825f5ea6196adba.png" src="../_images/4bec4396af6c9982be1e5321e01a0d3ead2d516dec3102589825f5ea6196adba.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="training-the-likelihood-approximator">
+<h2><span class="section-number">9.4. </span>2. Training the Likelihood Approximator<a class="headerlink" href="#training-the-likelihood-approximator" title="Link to this heading">#</a></h2>
+<section id="defining-the-simulator">
+<h3><span class="section-number">9.4.1. </span>Defining the Simulator<a class="headerlink" href="#defining-the-simulator" title="Link to this heading">#</a></h3>
+<p>Each call to <code class="docutils literal notranslate"><span class="pre">gnk_simulator</span></code> draws a <strong>single bivariate observation</strong> from the g-and-k model at a randomly-sampled parameter set <span class="math notranslate nohighlight">\((g, k, \rho)\)</span>. We use priors that do not land us in the “near-infinite-variance” regime.</p>
+<p>Because the <span class="math notranslate nohighlight">\(n\)</span> observations we will use for inference are <strong>exchangeable</strong> (i.i.d. given the parameters), BayesFlow only needs to learn the single-observation likelihood <span class="math notranslate nohighlight">\(p(x_i \mid g, k, \rho)\)</span> for <span class="math notranslate nohighlight">\(x_i \in \mathbb{R}^2\)</span>. During PyMC integration the <code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> wrapper automatically sums the per-observation log-probabilities over all <span class="math notranslate nohighlight">\(n\)</span> data points.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="n">g</span>   <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k</span>   <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="n">g</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">rho</span><span class="p">}</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gnk_simulator</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw one bivariate observation from the g-and-k copula model.&quot;&quot;&quot;</span>
+    <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">],</span> <span class="p">[</span><span class="n">rho</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
+    <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">cov</span><span class="p">)</span>
+    <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-4</span><span class="p">)</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">gnk_quantile</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)}</span>
+
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">gnk_simulator</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_batch</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;g   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;k   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rho shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>x   shape: (3, 2)
+g   shape: (3, 1)
+k   shape: (3, 1)
+rho shape: (3, 1)
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="training-setup">
+<h3><span class="section-number">9.4.2. </span>Training Setup<a class="headerlink" href="#training-setup" title="Link to this heading">#</a></h3>
+<p>The network models <span class="math notranslate nohighlight">\(p(x \mid g, k, \rho)\)</span> where <span class="math notranslate nohighlight">\(x \in \mathbb{R}^2\)</span>. For demonstration purposes, we train a <em>normalizing flow</em> with a spline transform (i.e., a “neural spline flow”). Despite developments in free-form architecture, such as <a class="reference external" href="https://arxiv.org/abs/2512.20685">diffusion models</a>, normalizing flows are still attractive because they can perform single-step density evaluation. The variable roles are <strong>reversed</strong> compared to posterior estimation:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Role</p></th>
+<th class="head"><p>Variable</p></th>
+<th class="head"><p>Meaning</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">inference_variables</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\(x\)</span></p></td>
+<td><p>what the network models (the 2-D observation)</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code></p></td>
+<td><p><span class="math notranslate nohighlight">\([g,\,k,\,\rho]\)</span></p></td>
+<td><p>the conditioning parameters</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>We pass the three parameters as separate keys; BayesFlow’s adapter automatically concatenates them into a single conditions vector before passing to the network.</p>
+<p>Training takes approximately <strong>4-5 minutes</strong> with JAX on a CPU and around 20 seconds on GPU.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
+        <span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">,</span> 
+        <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+        <span class="c1"># For heavier-tail likelihoods, you can play around with</span>
+        <span class="c1"># base_distribution=bf.distributions.DiagonalStudentT(df=20),</span>
+    <span class="p">),</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> 
+    <span class="n">validation_data</span><span class="o">=</span><span class="mi">1024</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s briefly inspect convergence. The loss curve should resemble a smooth exponential decay.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/f1779f3a954db51a9520e242333849ac3a75c15327c9ab76b925a630dfab52ad.png" src="../_images/f1779f3a954db51a9520e242333849ac3a75c15327c9ab76b925a630dfab52ad.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="evaluating-the-learned-likelihood">
+<h2><span class="section-number">9.5. </span>3. Evaluating the Learned Likelihood<a class="headerlink" href="#evaluating-the-learned-likelihood" title="Link to this heading">#</a></h2>
+<section id="comparing-simulator-and-flow-samples">
+<h3><span class="section-number">9.5.1. </span>Comparing Simulator and Flow Samples<a class="headerlink" href="#comparing-simulator-and-flow-samples" title="Link to this heading">#</a></h3>
+<p>As a quick check, we fix <span class="math notranslate nohighlight">\(\theta^\star = (g=0.9,\;k=0.4,\;\rho=0.5)\)</span>, a right-skewed, moderately heavy-tailed, positively-correlated bivariate distribution. We then draw 800 samples from both:</p>
+<ul class="simple">
+<li><p><strong>Simulator</strong> (ground truth): exact samples from the g-and-k model via the quantile function</p></li>
+<li><p><strong>Trained flow</strong> (approximation): samples from the learned likelihood</p></li>
+</ul>
+<p>The two scatter plots should be nearly indistinguishable, confirming the flow captures the distributional shape correctly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">g_star</span><span class="p">,</span> <span class="n">k_star</span><span class="p">,</span> <span class="n">rho_star</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">,</span> <span class="mf">0.5</span>
+
+<span class="n">true_samples</span> <span class="o">=</span> <span class="n">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g_star</span><span class="p">,</span> <span class="n">k_star</span><span class="p">,</span> <span class="n">rho_star</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span> <span class="n">rng_inst</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approx</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span>
+        <span class="s2">&quot;g&quot;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">g_star</span><span class="p">]]),</span>
+        <span class="s2">&quot;k&quot;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">k_star</span><span class="p">]]),</span>
+        <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">rho_star</span><span class="p">]]),</span>
+    <span class="p">},</span>
+<span class="p">)</span>
+<span class="n">approx_x</span> <span class="o">=</span> <span class="n">approx</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;approx_x shape:&quot;</span><span class="p">,</span> <span class="n">approx_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "3abe4715d41a49d08107c8d40d1b3d84", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 2.28 seconds.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>approx_x shape: (5000, 2)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">samp</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
+    <span class="n">axes</span><span class="p">,</span>
+    <span class="p">[</span><span class="n">true_samples</span><span class="p">,</span> <span class="n">approx_x</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;Simulator  (ground truth)&quot;</span><span class="p">,</span> <span class="s2">&quot;Trained flow  (approximate)&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">&quot;#132a70&quot;</span><span class="p">,</span> <span class="s2">&quot;#b22222&quot;</span><span class="p">],</span>
+<span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+    <span class="sa">rf</span><span class="s2">&quot;$g^\star=</span><span class="si">{</span><span class="n">g_star</span><span class="si">}</span><span class="s2">,\; k^\star=</span><span class="si">{</span><span class="n">k_star</span><span class="si">}</span><span class="s2">,\; \rho^\star=</span><span class="si">{</span><span class="n">rho_star</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/50f25ff4f3245076db82f4bf4be1356a011cd429ec2aa06eb9a6101e481b4ee3.png" src="../_images/50f25ff4f3245076db82f4bf4be1356a011cd429ec2aa06eb9a6101e481b4ee3.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="downstream-integration-with-pymc">
+<h2><span class="section-number">9.6. </span>4. Downstream Integration with PyMC<a class="headerlink" href="#downstream-integration-with-pymc" title="Link to this heading">#</a></h2>
+<section id="plugging-the-learned-likelihood-into-nuts">
+<h3><span class="section-number">9.6.1. </span>Plugging the Learned Likelihood into NUTS<a class="headerlink" href="#plugging-the-learned-likelihood-into-nuts" title="Link to this heading">#</a></h3>
+<p>BayesFlow’s <code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> wrapper registers the trained flow as a PyMC-compatible custom distribution.  We:</p>
+<ol class="arabic simple">
+<li><p>Simulate <span class="math notranslate nohighlight">\(n = 50\)</span> bivariate observations at known true parameters <span class="math notranslate nohighlight">\(\theta^\star\)</span></p></li>
+<li><p>Place broad priors on <span class="math notranslate nohighlight">\((g, k, \rho)\)</span> in a PyMC model</p></li>
+<li><p>Run NUTS to recover the posterior <span class="math notranslate nohighlight">\(p(g, k, \rho \mid x_{1:50})\)</span></p></li>
+</ol>
+<p>Because the observations are i.i.d., <code class="docutils literal notranslate"><span class="pre">NeuralDistribution</span></code> with <code class="docutils literal notranslate"><span class="pre">exchangeable=True</span></code> (the default) automatically <strong>vmaps</strong> the per-observation log-likelihood and sums the results. No manual looping is needed. The <code class="docutils literal notranslate"><span class="pre">param_names</span></code> argument specifies the order in which PyMC variables are forwarded to the network:</p>
+<div class="math notranslate nohighlight">
+\[q(\theta \mid x_{1:50}) \propto \underbrace{\prod_{i=1}^{50}q(x_i \mid g, k, \rho)}_{\text{neural likelihood}} \cdot \underbrace{p(g)\,p(k)\,p(\rho)}_{\text{PyMC priors}}\]</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">pymc</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">arviz</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">az</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.wrappers.pymc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuralDistribution</span>
+
+<span class="c1"># Simulate a &quot;real&quot; dataset at known true parameters</span>
+<span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span>
+<span class="n">observed_data</span> <span class="o">=</span> <span class="n">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">rng_inst</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observed data shape: </span><span class="si">{</span><span class="n">observed_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:arviz:Found &#39;auto&#39; as default backend, checking available backends
+INFO:arviz:Matplotlib is available, defining as default backend
+INFO:arviz.preview:arviz_base available, exposing its functions as part of arviz.preview
+INFO:arviz.preview:arviz_stats available, exposing its functions as part of arviz.preview
+INFO:arviz.preview:arviz_plots available, exposing its functions as part of arviz.preview
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Observed data shape: (50, 2)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">neural_dist</span> <span class="o">=</span> <span class="n">NeuralDistribution</span><span class="p">(</span>
+    <span class="n">approximator</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+    <span class="n">exchangeable</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">gnk_model</span><span class="p">:</span>
+    <span class="n">g</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;g&quot;</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">neural_dist</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed_data</span><span class="p">)</span>
+
+    <span class="c1"># Setting cores=4 naively on Linux will fork() and give you troubles</span>
+    <span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+        <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+        <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
+    <span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
+c:\Users\radevs\AppData\Local\anaconda3\envs\bf\Lib\site-packages\pytensor\link\c\cmodule.py:2986: UserWarning: PyTensor could not link to a BLAS installation. Operations that might benefit from BLAS will be severely degraded.
+This usually happens when PyTensor is installed via pip. We recommend it be installed via conda/mamba/pixi instead.
+Alternatively, you can use an experimental backend such as Numba or JAX that perform their own BLAS optimizations, by setting `pytensor.config.mode == &#39;NUMBA&#39;` or passing `mode=&#39;NUMBA&#39;` when compiling a PyTensor function.
+For more options and details see https://pytensor.readthedocs.io/en/latest/troubleshooting.html#how-do-i-configure-test-my-blas-library
+  warnings.warn(
+INFO:pymc.sampling.mcmc:Multiprocess sampling (4 chains in 4 jobs)
+INFO:pymc.sampling.mcmc:NUTS: [g, k, rho]
+</pre></div>
+</div>
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "284fd543da1c413eaec2368a7fba03d1", "version_major": 2, "version_minor": 0}</script><div class="output text_html"><pre style="white-space:pre;overflow-x:auto;line-height:normal;font-family:Menlo,'DejaVu Sans Mono',consolas,'Courier New',monospace"></pre>
+</div><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Sampling 4 chains for 1_000 tune and 1_000 draw iterations (4_000 + 4_000 draws total) took 61 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="recovering-the-true-parameters">
+<h3><span class="section-number">9.6.2. </span>Recovering the True Parameters<a class="headerlink" href="#recovering-the-true-parameters" title="Link to this heading">#</a></h3>
+<p>NUTS should recover posteriors concentrated near the true values <span class="math notranslate nohighlight">\((g^\star=1.2,\; k^\star=0.7,\; \rho^\star=0.5)\)</span>.</p>
+<p>With only <span class="math notranslate nohighlight">\(n = 50\)</span> observations the posteriors will be moderately wide, reflecting <em>epistemic uncertainty</em> about the shape parameters + <em>approximation error</em> due to the neural likelihood. The vertical lines in the posterior plots below mark the simulated ground-truths.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_posterior</span><span class="p">(</span>
+    <span class="n">trace</span><span class="p">,</span>
+    <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span>
+    <span class="n">ref_val</span><span class="o">=</span><span class="p">[</span><span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span><span class="p">],</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
+    <span class="sa">rf</span><span class="s2">&quot;Posterior  |  True: $g=</span><span class="si">{</span><span class="n">g_true</span><span class="si">}</span><span class="s2">$, $k=</span><span class="si">{</span><span class="n">k_true</span><span class="si">}</span><span class="s2">$, $\rho=</span><span class="si">{</span><span class="n">rho_true</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+    <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/042825ceba10026228cc784ad6a0b61b8f865dc1b892fcf630e5b6681bacf04e.png" src="../_images/042825ceba10026228cc784ad6a0b61b8f865dc1b892fcf630e5b6681bacf04e.png" />
+</div>
+</div>
+</section>
+<section id="postscript">
+<h3><span class="section-number">9.6.3. </span>Postscript<a class="headerlink" href="#postscript" title="Link to this heading">#</a></h3>
+<p>Neural Likelihood Estimation (NLE) with a <code class="docutils literal notranslate"><span class="pre">ContinuousApproximator</span></code> is not the only way you can connect BayesFlow networks with PyMC. Alternatively, and sometimes more stably, you can apply Neural Ratio Estimation (NRE) with a <a class="reference external" href="https://arxiv.org/abs/2210.06170">classifier trick</a> to learn the likelihood-to-evidence ratio <span class="math notranslate nohighlight">\(p(x \mid \theta) / p(x)\)</span>. This is demonstrated in a great detail in our <a class="reference internal" href="Ratio_Estimation.html"><span class="std std-doc">tutorial or NRE</span></a> featuring further ways to leverage the flexibility of learning a likelihood-like object.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Bayesian_Experimental_Design.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">8. </span>Bayesian Experimental Design (BED) with BayesFlow and PyTorch</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Multimodal_Data.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">10. </span>Posterior Estimation With Multimodal Data</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#a-real-challenge-intractable-likelihoods">9.1. A Real Challenge: Intractable Likelihoods</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-model">9.2. The Model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-g-and-k-distribution-family">9.3. 1. The g-and-k Distribution Family</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#why-the-likelihood-is-intractable">9.3.1. Why the Likelihood is Intractable?</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#training-the-likelihood-approximator">9.4. 2. Training the Likelihood Approximator</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#defining-the-simulator">9.4.1. Defining the Simulator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#training-setup">9.4.2. Training Setup</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#evaluating-the-learned-likelihood">9.5. 3. Evaluating the Learned Likelihood</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#comparing-simulator-and-flow-samples">9.5.1. Comparing Simulator and Flow Samples</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#downstream-integration-with-pymc">9.6. 4. Downstream Integration with PyMC</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#plugging-the-learned-likelihood-into-nuts">9.6.1. Plugging the Learned Likelihood into NUTS</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#recovering-the-true-parameters">9.6.2. Recovering the True Parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#postscript">9.6.3. Postscript</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.13/docsrc/source/_examples/Likelihood_Estimation.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

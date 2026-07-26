@@ -1,0 +1,1131 @@
+
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5. Summary Networks &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+
+    <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/summary_networks';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/user_guide/summary_networks.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="6. Inference Networks" href="inference_networks.html" />
+    <link rel="prev" title="4. Approximators" href="approximators.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.0.13" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulators.html">2. Simulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_processing.html">3. Data Processing: Adapters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="approximators.html">4. Approximators</a></li>
+<li class="toctree-l1 current active"><a class="current reference internal" href="#">5. Summary Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_networks.html">6. Inference Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">7. Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="saving_loading.html">8. Saving &amp; Loading Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnostics.html">9. Diagnostics and Visualizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">10. Using Datasets in BayesFlow</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">5. </span>Summary Networks</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="summary-networks">
+<h1><span class="section-number">5. </span>Summary Networks<a class="headerlink" href="#summary-networks" title="Link to this heading">#</a></h1>
+<p>Many scientific simulators produce observations that cannot be cleanly flattened into a fixed-length vector:</p>
+<ul class="simple">
+<li><p>A clinical trial might enroll a varying number of patients per study (exchangeable observations).</p></li>
+<li><p>An electrophysiology recording might span different durations across experiments (time series of varying length).</p></li>
+<li><p>A spatial simulator might output 2D fields of different resolutions (image data).</p></li>
+</ul>
+<p>Passing such data directly to an inference network (e.g., <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code>) requires padding or truncation, both of which throw away structure the network could otherwise exploit. A <strong>summary network</strong> avoids this by learning a fixed-size representation <span class="math notranslate nohighlight">\(h(x) \in \mathbb{R}^d\)</span> that <strong>preserves the structure of the data</strong> — permutation invariance for sets, causal ordering for time series, spatial locality for images — while compressing it into a vector the inference network can consume.</p>
+<p>The resulting summary dimension <span class="math notranslate nohighlight">\(d\)</span> (the <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code> argument) also serves as a diagnostic handle: you can inspect the learned summary space to check for posterior collapse or out-of-distribution behavior.</p>
+<p>This page covers:</p>
+<ol class="arabic simple">
+<li><p><strong>Available networks</strong>: which architecture fits your data</p></li>
+<li><p><strong>Sizing guide</strong>: how to set <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code> and network capacity</p></li>
+<li><p><strong>Hyperparameters in depth</strong>: key parameters and the <code class="docutils literal notranslate"><span class="pre">time_axis</span></code> argument</p></li>
+<li><p><strong>Usage examples</strong>: inside an approximator and inside a workflow</p></li>
+<li><p><strong>Custom summary networks</strong>: neural data example and a pretrained CNN backbone from Keras Hub</p></li>
+</ol>
+<section id="available-networks">
+<h2><span class="section-number">5.1. </span>Available Networks<a class="headerlink" href="#available-networks" title="Link to this heading">#</a></h2>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Network</p></th>
+<th class="head"><p>Data type</p></th>
+<th class="head"><p>Expected input shape</p></th>
+<th class="head"><p>Notes</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code></p></td>
+<td><p>Exchangeable / i.i.d. observations</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">num_obs,</span> <span class="pre">dim)</span></code></p></td>
+<td><p>Permutation-invariant by design</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code></p></td>
+<td><p>Ordered sequences (time series)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">time,</span> <span class="pre">dim)</span></code></p></td>
+<td><p>Recommended default for time series</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">FusionTransformer</span></code></p></td>
+<td><p>Ordered sequences with complex temporal structure</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">time,</span> <span class="pre">dim)</span></code></p></td>
+<td><p>Combines self-attention + recurrent template; slower than <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">TimeSeriesNetwork</span></code></p></td>
+<td><p>Ordered sequences (lightweight alternative)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">time,</span> <span class="pre">dim)</span></code></p></td>
+<td><p>Conv1D-based; faster but less expressive</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">ConvolutionalNetwork</span></code></p></td>
+<td><p>2D images / spatial fields</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">height,</span> <span class="pre">width,</span> <span class="pre">channels)</span></code></p></td>
+<td><p>ResNet-style with residual blocks</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">DeepSet</span></code></p></td>
+<td><p>Exchangeable data (simpler baseline)</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">num_obs,</span> <span class="pre">dim)</span></code></p></td>
+<td><p>Faster than <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> but captures fewer interactions</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<div><p><strong>SetTransformer is for sets, not ordered sequences.</strong> If your data has a clear ordering (e.g., time, spatial position), use <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code> or <code class="docutils literal notranslate"><span class="pre">FusionTransformer</span></code>. Using <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> on ordered data discards temporal structure.</p>
+</div></blockquote>
+<p>All networks are available under <code class="docutils literal notranslate"><span class="pre">bayesflow.networks</span></code> and accept a <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code> argument that controls the output dimensionality.</p>
+</section>
+<section id="sizing-guide">
+<h2><span class="section-number">5.2. </span>Sizing Guide<a class="headerlink" href="#sizing-guide" title="Link to this heading">#</a></h2>
+<section id="summary-dim-how-many-summary-statistics-to-learn">
+<h3><span class="section-number">5.2.1. </span><code class="docutils literal notranslate"><span class="pre">summary_dim</span></code>: how many summary statistics to learn<a class="headerlink" href="#summary-dim-how-many-summary-statistics-to-learn" title="Link to this heading">#</a></h3>
+<p>As a starting heuristic, set <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code> to <strong>3× the number of parameters</strong> you are inferring. For example, if you estimate 5 parameters, start with <code class="docutils literal notranslate"><span class="pre">summary_dim=15</span></code>. Scale up if in-silico diagnostics (simulation-based calibration, posterior z-scores) show poor recovery.</p>
+</section>
+<section id="network-capacity-small-base-large-xl">
+<h3><span class="section-number">5.2.2. </span>Network capacity: Small → Base → Large → XL<a class="headerlink" href="#network-capacity-small-base-large-xl" title="Link to this heading">#</a></h3>
+<p>All transformer-based summary networks share the same family of hyperparameters: <code class="docutils literal notranslate"><span class="pre">embed_dims</span></code> and <code class="docutils literal notranslate"><span class="pre">num_heads</span></code>. The length of these tuples sets the <strong>number of attention blocks</strong>. The FFN width inside each block is controlled by <code class="docutils literal notranslate"><span class="pre">expansion_factor</span></code> (default <code class="docutils literal notranslate"><span class="pre">4.0</span></code>) and rarely needs tuning. Here are the recommended configurations (always start with Base):</p>
+<p><strong>SetTransformer / TimeSeriesTransformer / FusionTransformer</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Size</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">embed_dims</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">num_heads</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Small</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">32)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(2,</span> <span class="pre">2)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Base</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(64,</span> <span class="pre">64,</span> <span class="pre">64)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(4,</span> <span class="pre">4,</span> <span class="pre">4)</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Large</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(128,</span> <span class="pre">128,</span> <span class="pre">128,</span> <span class="pre">128)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(8,</span> <span class="pre">8,</span> <span class="pre">8,</span> <span class="pre">8)</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>XL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256,</span> <span class="pre">256)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">16,</span> <span class="pre">16,</span> <span class="pre">16,</span> <span class="pre">16)</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>For <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code>, you can also consider increasing the <code class="docutils literal notranslate"><span class="pre">num_seeds</span></code> to values larger than the default <code class="docutils literal notranslate"><span class="pre">4</span></code>.</p>
+<p><strong>TimeSeriesNetwork</strong> (conv-recurrent; scale by widening filters and doubling <code class="docutils literal notranslate"><span class="pre">recurrent_dim</span></code>)</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Size</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">filters</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">recurrent_dim</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Tiny</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">32)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">64</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Base</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">64)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">128</span></code></p></td>
+</tr>
+<tr class="row-even"><td><p>Large</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">256</span></code></p></td>
+</tr>
+<tr class="row-odd"><td><p>XL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(64,</span> <span class="pre">128,</span> <span class="pre">256)</span></code></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">512</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><strong>ConvolutionalNetwork</strong></p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Size</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">widths</span></code></p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">stages</span></code></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Small</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(16,</span> <span class="pre">32)</span></code></p></td>
+<td><p>2</p></td>
+</tr>
+<tr class="row-odd"><td><p><strong>Base</strong></p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128)</span></code></p></td>
+<td><p>3</p></td>
+</tr>
+<tr class="row-even"><td><p>Large</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256)</span></code></p></td>
+<td><p>4</p></td>
+</tr>
+<tr class="row-odd"><td><p>XL</p></td>
+<td><p><code class="docutils literal notranslate"><span class="pre">(32,</span> <span class="pre">64,</span> <span class="pre">128,</span> <span class="pre">256,</span> <span class="pre">512)</span></code></p></td>
+<td><p>5</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<blockquote>
+<div><p>Scale up to Large or XL <strong>only</strong> if diagnostics show poor recovery after sufficient training. Oversized networks train slower and can hurt calibration on simple problems.</p>
+</div></blockquote>
+</section>
+</section>
+<section id="timeseriestransformer-in-depth">
+<h2><span class="section-number">5.3. </span>TimeSeriesTransformer In Depth<a class="headerlink" href="#timeseriestransformer-in-depth" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code> is the recommended default for any ordered sequential data. It pairs self-attention blocks with a <strong>Time2Vec</strong> embedding that lets the network learn both periodic and aperiodic time patterns.</p>
+<section id="key-parameters">
+<h3><span class="section-number">5.3.1. </span>Key parameters<a class="headerlink" href="#key-parameters" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Base-size configuration</span>
+<span class="n">summary_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span>
+    <span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>             <span class="c1"># output dimensionality; start at 3× num_params</span>
+    <span class="n">embed_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>    <span class="c1"># attention key/value/query dim per block</span>
+    <span class="n">num_heads</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>        <span class="c1"># attention heads per block</span>
+    <span class="n">time_embed_dim</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>           <span class="c1"># dimensionality of the Time2Vec embedding</span>
+    <span class="n">time_axis</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>             <span class="c1"># see below</span>
+    <span class="n">dropout</span><span class="o">=</span><span class="mf">0.05</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The tuples (<code class="docutils literal notranslate"><span class="pre">embed_dims</span></code>, <code class="docutils literal notranslate"><span class="pre">num_heads</span></code>) must all be the <strong>same length</strong> — this length controls the number of transformer blocks. The FFN inside each block uses <code class="docutils literal notranslate"><span class="pre">expansion_factor</span></code> (default <code class="docutils literal notranslate"><span class="pre">4.0</span></code>) to scale the intermediate width; you rarely need to change it.</p>
+</section>
+<section id="scaling-up-large-configuration">
+<h3><span class="section-number">5.3.2. </span>Scaling up: Large configuration<a class="headerlink" href="#scaling-up-large-configuration" title="Link to this heading">#</a></h3>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Large configuration — only if Base shows poor recovery in diagnostics</span>
+<span class="c1"># and does not show signs of overfitting.</span>
+<span class="n">summary_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span>
+    <span class="n">summary_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span>
+    <span class="n">embed_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
+    <span class="n">num_heads</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">8</span><span class="p">),</span>
+    <span class="n">time_embed_dim</span><span class="o">=</span><span class="mi">16</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="time-axis-when-to-set-it">
+<h3><span class="section-number">5.3.3. </span><code class="docutils literal notranslate"><span class="pre">time_axis</span></code>: when to set it<a class="headerlink" href="#time-axis-when-to-set-it" title="Link to this heading">#</a></h3>
+<p>Set <code class="docutils literal notranslate"><span class="pre">time_axis</span></code> <strong>only when your simulator explicitly appends a time-index column to the data</strong>. For example, if your simulator outputs irregularly-spaced observations and includes the timestamp as one of the features:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Simulator output: (batch, T, 3) where the last column is the observation time</span>
+<span class="c1"># The time column lives at axis=-1 position 2</span>
+<span class="n">summary_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span>
+    <span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+    <span class="n">time_axis</span><span class="o">=-</span><span class="mi">1</span>   <span class="c1"># tells the network which column contains the time index</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>If your data is a plain value sequence — e.g., shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">T,</span> <span class="pre">d)</span></code> where every column is a measurement — <strong>leave <code class="docutils literal notranslate"><span class="pre">time_axis=None</span></code></strong>. The network will assume uniform time spacing <span class="math notranslate nohighlight">\([0, T]\)</span> automatically. Passing a wrong <code class="docutils literal notranslate"><span class="pre">time_axis</span></code> that points to a data channel rather than actual timestamps will degrade performance.</p>
+</section>
+</section>
+<section id="usage-examples">
+<h2><span class="section-number">5.4. </span>Usage Examples<a class="headerlink" href="#usage-examples" title="Link to this heading">#</a></h2>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Here is a very simple simulator that generates spatial data</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">theta</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>  <span class="c1"># [mu, log_sigma]</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">):</span>
+    <span class="n">mu</span><span class="p">,</span> <span class="n">log_sigma</span> <span class="o">=</span> <span class="n">theta</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_sigma</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">y</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+        <span class="n">z</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">30</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+    <span class="p">)</span>
+
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="inside-a-standalone-approximator">
+<h3><span class="section-number">5.4.1. </span>Inside a standalone approximator<a class="headerlink" href="#inside-a-standalone-approximator" title="Link to this heading">#</a></h3>
+<p>The summary network is passed directly to the approximator. The adapter routes data to <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code>, which the approximator feeds through the summary network before the inference network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="inside-a-workflow">
+<h3><span class="section-number">5.4.2. </span>Inside a workflow<a class="headerlink" href="#inside-a-workflow" title="Link to this heading">#</a></h3>
+<p>The workflow handles compilation for you. Pass <code class="docutils literal notranslate"><span class="pre">summary_network</span></code> directly:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">],</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;y&quot;</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">],</span>           <span class="c1"># tells the workflow what to summarize</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The workflow’s default adapter will automatically mark <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code> correctly based on the names provided. See <a class="reference internal" href="data_processing.html"><span class="std std-doc">Data Processing</span></a> for controlling the adapter configuration in more detail.</p>
+</section>
+</section>
+<section id="custom-summary-networks">
+<h2><span class="section-number">5.5. </span>Custom Summary Networks<a class="headerlink" href="#custom-summary-networks" title="Link to this heading">#</a></h2>
+<p>When none of the built-in networks fit your data modality, you can write your own. Two requirements:</p>
+<ol class="arabic simple">
+<li><p><strong>Inherit from <code class="docutils literal notranslate"><span class="pre">bf.networks.SummaryNetwork</span></code></strong>.</p></li>
+<li><p><strong>Decorate with <code class="docutils literal notranslate"><span class="pre">&#64;serializable</span></code></strong> so the network can be saved and loaded (see <a class="reference internal" href="saving_loading.html"><span class="std std-doc">Saving &amp; Loading</span></a>).</p></li>
+</ol>
+<section id="example-multi-channel-lfp-encoder">
+<h3><span class="section-number">5.5.1. </span>Example: multi-channel LFP encoder<a class="headerlink" href="#example-multi-channel-lfp-encoder" title="Link to this heading">#</a></h3>
+<p>Local field potentials (LFPs) are multi-channel neural recordings — a 3D array of shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">time,</span> <span class="pre">n_channels)</span></code>. Standard summary networks treat channels uniformly. This custom encoder combines a <strong>causal Conv1D</strong> across time with a <strong>channel attention</strong> layer, giving the network an inductive bias that is tailored to spatially correlated brain signals.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.utils.serialization</span><span class="w"> </span><span class="kn">import</span> <span class="n">serializable</span><span class="p">,</span> <span class="n">serialize</span>
+
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;my_project.networks&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">LFPEncoder</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compresses multi-channel LFP recordings into fixed-size summaries.</span>
+
+<span class="sd">    Architecture:</span>
+<span class="sd">      - Shared Conv1D across time (captures local temporal dynamics)</span>
+<span class="sd">      - Bidirectional GRU (captures long-range dependencies)</span>
+<span class="sd">      - Dense channel-attention gate (weights channels by relevance)</span>
+<span class="sd">      - Global average pool + projection to summary_dim</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">64</span><span class="p">,</span> <span class="n">gru_units</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">filters</span> <span class="o">=</span> <span class="n">filters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gru_units</span> <span class="o">=</span> <span class="n">gru_units</span>
+
+        <span class="c1"># Temporal feature extraction</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv1D</span><span class="p">(</span><span class="n">filters</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;causal&quot;</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;gelu&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">norm</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">LayerNormalization</span><span class="p">()</span>
+
+        <span class="c1"># Sequence compression</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gru</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Bidirectional</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="n">gru_units</span><span class="p">,</span> <span class="n">return_sequences</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+
+        <span class="c1"># Channel attention: squeeze across time, then gate across channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">channel_gate</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">gru_units</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">)</span>
+
+        <span class="c1"># Output projection</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GlobalAveragePooling1D</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : Tensor, shape (batch, time, n_channels)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tensor, shape (batch, summary_dim)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>                     <span class="c1"># (batch, time, gru_units*2)</span>
+
+        <span class="c1"># Channel attention: average over time, compute gate, broadcast back</span>
+        <span class="n">gate</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">channel_gate</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">h</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
+        <span class="n">h</span> <span class="o">=</span> <span class="n">h</span> <span class="o">*</span> <span class="n">gate</span>
+
+        <span class="n">h</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>                                  <span class="c1"># (batch, gru_units*2)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>                               <span class="c1"># (batch, summary_dim)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">base</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">({</span>
+            <span class="s2">&quot;summary_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">,</span>
+            <span class="s2">&quot;filters&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">filters</span><span class="p">,</span>
+            <span class="s2">&quot;gru_units&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru_units</span>
+        <span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Use it exactly like any built-in summary network:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">LFPEncoder</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="using-a-pretrained-backbone-from-keras-hub">
+<h3><span class="section-number">5.5.2. </span>Using a pretrained backbone from Keras Hub<a class="headerlink" href="#using-a-pretrained-backbone-from-keras-hub" title="Link to this heading">#</a></h3>
+<p>For image data, you can wrap any pre-trained CNN from <a class="reference external" href="https://keras.io/keras_hub/">Keras Hub</a> as a summary network. This is useful when your simulator produces realistic-looking images (e.g., spatial maps, microscopy images, cosmological fields) and you want to leverage ImageNet-pretrained features as a starting point.</p>
+<p>The example below wraps <strong>DenseNet-121</strong> (<a class="reference external" href="https://www.kaggle.com/models/keras/densenet/keras/densenet_121_imagenet/3">model page</a>) — a densely-connected convolutional network — as a BayesFlow summary network. The backbone extracts features; a trainable projection head maps them to <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># pip install keras-hub</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras_hub</span>
+
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;my_project.networks&quot;</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">DenseNetSummary</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Wraps a pretrained DenseNet-121 backbone as a BayesFlow summary network.</span>
+
+<span class="sd">    Input shape: (batch, height, width, 3)  — expects 3-channel images.</span>
+<span class="sd">    Output shape: (batch, summary_dim)</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">summary_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span> <span class="n">trainable_backbone</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainable_backbone</span> <span class="o">=</span> <span class="n">trainable_backbone</span>
+
+        <span class="c1"># Load pretrained backbone — feature extractor only (no classification head)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span> <span class="o">=</span> <span class="n">keras_hub</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">DenseNetBackbone</span><span class="o">.</span><span class="n">from_preset</span><span class="p">(</span>
+            <span class="s2">&quot;densenet_121_imagenet&quot;</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="o">.</span><span class="n">trainable</span> <span class="o">=</span> <span class="n">trainable_backbone</span>
+
+        <span class="c1"># Global average pool + projection to summary_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GlobalAveragePooling2D</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;gelu&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">out</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        x : Tensor, shape (batch, height, width, 3)</span>
+<span class="sd">            Images normalized to [0, 1] or [-1, 1].</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        Tensor, shape (batch, summary_dim)</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">features</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbone</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="c1"># backbone outputs (batch, H&#39;, W&#39;, C) feature maps; pool to a vector</span>
+        <span class="n">pooled</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool</span><span class="p">(</span><span class="n">features</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">out</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">proj</span><span class="p">(</span><span class="n">pooled</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="n">base</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">base</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">({</span>
+            <span class="s2">&quot;summary_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">,</span>
+            <span class="s2">&quot;trainable_backbone&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainable_backbone</span>
+        <span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p><strong>Usage:</strong></p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Images are of shape (batch, 128, 128, 3)</span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">DenseNetSummary</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">trainable_backbone</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="approximators.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">4. </span>Approximators</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="inference_networks.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">6. </span>Inference Networks</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#available-networks">5.1. Available Networks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#sizing-guide">5.2. Sizing Guide</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-dim-how-many-summary-statistics-to-learn">5.2.1. <code class="docutils literal notranslate"><span class="pre">summary_dim</span></code>: how many summary statistics to learn</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#network-capacity-small-base-large-xl">5.2.2. Network capacity: Small → Base → Large → XL</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#timeseriestransformer-in-depth">5.3. TimeSeriesTransformer In Depth</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#key-parameters">5.3.1. Key parameters</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#scaling-up-large-configuration">5.3.2. Scaling up: Large configuration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#time-axis-when-to-set-it">5.3.3. <code class="docutils literal notranslate"><span class="pre">time_axis</span></code>: when to set it</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#usage-examples">5.4. Usage Examples</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inside-a-standalone-approximator">5.4.1. Inside a standalone approximator</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inside-a-workflow">5.4.2. Inside a workflow</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-summary-networks">5.5. Custom Summary Networks</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#example-multi-channel-lfp-encoder">5.5.1. Example: multi-channel LFP encoder</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#using-a-pretrained-backbone-from-keras-hub">5.5.2. Using a pretrained backbone from Keras Hub</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.0.13/docsrc/source/user_guide/summary_networks.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    <br/>
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

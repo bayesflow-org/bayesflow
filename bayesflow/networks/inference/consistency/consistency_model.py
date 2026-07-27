@@ -115,7 +115,6 @@ class ConsistencyModel(InferenceNetwork):
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-        self._project_output = kwargs.pop("project_output", None)
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
@@ -166,16 +165,10 @@ class ConsistencyModel(InferenceNetwork):
             "fixed_target_prob": self.fixed_target_prob,
             "missing_target_prob": self.missing_target_prob,
             "missing_conditions_prob": self.missing_conditions_prob,
-            "project_output": self._project_output,
             # we do not need to store subnet_kwargs
         }
 
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        # Older configs may have no "project_output" key and always used a Dense projector.
-        return super().from_config({"project_output": True} | config, custom_objects=custom_objects)
 
     def _schedule_discretization(self, step) -> float:
         """Schedule function for adjusting the discretization level `N(k)` during

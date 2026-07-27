@@ -156,7 +156,6 @@ class DiffusionModel(InferenceNetwork):
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-        self._project_output = kwargs.pop("project_output", None)
         self.fixed_target_prob = fixed_target_prob
         self.missing_target_prob = missing_target_prob
         self.missing_conditions_prob = missing_conditions_prob
@@ -275,10 +274,7 @@ class DiffusionModel(InferenceNetwork):
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
         units = 1 if self._prediction_type == "potential" else xz_shape[-1]
-        if self._project_output is None:
-            # a subnet whose output already has the target width projects into target space itself
-            self._project_output = out_shape[-1] != units
-        if self._project_output:
+        if out_shape[-1] != units:
             self.output_projector = keras.layers.Dense(
                 units=units,
                 bias_initializer="zeros",
@@ -301,14 +297,8 @@ class DiffusionModel(InferenceNetwork):
             "fixed_target_prob": self.fixed_target_prob,
             "missing_target_prob": self.missing_target_prob,
             "missing_conditions_prob": self.missing_conditions_prob,
-            "project_output": self._project_output,
         }
         return base_config | serialize(config)
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        # Older configs may have no "project_output" key and always used a Dense projector.
-        return super().from_config({"project_output": True} | config, custom_objects=custom_objects)
 
     def guidance_function(
         self,

@@ -164,5 +164,7 @@ class TimeSeriesTransformer(Transformer):
         return summary
 
     def compute_mask(self, inputs, mask=None):
-        # The mask is consumed here (attention and pooling). Nothing is propagated downstream.
+        # `mask` (magic keyword in Keras) is terminated here by `return None`
+        # to prevent warnings about inability to inject it downstream.
+        # We explicitly pass mask and do not rely on having it travel with as a tensor attribute.
         return None

@@ -206,10 +206,7 @@ class ConsistencyModel(InferenceNetwork):
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        if self._project_output is None:
-            # a subnet whose output already has the target width projects into target space itself
-            self._project_output = out_shape[-1] != xz_shape[-1]
-        if self._project_output:
+        if out_shape[-1] != xz_shape[-1]:
             self.output_projector = keras.layers.Dense(
                 units=xz_shape[-1],
                 bias_initializer="zeros",

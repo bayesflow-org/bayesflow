@@ -467,7 +467,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
                         **kwargs,
                     )
                     processed[score_key][head_key] = adapted
-        return processed
+
+        return keras.tree.map_structure(keras.ops.convert_to_numpy, processed)
 
     def _reorder_estimates(
         self,

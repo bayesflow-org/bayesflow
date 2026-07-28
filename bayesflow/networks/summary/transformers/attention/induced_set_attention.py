@@ -88,7 +88,7 @@ class InducedSetAttention(keras.Layer):
         self.mab0 = MultiHeadAttention(**mab_kwargs)
         self.mab1 = MultiHeadAttention(**mab_kwargs)
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
+    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None) -> Tensor:
         """Performs the forward pass through the ISAB block.
 
         Parameters
@@ -98,7 +98,8 @@ class InducedSetAttention(keras.Layer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(batch_size,...)`` where
+            Boolean mask broadcastable to
+            ``(batch_size, num_heads, num_inducing_points, set_size)`` where
             1 = attend, 0 = mask.
 
         Returns
@@ -108,8 +109,8 @@ class InducedSetAttention(keras.Layer):
         """
         batch_size = keras.ops.shape(x)[0]
         inducing_points_tiled = keras.ops.tile(keras.ops.expand_dims(self.inducing_points, axis=0), [batch_size, 1, 1])
-        h = self.mab0(inducing_points_tiled, x, training=training)
-        return self.mab1(x, h, training=training, attention_mask=attention_mask)
+        h = self.mab0(inducing_points_tiled, x, training=training, attention_mask=attention_mask)
+        return self.mab1(x, h, training=training)
 
     def build(self, input_shape):
         if self.built:

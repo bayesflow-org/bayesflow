@@ -107,7 +107,12 @@ class PoolingByMultiHeadAttention(keras.Layer):
             kernel_initializer=kernel_initializer,
         )
 
-    def call(self, x: Tensor, training: bool = False) -> Tensor:
+    def call(
+        self,
+        x: Tensor,
+        training: bool = False,
+        attention_mask: Tensor | None = None,
+    ) -> Tensor:
         """Performs the forward pass through the PMA block.
 
         Parameters
@@ -116,6 +121,10 @@ class PoolingByMultiHeadAttention(keras.Layer):
             Input of shape ``(batch_size, set_size, input_dim)``.
         training : bool, optional
             Passed to dropout and norm layers, by default False.
+        attention_mask : Tensor, optional
+            Boolean mask broadcastable to
+            ``(batch_size, num_heads, num_seeds, set_size)`` where 1 = attend,
+            0 = mask.
 
         Returns
         -------
@@ -125,7 +134,12 @@ class PoolingByMultiHeadAttention(keras.Layer):
         set_x_transformed = self.feedforward(x, training=training)
         batch_size = keras.ops.shape(x)[0]
         seed_tiled = keras.ops.tile(keras.ops.expand_dims(self.seed_vector, axis=0), [batch_size, 1, 1])
-        summaries = self.mab(seed_tiled, set_x_transformed, training=training)
+        summaries = self.mab(
+            seed_tiled,
+            set_x_transformed,
+            training=training,
+            attention_mask=attention_mask,
+        )
         return keras.ops.reshape(summaries, (keras.ops.shape(summaries)[0], -1))
 
     def build(self, input_shape):

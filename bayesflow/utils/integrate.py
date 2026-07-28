@@ -470,18 +470,17 @@ def integrate_scipy(
     keys = list(state.keys())
     # convert to tensor before determining the shape in case a number was passed
     shapes = keras.tree.map_structure(lambda x: keras.ops.shape(keras.ops.convert_to_tensor(x)), state)
-    adapter = Adapter().concatenate(keys, into="x", axis=-1).convert_dtype(np.float32, np.float64)
+    adapter = Adapter().concatenate(keys, into="x", axis=-1)
 
     def state_to_vector(state):
-        state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
         # flatten state
         state = keras.tree.map_structure(lambda x: keras.ops.reshape(x, (-1,)), state)
         # apply concatenation
-        x = adapter.forward(state)["x"]
-        return x
+        x = adapter(state)["x"]
+        return keras.ops.convert_to_numpy(x).astype(np.float64)
 
     def vector_to_state(x):
-        state = adapter.inverse({"x": x})
+        state = adapter({"x": x}, inverse=True)
         state = {key: keras.ops.reshape(value, shapes[key]) for key, value in state.items()}
         state = keras.tree.map_structure(keras.ops.convert_to_tensor, state)
         return state

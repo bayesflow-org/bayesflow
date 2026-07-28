@@ -445,9 +445,10 @@ class ContinuousApproximator(Approximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         samples = {k: s.reshape((n_datasets, n_children, n_parent_samples, *s.shape[2:])) for k, s in samples.items()}
 
         if return_summaries and summary_outputs is not None:

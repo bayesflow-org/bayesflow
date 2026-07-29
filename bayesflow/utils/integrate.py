@@ -54,6 +54,45 @@ def add_scaled(state, ks, coeffs, h):
     return out
 
 
+def _error_ratio(
+    err_state: StateDict,
+    state: StateDict,
+    new_state: StateDict,
+    atol: ArrayLike,
+    rtol: ArrayLike,
+) -> ArrayLike:
+    """Normalize a local error estimate by a per-component tolerance.
+
+    The error of an entry is reduced with a root-mean-square norm, which keeps the criterion independent of
+    the number of components.
+
+    Parameters
+    ----------
+    err_state : dict
+        Local error estimate per state entry, as returned by the adaptive step functions.
+    state : dict
+        State at the beginning of the step.
+    new_state : dict
+        State at the end of the step.
+    atol : int or float or Tensor
+        Absolute tolerance.
+    rtol : int or float or Tensor
+        Relative tolerance.
+
+    Returns
+    -------
+    int or float or Tensor
+        The normalized error, which is at most 1 if the step meets the requested tolerance.
+    """
+    ratio = None
+    for key, err in err_state.items():
+        scale = atol + rtol * keras.ops.maximum(keras.ops.abs(state[key]), keras.ops.abs(new_state[key]))
+        key_ratio = keras.ops.max(keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale), axis=-1)))
+        ratio = key_ratio if ratio is None else keras.ops.maximum(ratio, key_ratio)
+
+    return ratio
+
+
 def rk45_step(
     fn: Callable,
     state: StateDict,
@@ -61,7 +100,7 @@ def rk45_step(
     step_size: ArrayLike,
     k1: StateDict = None,
     use_adaptive_step_size: bool = True,
-) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, StateDict | None, StateDict | None]:
     """
     Dormand-Prince 5(4) method with embedded error estimation [1].
 
@@ -97,7 +136,7 @@ def rk45_step(
 
     new_time = time + h
     if not use_adaptive_step_size:
-        return new_state, new_time, None, 0.0
+        return new_state, new_time, None, None
 
     k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
@@ -114,10 +153,7 @@ def rk45_step(
         )
         err_state[key] = new_state[key] - y4
 
-    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-    err = keras.ops.max(err_norm)
-
-    return new_state, new_time, k7, err
+    return new_state, new_time, k7, err_state
 
 
 def tsit5_step(
@@ -127,7 +163,7 @@ def tsit5_step(
     step_size: ArrayLike,
     k1: StateDict = None,
     use_adaptive_step_size: bool = True,
-) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, StateDict | None, StateDict | None]:
     """
     Implements a single step of the Tsitouras 5/4 Runge-Kutta method [1].
 
@@ -192,7 +228,7 @@ def tsit5_step(
 
     new_time = time + h
     if not use_adaptive_step_size:
-        return new_state, new_time, None, 0.0
+        return new_state, new_time, None, None
 
     k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
@@ -208,10 +244,7 @@ def tsit5_step(
             - 0.45808210592918697 * k6[key]
         )
 
-    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-    err = keras.ops.max(err_norm)
-
-    return new_state, new_time, k7, err
+    return new_state, new_time, k7, err_state
 
 
 def integrate_fixed(
@@ -313,8 +346,9 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
-    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4), dtype="float32")
+    # density computation needs higher accuracy, reduce tolerances
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6 if len(state) == 1 else 1e-8), dtype="float32")
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-8), dtype="float32")
     initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
     step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
     count_not_accepted = 0
@@ -342,7 +376,7 @@ def integrate_adaptive(
         h = keras.ops.sign(_step_size) * keras.ops.clip(keras.ops.abs(_step_size), min_step_size, max_step_size)
 
         # Take one trial step
-        new_state, new_time, new_k1, err = step_fn(
+        new_state, new_time, new_k1, err_state = step_fn(
             state=_state,
             time=_time,
             step_size=h,
@@ -350,12 +384,7 @@ def integrate_adaptive(
         )
 
         # New step size suggestion
-        max_abs = None
-        for k, v in _state.items():
-            m = keras.ops.max(keras.ops.abs(v))
-            max_abs = m if max_abs is None else keras.ops.maximum(max_abs, m)
-        scale = atol + rtol * max_abs
-        error_ratio = err / scale
+        error_ratio = _error_ratio(err_state, _state, new_state, atol, rtol)
         new_step_size = h * keras.ops.clip(0.9 * (1.0 / (error_ratio + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.sign(new_step_size) * keras.ops.clip(
             keras.ops.abs(new_step_size), min_step_size, max_step_size

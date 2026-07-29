@@ -179,7 +179,7 @@ class Approximator(BackendApproximator):
             Raw summary network outputs, or ``None`` if no summary network.
         """
         if data is not None:
-            adapted = self.adapter(data, strict=False, keras=True, **kwargs)
+            adapted = self.adapter(data, strict=False, **kwargs)
             summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
         elif summary_outputs is not None:
             adapted = {}

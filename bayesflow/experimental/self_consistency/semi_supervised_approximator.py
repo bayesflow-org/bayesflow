@@ -140,7 +140,7 @@ class SemiSupervisedApproximator(Approximator):
         if not approximator or not isinstance(approximator, Approximator):
             return {}
         if approximator.adapter:
-            data = approximator.adapter(data, keras=True)
+            data = approximator.adapter(data)
 
         metrics = approximator.compute_metrics(**data, stage=stage)
         return metrics

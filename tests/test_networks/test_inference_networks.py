@@ -144,7 +144,9 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 
     # for the numerical output increase tolerances of an adaptive sampler if any is used
-    generative_inference_network.integrate_kwargs.update({"atol": 1e-8, "rtol": 1e-8})
+    if hasattr(generative_inference_network, "integrate_kwargs"):
+        # needed to be comparable as this has only one state
+        generative_inference_network.integrate_kwargs.update({"atol": 1e-8, "rtol": 1e-8})
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)

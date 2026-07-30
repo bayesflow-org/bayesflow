@@ -145,7 +145,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
 
     # for the numerical output do not use an adaptive solver as this tends to be unreliable
     if hasattr(generative_inference_network, "integrate_kwargs"):
-        generative_inference_network.integrate_kwargs.update({"steps": 200})
+        generative_inference_network.integrate_kwargs.update({"steps": 250})
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)
@@ -162,8 +162,8 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     assert_allclose(
         log_density,
         numerical_log_density,
-        rtol=1e-3,
-        atol=1e-3,
+        rtol=1e-4,
+        atol=1e-4,
         msg="Density of numerical jacobian and network do not match.",
     )
 

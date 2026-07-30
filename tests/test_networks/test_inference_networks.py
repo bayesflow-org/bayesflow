@@ -143,10 +143,9 @@ def test_density_numerically(generative_inference_network, random_samples, rando
 
     log_prob = generative_inference_network.base_distribution.log_prob(output)
 
-    # for the numerical output increase tolerances of an adaptive sampler if any is used
+    # for the numerical output do not use an adaptive solver as this tends to be unreliable
     if hasattr(generative_inference_network, "integrate_kwargs"):
-        # needed to be comparable as this has only one state
-        generative_inference_network.integrate_kwargs.update({"atol": 1e-8, "rtol": 1e-8})
+        generative_inference_network.integrate_kwargs.update({"steps": 200})
 
     def f(x):
         return generative_inference_network(x, conditions=random_conditions)
@@ -154,9 +153,7 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert_allclose(
-        output, numerical_output, rtol=1e-4, atol=1e-4, msg="Outputs of numerical jacobian and network do not match."
-    )
+    assert_allclose(output, numerical_output, msg="Outputs of numerical jacobian and network do not match.")
 
     # use change of variables to compute the numerical log density
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
@@ -165,8 +162,8 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     assert_allclose(
         log_density,
         numerical_log_density,
-        rtol=1e-3,
-        atol=1e-3,
+        rtol=1e-4,
+        atol=1e-4,
         msg="Density of numerical jacobian and network do not match.",
     )
 

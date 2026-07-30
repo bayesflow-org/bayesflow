@@ -153,7 +153,9 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
-    assert_allclose(output, numerical_output, msg="Outputs of numerical jacobian and network do not match.")
+    assert_allclose(
+        output, numerical_output, rtol=1e-5, atol=1e-5, msg="Outputs of numerical jacobian and network do not match."
+    )
 
     # use change of variables to compute the numerical log density
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))

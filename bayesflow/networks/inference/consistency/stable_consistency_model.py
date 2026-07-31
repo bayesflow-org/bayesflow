@@ -153,11 +153,11 @@ class StableConsistencyModel(InferenceNetwork):
 
     @staticmethod
     def _discretize_time(num_steps: int, rho: float):
-        t = keras.ops.linspace(0.0, pi / 2, num_steps)
+        t = keras.ops.linspace(0.0, pi / 2, num_steps + 1)[1:]
         times = keras.ops.exp((t - pi / 2) * rho) * pi / 2
 
         # if rho is set too low, bad schedules can occur
-        if times[1] > StableConsistencyModel.EPS_WARN:
+        if times[0] > StableConsistencyModel.EPS_WARN:
             logging.warning("Warning: The last time step is large.")
             logging.warning(f"Increasing rho (was {rho}) or n_steps (was {num_steps}) might improve results.")
         return times

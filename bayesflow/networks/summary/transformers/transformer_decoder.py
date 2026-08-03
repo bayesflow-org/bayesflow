@@ -30,6 +30,7 @@ class TransformerDecoder(keras.Layer):
         glu_variant: str = "swiglu",
         use_bias: bool = False,
         layer_norm: bool = True,
+        include_condition: bool = True,
         time_embed_dim: int = 8,
         kernel_initializer: str = "glorot_uniform",
         **kwargs,
@@ -45,6 +46,7 @@ class TransformerDecoder(keras.Layer):
         self.glu_variant = glu_variant
         self.use_bias = use_bias
         self.layer_norm = layer_norm
+        self.include_condition = include_condition
         self.time_embed_dim = time_embed_dim
         self.kernel_initializer = kernel_initializer
 
@@ -157,7 +159,10 @@ class TransformerDecoder(keras.Layer):
         if self.output_norm is not None:
             x = self.output_norm(x, training=training)
 
-        return self.output_projection(x)
+        condition = self.output_projection(x)
+        if self.include_condition:
+            condition = self._attach_condition(condition, encoder_outputs, encoder_mask)
+        return condition
 
     def initialize_cache(
         self,
@@ -173,6 +178,8 @@ class TransformerDecoder(keras.Layer):
                 for attention in self.cross_attention_blocks
             ],
             "self_key_values": [None] * self.num_layers,
+            "encoder_outputs": encoder_outputs,
+            "encoder_mask": encoder_mask,
             "encoder_attention_mask": encoder_attention_mask,
             "time": time,
         }
@@ -244,7 +251,28 @@ class TransformerDecoder(keras.Layer):
         if self.output_norm is not None:
             x = self.output_norm(x, training=False)
         condition = self.output_projection(x)[:, 0]
+        if self.include_condition:
+            step_condition = cache["encoder_outputs"][:, step]
+            if cache.get("encoder_mask") is not None:
+                step_condition = step_condition * keras.ops.cast(
+                    cache["encoder_mask"][:, step : step + 1],
+                    step_condition.dtype,
+                )
+            condition = keras.ops.concatenate([condition, step_condition], axis=-1)
         return condition, cache | {"self_key_values": new_self_key_values}
+
+    @staticmethod
+    def _attach_condition(
+        condition: Tensor,
+        encoder_outputs: Tensor,
+        encoder_mask: Tensor | None,
+    ) -> Tensor:
+        if encoder_mask is not None:
+            encoder_outputs = encoder_outputs * keras.ops.cast(
+                encoder_mask[..., None],
+                encoder_outputs.dtype,
+            )
+        return keras.ops.concatenate([condition, encoder_outputs], axis=-1)
 
     @staticmethod
     def _normalize_time(
@@ -333,7 +361,8 @@ class TransformerDecoder(keras.Layer):
         return mask
 
     def compute_output_shape(self, inference_variables_shape, encoder_outputs_shape):
-        return tuple(inference_variables_shape)[:-1] + (self.summary_dim,)
+        output_dim = self.summary_dim + encoder_outputs_shape[-1] if self.include_condition else self.summary_dim
+        return tuple(inference_variables_shape)[:-1] + (output_dim,)
 
     def get_config(self):
         return super().get_config() | serialize(
@@ -347,6 +376,7 @@ class TransformerDecoder(keras.Layer):
                 "glu_variant": self.glu_variant,
                 "use_bias": self.use_bias,
                 "layer_norm": self.layer_norm,
+                "include_condition": self.include_condition,
                 "time_embed_dim": self.time_embed_dim,
                 "kernel_initializer": self.kernel_initializer,
             }

@@ -273,6 +273,14 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
 
         return concatenate_valid((summary_variables, inference_conditions), axis=-1)
 
+    @staticmethod
+    def resolve_decoder_time(encoder_network: keras.Layer, encoder_inputs: Tensor) -> Tensor | None:
+        """Return the explicit time vector consumed by the encoder, if one is configured."""
+        time_axis = getattr(encoder_network, "time_axis", None)
+        if time_axis is None:
+            return None
+        return encoder_inputs[..., time_axis]
+
     def resolve(
         self,
         *,
@@ -287,7 +295,8 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
         summary_mask: Tensor | None = None,
         inference_attention_mask: Tensor | None = None,
         inference_mask: Tensor | None = None,
-    ) -> tuple[Tensor | None, Tensor]:
+        return_decoder_time: bool = False,
+    ) -> tuple[Tensor | None, Tensor] | tuple[Tensor | None, Tensor, Tensor | None]:
         encoder_inputs = self.resolve_encoder_inputs(
             standardizer,
             inference_conditions,
@@ -295,6 +304,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             stage=stage,
             summary_mask=summary_mask,
         )
+        decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
         encoder_kwargs = filter_kwargs(
             {
                 "attention_mask": summary_attention_mask,
@@ -310,14 +320,22 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
         )
 
         if inference_variables is None:
+            if return_decoder_time:
+                return None, encoder_outputs, decoder_time
             return None, encoder_outputs
 
-        conditions = decoder_network(
-            inference_variables,
-            encoder_outputs,
-            target_mask=inference_mask,
-            encoder_mask=summary_mask,
-            attention_mask=inference_attention_mask,
-            training=stage == "training",
+        decoder_kwargs = filter_kwargs(
+            {
+                "time": decoder_time,
+                "target_mask": inference_mask,
+                "encoder_mask": summary_mask,
+                "attention_mask": inference_attention_mask,
+                "training": stage == "training",
+            },
+            decoder_network.call,
         )
+        conditions = decoder_network(inference_variables, encoder_outputs, **decoder_kwargs)
+
+        if return_decoder_time:
+            return conditions, encoder_outputs, decoder_time
         return conditions, encoder_outputs

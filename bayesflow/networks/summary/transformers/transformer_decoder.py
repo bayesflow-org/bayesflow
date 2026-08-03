@@ -15,6 +15,8 @@ class TransformerDecoder(keras.Layer):
     Each layer alternates the existing BayesFlow ``MultiHeadAttention``
     block between causal self-attention over shifted targets and unrestricted
     cross-attention over the complete encoded observation sequence.
+    If explicit timestamps are supplied, decoder Time2Vec embeddings use them;
+    otherwise they fall back to integer sequence positions.
     """
 
     def __init__(
@@ -109,6 +111,7 @@ class TransformerDecoder(keras.Layer):
         inference_variables: Tensor,
         encoder_outputs: Tensor,
         *,
+        time: Tensor | None = None,
         target_mask: Tensor | None = None,
         encoder_mask: Tensor | None = None,
         attention_mask: Tensor | None = None,
@@ -121,7 +124,8 @@ class TransformerDecoder(keras.Layer):
             (batch_size, 1, keras.ops.shape(inference_variables)[-1]),
         )
         shifted_targets = keras.ops.concatenate([bos, inference_variables[:, :-1]], axis=1)
-        x = self.target_projection(self.time_embedding(shifted_targets))
+        time = self._normalize_time(time, batch_size, num_steps, shifted_targets.dtype)
+        x = self.target_projection(self.time_embedding(shifted_targets, t=time))
 
         self_attention_mask = self._shift_attention_mask(
             target_mask,
@@ -155,7 +159,12 @@ class TransformerDecoder(keras.Layer):
 
         return self.output_projection(x)
 
-    def initialize_cache(self, encoder_outputs: Tensor, encoder_mask: Tensor | None = None) -> dict:
+    def initialize_cache(
+        self,
+        encoder_outputs: Tensor,
+        encoder_mask: Tensor | None = None,
+        time: Tensor | None = None,
+    ) -> dict:
         """Cache projected encoder keys and values for every cross-attention block."""
         encoder_attention_mask = None if encoder_mask is None else keras.ops.cast(encoder_mask[:, None, :], "bool")
         return {
@@ -165,6 +174,7 @@ class TransformerDecoder(keras.Layer):
             ],
             "self_key_values": [None] * self.num_layers,
             "encoder_attention_mask": encoder_attention_mask,
+            "time": time,
         }
 
     def decode_step(
@@ -173,6 +183,7 @@ class TransformerDecoder(keras.Layer):
         *,
         step: int,
         cache: dict,
+        time: Tensor | None = None,
         target_mask: Tensor | None = None,
         attention_mask: Tensor | None = None,
     ) -> tuple[Tensor, dict]:
@@ -186,7 +197,7 @@ class TransformerDecoder(keras.Layer):
         else:
             shifted_target = previous_target[:, None, :]
 
-        time = keras.ops.full((batch_size, 1), step, dtype=shifted_target.dtype)
+        time = self._step_time(time if time is not None else cache.get("time"), step, batch_size, shifted_target.dtype)
         x = self.target_projection(self.time_embedding(shifted_target, t=time))
 
         self_attention_mask = None
@@ -234,6 +245,65 @@ class TransformerDecoder(keras.Layer):
             x = self.output_norm(x, training=False)
         condition = self.output_projection(x)[:, 0]
         return condition, cache | {"self_key_values": new_self_key_values}
+
+    @staticmethod
+    def _normalize_time(
+        time: Tensor | None,
+        batch_size: int,
+        num_steps: int,
+        dtype: str,
+    ) -> Tensor | None:
+        if time is None:
+            return None
+
+        if keras.ops.ndim(time) == 3:
+            if time.shape[-1] not in (1, None):
+                raise ValueError(
+                    "Decoder time must have shape (sequence_length,), (batch_size, sequence_length), "
+                    "or (batch_size, sequence_length, 1)."
+                )
+            time = keras.ops.squeeze(time, axis=-1)
+
+        if keras.ops.ndim(time) == 1:
+            time = keras.ops.broadcast_to(time[None, :], (batch_size, num_steps))
+        elif keras.ops.ndim(time) != 2:
+            raise ValueError(
+                "Decoder time must have shape (sequence_length,), (batch_size, sequence_length), "
+                "or (batch_size, sequence_length, 1)."
+            )
+
+        return keras.ops.cast(time, dtype)
+
+    @classmethod
+    def _step_time(
+        cls,
+        time: Tensor | None,
+        step: int,
+        batch_size: int,
+        dtype: str,
+    ) -> Tensor:
+        if time is None:
+            return keras.ops.full((batch_size, 1), step, dtype=dtype)
+
+        if keras.ops.ndim(time) == 3:
+            if time.shape[-1] not in (1, None):
+                raise ValueError(
+                    "Decoder time must have shape (sequence_length,), (batch_size, sequence_length), "
+                    "or (batch_size, sequence_length, 1)."
+                )
+            time = keras.ops.squeeze(time, axis=-1)
+
+        if keras.ops.ndim(time) == 1:
+            step_time = keras.ops.broadcast_to(time[step : step + 1][None, :], (batch_size, 1))
+        elif keras.ops.ndim(time) == 2:
+            step_time = time[:, step : step + 1]
+        else:
+            raise ValueError(
+                "Decoder time must have shape (sequence_length,), (batch_size, sequence_length), "
+                "or (batch_size, sequence_length, 1)."
+            )
+
+        return keras.ops.cast(step_time, dtype)
 
     @staticmethod
     def _shift_attention_mask(

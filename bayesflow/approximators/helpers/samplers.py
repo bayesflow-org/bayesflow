@@ -6,7 +6,14 @@ import keras
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
-from bayesflow.utils import MaskName, slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
+from bayesflow.utils import (
+    MaskName,
+    dim_maybe_nested,
+    filter_kwargs,
+    repeat_and_flatten,
+    slice_maybe_nested,
+    tree_concatenate,
+)
 from bayesflow.types import Tensor
 
 
@@ -156,7 +163,7 @@ class Sampler:
 
 @serializable("bayesflow.approximators")
 class AutoregressiveSampler(Sampler):
-    """Sample trajectories with an incrementally cached transformer decoder."""
+    """Sample trajectories with an incrementally cached autoregressive decoder."""
 
     def _sample_batch(
         self,
@@ -167,6 +174,7 @@ class AutoregressiveSampler(Sampler):
         conditions: Tensor | None,
         sample_shape,
         num_steps: int,
+        time: Tensor | None = None,
         encoder_mask: Tensor | None = None,
         target_mask: Tensor | None = None,
         target_attention_mask: Tensor | None = None,
@@ -178,6 +186,7 @@ class AutoregressiveSampler(Sampler):
             raise ValueError("AutoregressiveSampler requires encoded observations.")
 
         encoder_outputs = self.repeat_and_flatten_conditions(conditions, num_samples)
+        time = self.repeat_and_flatten_conditions(time, num_samples)
         encoder_mask = self.repeat_and_flatten_conditions(encoder_mask, num_samples)
         target_mask = self.repeat_and_flatten_conditions(target_mask, num_samples)
         target_attention_mask = self.repeat_and_flatten_conditions(target_attention_mask, num_samples)
@@ -189,7 +198,14 @@ class AutoregressiveSampler(Sampler):
             for key, value in kwargs.items()
         }
 
-        cache = decoder_network.initialize_cache(encoder_outputs, encoder_mask=encoder_mask)
+        cache_kwargs = filter_kwargs(
+            {
+                "encoder_mask": encoder_mask,
+                "time": time,
+            },
+            decoder_network.initialize_cache,
+        )
+        cache = decoder_network.initialize_cache(encoder_outputs, **cache_kwargs)
         previous_target = None
         generated = []
 

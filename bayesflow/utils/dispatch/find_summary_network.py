@@ -35,6 +35,16 @@ def _(name: str, *args, **kwargs):
 
             return TimeSeriesNetwork(*args, **kwargs)
 
+        case "recurrent_net":
+            from bayesflow.networks import RecurrentNet
+
+            return RecurrentNet(*args, **kwargs)
+
+        case "memory_decoder":
+            from bayesflow.networks import MemoryDecoder
+
+            return MemoryDecoder(*args, **kwargs)
+
         case unknown_network:
             raise ValueError(f"Unknown summary network: '{unknown_network}'")
 

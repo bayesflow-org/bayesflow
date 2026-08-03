@@ -38,7 +38,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
         inference_network: InferenceNetwork,
         adapter: Adapter | None = None,
         encoder_network: keras.Layer | None = None,
-        decoder_network: TransformerDecoder | None = None,
+        decoder_network: keras.Layer | None = None,
         standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
@@ -96,7 +96,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             mask=inference_mask,
         )
 
-        conditions, _ = self.condition_builder.resolve(
+        conditions, _, _ = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -108,6 +108,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             summary_mask=summary_mask,
             inference_attention_mask=inference_attention_mask,
             inference_mask=inference_mask,
+            return_decoder_time=True,
         )
 
         inference_metrics = self.inference_network.compute_metrics(
@@ -142,7 +143,8 @@ class AutoregressiveApproximator(ContinuousApproximator):
 
         adapted = self.adapter(conditions, strict=False, stage="inference")
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
-        _, encoder_outputs = self.condition_builder.resolve(
+
+        _, encoder_outputs, decoder_time = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -152,6 +154,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             stage="inference",
             summary_attention_mask=adapted.get("summary_attention_mask"),
             summary_mask=adapted.get("summary_mask"),
+            return_decoder_time=True,
         )
 
         kwargs = self._maybe_standardize_fixed_target_value(kwargs)
@@ -165,6 +168,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             sample_shape=sample_shape,
             seed=resolve_seed(seed),
             num_steps=keras.ops.shape(encoder_outputs)[1],
+            time=decoder_time,
             encoder_mask=adapted.get("summary_mask"),
             target_mask=adapted.get("inference_mask"),
             target_attention_mask=adapted.get("inference_attention_mask"),
@@ -210,7 +214,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             log_det_jac=True,
             mask=adapted.get("inference_mask"),
         )
-        conditions, _ = self.condition_builder.resolve(
+        conditions, _, _ = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -222,6 +226,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             summary_mask=adapted.get("summary_mask"),
             inference_attention_mask=adapted.get("inference_attention_mask"),
             inference_mask=adapted.get("inference_mask"),
+            return_decoder_time=True,
         )
 
         inference_kwargs = {key: value for key, value in kwargs.items() if key != "batch_size"}

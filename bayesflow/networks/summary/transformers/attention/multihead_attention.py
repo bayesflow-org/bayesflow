@@ -107,6 +107,7 @@ class MultiHeadAttention(keras.Layer):
         y: Tensor,
         training: bool = False,
         attention_mask: Tensor = None,
+        use_causal_mask: bool = False,
     ) -> Tensor:
         """Performs the forward pass through the Pre-LN attention block.
 
@@ -121,6 +122,9 @@ class MultiHeadAttention(keras.Layer):
         attention_mask : Tensor, optional
             Boolean mask broadcastable to ``(B, num_heads, seq_len_x, seq_len_y)``
             where 1 = attend, 0 = mask.
+        use_causal_mask : bool, optional
+            Whether query position ``i`` may only attend to key positions up to
+            and including ``i``, by default False.
 
         Returns
         -------
@@ -133,7 +137,12 @@ class MultiHeadAttention(keras.Layer):
         query = self.ln_attn(x, training=training) if self.ln_attn is not None else x
         key_value = self.ln_kv(y, training=training) if self.ln_kv is not None else y
         x = x + self.attention(
-            query=query, key=key_value, value=key_value, training=training, attention_mask=attention_mask
+            query=query,
+            key=key_value,
+            value=key_value,
+            training=training,
+            attention_mask=attention_mask,
+            use_causal_mask=use_causal_mask,
         )
 
         # FFN sublayer: Pre-LN -> FFN -> residual
@@ -141,6 +150,60 @@ class MultiHeadAttention(keras.Layer):
         x = x + self.feedforward(ffn_in, training=training)
 
         return x
+
+    def prepare_key_value(self, y: Tensor, training: bool = False) -> tuple[Tensor, Tensor]:
+        """Project keys and values once for incremental attention.
+
+        This uses the projections owned by the underlying optimized Keras
+        ``MultiHeadAttention`` layer. The returned tensors can be reused by
+        :meth:`call_with_cache` without projecting the same context again.
+        """
+        key_value = self.ln_kv(y, training=training) if self.ln_kv is not None else y
+        return self.attention.key_dense(key_value), self.attention.value_dense(key_value)
+
+    def call_with_cache(
+        self,
+        x: Tensor,
+        *,
+        y: Tensor | None = None,
+        key_value_cache: tuple[Tensor, Tensor] | None = None,
+        append_key_value: bool = False,
+        training: bool = False,
+        attention_mask: Tensor | None = None,
+    ) -> tuple[Tensor, tuple[Tensor, Tensor]]:
+        """Attend one query using cached projected keys and values.
+
+        ``append_key_value=True`` is used for autoregressive self-attention:
+        the current token's projections are appended to the prefix cache. For
+        cross-attention, pass the cache returned by :meth:`prepare_key_value`
+        and leave ``append_key_value=False``.
+        """
+        key_value_input = x if y is None else y
+        if append_key_value or key_value_cache is None:
+            current_key, current_value = self.prepare_key_value(key_value_input, training=training)
+            if key_value_cache is None:
+                key_value_cache = (current_key, current_value)
+            else:
+                key_value_cache = (
+                    keras.ops.concatenate([key_value_cache[0], current_key], axis=1),
+                    keras.ops.concatenate([key_value_cache[1], current_value], axis=1),
+                )
+
+        x = self.input_projector(x)
+        query = self.ln_attn(x, training=training) if self.ln_attn is not None else x
+        query = self.attention.query_dense(query)
+        attended, _ = self.attention._compute_attention(
+            query,
+            key_value_cache[0],
+            key_value_cache[1],
+            attention_mask=attention_mask,
+            training=training,
+            return_attention_scores=False,
+        )
+        x = x + self.attention.output_dense(attended)
+
+        ffn_in = self.ln_ffn(x, training=training) if self.ln_ffn is not None else x
+        return x + self.feedforward(ffn_in, training=training), key_value_cache
 
     def build(self, x_shape, y_shape):
         if self.built:

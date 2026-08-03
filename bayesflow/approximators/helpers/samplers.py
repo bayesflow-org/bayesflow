@@ -152,3 +152,76 @@ class Sampler:
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Sampler":
         return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable("bayesflow.approximators")
+class AutoregressiveSampler(Sampler):
+    """Sample trajectories with an incrementally cached transformer decoder."""
+
+    def _sample_batch(
+        self,
+        *,
+        inference_network: keras.Layer,
+        decoder_network: keras.Layer,
+        num_samples: int,
+        conditions: Tensor | None,
+        sample_shape,
+        num_steps: int,
+        encoder_mask: Tensor | None = None,
+        target_mask: Tensor | None = None,
+        target_attention_mask: Tensor | None = None,
+        masking_names=(),
+        seed=None,
+        **kwargs,
+    ):
+        if conditions is None:
+            raise ValueError("AutoregressiveSampler requires encoded observations.")
+
+        encoder_outputs = self.repeat_and_flatten_conditions(conditions, num_samples)
+        encoder_mask = self.repeat_and_flatten_conditions(encoder_mask, num_samples)
+        target_mask = self.repeat_and_flatten_conditions(target_mask, num_samples)
+        target_attention_mask = self.repeat_and_flatten_conditions(target_attention_mask, num_samples)
+
+        kwargs = {
+            key: self.repeat_and_flatten_conditions(value, num_samples)
+            if hasattr(value, "shape") and key not in masking_names
+            else value
+            for key, value in kwargs.items()
+        }
+
+        cache = decoder_network.initialize_cache(encoder_outputs, encoder_mask=encoder_mask)
+        previous_target = None
+        generated = []
+
+        for step in range(num_steps):
+            step_conditions, cache = decoder_network.decode_step(
+                previous_target,
+                step=step,
+                cache=cache,
+                target_mask=target_mask,
+                attention_mask=target_attention_mask,
+            )
+            step_kwargs = {
+                key: value[:, step]
+                if hasattr(value, "shape") and len(value.shape) >= 3 and value.shape[1] == num_steps
+                else value
+                for key, value in kwargs.items()
+            }
+
+            current_target = inference_network.sample(
+                (keras.ops.shape(encoder_outputs)[0],),
+                conditions=step_conditions,
+                seed=seed,
+                **step_kwargs,
+            )
+
+            if target_mask is not None:
+                current_target = current_target * keras.ops.cast(
+                    target_mask[:, step : step + 1],
+                    current_target.dtype,
+                )
+
+            generated.append(current_target)
+            previous_target = current_target
+
+        return self.unflatten_samples(keras.ops.stack(generated, axis=1), num_samples)

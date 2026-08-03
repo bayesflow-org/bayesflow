@@ -28,7 +28,7 @@ from .summary import ConvolutionalNetwork
 from .summary import DeepSet
 from .summary import FusionNetwork
 from .summary import TimeSeriesNetwork
-from .summary import SetTransformer, TimeSeriesTransformer, FusionTransformer
+from .summary import SetTransformer, TimeSeriesTransformer, TransformerDecoder, FusionTransformer
 
 # Subnets (backbones for inference / summary networks)
 from . import subnets

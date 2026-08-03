@@ -7,7 +7,14 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
-from bayesflow.utils import concatenate_valid, dim_maybe_nested, filter_kwargs, slice_maybe_nested, tree_concatenate
+from bayesflow.utils import (
+    concatenate_valid,
+    concatenate_valid_shapes,
+    dim_maybe_nested,
+    filter_kwargs,
+    slice_maybe_nested,
+    tree_concatenate,
+)
 
 
 @serializable("bayesflow.approximators")
@@ -224,3 +231,93 @@ class ConditionBuilder:
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "ConditionBuilder":
         return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable("bayesflow.approximators")
+class AutoregressiveConditionBuilder(ConditionBuilder):
+    """Resolve encoder inputs and causal decoder conditions for joint smoothing."""
+
+    @staticmethod
+    def encoder_input_shape(summary_shape: tuple, conditions_shape: tuple | None) -> tuple:
+        if conditions_shape is not None and len(conditions_shape) < len(summary_shape):
+            conditions_shape = tuple(summary_shape[:-1]) + (conditions_shape[-1],)
+        return concatenate_valid_shapes((summary_shape, conditions_shape), axis=-1)
+
+    @staticmethod
+    def resolve_encoder_inputs(
+        standardizer: keras.Layer,
+        inference_conditions: Tensor | None,
+        summary_variables: Tensor,
+        *,
+        stage: str,
+        summary_mask: Tensor | None = None,
+    ) -> Tensor:
+        summary_variables = standardizer.maybe_standardize(
+            summary_variables,
+            key="summary_variables",
+            stage=stage,
+            mask=summary_mask,
+        )
+        inference_conditions = standardizer.maybe_standardize(
+            inference_conditions,
+            key="inference_conditions",
+            stage=stage,
+        )
+
+        if inference_conditions is not None and len(inference_conditions.shape) < len(summary_variables.shape):
+            inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
+            inference_conditions = keras.ops.broadcast_to(
+                inference_conditions,
+                (*keras.ops.shape(summary_variables)[:-1], keras.ops.shape(inference_conditions)[-1]),
+            )
+
+        return concatenate_valid((summary_variables, inference_conditions), axis=-1)
+
+    def resolve(
+        self,
+        *,
+        standardizer: keras.Layer,
+        encoder_network: keras.Layer,
+        decoder_network: keras.Layer,
+        inference_variables: Tensor | None,
+        inference_conditions: Tensor | None,
+        summary_variables: Tensor,
+        stage: str,
+        summary_attention_mask: Tensor | None = None,
+        summary_mask: Tensor | None = None,
+        inference_attention_mask: Tensor | None = None,
+        inference_mask: Tensor | None = None,
+    ) -> tuple[Tensor | None, Tensor]:
+        encoder_inputs = self.resolve_encoder_inputs(
+            standardizer,
+            inference_conditions,
+            summary_variables,
+            stage=stage,
+            summary_mask=summary_mask,
+        )
+        encoder_kwargs = filter_kwargs(
+            {
+                "attention_mask": summary_attention_mask,
+                "mask": summary_mask,
+            },
+            encoder_network.call,
+        )
+        encoder_kwargs = {key: value for key, value in encoder_kwargs.items() if value is not None}
+        encoder_outputs = encoder_network(
+            encoder_inputs,
+            training=stage == "training",
+            **encoder_kwargs,
+        )
+
+        if inference_variables is None:
+            return None, encoder_outputs
+
+        conditions = decoder_network(
+            inference_variables,
+            encoder_outputs,
+            target_mask=inference_mask,
+            encoder_mask=summary_mask,
+            attention_mask=inference_attention_mask,
+            training=stage == "training",
+        )
+        return conditions, encoder_outputs

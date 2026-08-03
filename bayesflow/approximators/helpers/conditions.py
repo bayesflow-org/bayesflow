@@ -10,6 +10,7 @@ from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils import (
     concatenate_valid,
     concatenate_valid_shapes,
+    call_accepts_kwarg,
     dim_maybe_nested,
     filter_kwargs,
     slice_maybe_nested,
@@ -304,7 +305,9 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             stage=stage,
             summary_mask=summary_mask,
         )
-        decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
+        decoder_time = None
+        if return_decoder_time or call_accepts_kwarg(decoder_network.call, "time"):
+            decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
         encoder_kwargs = filter_kwargs(
             {
                 "attention_mask": summary_attention_mask,
@@ -324,16 +327,20 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
                 return None, encoder_outputs, decoder_time
             return None, encoder_outputs
 
-        decoder_kwargs = filter_kwargs(
-            {
-                "time": decoder_time,
-                "target_mask": inference_mask,
-                "encoder_mask": summary_mask,
-                "attention_mask": inference_attention_mask,
-                "training": stage == "training",
-            },
-            decoder_network.call,
-        )
+        decoder_kwargs = {
+            key: value
+            for key, value in filter_kwargs(
+                {
+                    "time": decoder_time,
+                    "target_mask": inference_mask,
+                    "encoder_mask": summary_mask,
+                    "attention_mask": inference_attention_mask,
+                    "training": stage == "training",
+                },
+                decoder_network.call,
+            ).items()
+            if key == "training" or value is not None
+        }
         conditions = decoder_network(inference_variables, encoder_outputs, **decoder_kwargs)
 
         if return_decoder_time:

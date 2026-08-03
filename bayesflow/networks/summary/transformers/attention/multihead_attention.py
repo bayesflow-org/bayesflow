@@ -23,6 +23,25 @@ class MultiHeadAttention(keras.Layer):
         In International conference on machine learning (pp. 3744-3753). PMLR.
     [2] Xiong, R. et al. (2020). On layer normalization in the transformer architecture. ICML.
     [3] Shazeer, N. (2020). GLU variants improve transformer. arXiv:2002.05202.
+
+    Parameters
+    ----------
+    embed_dim : int, optional
+        Dimensionality of the embedding space, by default 64.
+    num_heads : int, optional
+        Number of attention heads, by default 4.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    kernel_initializer : str, optional
+        Weight initializer for all dense projections, by default ``"glorot_uniform"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense projections, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
     """
 
     def __init__(
@@ -37,32 +56,6 @@ class MultiHeadAttention(keras.Layer):
         layer_norm: bool = True,
         **kwargs,
     ):
-        """
-        Parameters
-        ----------
-        embed_dim : int, optional
-            Dimensionality of the embedding space, by default 64.
-        num_heads : int, optional
-            Number of attention heads, by default 4.
-        dropout : float, optional
-            Dropout rate applied inside the attention sublayer, by default 0.05.
-        expansion_factor : float, optional
-            FFN intermediate width multiplier (before the 2/3 GLU correction),
-            by default 4.0.
-        glu_variant : str, optional
-            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
-            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
-        kernel_initializer : str, optional
-            Weight initializer for all Dense projections, by default
-            ``"glorot_uniform"``.
-        use_bias : bool, optional
-            Whether to include bias terms in all Dense projections, by default
-            False (SOTA practice for transformer blocks).
-        layer_norm : bool, optional
-            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
-        **kwargs
-            Additional keyword arguments passed to ``keras.Layer``.
-        """
         super().__init__(**layer_kwargs(kwargs))
 
         if embed_dim % num_heads != 0:

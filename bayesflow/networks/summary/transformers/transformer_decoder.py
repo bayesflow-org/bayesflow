@@ -121,11 +121,7 @@ class TransformerDecoder(keras.Layer):
     ) -> Tensor:
         """Create all sequence conditions in parallel using teacher forcing."""
         batch_size, num_steps = keras.ops.shape(inference_variables)[:2]
-        bos = keras.ops.broadcast_to(
-            self.bos_embedding,
-            (batch_size, 1, keras.ops.shape(inference_variables)[-1]),
-        )
-        shifted_targets = keras.ops.concatenate([bos, inference_variables[:, :-1]], axis=1)
+        shifted_targets = self._shift_targets_with_bos(inference_variables, target_mask)
         time = self._normalize_time(time, batch_size, num_steps, shifted_targets.dtype)
         x = self.target_projection(self.time_embedding(shifted_targets, t=time))
 
@@ -172,17 +168,19 @@ class TransformerDecoder(keras.Layer):
     ) -> dict:
         """Cache projected encoder keys and values for every cross-attention block."""
         encoder_attention_mask = None if encoder_mask is None else keras.ops.cast(encoder_mask[:, None, :], "bool")
-        return {
+        cache = {
             "cross_key_values": [
                 attention.prepare_key_value(encoder_outputs, training=False)
                 for attention in self.cross_attention_blocks
             ],
             "self_key_values": [None] * self.num_layers,
-            "encoder_outputs": encoder_outputs,
-            "encoder_mask": encoder_mask,
             "encoder_attention_mask": encoder_attention_mask,
             "time": time,
         }
+        if self.include_condition:
+            cache["encoder_outputs"] = encoder_outputs
+            cache["encoder_mask"] = encoder_mask
+        return cache
 
     def decode_step(
         self,
@@ -202,6 +200,11 @@ class TransformerDecoder(keras.Layer):
                 (batch_size, 1, keras.ops.shape(self.bos_embedding)[-1]),
             )
         else:
+            if target_mask is not None and step > 0:
+                previous_target = previous_target * keras.ops.cast(
+                    target_mask[:, step - 1 : step],
+                    previous_target.dtype,
+                )
             shifted_target = previous_target[:, None, :]
 
         time = self._step_time(time if time is not None else cache.get("time"), step, batch_size, shifted_target.dtype)
@@ -260,6 +263,22 @@ class TransformerDecoder(keras.Layer):
                 )
             condition = keras.ops.concatenate([condition, step_condition], axis=-1)
         return condition, cache | {"self_key_values": new_self_key_values}
+
+    def _shift_targets_with_bos(self, inference_variables: Tensor, target_mask: Tensor | None) -> Tensor:
+        batch_size = keras.ops.shape(inference_variables)[0]
+        bos = keras.ops.broadcast_to(
+            self.bos_embedding,
+            (batch_size, 1, keras.ops.shape(inference_variables)[-1]),
+        )
+        shifted_targets = keras.ops.concatenate([bos, inference_variables[:, :-1]], axis=1)
+        if target_mask is None:
+            return shifted_targets
+
+        shifted_mask = keras.ops.concatenate(
+            [keras.ops.ones((batch_size, 1), dtype=target_mask.dtype), target_mask[:, :-1]],
+            axis=1,
+        )
+        return shifted_targets * keras.ops.cast(shifted_mask[..., None], shifted_targets.dtype)
 
     @staticmethod
     def _attach_condition(

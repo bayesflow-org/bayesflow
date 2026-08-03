@@ -7,7 +7,7 @@ import numpy as np
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, TimeSeriesTransformer, TransformerDecoder
 from bayesflow.types import Tensor
-from bayesflow.utils import split_arrays
+from bayesflow.utils import call_accepts_kwarg, split_arrays
 from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serialize, serializable
 
@@ -96,7 +96,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             mask=inference_mask,
         )
 
-        conditions, _, _ = self.condition_builder.resolve(
+        conditions, _ = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -108,7 +108,6 @@ class AutoregressiveApproximator(ContinuousApproximator):
             summary_mask=summary_mask,
             inference_attention_mask=inference_attention_mask,
             inference_mask=inference_mask,
-            return_decoder_time=True,
         )
 
         inference_metrics = self.inference_network.compute_metrics(
@@ -144,7 +143,8 @@ class AutoregressiveApproximator(ContinuousApproximator):
         adapted = self.adapter(conditions, strict=False, stage="inference")
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        _, encoder_outputs, decoder_time = self.condition_builder.resolve(
+        return_decoder_time = call_accepts_kwarg(self.decoder_network.initialize_cache, "time")
+        resolved_conditions = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -154,8 +154,13 @@ class AutoregressiveApproximator(ContinuousApproximator):
             stage="inference",
             summary_attention_mask=adapted.get("summary_attention_mask"),
             summary_mask=adapted.get("summary_mask"),
-            return_decoder_time=True,
+            return_decoder_time=return_decoder_time,
         )
+        if return_decoder_time:
+            _, encoder_outputs, decoder_time = resolved_conditions
+        else:
+            _, encoder_outputs = resolved_conditions
+            decoder_time = None
 
         kwargs = self._maybe_standardize_fixed_target_value(kwargs)
         kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
@@ -214,7 +219,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             log_det_jac=True,
             mask=adapted.get("inference_mask"),
         )
-        conditions, _, _ = self.condition_builder.resolve(
+        conditions, _ = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
             decoder_network=self.decoder_network,
@@ -226,7 +231,6 @@ class AutoregressiveApproximator(ContinuousApproximator):
             summary_mask=adapted.get("summary_mask"),
             inference_attention_mask=adapted.get("inference_attention_mask"),
             inference_mask=adapted.get("inference_mask"),
-            return_decoder_time=True,
         )
 
         inference_kwargs = {key: value for key, value in kwargs.items() if key != "batch_size"}

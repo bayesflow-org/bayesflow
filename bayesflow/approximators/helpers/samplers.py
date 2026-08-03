@@ -205,7 +205,16 @@ class AutoregressiveSampler(Sampler):
             },
             decoder_network.initialize_cache,
         )
+        cache_kwargs = {key: value for key, value in cache_kwargs.items() if value is not None}
         cache = decoder_network.initialize_cache(encoder_outputs, **cache_kwargs)
+        decode_kwargs = filter_kwargs(
+            {
+                "target_mask": target_mask,
+                "attention_mask": target_attention_mask,
+            },
+            decoder_network.decode_step,
+        )
+        decode_kwargs = {key: value for key, value in decode_kwargs.items() if value is not None}
         previous_target = None
         generated = []
 
@@ -214,8 +223,7 @@ class AutoregressiveSampler(Sampler):
                 previous_target,
                 step=step,
                 cache=cache,
-                target_mask=target_mask,
-                attention_mask=target_attention_mask,
+                **decode_kwargs,
             )
             step_kwargs = {
                 key: value[:, step]

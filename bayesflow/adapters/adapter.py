@@ -553,7 +553,7 @@ class Adapter(MutableSequence[Transform]):
         upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
-        epsilon: float = 1e-15,
+        epsilon: float = 1e-6,
     ):
         """Append a :py:class:`~transforms.Constrain` transform to the adapter.
 

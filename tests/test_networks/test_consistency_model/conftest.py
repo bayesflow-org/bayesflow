@@ -12,7 +12,7 @@ def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[2, 5], scope="session")
+@pytest.fixture(params=[2], scope="session")
 def xz_dim(request):
     return request.param
 

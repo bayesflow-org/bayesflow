@@ -37,7 +37,7 @@ def concatenate_valid_shapes(tensor_shapes: Sequence[Shape | None], axis: int = 
     return output_shape
 
 
-def repeat_valid(x: Tensor, repeats: int, axis: int = 0) -> Tensor | None:
+def repeat_valid(x: Tensor | None, repeats: int, axis: int = 0) -> Tensor | None:
     """Repeat tensor along axis, ignoring None values."""
     if x is None:
         return None

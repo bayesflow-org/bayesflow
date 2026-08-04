@@ -222,9 +222,9 @@ class ContinuousApproximator(Approximator):
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
-        numpy: bool = True,
+        to_numpy: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | Tensor]:
         """
         Generates samples from the approximator given input conditions. The `conditions` dictionary is preprocessed
         using the `adapter`. Samples are converted to NumPy arrays after inference.
@@ -256,6 +256,9 @@ class ContinuousApproximator(Approximator):
             Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
             and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
             as-is. If ``None`` (default), each component uses its own instance seed generator.
+        to_numpy: bool, optional
+            If True, the returned samples be converted to numpy arrays
+            (as opposed to returned as keras backend tensors).
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -291,7 +294,7 @@ class ContinuousApproximator(Approximator):
             lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
-        if numpy:
+        if to_numpy:
             samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         if return_summaries and summary_outputs is not None:
@@ -302,7 +305,7 @@ class ContinuousApproximator(Approximator):
 
         return samples
 
-    def log_prob(self, data: Mapping[str, np.ndarray], numpy: bool = True, **kwargs) -> np.ndarray:
+    def log_prob(self, data: Mapping[str, np.ndarray], to_numpy: bool = True, **kwargs) -> np.ndarray | Tensor:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -311,6 +314,9 @@ class ContinuousApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Dictionary of observed data as NumPy arrays.
+        to_numpy: bool, optional
+            If True, the returned log-probability be converted to a numpy array
+            (as opposed to returned as keras backend tensor).
         **kwargs : dict
             Additional keyword arguments for the adapter and log-probability computation.
 
@@ -352,7 +358,7 @@ class ContinuousApproximator(Approximator):
 
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
 
-        if numpy:
+        if to_numpy:
             log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
         return log_prob

@@ -1,4 +1,5 @@
 import pandas as pd
+import keras
 import keras.ops as ops
 
 from bayesflow.types import Tensor
@@ -29,7 +30,7 @@ class ToDict(Transform):
                 if value.dtype == "category":
                     value = pd.get_dummies(value)
 
-                value = ops.convert_to_tensor(value, dtype="float32")
+                value = ops.convert_to_tensor(value, dtype=keras.backend.floatx())
 
             data[key] = value
 

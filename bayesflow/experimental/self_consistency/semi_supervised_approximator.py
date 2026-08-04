@@ -113,7 +113,7 @@ class SemiSupervisedApproximator(Approximator):
 
         return metrics
 
-    def sample(self, *, approximator: str, numpy: bool = True, **kwargs):
+    def sample(self, *, approximator: str, to_numpy: bool = True, **kwargs):
         """
         Generates samples from one of the approximator (specified by its name) given input conditions.
         **kwargs are passed to the approximator.sample method.
@@ -124,7 +124,7 @@ class SemiSupervisedApproximator(Approximator):
             raise AttributeError(f"approximator `{approximator}` does not have a `sample` method.")
 
         samples = self.adapter(samples, inverse=True)
-        if numpy:
+        if to_numpy:
             samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         return samples

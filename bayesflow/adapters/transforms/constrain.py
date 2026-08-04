@@ -64,7 +64,7 @@ class Constrain(ElementwiseTransform):
         upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
-        epsilon: float = 1e-15,
+        epsilon: float = 1e-6,
     ):
         super().__init__()
 

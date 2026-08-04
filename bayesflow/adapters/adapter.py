@@ -1,4 +1,5 @@
 from collections.abc import Callable, MutableSequence, Sequence
+from typing import Any
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
@@ -59,17 +60,17 @@ class Adapter(MutableSequence[Transform]):
     ----------
     transforms : Sequence[Transform], optional
         The sequence of transforms to execute.
-    device_name: str, optional
+    device: str, optional
         Passed to keras.device to specify on which device to apply the adapter.
     """
 
-    def __init__(self, transforms: Sequence[Transform] | None = None, device_name: str = "cpu"):
+    def __init__(self, transforms: Sequence[Transform] | None = None, device: str = "cpu"):
         if transforms is None:
             transforms = []
 
         self.transforms = list(transforms)
 
-        self.device_name = device_name
+        self.device = device
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -103,7 +104,7 @@ class Adapter(MutableSequence[Transform]):
         return serialize(config)
 
     def forward(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the forward direction.
 
@@ -136,13 +137,13 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
-        data : dict[str, any]
+        data : dict[str, Any]
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
@@ -168,13 +169,13 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, Any], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
         Parameters
         ----------
-        data : Mapping[str, any]
+        data : Mapping[str, Any]
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
@@ -187,12 +188,12 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
-        if self.device_name is None:
+        if self.device is None:
             if inverse:
                 return self.inverse(data, **kwargs)
             return self.forward(data, **kwargs)
 
-        with keras.device(self.device_name):
+        with keras.device(self.device):
             if inverse:
                 data = self.inverse(data, **kwargs)
             else:

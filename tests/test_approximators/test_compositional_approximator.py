@@ -1,6 +1,7 @@
 """Tests for compositional sampling and prior score computation with adapters."""
 
 import numpy as np
+import keras
 
 from bayesflow import CompositionalApproximator
 
@@ -11,6 +12,12 @@ def mock_prior_score_original_space(data_dict, time):
 
     # Simple prior: N(0,1) for loc
     loc_score = -loc
+    # Convert time to CPU to avoid issues with MPS tensors on macOS
+    if keras.backend.backend() == "torch":
+        import torch
+
+        if isinstance(time, torch.Tensor):
+            time = time.cpu().detach().numpy()
     return {"loc": (1.0 - time) * loc_score}
 
 

@@ -102,7 +102,7 @@ def test_compositional_masking():
             keras.ops.zeros(1),  # param 2 is fixed
         )
     )
-    fixed_target_mask = np.broadcast_to(fixed_target_mask, (5, 2))
+    fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, (5, 2))
     targets_fixed = test_conditions_adapted["inference_variables"]
 
     fixed_samples = workflow.compositional_sample(

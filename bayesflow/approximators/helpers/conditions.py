@@ -10,7 +10,6 @@ from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils import (
     concatenate_valid,
     concatenate_valid_shapes,
-    call_accepts_kwarg,
     dim_maybe_nested,
     filter_kwargs,
     slice_maybe_nested,
@@ -282,22 +281,18 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             return None
         return encoder_inputs[..., time_axis]
 
-    def resolve(
+    def resolve_encoder(
         self,
         *,
         standardizer: keras.Layer,
         encoder_network: keras.Layer,
-        decoder_network: keras.Layer,
-        inference_variables: Tensor | None,
         inference_conditions: Tensor | None,
         summary_variables: Tensor,
         stage: str,
         summary_attention_mask: Tensor | None = None,
         summary_mask: Tensor | None = None,
-        inference_attention_mask: Tensor | None = None,
-        inference_mask: Tensor | None = None,
-        return_decoder_time: bool = False,
-    ) -> tuple[Tensor | None, Tensor] | tuple[Tensor | None, Tensor, Tensor | None]:
+    ) -> tuple[Tensor, Tensor | None]:
+        """Resolve encoder outputs and the explicit decoder time vector, if configured."""
         encoder_inputs = self.resolve_encoder_inputs(
             standardizer,
             inference_conditions,
@@ -305,9 +300,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             stage=stage,
             summary_mask=summary_mask,
         )
-        decoder_time = None
-        if return_decoder_time or call_accepts_kwarg(decoder_network.call, "time"):
-            decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
+        decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
         encoder_kwargs = filter_kwargs(
             {
                 "attention_mask": summary_attention_mask,
@@ -321,11 +314,32 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             training=stage == "training",
             **encoder_kwargs,
         )
+        return encoder_outputs, decoder_time
 
-        if inference_variables is None:
-            if return_decoder_time:
-                return None, encoder_outputs, decoder_time
-            return None, encoder_outputs
+    def resolve(
+        self,
+        *,
+        standardizer: keras.Layer,
+        encoder_network: keras.Layer,
+        decoder_network: keras.Layer,
+        inference_variables: Tensor,
+        inference_conditions: Tensor | None,
+        summary_variables: Tensor,
+        stage: str,
+        summary_attention_mask: Tensor | None = None,
+        summary_mask: Tensor | None = None,
+        inference_attention_mask: Tensor | None = None,
+        inference_mask: Tensor | None = None,
+    ) -> tuple[Tensor, Tensor]:
+        encoder_outputs, decoder_time = self.resolve_encoder(
+            standardizer=standardizer,
+            encoder_network=encoder_network,
+            inference_conditions=inference_conditions,
+            summary_variables=summary_variables,
+            stage=stage,
+            summary_attention_mask=summary_attention_mask,
+            summary_mask=summary_mask,
+        )
 
         decoder_kwargs = {
             key: value
@@ -342,7 +356,4 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             if key == "training" or value is not None
         }
         conditions = decoder_network(inference_variables, encoder_outputs, **decoder_kwargs)
-
-        if return_decoder_time:
-            return conditions, encoder_outputs, decoder_time
         return conditions, encoder_outputs

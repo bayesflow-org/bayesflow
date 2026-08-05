@@ -5,9 +5,10 @@ import keras
 import numpy as np
 
 from bayesflow.adapters import Adapter
-from bayesflow.networks import InferenceNetwork, TimeSeriesTransformer, TransformerDecoder
+from bayesflow.networks import InferenceNetwork, TimeSeriesTransformer
+from bayesflow.networks.decoders import TransformerDecoder
 from bayesflow.types import Tensor
-from bayesflow.utils import call_accepts_kwarg, split_arrays
+from bayesflow.utils import split_arrays
 from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serialize, serializable
 
@@ -17,19 +18,31 @@ from .helpers import AutoregressiveConditionBuilder, AutoregressiveSampler
 
 @serializable("bayesflow.approximators")
 class AutoregressiveApproximator(ContinuousApproximator):
-    r"""Estimate a joint smoothing distribution with an ordinary inference network.
+    """Estimate a joint smoothing or filtering distribution with an arbitrary inference network.
 
-    The approximator factorizes
+    A bidirectional encoder represents the complete conditions sequence and
+    learns a smoothing representation using past and future conditions. A causal
+    decoder combines this representation with shifted targets to learn the
+    filtering distribution over each target given the preceding targets.
+    Training and density evaluation operate on complete sequence tensors, while
+    sampling advances the decoder autoregressively using efficient caching.
 
-    .. math::
-
-        p(\theta_{1:T}\mid x_{1:T}) = \prod_{t=1}^T
-        p(\theta_t\mid x_{1:T}, \theta_{1:t-1}).
-
-    An encoder represents the complete observation sequence. A causal decoder
-    combines that representation with shifted targets to produce one condition
-    per time point. Training and density evaluation operate on complete sequence
-    tensors; sampling advances the decoder autoregressively with attention caches.
+    Parameters
+    ----------
+    inference_network : InferenceNetwork
+        Network used to estimate the conditional target distribution.
+    adapter : Adapter or None, optional
+        Adapter used to transform input data.
+    encoder_network : keras.Layer or None, optional
+        Network used to encode the complete conditions sequence. If `None`, a
+        `TimeSeriesTransformer` with `return_sequences=True` is used.
+    decoder_network : keras.Layer or None, optional
+        Causal network used to combine encoded conditions with shifted targets.
+        If `None`, a `TransformerDecoder` is used.
+    standardize : str, sequence of str, or None, optional
+        Variables to standardize. Defaults to `"inference_variables"`.
+    **kwargs
+        Additional keyword arguments passed to `ContinuousApproximator`.
     """
 
     def __init__(
@@ -143,27 +156,19 @@ class AutoregressiveApproximator(ContinuousApproximator):
         adapted = self.adapter(conditions, strict=False, stage="inference")
         adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
-        return_decoder_time = call_accepts_kwarg(self.decoder_network.initialize_cache, "time")
-        resolved_conditions = self.condition_builder.resolve(
+        encoder_outputs, decoder_time = self.condition_builder.resolve_encoder(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,
-            decoder_network=self.decoder_network,
-            inference_variables=None,
             inference_conditions=adapted.get("inference_conditions"),
             summary_variables=adapted.get("summary_variables"),
             stage="inference",
             summary_attention_mask=adapted.get("summary_attention_mask"),
             summary_mask=adapted.get("summary_mask"),
-            return_decoder_time=return_decoder_time,
         )
-        if return_decoder_time:
-            _, encoder_outputs, decoder_time = resolved_conditions
-        else:
-            _, encoder_outputs = resolved_conditions
-            decoder_time = None
 
         kwargs = self._maybe_standardize_fixed_target_value(kwargs)
         kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
+
         samples = self.sampler.sample(
             inference_network=self.inference_network,
             decoder_network=self.decoder_network,
@@ -219,6 +224,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             log_det_jac=True,
             mask=adapted.get("inference_mask"),
         )
+
         conditions, _ = self.condition_builder.resolve(
             standardizer=self.standardizer,
             encoder_network=self.encoder_network,

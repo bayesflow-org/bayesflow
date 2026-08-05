@@ -182,9 +182,6 @@ class AutoregressiveSampler(Sampler):
         seed=None,
         **kwargs,
     ):
-        if conditions is None:
-            raise ValueError("AutoregressiveSampler requires encoded observations.")
-
         encoder_outputs = self.repeat_and_flatten_conditions(conditions, num_samples)
         time = self.repeat_and_flatten_conditions(time, num_samples)
         encoder_mask = self.repeat_and_flatten_conditions(encoder_mask, num_samples)

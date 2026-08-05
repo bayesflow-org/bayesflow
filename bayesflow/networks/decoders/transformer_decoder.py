@@ -1,11 +1,10 @@
 import keras
 
 from bayesflow.networks.helpers import Time2Vec
+from bayesflow.networks.summary.transformers.attention import MultiHeadAttention
 from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-
-from .attention import MultiHeadAttention
 
 
 @serializable("bayesflow.networks")

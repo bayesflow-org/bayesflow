@@ -1,8 +1,12 @@
 import numpy as np
 import keras
+import pytest
 
+from bayesflow import AutoregressiveApproximator
 from bayesflow.approximators.helpers import AutoregressiveConditionBuilder, AutoregressiveSampler
-from bayesflow.networks import TransformerDecoder
+from bayesflow.networks import CouplingFlow, TimeSeriesTransformer
+from bayesflow.networks.decoders import RecurrentDecoder, TransformerDecoder
+from tests.utils import assert_models_equal
 
 
 class NoOpStandardizer:
@@ -39,6 +43,70 @@ class EchoInferenceNetwork:
         return conditions
 
 
+@pytest.fixture(params=["recurrent", "transformer"])
+def autoregressive_approximator(request):
+    if request.param == "recurrent":
+        decoder = RecurrentDecoder(hidden_dim=8)
+    else:
+        decoder = TransformerDecoder(
+            summary_dim=4,
+            embed_dim=8,
+            num_layers=1,
+            num_heads=2,
+            dropout=0.0,
+            time_embed_dim=4,
+        )
+
+    return AutoregressiveApproximator(
+        inference_network=CouplingFlow(
+            depth=1,
+            permutation=None,
+            use_actnorm=False,
+            subnet_kwargs={"widths": (8, 8)},
+        ),
+        encoder_network=TimeSeriesTransformer(
+            summary_dim=4,
+            embed_dims=(8,),
+            num_heads=(2,),
+            dropout=0.0,
+            time_embed_dim=4,
+            time_axis=2,
+            return_sequences=True,
+        ),
+        decoder_network=decoder,
+        standardize=None,
+    )
+
+
+@pytest.fixture
+def autoregressive_data():
+    rng = np.random.default_rng(123)
+    batch_size, num_steps = 3, 5
+    time = np.broadcast_to(np.arange(num_steps, dtype="float32"), (batch_size, num_steps))
+    summary_variables = np.concatenate(
+        [rng.normal(size=(batch_size, num_steps, 2)).astype("float32"), time[..., None]],
+        axis=-1,
+    )
+    inference_mask = np.array(
+        [
+            [True, True, True, False, False],
+            [True, True, True, True, False],
+            [True, True, False, False, False],
+        ]
+    )
+    return {
+        "inference_variables": rng.normal(size=(batch_size, num_steps, 2)).astype("float32"),
+        "summary_variables": summary_variables,
+        "summary_mask": inference_mask.copy(),
+        "inference_mask": inference_mask,
+    }
+
+
+def build_approximator(approximator, data):
+    data_shapes = {key: value.shape for key, value in data.items()}
+    approximator.build(data_shapes)
+
+
 def test_condition_builder_uses_encoder_time_axis_for_decoder_time():
     summary_variables = keras.ops.convert_to_tensor(
         np.array(
@@ -51,7 +119,15 @@ def test_condition_builder_uses_encoder_time_axis_for_decoder_time():
     )
     inference_variables = keras.ops.zeros((2, 3, 2))
 
-    conditions, _, decoder_time = AutoregressiveConditionBuilder().resolve(
+    builder = AutoregressiveConditionBuilder()
+    encoder_outputs, decoder_time = builder.resolve_encoder(
+        standardizer=NoOpStandardizer(),
+        encoder_network=TimeAxisEncoder(time_axis=1),
+        inference_conditions=None,
+        summary_variables=summary_variables,
+        stage="inference",
+    )
+    conditions, _ = builder.resolve(
         standardizer=NoOpStandardizer(),
         encoder_network=TimeAxisEncoder(time_axis=1),
         decoder_network=TimeEchoDecoder(),
@@ -59,11 +135,11 @@ def test_condition_builder_uses_encoder_time_axis_for_decoder_time():
         inference_conditions=None,
         summary_variables=summary_variables,
         stage="inference",
-        return_decoder_time=True,
     )
 
     expected_time = np.array([[10.0, 11.0, 12.0], [13.0, 14.0, 15.0]], dtype="float32")
     np.testing.assert_allclose(keras.ops.convert_to_numpy(decoder_time), expected_time)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(encoder_outputs), summary_variables)
     np.testing.assert_allclose(keras.ops.convert_to_numpy(conditions[..., 0]), expected_time)
 
 
@@ -137,3 +213,65 @@ def test_transformer_decoder_cached_decode_matches_teacher_forcing():
             rtol=1e-5,
             atol=1e-5,
         )
+
+
+def test_builds_all_autoregressive_networks(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+
+    assert autoregressive_approximator.built
+    assert autoregressive_approximator.encoder_network.built
+    assert autoregressive_approximator.decoder_network.built
+    assert autoregressive_approximator.inference_network.built
+
+
+def test_sample_with_each_decoder(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    conditions = {key: value for key, value in autoregressive_data.items() if key != "inference_variables"}
+
+    samples = autoregressive_approximator.sample(
+        num_samples=2,
+        conditions=conditions,
+        batch_size=1,
+        seed=123,
+    )["inference_variables"]
+
+    assert samples.shape == (3, 2, 5, 2)
+    assert np.all(np.isfinite(samples))
+    expanded_mask = autoregressive_data["inference_mask"][:, None, :, None]
+    np.testing.assert_allclose(np.where(expanded_mask, 0.0, samples), 0.0, atol=0.0)
+
+
+def test_log_prob_with_each_decoder(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+
+    log_prob = autoregressive_approximator.log_prob(autoregressive_data)
+
+    assert log_prob.shape == (3,)
+    assert np.all(np.isfinite(log_prob))
+
+
+def test_padding_masks_ignore_masked_values(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    expected = autoregressive_approximator.log_prob(autoregressive_data)
+
+    perturbed = {key: value.copy() for key, value in autoregressive_data.items()}
+    padding = ~autoregressive_data["inference_mask"]
+    perturbed["inference_variables"][padding] = 1e4
+    perturbed["summary_variables"][padding] = -1e4
+    actual = autoregressive_approximator.log_prob(perturbed)
+
+    np.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-5)
+
+
+def test_save_and_load_with_each_decoder(tmp_path, autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    expected = autoregressive_approximator.log_prob(autoregressive_data)
+    model_path = tmp_path / "autoregressive.keras"
+
+    keras.saving.save_model(autoregressive_approximator, model_path)
+    loaded = keras.saving.load_model(model_path)
+    actual = loaded.log_prob(autoregressive_data)
+
+    assert type(loaded.decoder_network) is type(autoregressive_approximator.decoder_network)
+    assert_models_equal(autoregressive_approximator, loaded)
+    np.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-5)

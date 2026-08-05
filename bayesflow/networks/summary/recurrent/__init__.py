@@ -1,3 +1,2 @@
 from .recurrent_network import RecurrentNetwork
 from .time_series_network import TimeSeriesNetwork
-from .recurrent_decoder import RecurrentDecoder

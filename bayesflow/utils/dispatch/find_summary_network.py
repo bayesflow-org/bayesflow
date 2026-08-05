@@ -40,11 +40,6 @@ def _(name: str, *args, **kwargs):
 
             return RecurrentNetwork(*args, **kwargs)
 
-        case "memory_decoder" | "recurrent_decoder":
-            from bayesflow.networks import RecurrentDecoder
-
-            return RecurrentDecoder(*args, **kwargs)
-
         case unknown_network:
             raise ValueError(f"Unknown summary network: '{unknown_network}'")
 

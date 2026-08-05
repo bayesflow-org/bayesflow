@@ -274,7 +274,7 @@ class EnsembleApproximator(Approximator):
 
         weights = self._resolve_member_weights(member_weights)
         names = tuple(weights.keys())
-        probs = np.array(list(weights.values()))
+        probs = np.array(list(weights.values()), dtype=keras.backend.floatx())
 
         # Sample counts from multinomial
         K = len(probs)
@@ -293,9 +293,9 @@ class EnsembleApproximator(Approximator):
             ),
         )
 
-        merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
+        merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *per_member.values())
         shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
-
+        shuffle_idx = keras.ops.convert_to_numpy(shuffle_idx)
         return keras.tree.map_structure(lambda a: np.take(a, shuffle_idx, axis=1), merged)
 
     def log_prob(

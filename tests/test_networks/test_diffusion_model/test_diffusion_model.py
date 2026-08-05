@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
-from tests.utils import assert_layers_equal
+from tests.utils import assert_allclose, assert_layers_equal
 
 
 # ---- Noise schedule tests --------------------------------------------------
@@ -32,86 +32,109 @@ def test_validate_noise_schedule(noise_schedule):
     noise_schedule.validate()
 
 
-# ---- Build -----------------------------------------------------------------
+# ---- Configuration ---------------------------------------------------------
 
 
-def test_build(diffusion_model, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-
-    assert not diffusion_model.built
-    diffusion_model.build(xz_shape, conditions_shape=cond_shape)
-    assert diffusion_model.built
-    assert diffusion_model.variables
-
-
-def test_build_with_custom_integrate_kwargs(random_samples, random_conditions):
+def test_build_with_custom_integrate_kwargs():
     from bayesflow.networks import DiffusionModel
 
     model = DiffusionModel(
         subnet_kwargs=dict(widths=(8, 8)),
         integrate_kwargs=dict(method="euler", steps=10),
     )
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    model.build(xz_shape, conditions_shape=cond_shape)
+    model.build((2, 3), conditions_shape=(2, 3))
     assert model.built
     assert model.integrate_kwargs["method"] == "euler"
     assert model.integrate_kwargs["steps"] == 10
 
 
-# ---- Output shapes ---------------------------------------------------------
+# ---- Prediction type / noise schedule variants ------------------------------
+# The generic interface contract (shapes, batch sizes, save/load, ...) is
+# covered by test_networks/test_inference_networks.py for the default model.
+# The tests below run the model-specific configuration variants through the
+# training and (fixed-step, low-accuracy) sampling/density code paths.
 
 
-def test_inverse_output_shape(diffusion_model, random_samples, random_conditions):
+def test_compute_metrics(diffusion_model, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
     diffusion_model.build(xz_shape, conditions_shape=cond_shape)
 
-    z = keras.random.normal(keras.ops.shape(random_samples))
-    out = diffusion_model(z, conditions=random_conditions, inverse=True)
-    assert keras.ops.shape(out) == keras.ops.shape(random_samples)
+    metrics = diffusion_model.compute_metrics(random_samples, conditions=random_conditions)
+    assert "loss" in metrics
+    loss = keras.ops.convert_to_numpy(metrics["loss"])
+    assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
-def test_inverse_density_output_shape(diffusion_model, random_samples, random_conditions):
+@pytest.mark.parametrize("loss_type", ["noise", "velocity", "F"])
+def test_compute_metrics_loss_types(loss_type, random_samples, random_conditions):
+    from bayesflow.networks import DiffusionModel
+
+    model = DiffusionModel(subnet_kwargs=dict(widths=(8, 8)), loss_type=loss_type)
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    model.build(xz_shape, conditions_shape=cond_shape)
+
+    metrics = model.compute_metrics(random_samples, conditions=random_conditions)
+    loss = keras.ops.convert_to_numpy(metrics["loss"])
+    assert np.isfinite(loss), f"Loss is not finite: {loss}"
+
+
+def test_sample_and_density(diffusion_model, random_samples, random_conditions):
+    """Each prediction type supports sampling and density evaluation in both directions.
+
+    Accuracy is checked in test_inference_networks.py::test_density_numerically;
+    here a few fixed solver steps suffice to exercise the velocity/score conversions.
+    """
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
     diffusion_model.build(xz_shape, conditions_shape=cond_shape)
+    diffusion_model.integrate_kwargs.update({"method": "rk45", "steps": 8})
 
-    z = keras.random.normal(keras.ops.shape(random_samples))
+    z = keras.random.normal(xz_shape)
     x, log_density = diffusion_model(z, conditions=random_conditions, inverse=True, density=True)
-    assert keras.ops.shape(x) == keras.ops.shape(random_samples)
-    assert keras.ops.shape(log_density) == (keras.ops.shape(random_samples)[0],)
-
-
-def test_forward_density_output_shape(diffusion_model, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    diffusion_model.build(xz_shape, conditions_shape=cond_shape)
+    assert keras.ops.shape(x) == xz_shape
+    assert keras.ops.shape(log_density) == (xz_shape[0],)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(x)))
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(log_density)))
 
     z, log_density = diffusion_model(random_samples, conditions=random_conditions, density=True)
-    assert keras.ops.shape(z) == keras.ops.shape(random_samples)
-    assert keras.ops.shape(log_density) == (keras.ops.shape(random_samples)[0],)
+    assert keras.ops.shape(z) == xz_shape
+    assert keras.ops.shape(log_density) == (xz_shape[0],)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(z)))
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(log_density)))
 
 
-# ---- Variable batch size ---------------------------------------------------
+def test_adaptive_solver_sample_and_density():
+    """The instance defaults are adaptive solvers (stochastic sampling, adaptive ODE for
+    density). The adaptive density must match a high-accuracy fixed-step reference, which
+    in turn is verified against a numerical jacobian in
+    test_inference_networks.py::test_density_numerically."""
+    from bayesflow.networks import DiffusionModel
 
+    model = DiffusionModel(subnet_kwargs=dict(widths=(8, 8)))
+    conditions = keras.random.normal((2, 3))
+    model.build((2, 3), conditions_shape=(2, 3))
 
-def test_variable_batch_size(diffusion_model, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    diffusion_model.build(xz_shape, conditions_shape=cond_shape)
+    # sampling with the default (stochastic, adaptive) solver
+    z = keras.random.normal((2, 3))
+    x = model(z, conditions=conditions, inverse=True)
+    assert keras.ops.shape(x) == (2, 3)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(x)))
 
-    for bs in [1, 4, 7]:
-        z = keras.random.normal((bs,) + keras.ops.shape(random_samples)[1:])
-        cond = (
-            None if random_conditions is None else keras.random.normal((bs,) + keras.ops.shape(random_conditions)[1:])
-        )
-        out = diffusion_model(z, conditions=cond, inverse=True)
-        assert keras.ops.shape(out)[0] == bs
+    # density with the adaptive ODE solver, in both directions
+    x_adaptive, ld_inv_adaptive = model(z, conditions=conditions, inverse=True, density=True)
+    z_adaptive, ld_fwd_adaptive = model(x_adaptive, conditions=conditions, density=True)
 
+    # high-accuracy fixed-step reference
+    model.integrate_kwargs.update({"steps": 150})
+    x_fixed, ld_inv_fixed = model(z, conditions=conditions, inverse=True, density=True)
+    z_fixed, ld_fwd_fixed = model(x_adaptive, conditions=conditions, density=True)
 
-# ---- Serialization ---------------------------------------------------------
+    assert_allclose(x_adaptive, x_fixed, atol=1e-3, rtol=1e-3)
+    assert_allclose(ld_inv_adaptive, ld_inv_fixed, atol=1e-3, rtol=1e-3)
+    assert_allclose(z_adaptive, z_fixed, atol=1e-3, rtol=1e-3)
+    assert_allclose(ld_fwd_adaptive, ld_fwd_fixed, atol=1e-3, rtol=1e-3)
 
 
 def test_serialize_deserialize(diffusion_model, random_samples, random_conditions):
@@ -138,18 +161,7 @@ def test_save_and_load(tmp_path, diffusion_model, random_samples, random_conditi
     assert_layers_equal(diffusion_model, loaded)
 
 
-# ---- compute_metrics -------------------------------------------------------
-
-
-def test_compute_metrics(diffusion_model, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    diffusion_model.build(xz_shape, conditions_shape=cond_shape)
-
-    metrics = diffusion_model.compute_metrics(random_samples, conditions=random_conditions)
-    assert "loss" in metrics
-    loss = keras.ops.convert_to_numpy(metrics["loss"])
-    assert np.isfinite(loss), f"Loss is not finite: {loss}"
+# ---- Masking ----------------------------------------------------------------
 
 
 def test_compute_metrics_with_masking(diffusion_model_with_masking, random_samples, random_conditions):

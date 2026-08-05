@@ -62,15 +62,20 @@ class Adapter(MutableSequence[Transform]):
         The sequence of transforms to execute.
     device: str, optional
         Passed to keras.device to specify on which device to apply the adapter.
+    differentiable: bool, optional
+        If False (default), adapter transforms run in a state detached from the computational graph.
     """
 
-    def __init__(self, transforms: Sequence[Transform] | None = None, device: str = "cpu"):
+    def __init__(
+        self, transforms: Sequence[Transform] | None = None, device: str = "cpu", differentiable: bool = False
+    ):
         if transforms is None:
             transforms = []
 
         self.transforms = list(transforms)
 
         self.device = device
+        self.differentiable = differentiable
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -188,11 +193,6 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
-        if self.device is None:
-            if inverse:
-                return self.inverse(data, **kwargs)
-            return self.forward(data, **kwargs)
-
         with keras.device(self.device):
             if inverse:
                 data = self.inverse(data, **kwargs)
@@ -202,8 +202,8 @@ class Adapter(MutableSequence[Transform]):
         # we need to hand off tensors on the default device
         # not on the device the adapter ran
         if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
-            return tuple(prepare_data(value) for value in data)
-        return prepare_data(data)
+            return tuple(prepare_data(value, self.differentiable) for value in data)
+        return prepare_data(data, self.differentiable)
 
     def __repr__(self):
         result = ""

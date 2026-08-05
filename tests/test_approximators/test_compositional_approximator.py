@@ -12,7 +12,8 @@ def mock_prior_score_original_space(data_dict, time):
 
     # Simple prior: N(0,1) for loc
     loc_score = -loc
-    time = keras.ops.convert_to_numpy(time)
+    if keras.backend.backend() == "torch":
+        time = keras.ops.convert_to_numpy(time)
     return {"loc": (1.0 - time) * loc_score}
 
 

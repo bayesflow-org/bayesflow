@@ -274,7 +274,7 @@ class RatioApproximator(Approximator):
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
         B = keras.ops.shape(inference_variables)[0]
-        num_contrastive = min(self.K, B - 1)
+        num_contrastive = keras.ops.minimum(self.K, B - 1)
 
         # Sample from (B, B-1) space in O(B*K) instead of O(B^2)
         scores = keras.random.uniform(
@@ -285,7 +285,7 @@ class RatioApproximator(Approximator):
         _, idx = keras.ops.top_k(scores, k=num_contrastive)
 
         # Remap indices >= row index to skip self: [0..i-1] unchanged, [i..B-2] -> [i+1..B-1]
-        row = keras.ops.arange(B)[:, None]  # (B, 1)
+        row = keras.ops.arange(B)[:, None]
         idx = idx + keras.ops.cast(idx >= row, dtype=idx.dtype)
 
         return keras.ops.take(inference_variables, idx, axis=0)

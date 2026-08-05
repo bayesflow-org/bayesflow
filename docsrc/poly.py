@@ -113,7 +113,6 @@ src = Path(SOURCE_DIR)
 vcs = Git(
     branch_regex=BRANCH_REGEX,
     tag_regex=TAG_REGEX,
-    buffer_size=1 * 10**9,  # 1 GB
     predicate=file_predicate([src]),  # exclude refs without source dir
 )
 

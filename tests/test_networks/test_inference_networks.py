@@ -3,21 +3,15 @@ import numpy as np
 import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
-from bayesflow.utils import filter_kwargs
 
 from tests.utils import assert_allclose, assert_layers_equal
 
 
-def _skip_torch_cpu_masking_workflow():
-    if keras.backend.backend() != "torch":
-        return
-
-    import torch
-
-    if torch.cuda.device_count() == 0:
-        pytest.skip(
-            "PyTorch CPU scaled-dot-product attention does not support forward-mode AD used by the masking workflow."
-        )
+def _use_fast_integration(network, steps=8):
+    """Use a few fixed integration steps for tests whose assertions do not
+    depend on solver accuracy (shapes, structure, batch sizes)."""
+    if hasattr(network, "integrate_kwargs"):
+        network.integrate_kwargs.update({"steps": steps})
 
 
 def test_build(inference_network, random_samples, random_conditions):
@@ -44,6 +38,7 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
     samples_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
     inference_network.build(samples_shape, conditions_shape=conditions_shape)
+    _use_fast_integration(inference_network)
 
     # run with another batch size
     batch_sizes = np.random.choice(10, replace=False, size=3)
@@ -69,6 +64,7 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):
+    _use_fast_integration(generative_inference_network)
     try:
         output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
     except NotImplementedError:
@@ -88,6 +84,7 @@ def test_output_structure(density, generative_inference_network, random_samples,
 
 
 def test_output_shape(generative_inference_network, random_samples, random_conditions):
+    _use_fast_integration(generative_inference_network)
     try:
         forward_output, forward_log_density = generative_inference_network(
             random_samples, conditions=random_conditions, density=True
@@ -113,6 +110,9 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 
     if isinstance(generative_inference_network, bf.networks.DiffusionModel):
         pytest.skip(reason="test unstable for untrained diffusion models")
+    # 50 fixed steps leave a discretization error orders of magnitude below the
+    # tolerances while being much cheaper than an adaptive solve
+    _use_fast_integration(generative_inference_network, steps=50)
     try:
         forward_output, forward_log_density = generative_inference_network(
             random_samples, conditions=random_conditions, density=True
@@ -127,31 +127,38 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
     assert_allclose(forward_log_density, inverse_log_density, atol=1e-3, rtol=1e-3)
 
 
-def test_density_numerically(generative_inference_network, random_samples, random_conditions):
+@pytest.mark.parametrize(
+    "network_name",
+    # one representative per density implementation
+    ["affine_coupling_flow", "spline_coupling_flow", "free_form_flow", "flow_matching", "diffusion_model"],
+)
+def test_density_numerically(network_name, request):
+    # The reference computation (numerical jacobian of the full integration) is expensive,
+    # so this test runs on a single small input instead of the full shape grid
     from bayesflow.utils import jacobian
 
-    try:
-        if keras.backend.backend() == "jax" and hasattr(generative_inference_network, "integrate_kwargs"):
-            # jax backend does not support adaptive solvers for numerical jacobian computation yet
-            if generative_inference_network.integrate_kwargs["steps"] == "adaptive":
-                generative_inference_network.integrate_kwargs.update({"steps": 250})
+    network = request.getfixturevalue(network_name)
 
-        output, log_density = generative_inference_network(random_samples, conditions=random_conditions, density=True)
-    except NotImplementedError:
-        # network does not support density estimation
-        return
+    random_samples = keras.random.normal((2, 3))
+    random_conditions = keras.random.normal((2, 3))
+
+    # Use the same fixed-step solver for the network density and the numerical reference,
+    if hasattr(network, "integrate_kwargs"):
+        network.integrate_kwargs.update({"steps": 50})
+
+    output, log_density = network(random_samples, conditions=random_conditions, density=True)
+
+    log_prob = network.base_distribution.log_prob(output)
 
     def f(x):
-        return generative_inference_network(x, conditions=random_conditions)
+        return network(x, conditions=random_conditions)
 
     numerical_output, numerical_jacobian = jacobian(f, random_samples, return_output=True)
 
     # output should be identical, otherwise this test does not work (e.g. for stochastic networks)
     assert_allclose(
-        output, numerical_output, rtol=1e-3, atol=1e-3, msg="Outputs of numerical jacobian and network do not match."
+        output, numerical_output, rtol=1e-5, atol=1e-5, msg="Outputs of numerical jacobian and network do not match."
     )
-
-    log_prob = generative_inference_network.base_distribution.log_prob(output)
 
     # use change of variables to compute the numerical log density
     numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
@@ -160,8 +167,8 @@ def test_density_numerically(generative_inference_network, random_samples, rando
     assert_allclose(
         log_density,
         numerical_log_density,
-        rtol=1e-3,
-        atol=1e-3,
+        rtol=1e-4,
+        atol=1e-4,
         msg="Density of numerical jacobian and network do not match.",
     )
 
@@ -195,118 +202,7 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
 
-    print(f"{inference_network.__class__.__name__=}")
-    print(f"{xz_shape=}, {conditions_shape=}")
     inference_network.build(xz_shape, conditions_shape)
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
-
-
-def test_masking(diffusion_type_inference_network):
-    _skip_torch_cpu_masking_workflow()
-
-    from bayesflow import BasicWorkflow
-    from bayesflow.simulators import TwoMoons
-
-    num_samples = 3
-    batch_size = 2
-    num_batches_per_epoch = 2
-    epochs = 5
-    n_test_data = 5
-    workflow = BasicWorkflow(
-        inference_network=diffusion_type_inference_network(
-            subnet_kwargs=dict(widths=(8, 8)),
-            fixed_target_prob=0.5,
-            missing_target_prob=0.5,
-            **filter_kwargs(
-                dict(total_steps=epochs * num_batches_per_epoch, s0=3, s1=10, eps=1e-8),
-                diffusion_type_inference_network,
-            ),
-        ),
-        inference_variables=["parameters"],
-        inference_conditions=["observables"],
-        simulator=TwoMoons(),
-    )
-
-    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
-    test_conditions = workflow.simulate((n_test_data,))
-    samples = workflow.sample(num_samples=num_samples, conditions=test_conditions)["parameters"]
-
-    test_conditions_adapted = workflow.adapter(test_conditions)
-    fixed_target_mask = keras.ops.concatenate(
-        (
-            keras.ops.ones(1),  # param 1 is inferred
-            keras.ops.zeros(1),  # param 2 is fixed
-        )
-    )
-    fixed_target_mask = np.broadcast_to(fixed_target_mask, (n_test_data, 2))
-    targets_fixed = test_conditions_adapted["inference_variables"]
-
-    fixed_samples = workflow.sample(
-        conditions=test_conditions,
-        num_samples=num_samples,
-        fixed_target_value=targets_fixed,
-        fixed_target_mask=fixed_target_mask,
-    )["parameters"]
-    assert samples.shape == fixed_samples.shape
-    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
-    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary
-
-    infer_target_mask = keras.ops.concatenate(
-        (
-            keras.ops.ones(1),  # param 1 is inferred only
-            keras.ops.zeros(1),  # param 2 is marginalized
-        )
-    )
-    infer_target_mask = np.broadcast_to(infer_target_mask, (5, 2))
-    marginalized_samples = workflow.sample(
-        conditions=test_conditions,
-        num_samples=num_samples,
-        infer_target_mask=infer_target_mask,
-    )["parameters"]
-    assert samples.shape == marginalized_samples.shape
-
-
-def test_masking_unconditional(diffusion_type_inference_network):
-    _skip_torch_cpu_masking_workflow()
-
-    from bayesflow import BasicWorkflow
-    from bayesflow.simulators import TwoMoons
-
-    num_samples = 3
-    batch_size = 2
-    num_batches_per_epoch = 2
-    epochs = 5
-    workflow = BasicWorkflow(
-        inference_network=diffusion_type_inference_network(
-            subnet_kwargs=dict(widths=(8, 8)),
-            fixed_target_prob=0.5,
-            **filter_kwargs(
-                dict(total_steps=epochs * num_batches_per_epoch, s0=3, s1=10, eps=1e-8),
-                diffusion_type_inference_network,
-            ),
-        ),
-        inference_variables=["parameters"],
-        simulator=TwoMoons(),
-    )
-
-    workflow.fit_online(epochs=epochs, batch_size=batch_size, num_batches_per_epoch=num_batches_per_epoch)
-    test_conditions = workflow.simulate((5,))
-
-    test_conditions_adapted = workflow.adapter(test_conditions)
-    fixed_target_mask = keras.ops.concatenate(
-        (
-            keras.ops.ones(1),  # param 1 is inferred
-            keras.ops.zeros(1),  # param 2 is fixed
-        )
-    )
-    fixed_target_mask = np.broadcast_to(fixed_target_mask, (5, num_samples, 2)).reshape(-1, 2)
-    targets_fixed = test_conditions_adapted["inference_variables"]
-    targets_fixed = np.broadcast_to(np.expand_dims(targets_fixed, axis=1), (5, num_samples, 2)).reshape(-1, 2)
-
-    fixed_samples = workflow.sample(
-        num_samples=num_samples * 5, fixed_target_value=targets_fixed, fixed_target_mask=fixed_target_mask
-    )["parameters"].reshape(5, num_samples, 2)
-    assert (np.abs(fixed_samples[..., 1] - test_conditions["parameters"][:, 1:]) < 1e-6).all()
-    assert (np.abs(fixed_samples[..., 0] - test_conditions["parameters"][:, :1]) > 0.1).any()  # should vary

@@ -3,26 +3,32 @@ name: Publish to PyPI and Release
 on:
   workflow_dispatch:
     inputs:
+      # The type of version bump to perform automatically. Select none if you have
+      # already updated the version string in pyproject.toml.
+      # We explicitly only support minor and patch releases with this workflow.
+      # Other release types should be handled manually by selecting none.
       bump_version:
-        description: "The type of version bump to perform automatically. Select none if you have already updated the version string in pyproject.toml."
+        description: "Version bump type"
         required: true
         type: choice
-        # We explicitly only support minor and patch releases with this workflow.
-        # Other release types should be handled manually by selecting none.
         options: [minor, patch, none]
         default: patch
+      # Whether to create a git tag for the new version.
       tag_version:
-        description: "Whether to create a git tag for the new version."
+        description: "Create a git tag for the new version?"
         required: true
         type: boolean
         default: true
+      # Whether to publish the package to PyPI.
       publish_package:
-        description: "Whether to publish the package to PyPI."
+        description: "Publish the package to PyPI?"
         required: true
         type: boolean
         default: true
+      # Whether to perform a dry run, which skips tagging and publishing even if
+      # they are selected above.
       dry_run:
-        description: "Whether to perform a dry run, which skips tagging and publishing even if they are selected above."
+        description: "Dry run (skip tagging/publishing)?"
         required: true
         type: boolean
         default: true
@@ -45,7 +51,8 @@ jobs:
     steps:
     - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
       with:
-        persist-credentials: false
+        # we need the credentials to commit and tag later
+        persist-credentials: 'true'
 
     - name: Install uv
       uses: astral-sh/setup-uv@08807647e7069bb48b6ef5acd8ec9567f424441b # v8.1.0
@@ -53,6 +60,9 @@ jobs:
     - name: Update version string
       if: ${{ env.BUMP_VERSION != 'none' }}
       run: uv version --bump "${BUMP_VERSION}"
+
+    - name: Determine version
+      run: echo "VERSION=$(uv version --short)" >> "$GITHUB_ENV"
 
     - name: Build wheel
       run: uv build
@@ -66,25 +76,26 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "github-actions[bot]"
         git add pyproject.toml
-        if [[ $DRY_RUN == true ]]; then
-          echo "Committing version v$VERSION (dry run)"
+
+        # Skip the commit if there's nothing staged, e.g. bump_version was set to
+        # "none" because the version was already bumped in a prior commit.
+        if git diff --cached --quiet; then
+          echo "No version change to commit."
+        elif [[ $DRY_RUN == true ]]; then
+          echo "Committing version $VERSION (dry run)"
           git commit -m "🚀 Release $VERSION" --dry-run
-
-          if [[ $TAG_VERSION == true ]]; then
-            echo "Creating git tag v$VERSION (dry run)"
-            git tag v$VERSION
-          fi
-
-          git push origin --tags --dry-run
         else
           echo "Committing version $VERSION"
           git commit -m "🚀 Release $VERSION"
+        fi
 
-          if [[ $TAG_VERSION == true ]]; then
-            echo "Creating git tag v$VERSION"
-            git tag v$VERSION
-          fi
-
+        if [[ $DRY_RUN == true ]]; then
+          echo "Creating git tag v$VERSION (dry run)"
+          git tag v$VERSION
+          git push origin --tags --dry-run
+        else
+          echo "Creating git tag v$VERSION"
+          git tag v$VERSION
           git push origin --tags
         fi
 

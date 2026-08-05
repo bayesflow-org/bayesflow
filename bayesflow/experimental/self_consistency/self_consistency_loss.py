@@ -118,7 +118,7 @@ class SelfConsistencyLoss:
         The log marginal likelihood is evaluated at these parameter samples.
         The SC loss is computed over the log marginal likelihoods over these samples.
         """
-        samples = self.posterior.sample(num_samples=self.num_samples, conditions=data, numpy=False)
+        samples = self.posterior.sample(num_samples=self.num_samples, conditions=data, to_numpy=False)
         samples = keras.tree.map_structure(keras.ops.stop_gradient, samples)
         return samples
 
@@ -206,7 +206,7 @@ class SelfConsistencyLoss:
             elif isinstance(self.likelihood, Approximator) and not self.adapted:
                 # Approximate likelihood, loss in data space
                 # Infer data_keys from a likelihood sample
-                data_samples = self.likelihood.sample(num_samples=1, conditions=data, numpy=False)
+                data_samples = self.likelihood.sample(num_samples=1, conditions=data, to_numpy=False)
                 self.data_keys = list(data_samples.keys())
             elif self.adapted:
                 # Analytic likelihood, loss in adapted space
@@ -281,7 +281,7 @@ class SelfConsistencyLoss:
         """
 
         if isinstance(distribution, Approximator):
-            log_prob = distribution.log_prob(adapted_data, numpy=False, stage=stage)
+            log_prob = distribution.log_prob(adapted_data, to_numpy=False, stage=stage)
             if not self.adapted:
                 log_prob = log_prob - log_det_jac
         elif hasattr(distribution, "log_prob"):

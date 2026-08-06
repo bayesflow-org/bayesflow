@@ -145,6 +145,7 @@ class RatioApproximator(Approximator):
         # Get (batch_size, K+1, dim) inference variables (theta)
         bootstrap_inference_variables = self._sample_from_batch(inference_variables)
         num_contrastive = keras.ops.shape(bootstrap_inference_variables)[1]
+
         log_K = keras.ops.broadcast_to(keras.ops.log(num_contrastive), (batch_size,))
         bootstrap_inference_variables = keras.ops.concatenate(
             [inference_variables[:, None, :], bootstrap_inference_variables], axis=1
@@ -274,7 +275,7 @@ class RatioApproximator(Approximator):
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
         B = keras.ops.shape(inference_variables)[0]
-        num_contrastive = keras.ops.minimum(self.K, B - 1)
+        num_contrastive = min(self.K, B - 1) if isinstance(B, int) else keras.ops.minimum(self.K, B - 1)
 
         # Sample from (B, B-1) space in O(B*K) instead of O(B^2)
         scores = keras.random.uniform(

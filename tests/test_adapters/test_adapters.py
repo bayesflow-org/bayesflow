@@ -8,9 +8,14 @@ from bayesflow.utils.serialization import deserialize, serialize
 import bayesflow as bf
 
 
+def to_numpy(x):
+    """The adapter returns backend tensors, which numpy cannot read on all devices (e.g. torch MPS)."""
+    return keras.tree.map_structure(keras.ops.convert_to_numpy, x)
+
+
 def test_cycle_consistency(adapter, random_data):
     processed = adapter(random_data)
-    deprocessed = adapter(processed, inverse=True)
+    deprocessed = to_numpy(adapter(processed, inverse=True))
 
     for key, value in random_data.items():
         if key in ["d1", "d2", "p3", "n1", "u1"]:
@@ -23,8 +28,27 @@ def test_cycle_consistency(adapter, random_data):
         assert np.allclose(value, deprocessed[key])
 
 
+@pytest.mark.parametrize("differentiable", [False, True])
+def test_differentiable(differentiable):
+    from bayesflow._backend import grad
+
+    adapter = bf.Adapter(differentiable=differentiable).log("x").scale("x", by=2.0)
+    x = keras.ops.convert_to_tensor(np.array([[1.0, 2.0], [3.0, 4.0]], dtype="float32"))
+
+    def loss(x):
+        return keras.ops.sum(adapter({"x": x})["x"])
+
+    gradient = to_numpy(grad(loss)(x))
+
+    if differentiable:
+        # d/dx (2 * log(x)) = 2 / x
+        assert np.allclose(gradient, 2.0 / to_numpy(x))
+    else:
+        assert np.allclose(gradient, 0.0)
+
+
 def test_serialize_deserialize(adapter, random_data):
-    processed = adapter(random_data)
+    processed = to_numpy(adapter(random_data))
     serialized = serialize(adapter)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
@@ -32,7 +56,7 @@ def test_serialize_deserialize(adapter, random_data):
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
     random_data["foo"] = random_data["x1"]
-    deserialized_processed = deserialized(random_data)
+    deserialized_processed = to_numpy(deserialized(random_data))
     for key, value in processed.items():
         if key == "s3":
             # skip this key because it is *randomly* subsampled
@@ -97,7 +121,7 @@ def test_constrain():
     assert ops.isneginf(ops.min(result["x_lower_disc2"]))
     assert ops.isinf(ops.max(result["x_upper_disc2"]))
     assert ops.isneginf(ops.min(result["x_both_disc2"]))
-    assert ops.isinf(ops.max(result["x_both_disc2"][-1]))
+    assert ops.isinf(ops.max(result["x_both_disc2"]))
 
 
 def test_simple_transforms(random_data):
@@ -108,13 +132,13 @@ def test_simple_transforms(random_data):
 
     result = ad(random_data)
 
-    assert np.allclose(result["p2"], np.log(random_data["p2"]))
-    assert np.allclose(result["t2"], np.log(random_data["t2"]))
-    assert np.allclose(result["t1"], np.log1p(random_data["t1"]))
-    assert np.allclose(result["p1"], np.sqrt(random_data["p1"]))
+    assert np.allclose(to_numpy(result["p2"]), np.log(random_data["p2"]))
+    assert np.allclose(to_numpy(result["t2"]), np.log(random_data["t2"]))
+    assert np.allclose(to_numpy(result["t1"]), np.log1p(random_data["t1"]))
+    assert np.allclose(to_numpy(result["p1"]), np.sqrt(random_data["p1"]))
 
     # inverse results should match the original input
-    inverse = ad(result, inverse=True)
+    inverse = to_numpy(ad(result, inverse=True))
 
     assert np.allclose(inverse["p2"], random_data["p2"])
     assert np.allclose(inverse["t2"], random_data["t2"])
@@ -245,6 +269,7 @@ def test_to_dict_transform():
 
 def test_log_det_jac(adapter_log_det_jac, random_data):
     d, log_det_jac = adapter_log_det_jac(random_data, log_det_jac=True)
+    log_det_jac = to_numpy(log_det_jac)
 
     assert np.allclose(log_det_jac["x1"], np.log(2))
 
@@ -271,6 +296,7 @@ def test_log_det_jac(adapter_log_det_jac, random_data):
 def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
     d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
     d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
+    forward_log_det_jac, inverse_log_det_jac = to_numpy((forward_log_det_jac, inverse_log_det_jac))
 
     for key in forward_log_det_jac.keys():
         assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
@@ -283,6 +309,7 @@ def test_log_det_jac_exceptions(random_data):
     # (because the log_det_jac are summed, not concatenated)
     adapter = bf.Adapter().concatenate(["p1", "p2", "p3"], into="p").sqrt("p")
     transformed_data, log_det_jac = adapter(random_data, log_det_jac=True)
+    log_det_jac = to_numpy(log_det_jac)
 
     # test that inverse raises error
     with pytest.raises(ValueError):
@@ -293,7 +320,8 @@ def test_log_det_jac_exceptions(random_data):
 
     transformed_data, forward_log_det_jac = adapter(random_data, log_det_jac=True)
     data, inverse_log_det_jac = adapter(transformed_data, inverse=True, log_det_jac=True)
-    inverse_log_det_jac = sum(inverse_log_det_jac.values())
+    forward_log_det_jac = to_numpy(forward_log_det_jac)
+    inverse_log_det_jac = sum(to_numpy(inverse_log_det_jac).values())
 
     # forward is the same regardless
     assert np.allclose(forward_log_det_jac["p"], log_det_jac["p"])
@@ -311,7 +339,7 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test", default_value=-1.0, return_mask=False)
     )
-    out = transform(arr)["test"]
+    out = to_numpy(transform(arr)["test"])
     np.testing.assert_array_equal(out, np.array([1.0, -1.0, 3.0]))
 
     # test with mask
@@ -322,7 +350,7 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test", default_value=0.0, return_mask=True)
     )
-    out = transform(arr)
+    out = to_numpy(transform(arr))
     np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
     np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
 
@@ -333,6 +361,6 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
     )
-    out = transform(arr)
+    out = to_numpy(transform(arr))
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
     np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))

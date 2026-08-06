@@ -87,7 +87,6 @@ from .rng import next_seed_sequence, next_uint32, reseed_generator, reseed_rando
 from .tensor_utils import (
     concatenate_valid,
     concatenate_valid_shapes,
-    repeat_valid,
     expand,
     expand_as,
     expand_to,

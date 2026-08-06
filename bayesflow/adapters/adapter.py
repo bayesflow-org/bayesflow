@@ -98,6 +98,8 @@ class Adapter(MutableSequence[Transform]):
     def get_config(self) -> dict:
         config = {
             "transforms": self.transforms,
+            "device": self.device,
+            "differentiable": self.differentiable,
         }
 
         return serialize(config)
@@ -187,14 +189,14 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
+        data = self.to_adapter_device(data)
+
         with keras.device(self.device):
             if inverse:
                 data = self.inverse(data, **kwargs)
             else:
                 data = self.forward(data, **kwargs)
 
-        # we need to hand off tensors on the default device
-        # not on the device the adapter ran
         if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
             return tuple(self.tensorize_to_floatx(value) for value in data)
         return self.tensorize_to_floatx(data)
@@ -219,13 +221,34 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(value)
         return self
 
+    def to_adapter_device(self, data: Any) -> Any:
+        """Move backend tensors in ``data`` onto :py:attr:`device`."""
+        with keras.device(self.device):
+            return keras.tree.map_structure(
+                # move tensor to the correct device
+                lambda x: keras.ops.convert_to_tensor(x) if keras.ops.is_tensor(x) else x,
+                data,
+            )
+
     def tensorize_to_floatx(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
-        data = keras.tree.map_structure(lambda x: keras.ops.convert_to_tensor(x, keras.backend.floatx()), data)
+        """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""
+        floatx = keras.backend.floatx()
 
-        if not self.differentiable:
-            data = keras.tree.map_structure(keras.ops.stop_gradient, data)
+        def convert(x):
+            if keras.ops.is_tensor(x):
+                # cast in place: converting *with* a dtype moves to the target device first,
+                # which fails for dtypes that device does not support (float64 on torch MPS)
+                x = keras.ops.cast(x, floatx)
+            else:
+                with keras.device(self.device):
+                    x = keras.ops.convert_to_tensor(x, floatx)
 
-        return data
+            # we need to hand off tensors on the default device, not on the device the adapter ran
+            x = keras.ops.convert_to_tensor(x)
+
+            return x if self.differentiable else keras.ops.stop_gradient(x)
+
+        return keras.tree.map_structure(convert, data)
 
     def __delitem__(self, key: int | slice):
         del self.transforms[key]

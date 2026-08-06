@@ -20,10 +20,3 @@ def devices() -> list:
             return []
         case _:
             raise NotImplementedError(f"Backend {keras.backend.backend()} not supported.")
-
-
-def prepare_data(data, differentiable: bool):
-    data = keras.tree.map_structure(lambda x: keras.ops.convert_to_tensor(x, keras.backend.floatx()), data)
-    if not differentiable:
-        data = keras.tree.map_structure(keras.ops.stop_gradient, data)
-    return data

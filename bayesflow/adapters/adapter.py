@@ -34,7 +34,6 @@ from .transforms import (
     NanToNum,
 )
 from .transforms.filter_transform import Predicate
-from bayesflow.utils.devices import prepare_data
 
 
 @serializable("bayesflow.adapters")
@@ -202,8 +201,8 @@ class Adapter(MutableSequence[Transform]):
         # we need to hand off tensors on the default device
         # not on the device the adapter ran
         if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
-            return tuple(prepare_data(value, self.differentiable) for value in data)
-        return prepare_data(data, self.differentiable)
+            return tuple(self.prepare_data(value) for value in data)
+        return self.prepare_data(data)
 
     def __repr__(self):
         result = ""
@@ -224,6 +223,12 @@ class Adapter(MutableSequence[Transform]):
         """
         self.transforms.append(value)
         return self
+
+    def prepare_data(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
+        data = keras.tree.map_structure(lambda x: keras.ops.convert_to_tensor(x, keras.backend.floatx()), data)
+        if not self.differentiable:
+            data = keras.tree.map_structure(keras.ops.stop_gradient, data)
+        return data
 
     def __delitem__(self, key: int | slice):
         del self.transforms[key]
@@ -286,8 +291,6 @@ class Adapter(MutableSequence[Transform]):
 
     def __len__(self):
         return len(self.transforms)
-
-    add_transform = append
 
     def apply(
         self,

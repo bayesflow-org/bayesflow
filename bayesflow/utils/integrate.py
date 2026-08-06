@@ -7,7 +7,6 @@ import keras
 import numpy as np
 from typing import Literal, Union
 
-from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning, debug
@@ -303,7 +302,7 @@ def integrate_scheduled(
     method: str,
     **kwargs,
 ) -> StateDict:
-    steps = keras.ops.convert_to_tensor(steps, dtype=keras.config.floatx())
+    steps = keras.ops.convert_to_tensor(steps, dtype=keras.backend.floatx())
 
     match method:
         case "euler":
@@ -358,11 +357,12 @@ def integrate_adaptive(
             raise TypeError(f"Invalid integration method: {other!r}")
 
     # density computation (state carries more than one entry) needs higher accuracy than sampling,
-    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
-    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype="float32")
-    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
-    step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
-    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype="float32")
+    floatx = keras.backend.floatx()
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=floatx)
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=floatx)
+    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=floatx)
+    step0 = keras.ops.convert_to_tensor(0.0, dtype=floatx)
+    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype=floatx)
 
     # "First Same As Last" (FSAL) property
     k1_0 = fn(start_time, **filter_kwargs(state, fn))
@@ -470,19 +470,19 @@ def integrate_scipy(
     keys = list(state.keys())
     # convert to tensor before determining the shape in case a number was passed
     shapes = keras.tree.map_structure(lambda x: keras.ops.shape(keras.ops.convert_to_tensor(x)), state)
-    adapter = Adapter().concatenate(keys, into="x", axis=-1)
+    split_indices = np.cumsum([int(np.prod(shapes[key])) for key in keys])[:-1]
 
     def state_to_vector(state):
-        state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
-        state = keras.tree.map_structure(lambda x: np.reshape(x, (-1,)), state)
-        x = adapter(state)["x"]
-        return keras.ops.convert_to_numpy(x).astype(np.float64)
+        flat = [np.reshape(keras.ops.convert_to_numpy(state[key]), (-1,)) for key in keys]
+        # scipy's error control needs float64
+        return np.concatenate(flat, axis=-1).astype(np.float64)
 
     def vector_to_state(x):
-        state = adapter({"x": x}, inverse=True)
-        state = {key: keras.ops.reshape(value, shapes[key]) for key, value in state.items()}
-        state = keras.tree.map_structure(keras.ops.convert_to_tensor, state)
-        return state
+        parts = np.split(np.asarray(x), split_indices)
+        return {
+            key: keras.ops.convert_to_tensor(np.reshape(part, shapes[key]), dtype=keras.backend.floatx())
+            for key, part in zip(keys, parts)
+        }
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)

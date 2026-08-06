@@ -474,8 +474,8 @@ def integrate_scipy(
 
     def state_to_vector(state):
         state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
-        # flatten state
-        state = keras.tree.map_structure(lambda x: keras.ops.reshape(x, (-1,)), state)
+        # flatten state, staying in numpy
+        state = keras.tree.map_structure(lambda x: np.reshape(x, (-1,)), state)
         # apply concatenation
         x = adapter.forward(state)["x"]
         return x

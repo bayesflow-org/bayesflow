@@ -22,7 +22,12 @@ def test_scheduled_integration(method):
 
     steps = keras.ops.arange(0.0, 1.0 + 1e-6, 0.01)
     result = integrate(fn, {"x": 0.0}, steps=steps, method=method)["x"]
-    np.testing.assert_allclose(result, analytical_result(steps[-1]), atol=1e-1, rtol=1e-1)
+    np.testing.assert_allclose(
+        keras.ops.convert_to_numpy(result),
+        keras.ops.convert_to_numpy(analytical_result(steps[-1])),
+        atol=1e-1,
+        rtol=1e-1,
+    )
 
 
 def test_scipy_integration():
@@ -41,7 +46,9 @@ def test_scipy_integration():
         method="scipy",
         scipy_kwargs={"atol": 1e-6, "rtol": 1e-6},
     )["x"]
-    np.testing.assert_allclose(exact_result, result, atol=1e-6, rtol=1e-6)
+    np.testing.assert_allclose(
+        keras.ops.convert_to_numpy(exact_result), keras.ops.convert_to_numpy(result), atol=1e-6, rtol=1e-6
+    )
 
 
 @pytest.mark.parametrize(
@@ -64,8 +71,8 @@ def test_analytical_integration(method, atol):
             fn, initial_state, start_time=0.0, stop_time=T_final, steps="adaptive", method=method, max_steps=1_000
         )["x"]
 
-    np.testing.assert_allclose(result, analytical_result, atol=atol, rtol=0.1)
-    np.testing.assert_allclose(result_adaptive, analytical_result, atol=atol, rtol=0.1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(result), analytical_result, atol=atol, rtol=0.1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(result_adaptive), analytical_result, atol=atol, rtol=0.1)
 
 
 @pytest.mark.parametrize(
@@ -89,8 +96,8 @@ def test_analytical_backward_integration(method, atol):
             fn, initial_state, start_time=T_final, stop_time=0.0, steps="adaptive", method=method, max_steps=1_000
         )["x"]
 
-    np.testing.assert_allclose(result, analytical_result, atol=atol, rtol=0.1)
-    np.testing.assert_allclose(result_adaptive, analytical_result, atol=atol, rtol=0.1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(result), analytical_result, atol=atol, rtol=0.1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(result_adaptive), analytical_result, atol=atol, rtol=0.1)
 
 
 @pytest.mark.parametrize(
@@ -149,7 +156,7 @@ def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
         method=method,
     )
 
-    x_T = np.array(out["x"])
+    x_T = keras.ops.convert_to_numpy(out["x"])
     emp_mean = float(x_T.mean())
     emp_var = float(x_T.var())
 
@@ -214,7 +221,7 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
         method=method,
     )
 
-    x_0 = np.array(out["x"])
+    x_0 = keras.ops.convert_to_numpy(out["x"])
     emp_mean = float(x_0.mean())
     emp_var = float(x_0.var())
 
@@ -265,7 +272,7 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
     )["x"]
 
     exact = x0 * np.exp(a * T)
-    np.testing.assert_allclose(np.array(out).mean(), exact, atol=1e-3, rtol=0.1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(out).mean(), exact, atol=1e-3, rtol=0.1)
 
 
 @pytest.mark.parametrize("start_time, stop_time", [(0.0, 1.0), (0.8, 0.2)])
@@ -289,7 +296,7 @@ def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time)
     )["x"]
 
     assert keras.ops.shape(out) == keras.ops.shape(initial_state["x"])
-    assert np.isfinite(np.array(out)).all()
+    assert np.isfinite(keras.ops.convert_to_numpy(out)).all()
 
 
 @pytest.mark.parametrize("steps", [500])
@@ -354,7 +361,7 @@ def test_langevin_gaussian_sampling(steps):
         corrector_steps=1,
     )
 
-    xT = np.array(final_state["x"])
+    xT = keras.ops.convert_to_numpy(final_state["x"])
     emp_mean = float(xT.mean())
     emp_var = float(xT.var())
 

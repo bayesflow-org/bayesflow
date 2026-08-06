@@ -264,8 +264,6 @@ class BasicWorkflow(Workflow):
         Create a default adapter for processing inference variables, conditions,
         summaries, and standardization.
 
-        - Converts all float64 values to float32 for computational efficiency.
-
         Parameters
         ----------
         inference_variables : Sequence[str] or str
@@ -278,14 +276,10 @@ class BasicWorkflow(Workflow):
         Returns
         -------
         Adapter
-            A configured Adapter instance that applies dtype conversion and concatenation.
+            A configured Adapter instance that applies concatenation.
         """
 
-        adapter = (
-            Adapter()
-            .convert_dtype(from_dtype="float64", to_dtype="float32")
-            .concatenate(inference_variables, into="inference_variables")
-        )
+        adapter = Adapter().concatenate(inference_variables, into="inference_variables")
 
         if inference_conditions is not None:
             adapter = adapter.concatenate(inference_conditions, into="inference_conditions")

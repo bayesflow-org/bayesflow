@@ -349,7 +349,7 @@ class Approximator(BackendApproximator):
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
         Handles the common pipeline shared by all approximators:
-        ``to_array -> convert_dtype -> concatenate -> keep``.
+        ``to_array -> concatenate -> keep``.
         Subclasses can call ``super().build_adapter(...)`` and apply additional
         steps to the returned adapter.
 
@@ -386,7 +386,6 @@ class Approximator(BackendApproximator):
 
         adapter = Adapter()
         adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
         adapter.concatenate(inference_variables, into="inference_variables")
 
         if inference_conditions is not None:

@@ -89,12 +89,7 @@ class Adapter(MutableSequence[Transform]):
         -------
         An initialized Adapter with a set of default transforms.
         """
-        return (
-            Adapter()
-            .to_array()
-            .convert_dtype("float64", "float32")
-            .concatenate(inference_variables, into="inference_variables")
-        )
+        return Adapter().to_array().concatenate(inference_variables, into="inference_variables")
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
@@ -173,7 +168,7 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, Any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, Any] | tuple[dict[str, Tensor], dict[str, Tensor]], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
@@ -201,8 +196,8 @@ class Adapter(MutableSequence[Transform]):
         # we need to hand off tensors on the default device
         # not on the device the adapter ran
         if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
-            return tuple(self.prepare_data(value) for value in data)
-        return self.prepare_data(data)
+            return tuple(self.tensorize_to_floatx(value) for value in data)
+        return self.tensorize_to_floatx(data)
 
     def __repr__(self):
         result = ""
@@ -224,10 +219,12 @@ class Adapter(MutableSequence[Transform]):
         self.transforms.append(value)
         return self
 
-    def prepare_data(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
+    def tensorize_to_floatx(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
         data = keras.tree.map_structure(lambda x: keras.ops.convert_to_tensor(x, keras.backend.floatx()), data)
+
         if not self.differentiable:
             data = keras.tree.map_structure(keras.ops.stop_gradient, data)
+
         return data
 
     def __delitem__(self, key: int | slice):

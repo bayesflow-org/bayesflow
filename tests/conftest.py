@@ -3,7 +3,20 @@ import logging
 import matplotlib
 import pytest
 
+from tests.utils import cpu_if_torch_mps
+
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
+
+
+@pytest.fixture(autouse=True)
+def _cpu_fallback_on_mps(request):
+    """Runs tests marked `cpu_fallback_on_mps` on the CPU instead of torch's MPS device."""
+    if request.node.get_closest_marker("cpu_fallback_on_mps") is None:
+        yield
+        return
+
+    with cpu_if_torch_mps():
+        yield
 
 
 def pytest_runtest_setup(item):

@@ -89,6 +89,7 @@ def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile, subtests):
         assert keras.ops.is_tensor(jacs[1])
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
     if jit_compile and keras.backend.backend() == "torch":
         pytest.skip("torch's jacfwd is not yet compatible with jit compilation for binary vector inputs.")

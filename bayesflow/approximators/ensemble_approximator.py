@@ -10,7 +10,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import logging, filter_kwargs
-from bayesflow.utils.keras_utils import resolve_seed
+from bayesflow.utils.keras_utils import resolve_seed, multinomial_allocation
 from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.datasets import EnsembleDataset
 
@@ -273,17 +273,8 @@ class EnsembleApproximator(Approximator):
         seed_generator = resolve_seed(seed)
 
         weights = self._resolve_member_weights(member_weights)
-        names = tuple(weights.keys())
-        probs = np.array(list(weights.values()))
-
-        # Sample counts from multinomial
-        K = len(probs)
-        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
-        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
-        one_hot = keras.ops.one_hot(cat_indices, K)
-        counts = keras.ops.sum(one_hot, axis=0)
-
-        alloc = {name: int(count) for name, count in zip(names, counts) if count > 0}
+        counts = multinomial_allocation(weights, num_samples, seed=seed)
+        alloc = {name: count for name, count in counts.items() if count > 0}
 
         per_member = self._map_members(
             list(alloc.keys()),
@@ -293,9 +284,9 @@ class EnsembleApproximator(Approximator):
             ),
         )
 
-        merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
+        merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *per_member.values())
         shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
-
+        shuffle_idx = keras.ops.convert_to_numpy(shuffle_idx)
         return keras.tree.map_structure(lambda a: np.take(a, shuffle_idx, axis=1), merged)
 
     def log_prob(

@@ -473,9 +473,8 @@ def integrate_scipy(
     adapter = Adapter().concatenate(keys, into="x", axis=-1)
 
     def state_to_vector(state):
-        # flatten state
-        state = keras.tree.map_structure(lambda x: keras.ops.reshape(x, (-1,)), state)
-        # apply concatenation
+        state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
+        state = keras.tree.map_structure(lambda x: np.reshape(x, (-1,)), state)
         x = adapter(state)["x"]
         return keras.ops.convert_to_numpy(x).astype(np.float64)
 
@@ -487,7 +486,7 @@ def integrate_scipy(
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
-        time = keras.ops.convert_to_tensor(time, dtype="float32")
+        time = keras.ops.convert_to_tensor(time, dtype=keras.backend.floatx())
         deltas = fn(time, **filter_kwargs(state, fn))
         return state_to_vector(deltas)
 
@@ -573,9 +572,6 @@ def integrate(
         return _compile_loop_integrator(run)()
     else:
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
-
-
-############ SDE Solvers #############
 
 
 def generate_noise(z: StateDict, seed: keras.random.SeedGenerator) -> StateDict:

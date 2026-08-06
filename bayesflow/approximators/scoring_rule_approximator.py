@@ -12,7 +12,7 @@ from bayesflow.utils import (
     split_arrays,
     squeeze_inner_estimates_dict,
 )
-from bayesflow.utils.keras_utils import resolve_seed
+from bayesflow.utils.keras_utils import resolve_seed, multinomial_allocation
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -230,19 +230,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         # Allocate samples per score according to weights
         score_weights = self._resolve_score_weights(score_weights)
-        probs = np.array(list(score_weights.values()))
-
-        # Sample counts from multinomial
-        K = len(probs)
-        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
-        cat_indices = keras.ops.squeeze(
-            keras.random.categorical(logits_broadcast, num_samples=1, seed=seed_generator), axis=-1
-        )
-        one_hot = keras.ops.one_hot(cat_indices, K)
-        counts = keras.ops.sum(one_hot, axis=0)
-
-        max_count = int(keras.ops.max(counts))
-        num_samples_per_score = {k: counts[i] for i, k in enumerate(score_weights.keys())}
+        num_samples_per_score = multinomial_allocation(score_weights, num_samples, seed=seed_generator)
+        max_count = max(num_samples_per_score.values())
 
         samples_by_score = self._sample_separate(
             num_samples=max_count, conditions=conditions, split=split, seed=seed_generator, **kwargs
@@ -253,25 +242,16 @@ class ScoringRuleApproximator(ContinuousApproximator):
         for score_key, k in num_samples_per_score.items():
             if k == 0:
                 continue
-            cropped = keras.tree.map_structure(
-                lambda arr, k=k: keras.ops.take(arr, keras.ops.arange(keras.ops.cast(k, "int32")), axis=1),
-                samples_by_score[score_key],
-            )
+            cropped = keras.tree.map_structure(lambda arr, k=k: arr[:, :k], samples_by_score[score_key])
             cropped_list.append(cropped)
 
         # Concatenate across scores along the sample axis.
-        concatenated = keras.tree.map_structure(
-            lambda *arrays: keras.ops.concatenate(arrays, axis=1),
-            *cropped_list,
-        )
+        concatenated = keras.tree.map_structure(lambda *arrays: np.concatenate(arrays, axis=1), *cropped_list)
 
         # Shuffle along the sample axis (1) to form the mixture samples.
         shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
-        shuffled = keras.tree.map_structure(
-            lambda arr: keras.ops.convert_to_numpy(keras.ops.take(arr, shuffle_idx, axis=1)),
-            concatenated,
-        )
-        return shuffled
+        shuffle_idx = keras.ops.convert_to_numpy(shuffle_idx)
+        return keras.tree.map_structure(lambda arr: np.take(arr, shuffle_idx, axis=1), concatenated)
 
     def _sample_separate(
         self,

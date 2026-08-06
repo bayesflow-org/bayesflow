@@ -280,8 +280,8 @@ def test_brier_score_reports_true_brier_value():
     brier = BrierScore().score({"probs": probs}, targets)
 
     # Exact (mean) Brier score sum((p - y)^2).
-    probs_np = np.asarray(probs)
-    expected = np.mean(np.sum((probs_np - np.asarray(targets)) ** 2, axis=-1))
+    probs_np = keras.ops.convert_to_numpy(probs)
+    expected = np.mean(np.sum((probs_np - keras.ops.convert_to_numpy(targets)) ** 2, axis=-1))
     assert keras.ops.allclose(brier, expected, atol=1e-6)
 
     # ...recovered from the alpha=2 Tsallis score via the affine map S_Brier = 2 S_poly + 1.

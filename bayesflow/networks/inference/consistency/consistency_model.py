@@ -320,7 +320,9 @@ class ConsistencyModel(InferenceNetwork):
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
-            x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
+            # discretized_time[n] >= eps by construction, but floating-point error can turn it slightly negative on mps
+            sqrt_arg = keras.ops.maximum(keras.ops.square(discretized_time[n]) - self.eps**2, 0.0)
+            x_n = x + keras.ops.sqrt(sqrt_arg) * noise
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = maybe_mask_tensor(x_n, mask=fixed_target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)

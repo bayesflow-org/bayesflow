@@ -12,7 +12,7 @@ from bayesflow.utils import (
     split_arrays,
     squeeze_inner_estimates_dict,
 )
-from bayesflow.utils.keras_utils import resolve_seed
+from bayesflow.utils.keras_utils import resolve_seed, multinomial_allocation
 from bayesflow.utils.serialization import serializable
 
 from .continuous_approximator import ContinuousApproximator
@@ -230,18 +230,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         # Allocate samples per score according to weights
         score_weights = self._resolve_score_weights(score_weights)
-        probs = np.array(list(score_weights.values()), dtype=keras.backend.floatx())
-
-        # Sample counts from multinomial
-        K = len(probs)
-        logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
-        cat_indices = keras.ops.squeeze(
-            keras.random.categorical(logits_broadcast, num_samples=1, seed=seed_generator), axis=-1
-        )
-        one_hot = keras.ops.one_hot(cat_indices, K)
-        counts = keras.ops.sum(one_hot, axis=0)
-
-        num_samples_per_score = {k: int(counts[i]) for i, k in enumerate(score_weights.keys())}
+        num_samples_per_score = multinomial_allocation(score_weights, num_samples, seed=seed_generator)
         max_count = max(num_samples_per_score.values())
 
         samples_by_score = self._sample_separate(

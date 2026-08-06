@@ -1,4 +1,5 @@
 import inspect
+from collections.abc import Mapping
 
 import keras
 import numpy as np
@@ -19,6 +20,22 @@ def resolve_seed(seed):
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)
     return seed
+
+
+def multinomial_allocation(weights: Mapping[str, float], num_samples: int, seed=None) -> dict[str, int]:
+    """Allocate `num_samples` draws across `weights` via multinomial sampling."""
+    names = tuple(weights.keys())
+    probs = np.array(list(weights.values()), dtype=keras.backend.floatx())
+
+    num_categories = len(probs)
+    logits_broadcast = keras.ops.broadcast_to(
+        keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, num_categories)
+    )
+    cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
+    one_hot = keras.ops.one_hot(cat_indices, num_categories)
+    counts = keras.ops.sum(one_hot, axis=0)
+
+    return {name: int(count) for name, count in zip(names, counts)}
 
 
 def call_accepts_kwarg(call, key: str) -> bool:

@@ -470,10 +470,9 @@ class DiffusionModel(InferenceNetwork):
         guidance_kwargs : Mapping[str, Any], optional
             A dictionary of parameters for computing a guidance constraint term, which is
             added to the score for guided sampling. The specific keys and values depend on
-            the implementation of `guidance_constraint_term`.
+            the implementation of `guidance_function`.
         **kwargs
             Subnet kwargs (e.g., attention_mask, mask) for the subnet layer.
-            Also supports guidance_constraints and guidance_function for custom guidance.
 
         Returns
         -------

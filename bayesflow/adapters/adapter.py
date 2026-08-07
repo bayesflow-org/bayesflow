@@ -198,8 +198,8 @@ class Adapter(MutableSequence[Transform]):
                 data = self.forward(data, **kwargs)
 
         if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
-            return tuple(self.tensorize_to_floatx(value) for value in data)
-        return self.tensorize_to_floatx(data)
+            return tuple(self.device_handoff(value) for value in data)
+        return self.device_handoff(data)
 
     def __repr__(self):
         result = ""
@@ -222,7 +222,11 @@ class Adapter(MutableSequence[Transform]):
         return self
 
     def to_adapter_device(self, data: Any) -> Any:
-        """Move backend tensors in ``data`` onto :py:attr:`device`."""
+        """Move backend tensors in ``data`` onto :py:attr:`device`.
+        This is only needed for tensor inputs;
+        other inputs (e.g., pd.DataFrames) will be tensorised
+        by the adapter itself, and will be allocated on the correct device.
+        """
         with keras.device(self.device):
             return keras.tree.map_structure(
                 # move tensor to the correct device
@@ -230,7 +234,7 @@ class Adapter(MutableSequence[Transform]):
                 data,
             )
 
-    def tensorize_to_floatx(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
+    def device_handoff(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
         """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""
         floatx = keras.backend.floatx()
 

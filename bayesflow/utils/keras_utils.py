@@ -14,10 +14,12 @@ def logits_relative_to_target(logits: Tensor, targets: Tensor) -> Tensor:
     return logits - logit_m
 
 
-def resolve_seed(seed):
+def resolve_seed(seed, seed_generator=None):
     """Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged."""
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)
+    if seed is None and seed_generator is not None:
+        return seed_generator
     return seed
 
 

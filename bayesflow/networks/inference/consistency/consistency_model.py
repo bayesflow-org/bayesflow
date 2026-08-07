@@ -292,7 +292,7 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         # Extract subnet masks from kwargs
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))

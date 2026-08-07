@@ -81,7 +81,7 @@ class Mixture(Distribution):
         Tensor
             Samples with shape ``batch_shape + (event_dim,)``.
         """
-        sg = resolve_seed(seed) or self.seed_generator
+        sg = resolve_seed(seed, self.seed_generator)
         K = len(self.distributions)
         total = math.prod(batch_shape)
 

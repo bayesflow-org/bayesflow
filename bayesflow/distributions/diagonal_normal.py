@@ -99,7 +99,7 @@ class DiagonalNormal(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
-        sg = resolve_seed(seed) or self.seed_generator
+        sg = resolve_seed(seed, self.seed_generator)
         z = keras.random.normal(shape=batch_shape + (self.dim,), seed=sg)
         z = self._mean + self._std * z
         return z

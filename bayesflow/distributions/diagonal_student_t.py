@@ -113,7 +113,7 @@ class DiagonalStudentT(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
-        sg = resolve_seed(seed) or self.seed_generator
+        sg = resolve_seed(seed, self.seed_generator)
         # As of writing this code, keras does not support the chi-square distribution
         # nor does it support a scale or rate parameter in Gamma. Hence, we use the relation:
         # chi-square(df) = Gamma(shape = 0.5 * df, scale = 2) = Gamma(shape = 0.5 * df, scale = 1) * 2

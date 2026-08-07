@@ -215,7 +215,7 @@ class StableConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         steps = kwargs.get("steps", self.steps)

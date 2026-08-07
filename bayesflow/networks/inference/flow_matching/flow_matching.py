@@ -290,7 +290,7 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
 
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
@@ -346,7 +346,7 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
 
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs

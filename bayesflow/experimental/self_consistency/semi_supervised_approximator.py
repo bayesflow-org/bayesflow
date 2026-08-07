@@ -101,9 +101,6 @@ class SemiSupervisedApproximator(Approximator):
         for key, value in data.items():
             for approx_name in self.approximator_metrics.get(key, []):
                 approximator_metrics = self._compute_metrics_approximator(data=value, name=approx_name, stage=stage)
-
-                if not approximator_metrics:
-                    continue
                 loss += approximator_metrics["loss"]
                 metrics = metrics | {f"{key}/{approx_name}/{k}": v for k, v in approximator_metrics.items()}
 

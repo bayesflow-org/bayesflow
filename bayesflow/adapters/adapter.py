@@ -601,7 +601,7 @@ class Adapter(MutableSequence[Transform]):
             - "none": Both lower and upper bounds are exclusive.
         epsilon : float, optional
             Small value to ensure inclusive bounds are not violated.
-            Current default is 1e-15 as this ensures finite outcomes
+            Current default is 1e-6 as this ensures finite outcomes
             with the default transformations applied to data exactly at the boundaries.
         """
         if isinstance(keys, str):

@@ -134,7 +134,7 @@ class SelfConsistencyLoss:
 
         data = data | samples
 
-        data = keras.tree.map_structure(lambda s: keras.ops.convert_to_tensor(s, dtype="float32"), data)
+        data = keras.tree.map_structure(lambda s: keras.ops.convert_to_tensor(s, dtype=keras.backend.floatx()), data)
 
         return data
 
@@ -212,7 +212,7 @@ class SelfConsistencyLoss:
                 # Analytic likelihood, loss in adapted space
                 # Need Jacobians, but cannot infer data keys
                 raise ValueError(
-                    "data_keys must be supplied when adapted=True and the likelihood is analytic.",
+                    "data_keys must be supplied when adapted=True and the likelihood is analytic. "
                     "Set data_keys to the list of observation keys in your data dict.",
                 )
             else:

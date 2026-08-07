@@ -8,14 +8,10 @@ from bayesflow.utils.serialization import deserialize, serialize
 import bayesflow as bf
 
 
-def to_numpy(x):
-    """The adapter returns backend tensors, which numpy cannot read on all devices (e.g. torch MPS)."""
-    return keras.tree.map_structure(keras.ops.convert_to_numpy, x)
-
-
+@pytest.mark.cpu_fallback_on_mps
 def test_cycle_consistency(adapter, random_data):
     processed = adapter(random_data)
-    deprocessed = to_numpy(adapter(processed, inverse=True))
+    deprocessed = adapter(processed, inverse=True)
 
     for key, value in random_data.items():
         if key in ["d1", "d2", "p3", "n1", "u1"]:
@@ -28,6 +24,7 @@ def test_cycle_consistency(adapter, random_data):
         assert np.allclose(value, deprocessed[key])
 
 
+@pytest.mark.cpu_fallback_on_mps
 @pytest.mark.parametrize("differentiable", [False, True])
 def test_differentiable(differentiable):
     from bayesflow._backend import grad
@@ -38,17 +35,18 @@ def test_differentiable(differentiable):
     def loss(x):
         return keras.ops.sum(adapter({"x": x})["x"])
 
-    gradient = to_numpy(grad(loss)(x))
+    gradient = grad(loss)(x)
 
     if differentiable:
         # d/dx (2 * log(x)) = 2 / x
-        assert np.allclose(gradient, 2.0 / to_numpy(x))
+        assert np.allclose(gradient, 2.0 / x)
     else:
         assert np.allclose(gradient, 0.0)
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_serialize_deserialize(adapter, random_data):
-    processed = to_numpy(adapter(random_data))
+    processed = adapter(random_data)
     serialized = serialize(adapter)
     deserialized = deserialize(serialized)
     reserialized = serialize(deserialized)
@@ -56,7 +54,7 @@ def test_serialize_deserialize(adapter, random_data):
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
     random_data["foo"] = random_data["x1"]
-    deserialized_processed = to_numpy(deserialized(random_data))
+    deserialized_processed = deserialized(random_data)
     for key, value in processed.items():
         if key == "s3":
             # skip this key because it is *randomly* subsampled
@@ -124,6 +122,7 @@ def test_constrain():
     assert ops.isinf(ops.max(result["x_both_disc2"]))
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_simple_transforms(random_data):
     # check if simple transforms are applied correctly
     from bayesflow.adapters import Adapter
@@ -132,13 +131,13 @@ def test_simple_transforms(random_data):
 
     result = ad(random_data)
 
-    assert np.allclose(to_numpy(result["p2"]), np.log(random_data["p2"]))
-    assert np.allclose(to_numpy(result["t2"]), np.log(random_data["t2"]))
-    assert np.allclose(to_numpy(result["t1"]), np.log1p(random_data["t1"]))
-    assert np.allclose(to_numpy(result["p1"]), np.sqrt(random_data["p1"]))
+    assert np.allclose(result["p2"], np.log(random_data["p2"]))
+    assert np.allclose(result["t2"], np.log(random_data["t2"]))
+    assert np.allclose(result["t1"], np.log1p(random_data["t1"]))
+    assert np.allclose(result["p1"], np.sqrt(random_data["p1"]))
 
     # inverse results should match the original input
-    inverse = to_numpy(ad(result, inverse=True))
+    inverse = ad(result, inverse=True)
 
     assert np.allclose(inverse["p2"], random_data["p2"])
     assert np.allclose(inverse["t2"], random_data["t2"])
@@ -267,9 +266,10 @@ def test_to_dict_transform():
     assert processed["category"].shape[-1] == 5
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac(adapter_log_det_jac, random_data):
     d, log_det_jac = adapter_log_det_jac(random_data, log_det_jac=True)
-    log_det_jac = to_numpy(log_det_jac)
+    log_det_jac = log_det_jac
 
     assert np.allclose(log_det_jac["x1"], np.log(2))
 
@@ -293,15 +293,17 @@ def test_log_det_jac(adapter_log_det_jac, random_data):
     assert np.allclose(log_det_jac["u"], u1[:, 0])
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
     d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
     d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
-    forward_log_det_jac, inverse_log_det_jac = to_numpy((forward_log_det_jac, inverse_log_det_jac))
+    # forward_log_det_jac, inverse_log_det_jac = (forward_log_det_jac, inverse_log_det_jac)
 
     for key in forward_log_det_jac.keys():
         assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac_exceptions(random_data):
     # Test cannot compute inverse log_det_jac
     # e.g., when we apply a concat and then a transform that
@@ -309,7 +311,7 @@ def test_log_det_jac_exceptions(random_data):
     # (because the log_det_jac are summed, not concatenated)
     adapter = bf.Adapter().concatenate(["p1", "p2", "p3"], into="p").sqrt("p")
     transformed_data, log_det_jac = adapter(random_data, log_det_jac=True)
-    log_det_jac = to_numpy(log_det_jac)
+    log_det_jac = log_det_jac
 
     # test that inverse raises error
     with pytest.raises(ValueError):
@@ -320,8 +322,8 @@ def test_log_det_jac_exceptions(random_data):
 
     transformed_data, forward_log_det_jac = adapter(random_data, log_det_jac=True)
     data, inverse_log_det_jac = adapter(transformed_data, inverse=True, log_det_jac=True)
-    forward_log_det_jac = to_numpy(forward_log_det_jac)
-    inverse_log_det_jac = sum(to_numpy(inverse_log_det_jac).values())
+    forward_log_det_jac = forward_log_det_jac
+    inverse_log_det_jac = sum(inverse_log_det_jac.values())
 
     # forward is the same regardless
     assert np.allclose(forward_log_det_jac["p"], log_det_jac["p"])
@@ -330,6 +332,7 @@ def test_log_det_jac_exceptions(random_data):
     assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_nan_to_num():
     arr = {"test": np.array([1.0, np.nan, 3.0])}
     # test without mask
@@ -339,7 +342,7 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test", default_value=-1.0, return_mask=False)
     )
-    out = to_numpy(transform(arr)["test"])
+    out = transform(arr)["test"]
     np.testing.assert_array_equal(out, np.array([1.0, -1.0, 3.0]))
 
     # test with mask
@@ -350,7 +353,7 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test", default_value=0.0, return_mask=True)
     )
-    out = to_numpy(transform(arr))
+    out = transform(arr)
     np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
     np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
 
@@ -361,6 +364,6 @@ def test_nan_to_num():
         .convert_dtype("float64", "float32")
         .nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
     )
-    out = to_numpy(transform(arr))
+    out = transform(arr)
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
     np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))

@@ -13,6 +13,7 @@ def classifier_two_sample_test(
     targets: np.ndarray,
     metric: str = "accuracy",
     patience: int = 5,
+    min_epochs: int = 0,
     max_epochs: int = 1000,
     batch_size: int = 128,
     return_metric_only: bool = True,
@@ -43,6 +44,8 @@ def classifier_two_sample_test(
         Metric to evaluate the classifier performance. Default is "accuracy".
     patience : int, optional
         Number of epochs with no improvement after which training will be stopped. Default is 5.
+    min_epochs : int, optional
+        Number of warm-up epochs during which early stopping is disabled. Default is 0.
     max_epochs : int, optional
         Maximum number of epochs to train the classifier. Default is 1000.
     batch_size : int, optional
@@ -143,7 +146,10 @@ def classifier_two_sample_test(
 
         classifier = build_classifier()
         early_stopping = keras.callbacks.EarlyStopping(
-            monitor=f"val_{metric}", patience=patience, restore_best_weights=True
+            monitor=f"val_{metric}",
+            patience=patience,
+            restore_best_weights=True,
+            start_from_epoch=min_epochs,
         )
 
         # For now, we need to enable grads, since we turn them off by default
@@ -171,7 +177,12 @@ def classifier_two_sample_test(
                 validation_data=(data_val, labels_val),
             )
 
-        scores.append(history.history[f"val_{metric}"][-1])
+        val_metric = history.history[f"val_{metric}"]
+        if early_stopping.best is None:
+            # nothing was monitored, no weights were restored
+            scores.append(val_metric[-1])
+        else:
+            scores.append(val_metric[early_stopping.best_epoch])
         if not return_metric_only:
             histories.append(history.history)
             classifiers.append(classifier)

@@ -55,7 +55,7 @@ class MixtureScore(ParametricDistributionScore):
         )
     """
 
-    SKIP_INVERSE_ADAPTER = "mixture_logits"
+SKIP_INVERSE_ADAPTER = ("mixture_logits",)
 
     def __init__(
         self,

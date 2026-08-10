@@ -84,6 +84,7 @@ class MixtureScore(ParametricDistributionScore):
         self.K = len(self.component_names)
 
         self.weight_head = weight_head
+        self.seed_generator = keras.random.SeedGenerator()
 
         # Temperature is a non-trainable variable so it can be updated by external schedules.
         self.temperature = keras.Variable(temperature, trainable=False, dtype="float32", name="mixture_temperature")
@@ -215,7 +216,7 @@ class MixtureScore(ParametricDistributionScore):
         probs = keras.ops.softmax(logits / self.temperature, axis=-1)  # (batch_size, K)
 
         # Sample component indices via inverse-CDF on uniform draws
-        seed_generator = resolve_seed(seed)
+        seed_generator = resolve_seed(seed, self.seed_generator)
         u = keras.random.uniform((batch_size, 1), dtype=probs.dtype, seed=seed_generator)
         cdf = keras.ops.cumsum(probs, axis=-1)
         idx = keras.ops.argmax(keras.ops.cast(u <= cdf, "int32"), axis=-1)  # (B,)

@@ -20,7 +20,6 @@ class Mixture(Distribution):
         distributions: Sequence[Distribution],
         mixture_logits: Sequence[float] | None = None,
         trainable_mixture: bool = False,
-        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -36,8 +35,6 @@ class Mixture(Distribution):
         trainable_mixture : bool, optional
             Whether the mixture weights (`mixture_logits`) should be trainable.
             Default is `False`.
-        seed_generator : keras.random.SeedGenerator, optional
-            Seed generator for reproducible sampling. If ``None``, a new one is created.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
         """
@@ -52,7 +49,7 @@ class Mixture(Distribution):
             self.mixture_logits = ops.convert_to_tensor(mixture_logits)
 
         self.trainable_mixture = trainable_mixture
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.dim = None
         self._mixture_logits = None
@@ -150,7 +147,6 @@ class Mixture(Distribution):
             "distributions": self.distributions,
             "mixture_logits": self.mixture_logits,
             "trainable_mixture": self.trainable_mixture,
-            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

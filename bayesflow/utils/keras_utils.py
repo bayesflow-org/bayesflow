@@ -14,11 +14,20 @@ def logits_relative_to_target(logits: Tensor, targets: Tensor) -> Tensor:
     return logits - logit_m
 
 
-def resolve_seed(seed, seed_generator=None):
-    """Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged."""
+def resolve_seed(seed, seed_generator):
+    """Resolve a user-provided ``seed`` against an instance's own seed generator.
+
+    An integer is converted to a fresh ``SeedGenerator``, a ``SeedGenerator`` is passed through
+    unchanged, and ``None`` falls back to ``seed_generator``.
+
+    Every object that draws randomness of its own owns a ``self.seed_generator`` and passes it
+    here, so such draws never fall through to Keras' global generator (which cannot be traced
+    under ``jax.jit``). Objects that merely forward ``seed`` to a sub-component without drawing
+    randomness themselves own no generator and do not call this function at all.
+    """
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)
-    if seed is None and seed_generator is not None:
+    if seed is None:
         return seed_generator
     return seed
 

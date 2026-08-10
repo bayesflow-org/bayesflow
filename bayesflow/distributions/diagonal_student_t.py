@@ -24,7 +24,6 @@ class DiagonalStudentT(Distribution):
         loc: int | float | np.ndarray | Tensor = 0.0,
         scale: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
-        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -47,9 +46,6 @@ class DiagonalStudentT(Distribution):
             The scale parameter (standard deviation) of the distribution. Default is 1.0.
         trainable_parameters : bool, optional
             Whether to treat `loc` and `scale` as trainable parameters. Default is False.
-        seed_generator : keras.random.SeedGenerator, optional
-            A Keras seed generator for reproducible random sampling. If None, a new seed
-            generator is created. Default is None.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
         """
@@ -62,7 +58,7 @@ class DiagonalStudentT(Distribution):
 
         self.trainable_parameters = trainable_parameters
 
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.dim = None
         self._loc = None
@@ -136,7 +132,6 @@ class DiagonalStudentT(Distribution):
             "loc": self.loc,
             "scale": self.scale,
             "trainable_parameters": self.trainable_parameters,
-            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

@@ -5,7 +5,6 @@ import keras
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
-from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize
 
 
@@ -33,6 +32,13 @@ class InferenceNetwork(keras.Layer):
         Compute and return a ``dict[str, Tensor]`` of training metrics.  The dict
         **must** contain at least a ``"loss"`` key. This is where you implement
         the training objective for your custom inference network.
+
+    Subclasses that draw randomness of their own (e.g. stochastic solvers or training-time noise)
+    must set ``self.seed_generator = keras.random.SeedGenerator()`` in their ``__init__`` and
+    resolve an omitted ``seed`` against it via
+    :func:`~bayesflow.utils.keras_utils.resolve_seed`, so that they never fall back to Keras'
+    global generator (which cannot be traced under ``jax.jit``).  Purely deterministic subclasses
+    need no generator: :meth:`sample` forwards ``seed`` unchanged to ``base_distribution``.
 
     Optionally override:
 
@@ -117,7 +123,8 @@ class InferenceNetwork(keras.Layer):
         seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> Tensor:
-        seed = resolve_seed(seed)
+        # forwarded as-is: this method draws no randomness itself, so an omitted seed is resolved
+        # by base_distribution and by whichever _inverse implementation needs it
         samples = self.base_distribution.sample(batch_shape, seed=seed)
         if "compute_prior_score" in kwargs:
             samples = self._inverse_compositional(

@@ -43,6 +43,7 @@ class MvNormalScore(ParametricDistributionScore):
 
         self.dim = dim
         self.links = links or {"precision_cholesky_factor": CholeskyFactor()}
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.config = {"dim": dim}
 
@@ -133,7 +134,7 @@ class MvNormalScore(ParametricDistributionScore):
             Samples with the same shape as ``mean``.
         """
         covariance_cholesky_factor = keras.ops.inv(precision_cholesky_factor)
-        normal_samples = keras.random.normal(keras.ops.shape(mean), seed=resolve_seed(seed))
+        normal_samples = keras.random.normal(keras.ops.shape(mean), seed=resolve_seed(seed, self.seed_generator))
         scaled_normal = keras.ops.einsum("...ij,...j->...i", covariance_cholesky_factor, normal_samples)
         samples = mean + scaled_normal
         return samples

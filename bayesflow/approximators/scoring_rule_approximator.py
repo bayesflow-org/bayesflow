@@ -190,6 +190,10 @@ class ScoringRuleApproximator(ContinuousApproximator):
         merge_scores : bool, default True
             If True, return samples aggregated across scoring rules as a mixture.
             If False, return samples separately for each scoring rule.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         **kwargs
             Additional keyword arguments such as ``batch_size``.
 
@@ -219,7 +223,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 )
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
-        seed_generator = resolve_seed(seed)
+        seed_generator = resolve_seed(seed, self.seed_generator)
 
         # Single score: _sample_separate already squeezed to a plain result,
         # and mixing with uniform weight is an identity operation.

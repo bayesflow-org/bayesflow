@@ -56,6 +56,8 @@ class EnsembleApproximator(Approximator):
 
         self.has_distribution = bool(self.distribution_members)
 
+        self.seed_generator = keras.random.SeedGenerator()
+
     @classmethod
     def _warn_if_shared_approximator_components(cls, approximators):
         """Warn if approximators share component instances (not safely serializable yet)."""
@@ -253,6 +255,10 @@ class EnsembleApproximator(Approximator):
             Must be nonnegative, will be normalized to sum to 1.
         merge_members : bool, optional
             Whether to merge samples from all approximators into a single (weighted) marginal sample.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         **kwargs
             Additional arguments passed to approximator.sample().
 
@@ -270,7 +276,7 @@ class EnsembleApproximator(Approximator):
                 fn=lambda name, a: a.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs),
             )
 
-        seed_generator = resolve_seed(seed)
+        seed_generator = resolve_seed(seed, self.seed_generator)
 
         weights = self._resolve_member_weights(member_weights)
         names = tuple(weights.keys())

@@ -60,6 +60,7 @@ class ContinuousApproximator(Approximator):
         self.inference_network = inference_network
         self.summary_network = summary_network
         self.sampler = Sampler()
+        self.seed_generator = keras.random.SeedGenerator()
         self.standardizer = Standardization(standardize)
         self.condition_builder = ConditionBuilder()
         self.has_distribution = True
@@ -254,7 +255,7 @@ class ContinuousApproximator(Approximator):
         seed : int, keras.random.SeedGenerator, or None, optional
             Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
             and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
-            as-is. If ``None`` (default), each component uses its own instance seed generator.
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -275,7 +276,7 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
-            seed=resolve_seed(seed),
+            seed=resolve_seed(seed, self.seed_generator),
             **inference_kwargs,
         )
 

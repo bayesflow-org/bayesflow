@@ -123,7 +123,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in self.transforms:
                 data = transform(data, **kwargs)
@@ -156,7 +156,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in reversed(self.transforms):
                 data = transform(data, inverse=True, **kwargs)
@@ -189,9 +189,12 @@ class Adapter(MutableSequence[Transform]):
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
 
-        data = self.to_adapter_device(data)
-
         with keras.device(self.device):
+            data = keras.tree.map_structure(
+                lambda x: keras.ops.convert_to_tensor(x) if keras.ops.is_tensor(x) else x,
+                data,
+            )
+
             if inverse:
                 data = self.inverse(data, **kwargs)
             else:
@@ -220,19 +223,6 @@ class Adapter(MutableSequence[Transform]):
         """
         self.transforms.append(value)
         return self
-
-    def to_adapter_device(self, data: Any) -> Any:
-        """Move backend tensors in ``data`` onto :py:attr:`device`.
-        This is only needed for tensor inputs;
-        other inputs (e.g., pd.DataFrames) will be tensorised
-        by the adapter itself, and will be allocated on the correct device.
-        """
-        with keras.device(self.device):
-            return keras.tree.map_structure(
-                # move tensor to the correct device
-                lambda x: keras.ops.convert_to_tensor(x) if keras.ops.is_tensor(x) else x,
-                data,
-            )
 
     def device_handoff(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
         """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""

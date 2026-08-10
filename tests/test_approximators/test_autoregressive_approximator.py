@@ -141,7 +141,10 @@ def test_condition_builder_uses_encoder_time_axis_for_decoder_time():
 
     expected_time = np.array([[10.0, 11.0, 12.0], [13.0, 14.0, 15.0]], dtype="float32")
     np.testing.assert_allclose(keras.ops.convert_to_numpy(decoder_time), expected_time)
-    np.testing.assert_allclose(keras.ops.convert_to_numpy(encoder_outputs), summary_variables)
+    np.testing.assert_allclose(
+        keras.ops.convert_to_numpy(encoder_outputs),
+        keras.ops.convert_to_numpy(summary_variables),
+    )
     np.testing.assert_allclose(keras.ops.convert_to_numpy(conditions[..., 0]), expected_time)
 
 

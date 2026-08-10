@@ -43,14 +43,16 @@ class EchoInferenceNetwork:
         return conditions
 
 
-@pytest.fixture(params=["recurrent", "transformer"])
+@pytest.fixture(params=["recurrent", "deep_recurrent", "transformer"])
 def autoregressive_approximator(request):
     if request.param == "recurrent":
-        decoder = RecurrentDecoder(hidden_dim=8)
+        decoder = RecurrentDecoder(embed_dim=8)
+    elif request.param == "deep_recurrent":
+        decoder = RecurrentDecoder(embed_dim=(8, 6), recurrent_type=("gru", "lstm"))
     else:
         decoder = TransformerDecoder(
-            summary_dim=4,
             embed_dim=8,
+            output_dim=4,
             num_layers=1,
             num_heads=2,
             dropout=0.0,
@@ -184,8 +186,8 @@ def test_transformer_decoder_cached_decode_matches_teacher_forcing():
 
     for time in (None, explicit_time):
         decoder = TransformerDecoder(
-            summary_dim=5,
             embed_dim=8,
+            output_dim=5,
             num_layers=2,
             num_heads=2,
             dropout=0.0,
@@ -213,6 +215,46 @@ def test_transformer_decoder_cached_decode_matches_teacher_forcing():
             rtol=1e-5,
             atol=1e-5,
         )
+
+
+@pytest.mark.parametrize(
+    "embed_dim,recurrent_type",
+    [
+        (8, "gru"),
+        ((4, 5), "gru"),
+    ],
+)
+def test_recurrent_decoder_cached_decode_matches_teacher_forcing(embed_dim, recurrent_type):
+    batch_size, num_steps, target_dim, encoder_dim = 2, 4, 2, 3
+    inference_variables = keras.random.normal((batch_size, num_steps, target_dim), seed=1)
+    encoder_outputs = keras.random.normal((batch_size, num_steps, encoder_dim), seed=2)
+
+    decoder = RecurrentDecoder(
+        embed_dim=embed_dim,
+        recurrent_type=recurrent_type,
+    )
+    decoder.build(
+        (batch_size, num_steps, target_dim),
+        (batch_size, num_steps, encoder_dim),
+    )
+
+    teacher_forced = decoder(inference_variables, encoder_outputs, training=False)
+    cache = decoder.initialize_cache(encoder_outputs)
+    previous_target = None
+    cached_conditions = []
+
+    for step in range(num_steps):
+        condition, cache = decoder.decode_step(previous_target, step=step, cache=cache)
+        cached_conditions.append(condition)
+        previous_target = inference_variables[:, step]
+
+    cached_conditions = keras.ops.stack(cached_conditions, axis=1)
+    np.testing.assert_allclose(
+        keras.ops.convert_to_numpy(cached_conditions),
+        keras.ops.convert_to_numpy(teacher_forced),
+        rtol=1e-5,
+        atol=1e-5,
+    )
 
 
 def test_builds_all_autoregressive_networks(autoregressive_approximator, autoregressive_data):

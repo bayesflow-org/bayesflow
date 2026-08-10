@@ -61,24 +61,22 @@ class SkipRecurrentNet(keras.Layer):
             name="skip_conv",
         )
 
-        recurrent_constructor = find_recurrent_net(recurrent_type)
-
         if bidirectional:
             # Manually implement bidirectional to avoid Keras serialization issues with Bidirectional
-            forward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            backward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            forward_recurrent = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
+            backward_recurrent = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
             self.recurrent_forward = forward_recurrent
             self.recurrent_backward = backward_recurrent
 
             # Same for skip recurrent
-            forward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            backward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            forward_skip = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
+            backward_skip = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
             self.skip_recurrent_forward = forward_skip
             self.skip_recurrent_backward = backward_skip
 
         else:
-            self.recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            self.skip_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            self.recurrent = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
+            self.skip_recurrent = find_recurrent_net(recurrent_type, units=hidden_dim, dropout=dropout)
 
         self.input_channels = input_channels
         self.hidden_dim = hidden_dim

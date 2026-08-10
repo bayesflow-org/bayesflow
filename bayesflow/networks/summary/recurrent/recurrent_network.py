@@ -82,8 +82,7 @@ class RecurrentNetwork(SummaryNetwork):
             strict=True,
         ):
             hidden, rnn_type, bidir, merge, norm, layer_return_sequences = recurrent_layer_kwargs
-            recurrent_constructor = find_recurrent_net(rnn_type)
-            recurrent_layer = recurrent_constructor(units=hidden, return_sequences=layer_return_sequences)
+            recurrent_layer = find_recurrent_net(rnn_type, units=hidden, return_sequences=layer_return_sequences)
 
             if bidir:
                 recurrent_layer = keras.layers.Bidirectional(recurrent_layer, merge_mode=merge)

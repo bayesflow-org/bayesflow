@@ -9,19 +9,47 @@ from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 @serializable("bayesflow.networks")
 class TransformerDecoder(keras.Layer):
-    """Causal transformer decoder with incremental attention caching.
+    """Causal transformer decoder for autoregressive target sequences.
 
-    Each layer alternates the existing BayesFlow ``MultiHeadAttention``
-    block between causal self-attention over shifted targets and unrestricted
-    cross-attention over the complete encoded observation sequence.
-    If explicit timestamps are supplied, decoder Time2Vec embeddings use them;
-    otherwise they fall back to integer sequence positions.
+    Alternates causal self-attention over shifted targets with unrestricted
+    cross-attention over encoded summaries. In ``AutoregressiveApproximator``,
+    it creates one condition per target time step for teacher forcing and cached
+    autoregressive sampling.
+
+    Parameters
+    ----------
+    embed_dim : int, optional
+        Embedding dimensionality used inside attention blocks, by default 64.
+    output_dim : int or None, optional
+        Dimensionality of the projected decoder output. If None, uses ``embed_dim``.
+    num_layers : int, optional
+        Number of transformer decoder layers, by default 2.
+    num_heads : int, optional
+        Number of attention heads in each layer, by default 4.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense layers, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm inside attention blocks and before the
+        output projection, by default True.
+    include_condition : bool, optional
+        Whether to concatenate the matching encoder output to each decoded condition,
+        by default True.
+    time_embed_dim : int, optional
+        Dimensionality of Time2Vec embeddings for decoder steps, by default 8.
+    kernel_initializer : str, optional
+        Initializer for kernel weights, by default ``"glorot_uniform"``.
     """
 
     def __init__(
         self,
-        summary_dim: int = 32,
         embed_dim: int = 64,
+        output_dim: int | None = None,
         num_layers: int = 2,
         num_heads: int = 4,
         dropout: float = 0.05,
@@ -36,8 +64,8 @@ class TransformerDecoder(keras.Layer):
     ):
         super().__init__(**layer_kwargs(kwargs))
 
-        self.summary_dim = summary_dim
         self.embed_dim = embed_dim
+        self.output_dim = output_dim if output_dim is not None else embed_dim
         self.num_layers = num_layers
         self.num_heads = num_heads
         self.dropout_rate = dropout
@@ -70,7 +98,7 @@ class TransformerDecoder(keras.Layer):
         )
         self.output_norm = keras.layers.RMSNormalization(axis=-1) if layer_norm else None
         self.output_projection = keras.layers.Dense(
-            summary_dim,
+            self.output_dim,
             use_bias=use_bias,
             kernel_initializer=kernel_initializer,
         )
@@ -379,14 +407,14 @@ class TransformerDecoder(keras.Layer):
         return mask
 
     def compute_output_shape(self, inference_variables_shape, encoder_outputs_shape):
-        output_dim = self.summary_dim + encoder_outputs_shape[-1] if self.include_condition else self.summary_dim
+        output_dim = self.output_dim + encoder_outputs_shape[-1] if self.include_condition else self.output_dim
         return tuple(inference_variables_shape)[:-1] + (output_dim,)
 
     def get_config(self):
         return super().get_config() | serialize(
             {
-                "summary_dim": self.summary_dim,
                 "embed_dim": self.embed_dim,
+                "output_dim": self.output_dim,
                 "num_layers": self.num_layers,
                 "num_heads": self.num_heads,
                 "dropout": self.dropout_rate,
@@ -402,4 +430,5 @@ class TransformerDecoder(keras.Layer):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))
+        config = deserialize(config, custom_objects=custom_objects)
+        return cls(**config)

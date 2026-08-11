@@ -71,6 +71,8 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         self.has_distribution = len(self.distribution_keys) > 0
 
+        self.seed_generator = keras.random.SeedGenerator()
+
     def estimate(
         self,
         conditions: Mapping[str, np.ndarray] | None = None,

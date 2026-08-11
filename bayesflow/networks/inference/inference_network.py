@@ -87,11 +87,12 @@ class InferenceNetwork(keras.Layer):
         inverse: bool = False,
         density: bool = False,
         training: bool = False,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, conditions=conditions, density=density, training=training, **kwargs)
-        return self._forward(xz, conditions=conditions, density=density, training=training, **kwargs)
+            return self._inverse(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
+        return self._forward(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs

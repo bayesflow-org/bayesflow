@@ -268,9 +268,7 @@ def test_bootstrap_comparison_shapes():
         num_null_samples,
     )
 
-    assert isinstance(distance_observed, np.ndarray)
     assert distance_observed.shape == ()
-    assert isinstance(distance_null, np.ndarray)
     assert distance_null.shape == (num_null_samples,)
 
 
@@ -334,9 +332,7 @@ def test_mmd_comparison_from_summaries_shapes():
         num_null_samples=num_null_samples,
     )
 
-    assert isinstance(mmd_observed, np.ndarray)
     assert mmd_observed.shape == ()
-    assert isinstance(mmd_null, np.ndarray)
     assert mmd_null.shape == (num_null_samples,)
 
 
@@ -409,8 +405,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 

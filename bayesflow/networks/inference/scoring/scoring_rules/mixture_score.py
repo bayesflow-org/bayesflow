@@ -86,7 +86,9 @@ class MixtureScore(ParametricDistributionScore):
         self.weight_head = weight_head
 
         # Temperature is a non-trainable variable so it can be updated by external schedules.
-        self.temperature = keras.Variable(temperature, trainable=False, dtype="float32", name="mixture_temperature")
+        self.temperature = keras.Variable(
+            temperature, trainable=False, dtype=keras.backend.floatx(), name="mixture_temperature"
+        )
 
         # Ensure mixture logits are not inverse-standardized like inference variables.
         # Components may define their own transformation types.

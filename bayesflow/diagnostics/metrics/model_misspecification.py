@@ -6,6 +6,7 @@ distributions within the reference samples for hypothesis testing.
 from collections.abc import Mapping, Callable
 
 import numpy as np
+import keras
 from keras.ops import convert_to_numpy, convert_to_tensor
 
 from bayesflow.approximators import ContinuousApproximator
@@ -24,7 +25,7 @@ def bootstrap_comparison(
 
     Parameters
     ----------
-    observed_samples : np.ndarray)
+    observed_samples : np.ndarray
         Observed samples, shape (num_observed, ...).
     reference_samples : np.ndarray
         Reference samples, shape (num_reference, ...).
@@ -60,22 +61,24 @@ def bootstrap_comparison(
             f"but got {observed_samples.shape[1:]} != {reference_samples.shape[1:]}."
         )
 
-    observed_samples_tensor: Tensor = convert_to_tensor(observed_samples, dtype="float32")
-    reference_samples_tensor: Tensor = convert_to_tensor(reference_samples, dtype="float32")
+    dtype = keras.backend.floatx()
+    observed_samples_tensor = convert_to_tensor(observed_samples, dtype=dtype)
+    reference_samples_tensor = convert_to_tensor(reference_samples, dtype=dtype)
 
-    distance_null_samples: np.ndarray = np.zeros(num_null_samples, dtype=np.float64)
+    distance_null_samples = np.zeros(num_null_samples, dtype=dtype)
+
     for i in range(num_null_samples):
-        bootstrap_idx: np.ndarray = np.random.randint(0, num_reference, size=num_observed)
-        bootstrap_samples: np.ndarray = reference_samples[bootstrap_idx]
-        bootstrap_samples_tensor: Tensor = convert_to_tensor(bootstrap_samples, dtype="float32")
+        bootstrap_idx = np.random.randint(0, num_reference, size=num_observed)
+        bootstrap_samples = reference_samples[bootstrap_idx]
+        bootstrap_samples_tensor = convert_to_tensor(bootstrap_samples, dtype=dtype)
         distance_null_samples[i] = convert_to_numpy(comparison_fn(bootstrap_samples_tensor, reference_samples_tensor))
 
-    distance_observed_tensor: Tensor = comparison_fn(
+    distance_observed_tensor = comparison_fn(
         observed_samples_tensor,
         reference_samples_tensor,
     )
 
-    distance_observed: float = float(convert_to_numpy(distance_observed_tensor))
+    distance_observed = convert_to_numpy(distance_observed_tensor)
 
     return distance_observed, distance_null_samples
 

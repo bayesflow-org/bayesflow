@@ -67,21 +67,22 @@ class DiagonalNormal(Distribution):
             return
 
         self.dim = input_shape[-1]
+        dtype = keras.backend.floatx()
 
-        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
-        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
+        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), dtype)
+        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), dtype)
 
         if self.trainable_parameters:
             self._mean = self.add_weight(
                 shape=ops.shape(self.mean),
                 initializer=keras.initializers.get(keras.ops.copy(self.mean)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
             self._std = self.add_weight(
                 shape=ops.shape(self.std),
                 initializer=keras.initializers.get(keras.ops.copy(self.std)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
         else:

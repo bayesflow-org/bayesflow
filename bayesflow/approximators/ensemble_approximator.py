@@ -212,14 +212,14 @@ class EnsembleApproximator(Approximator):
                 stage=stage,
             )
 
+        loss = keras.ops.sum([approx_metrics["loss"] for approx_metrics in metrics.values()])
+
         metrics = {
             f"{approx_name}/{metric_key}": value
             for approx_name, approx_metrics in metrics.items()
             for metric_key, value in approx_metrics.items()
         }
-
-        losses = [v for k, v in metrics.items() if "loss" in k]
-        metrics["loss"] = keras.ops.sum(losses)
+        metrics["loss"] = loss
 
         return metrics
 

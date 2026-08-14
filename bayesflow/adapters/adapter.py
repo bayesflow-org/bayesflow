@@ -1,10 +1,9 @@
-from typing import Any
 from collections.abc import Callable, MutableSequence, Sequence
-
-import numpy as np
+from typing import Any
 
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
+import keras
 
 from .transforms import (
     AsSet,
@@ -20,7 +19,7 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
-    NumpyTransform,
+    KerasTransform,
     OneHot,
     Rename,
     SerializableCustomTransform,
@@ -60,13 +59,22 @@ class Adapter(MutableSequence[Transform]):
     ----------
     transforms : Sequence[Transform], optional
         The sequence of transforms to execute.
+    device: str, optional
+        Passed to keras.device to specify on which device to apply the adapter.
+    differentiable: bool, optional
+        If False (default), adapter transforms run in a state detached from the computational graph.
     """
 
-    def __init__(self, transforms: Sequence[Transform] | None = None):
+    def __init__(
+        self, transforms: Sequence[Transform] | None = None, device: str = "cpu", differentiable: bool = False
+    ):
         if transforms is None:
             transforms = []
 
         self.transforms = list(transforms)
+
+        self.device = device
+        self.differentiable = differentiable
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -81,12 +89,7 @@ class Adapter(MutableSequence[Transform]):
         -------
         An initialized Adapter with a set of default transforms.
         """
-        return (
-            Adapter()
-            .to_array()
-            .convert_dtype("float64", "float32")
-            .concatenate(inference_variables, into="inference_variables")
-        )
+        return Adapter().to_array().concatenate(inference_variables, into="inference_variables")
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
@@ -95,6 +98,8 @@ class Adapter(MutableSequence[Transform]):
     def get_config(self) -> dict:
         config = {
             "transforms": self.transforms,
+            "device": self.device,
+            "differentiable": self.differentiable,
         }
 
         return serialize(config)
@@ -118,7 +123,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in self.transforms:
                 data = transform(data, **kwargs)
@@ -127,19 +132,19 @@ class Adapter(MutableSequence[Transform]):
         log_det_jac = {}
         for transform in self.transforms:
             transformed_data = transform(data, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac=log_det_jac, **kwargs)
             data = transformed_data
 
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
-        data : dict[str, any]
+        data : dict[str, Any]
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
@@ -151,7 +156,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in reversed(self.transforms):
                 data = transform(data, inverse=True, **kwargs)
@@ -165,13 +170,13 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, Any] | tuple[dict[str, Tensor], dict[str, Tensor]], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
         Parameters
         ----------
-        data : Mapping[str, any]
+        data : Mapping[str, Any]
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
@@ -183,10 +188,21 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        if inverse:
-            return self.inverse(data, **kwargs)
 
-        return self.forward(data, **kwargs)
+        with keras.device(self.device):
+            data = keras.tree.map_structure(
+                lambda x: keras.ops.convert_to_tensor(x) if keras.ops.is_tensor(x) else x,
+                data,
+            )
+
+            if inverse:
+                data = self.inverse(data, **kwargs)
+            else:
+                data = self.forward(data, **kwargs)
+
+        if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
+            return tuple(self.device_handoff(value) for value in data)
+        return self.device_handoff(data)
 
     def __repr__(self):
         result = ""
@@ -207,6 +223,26 @@ class Adapter(MutableSequence[Transform]):
         """
         self.transforms.append(value)
         return self
+
+    def device_handoff(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
+        """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""
+        floatx = keras.backend.floatx()
+
+        def convert(x):
+            if keras.ops.is_tensor(x):
+                # cast in place: converting *with* a dtype moves to the target device first,
+                # which fails for dtypes that device does not support (float64 on torch MPS)
+                x = keras.ops.cast(x, floatx)
+            else:
+                with keras.device(self.device):
+                    x = keras.ops.convert_to_tensor(x, floatx)
+
+            # we need to hand off tensors on the default device, not on the device the adapter ran
+            x = keras.ops.convert_to_tensor(x)
+
+            return x if self.differentiable else keras.ops.stop_gradient(x)
+
+        return keras.tree.map_structure(convert, data)
 
     def __delitem__(self, key: int | slice):
         del self.transforms[key]
@@ -270,29 +306,27 @@ class Adapter(MutableSequence[Transform]):
     def __len__(self):
         return len(self.transforms)
 
-    add_transform = append
-
     def apply(
         self,
         include: str | Sequence[str] = None,
         *,
-        forward: np.ufunc | str,
-        inverse: np.ufunc | str = None,
+        forward: str,
+        inverse: str = None,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
-        """Append a :py:class:`~transforms.NumpyTransform` to the adapter.
+        """Append a :py:class:`~transforms.KerasTransform` to the adapter.
 
         Parameters
         ----------
-        forward : str or np.ufunc
+        forward : str
             The name of the NumPy function to use for the forward transformation.
-        inverse : str or np.ufunc, optional
+        inverse : str, optional
             The name of the NumPy function to use for the inverse transformation.
             By default, the inverse is inferred from the forward argument for supported methods.
             You can find the supported methods in
-            :py:const:`~bayesflow.adapters.transforms.NumpyTransform.INVERSE_METHODS`.
+            :py:const:`~bayesflow.adapters.transforms.KerasTransform.INVERSE_METHODS`.
         predicate : Predicate, optional
             Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
@@ -303,7 +337,7 @@ class Adapter(MutableSequence[Transform]):
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
-            transform_constructor=NumpyTransform,
+            transform_constructor=KerasTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,
@@ -536,7 +570,7 @@ class Adapter(MutableSequence[Transform]):
         upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
-        epsilon: float = 1e-15,
+        epsilon: float = 1e-6,
     ):
         """Append a :py:class:`~transforms.Constrain` transform to the adapter.
 
@@ -544,9 +578,9 @@ class Adapter(MutableSequence[Transform]):
         ----------
         keys : str or Sequence of str
             The names of the variables to constrain.
-        lower: int or float or np.darray, optional
+        lower: int or float or Tensor, optional
             Lower bound for named data variable.
-        upper : int or float or np.darray, optional
+        upper : int or float or Tensor, optional
             Upper bound for named data variable.
         method : str, optional
             Method by which to shrink the network predictions space to specified bounds. Choose from
@@ -561,7 +595,7 @@ class Adapter(MutableSequence[Transform]):
             - "none": Both lower and upper bounds are exclusive.
         epsilon : float, optional
             Small value to ensure inclusive bounds are not violated.
-            Current default is 1e-15 as this ensures finite outcomes
+            Current default is 1e-6 as this ensures finite outcomes
             with the default transformations applied to data exactly at the boundaries.
         """
         if isinstance(keys, str):

@@ -1,6 +1,8 @@
-import numpy as np
 import pandas as pd
+import keras
+import keras.ops as ops
 
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable
 
 from .transform import Transform
@@ -17,7 +19,7 @@ class ToDict(Transform):
     def get_config(self) -> dict:
         return {}
 
-    def forward(self, data, **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data, **kwargs) -> dict[str, Tensor]:
         data = dict(data)
 
         for key, value in data.items():
@@ -28,12 +30,12 @@ class ToDict(Transform):
                 if value.dtype == "category":
                     value = pd.get_dummies(value)
 
-                value = np.asarray(value).astype("float32", copy=False)
+                value = ops.convert_to_tensor(value, dtype=keras.backend.floatx())
 
             data[key] = value
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], **kwargs) -> dict[str, Tensor]:
         # non-invertible transform
         return data

@@ -1,13 +1,15 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, deserialize
+from bayesflow.types import Tensor
+from typing import Union
 
 
 @serializable("bayesflow.adapters")
 class ElementwiseTransform:
     """Base class on which other transforms are based"""
 
-    def __call__(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def __call__(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         if inverse:
             return self.inverse(data, **kwargs)
 
@@ -20,11 +22,17 @@ class ElementwiseTransform:
     def get_config(self) -> dict:
         raise NotImplementedError
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         raise NotImplementedError
 
-    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray | None:
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Union[Tensor, None]:
         return None
+
+    @staticmethod
+    def _sum_except_batch(data: Tensor) -> Tensor:
+        b = ops.shape(data)[0]
+        data = ops.reshape(data, (b, -1))
+        return ops.sum(data, axis=1)

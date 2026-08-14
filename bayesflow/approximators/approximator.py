@@ -150,8 +150,8 @@ class Approximator(BackendApproximator):
 
         Standard inference-time pipeline shared across all approximators:
 
-        1. Apply the adapter (``strict=False``)
-        2. Convert all values to tensors
+        1. Convert all values to tensors
+        2. Apply the adapter (``strict=False``)
         3. Standardize ``inference_conditions`` and ``summary_variables``
         4. Resolve conditions via the summary network (if present)
 
@@ -178,11 +178,8 @@ class Approximator(BackendApproximator):
         summary_outputs : Tensor or None
             Raw summary network outputs, or ``None`` if no summary network.
         """
-
         if data is not None:
             adapted = self.adapter(data, strict=False, **kwargs)
-            adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
-
             summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
         elif summary_outputs is not None:
             adapted = {}
@@ -352,7 +349,7 @@ class Approximator(BackendApproximator):
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
         Handles the common pipeline shared by all approximators:
-        ``to_array -> convert_dtype -> concatenate -> keep``.
+        ``to_array -> concatenate -> keep``.
         Subclasses can call ``super().build_adapter(...)`` and apply additional
         steps to the returned adapter.
 
@@ -389,7 +386,6 @@ class Approximator(BackendApproximator):
 
         adapter = Adapter()
         adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
         adapter.concatenate(inference_variables, into="inference_variables")
 
         if inference_conditions is not None:

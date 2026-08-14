@@ -87,6 +87,15 @@ class Sampler:
 
         num_conditions = dim_maybe_nested(conditions, axis=0)
 
+        if num_conditions is None:
+            return self._sample_batch(
+                inference_network=inference_network,
+                num_samples=num_samples,
+                conditions=conditions,
+                sample_shape=sample_shape,
+                **kwargs,
+            )
+
         if batch_size is None:
             batch_size = num_conditions
 

@@ -1,8 +1,7 @@
 from collections.abc import Callable, Sequence, Mapping
 from typing import Protocol
 
-import numpy as np
-
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
@@ -10,7 +9,7 @@ from .transform import Transform
 
 
 class Predicate(Protocol):
-    def __call__(self, key: str, value: np.ndarray, inverse: bool) -> bool:
+    def __call__(self, key: str, value: Tensor, inverse: bool) -> bool:
         raise NotImplementedError
 
 
@@ -87,7 +86,7 @@ class FilterTransform(Transform):
         }
         return serialize(config)
 
-    def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, Tensor], *, strict: bool = True, **kwargs) -> dict[str, Tensor]:
         data = data.copy()
 
         if strict and self.include is not None:
@@ -101,7 +100,7 @@ class FilterTransform(Transform):
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], *, strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], *, strict: bool = False, **kwargs) -> dict[str, Tensor]:
         data = data.copy()
 
         if strict and self.include is not None:
@@ -111,11 +110,11 @@ class FilterTransform(Transform):
 
         for key, value in data.items():
             if self._should_transform(key, value, inverse=True):
-                data[key] = self._apply_transform(key, value, inverse=True)
+                data[key] = self._apply_transform(key, value, inverse=True, **kwargs)
 
         return data
 
-    def _should_transform(self, key: str, value: np.ndarray, inverse: bool = False) -> bool:
+    def _should_transform(self, key: str, value: Tensor, inverse: bool = False) -> bool:
         match self.predicate, self.include, self.exclude:
             case None, None, None:
                 return True
@@ -149,7 +148,7 @@ class FilterTransform(Transform):
                     return True
                 return predicate(key, value, inverse=inverse)
 
-    def _apply_transform(self, key: str, value: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def _apply_transform(self, key: str, value: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         transform = self._get_transform(key)
 
         return transform(value, inverse=inverse, **kwargs)
@@ -160,9 +159,7 @@ class FilterTransform(Transform):
 
         return self.transform_map[key]
 
-    def log_det_jac(
-        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = True, **kwargs
-    ):
+    def log_det_jac(self, data: dict[str, Tensor], log_det_jac: dict[str, Tensor], *, strict: bool = True, **kwargs):
         data = data.copy()
 
         if strict and self.include is not None:

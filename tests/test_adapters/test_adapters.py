@@ -8,6 +8,7 @@ from bayesflow.utils.serialization import deserialize, serialize
 import bayesflow as bf
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_cycle_consistency(adapter, random_data):
     processed = adapter(random_data)
     deprocessed = adapter(processed, inverse=True)
@@ -23,6 +24,27 @@ def test_cycle_consistency(adapter, random_data):
         assert np.allclose(value, deprocessed[key])
 
 
+@pytest.mark.cpu_fallback_on_mps
+@pytest.mark.parametrize("differentiable", [False, True])
+def test_differentiable(differentiable):
+    from bayesflow._backend import grad
+
+    adapter = bf.Adapter(differentiable=differentiable).log("x").scale("x", by=2.0)
+    x = keras.ops.convert_to_tensor(np.array([[1.0, 2.0], [3.0, 4.0]], dtype="float32"))
+
+    def loss(x):
+        return keras.ops.sum(adapter({"x": x})["x"])
+
+    gradient = grad(loss)(x)
+
+    if differentiable:
+        # d/dx (2 * log(x)) = 2 / x
+        assert np.allclose(gradient, 2.0 / x)
+    else:
+        assert np.allclose(gradient, 0.0)
+
+
+@pytest.mark.cpu_fallback_on_mps
 def test_serialize_deserialize(adapter, random_data):
     processed = adapter(random_data)
     serialized = serialize(adapter)
@@ -44,6 +66,7 @@ def test_serialize_deserialize(adapter, random_data):
 def test_constrain():
     # check if constraint-implied transforms are applied correctly
     import numpy as np
+    import keras.ops as ops
     import warnings
     from bayesflow.adapters import Adapter
 
@@ -61,6 +84,8 @@ def test_constrain():
 
     ad = (
         Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
         .constrain("x_lower_cont", lower=0)
         .constrain("x_upper_cont", upper=0)
         .constrain("x_both_cont", lower=0, upper=1)
@@ -77,26 +102,27 @@ def test_constrain():
         result = ad(data)
 
     # continuous variables should not have boundary issues
-    assert result["x_lower_cont"].min() < 0.0
-    assert result["x_upper_cont"].max() > 0.0
-    assert result["x_both_cont"].min() < 0.0
-    assert result["x_both_cont"].max() > 1.0
+    assert ops.min(result["x_lower_cont"]) < 0.0
+    assert ops.max(result["x_upper_cont"]) > 0.0
+    assert ops.min(result["x_both_cont"]) < 0.0
+    assert ops.max(result["x_both_cont"]) > 1.0
 
     # discrete variables at the boundaries should not have issues
     # if inclusive is set properly
-    assert np.isfinite(result["x_lower_disc1"].min())
-    assert np.isfinite(result["x_upper_disc1"].max())
-    assert np.isfinite(result["x_both_disc1"].min())
-    assert np.isfinite(result["x_both_disc1"].max())
+    assert ops.isfinite(ops.min(result["x_lower_disc1"]))
+    assert ops.isfinite(ops.max(result["x_upper_disc1"]))
+    assert ops.isfinite(ops.min(result["x_both_disc1"]))
+    assert ops.isfinite(ops.max(result["x_both_disc1"]))
 
     # discrete variables at the boundaries should have issues
     # if inclusive is not set properly
-    assert np.isneginf(result["x_lower_disc2"][0])
-    assert np.isinf(result["x_upper_disc2"][0])
-    assert np.isneginf(result["x_both_disc2"][0])
-    assert np.isinf(result["x_both_disc2"][-1])
+    assert ops.isneginf(ops.min(result["x_lower_disc2"]))
+    assert ops.isinf(ops.max(result["x_upper_disc2"]))
+    assert ops.isneginf(ops.min(result["x_both_disc2"]))
+    assert ops.isinf(ops.max(result["x_both_disc2"]))
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_simple_transforms(random_data):
     # check if simple transforms are applied correctly
     from bayesflow.adapters import Adapter
@@ -203,6 +229,7 @@ def test_split_transform(adapter, random_data):
 
 def test_to_dict_transform():
     import pandas as pd
+    import keras.ops as ops
 
     data = {
         "int32": [1, 2, 3, 4, 5],
@@ -232,15 +259,17 @@ def test_to_dict_transform():
     assert list(processed.keys()) == ["int32", "int64", "float32", "float64", "object", "category"]
 
     for key, value in processed.items():
-        assert isinstance(value, np.ndarray)
-        assert value.dtype == "float32"
+        assert isinstance(value, bf.types.tensor.BackendTensor)
+        assert ops.dtype(value) == "float32"
 
     # category should have 5 one-hot categories, even though it was only passed 4
     assert processed["category"].shape[-1] == 5
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac(adapter_log_det_jac, random_data):
     d, log_det_jac = adapter_log_det_jac(random_data, log_det_jac=True)
+    log_det_jac = log_det_jac
 
     assert np.allclose(log_det_jac["x1"], np.log(2))
 
@@ -264,14 +293,17 @@ def test_log_det_jac(adapter_log_det_jac, random_data):
     assert np.allclose(log_det_jac["u"], u1[:, 0])
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac_inverse(adapter_log_det_jac_inverse, random_data):
     d, forward_log_det_jac = adapter_log_det_jac_inverse(random_data, log_det_jac=True)
     d, inverse_log_det_jac = adapter_log_det_jac_inverse(d, inverse=True, log_det_jac=True)
+    # forward_log_det_jac, inverse_log_det_jac = (forward_log_det_jac, inverse_log_det_jac)
 
     for key in forward_log_det_jac.keys():
         assert np.allclose(forward_log_det_jac[key], -inverse_log_det_jac[key])
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_log_det_jac_exceptions(random_data):
     # Test cannot compute inverse log_det_jac
     # e.g., when we apply a concat and then a transform that
@@ -279,6 +311,7 @@ def test_log_det_jac_exceptions(random_data):
     # (because the log_det_jac are summed, not concatenated)
     adapter = bf.Adapter().concatenate(["p1", "p2", "p3"], into="p").sqrt("p")
     transformed_data, log_det_jac = adapter(random_data, log_det_jac=True)
+    log_det_jac = log_det_jac
 
     # test that inverse raises error
     with pytest.raises(ValueError):
@@ -289,6 +322,7 @@ def test_log_det_jac_exceptions(random_data):
 
     transformed_data, forward_log_det_jac = adapter(random_data, log_det_jac=True)
     data, inverse_log_det_jac = adapter(transformed_data, inverse=True, log_det_jac=True)
+    forward_log_det_jac = forward_log_det_jac
     inverse_log_det_jac = sum(inverse_log_det_jac.values())
 
     # forward is the same regardless
@@ -298,22 +332,38 @@ def test_log_det_jac_exceptions(random_data):
     assert np.allclose(forward_log_det_jac["p"], -inverse_log_det_jac)
 
 
+@pytest.mark.cpu_fallback_on_mps
 def test_nan_to_num():
     arr = {"test": np.array([1.0, np.nan, 3.0])}
     # test without mask
-    transform = bf.Adapter().nan_to_num(keys="test", default_value=-1.0, return_mask=False)
-    out = transform.forward(arr)["test"]
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test", default_value=-1.0, return_mask=False)
+    )
+    out = transform(arr)["test"]
     np.testing.assert_array_equal(out, np.array([1.0, -1.0, 3.0]))
 
     # test with mask
     arr = {"test": np.array([1.0, np.nan, 3.0]), "test-2d": np.array([[1.0, np.nan], [np.nan, 4.0]])}
-    transform = bf.Adapter().nan_to_num(keys="test", default_value=0.0, return_mask=True)
-    out = transform.forward(arr)
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test", default_value=0.0, return_mask=True)
+    )
+    out = transform(arr)
     np.testing.assert_array_equal(out["test"], np.array([1.0, 0.0, 3.0]))
     np.testing.assert_array_equal(out["mask_test"], np.array([1.0, 0.0, 1.0]))
 
     # test two-d array
-    transform = bf.Adapter().nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
-    out = transform.forward(arr)
+    transform = (
+        bf.Adapter()
+        .to_array()
+        .convert_dtype("float64", "float32")
+        .nan_to_num(keys="test-2d", default_value=0.5, return_mask=True, mask_prefix="new_mask")
+    )
+    out = transform(arr)
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
     np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))

@@ -1,6 +1,7 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -30,8 +31,8 @@ class Standardize(ElementwiseTransform):
 
     def __init__(
         self,
-        mean: int | float | np.ndarray,
-        std: int | float | np.ndarray,
+        mean: int | float | Tensor,
+        std: int | float | Tensor,
     ):
         super().__init__()
 
@@ -45,21 +46,22 @@ class Standardize(ElementwiseTransform):
         }
         return serialize(config)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        mean = np.broadcast_to(self.mean, data.shape)
-        std = np.broadcast_to(self.std, data.shape)
+    def _mean_std(self, data: Tensor) -> tuple[Tensor, Tensor]:
+        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=ops.dtype(data)), ops.shape(data))
+        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=ops.dtype(data)), ops.shape(data))
+        return mean, std
 
-        return (data - mean) / std
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
+        mean, std = self._mean_std(data)
+        return ops.divide(ops.subtract(data, mean), std)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        mean = np.broadcast_to(self.mean, data.shape)
-        std = np.broadcast_to(self.std, data.shape)
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
+        mean, std = self._mean_std(data)
+        return ops.add(ops.multiply(data, std), mean)
 
-        return data * std + mean
-
-    def log_det_jac(self, data, inverse: bool = False, **kwargs) -> np.ndarray:
-        std = np.broadcast_to(self.std, data.shape)
-        ldj = -np.log(np.abs(std))
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
+        _, std = self._mean_std(data)
+        ldj = -ops.log(ops.abs(std))
         if inverse:
             ldj = -ldj
-        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+        return self._sum_except_batch(ldj)

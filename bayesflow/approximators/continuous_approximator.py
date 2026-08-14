@@ -222,8 +222,9 @@ class ContinuousApproximator(Approximator):
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
+        to_numpy: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | Tensor]:
         """
         Generates samples from the approximator given input conditions. The `conditions` dictionary is preprocessed
         using the `adapter`. Samples are converted to NumPy arrays after inference.
@@ -255,6 +256,9 @@ class ContinuousApproximator(Approximator):
             Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
             and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
             as-is. If ``None`` (default), each component uses its own instance seed generator.
+        to_numpy: bool, optional
+            If True, the returned samples be converted to numpy arrays
+            (as opposed to returned as keras backend tensors).
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -287,9 +291,11 @@ class ContinuousApproximator(Approximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
+        if to_numpy:
+            samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         if return_summaries and summary_outputs is not None:
             samples["_summaries"] = summary_outputs
@@ -299,7 +305,7 @@ class ContinuousApproximator(Approximator):
 
         return samples
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+    def log_prob(self, data: Mapping[str, np.ndarray], to_numpy: bool = True, **kwargs) -> np.ndarray | Tensor:
         """
         Computes the log-probability of given data under the model. The `data` dictionary is preprocessed using the
         `adapter`. Log-probabilities are returned as NumPy arrays.
@@ -308,6 +314,9 @@ class ContinuousApproximator(Approximator):
         ----------
         data : Mapping[str, np.ndarray]
             Dictionary of observed data as NumPy arrays.
+        to_numpy: bool, optional
+            If True, the returned log-probability be converted to a numpy array
+            (as opposed to returned as keras backend tensor).
         **kwargs : dict
             Additional keyword arguments for the adapter and log-probability computation.
 
@@ -321,7 +330,6 @@ class ContinuousApproximator(Approximator):
         # log_det_jac from the adapter call (log_det_jac=True), which
         # _prepare_conditions does not support.
         adapted, log_det_jac = self.adapter(data, strict=False, log_det_jac=True, stage="inference")
-        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
 
@@ -338,7 +346,7 @@ class ContinuousApproximator(Approximator):
         )
 
         log_det_jac = log_det_jac.get("inference_variables", 0.0)
-        log_det_jac += keras.ops.convert_to_numpy(log_det_jac_std)
+        log_det_jac += log_det_jac_std
 
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
@@ -348,8 +356,10 @@ class ContinuousApproximator(Approximator):
             **inference_kwargs,
         )
 
-        log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
         log_prob = keras.tree.map_structure(lambda lp: lp + log_det_jac, log_prob)
+
+        if to_numpy:
+            log_prob = keras.tree.map_structure(keras.ops.convert_to_numpy, log_prob)
 
         return log_prob
 
@@ -441,9 +451,10 @@ class ContinuousApproximator(Approximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
+        samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         samples = {k: s.reshape((n_datasets, n_children, n_parent_samples, *s.shape[2:])) for k, s in samples.items()}
 
         if return_summaries and summary_outputs is not None:

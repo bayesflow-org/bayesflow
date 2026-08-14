@@ -66,6 +66,7 @@ class DiskDataset(keras.utils.PyDataset):
         adapter: Adapter | None,
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
+        drop_last: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -83,9 +84,17 @@ class DiskDataset(keras.utils.PyDataset):
         if self._shuffle:
             self.shuffle()
 
+        self.drop_last = drop_last
+
     def __getitem__(self, item) -> dict[str, np.ndarray]:
+        # copy so we can give error messages with the original input
+        original_item = item
+
+        if item < 0:
+            item += self.num_batches
+
         if not 0 <= item < self.num_batches:
-            raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
+            raise IndexError(f"Index {original_item} is out of bounds for dataset with {self.num_batches} batches.")
 
         start = item * self.batch_size
         stop = min((item + 1) * self.batch_size, self.num_samples)
@@ -111,6 +120,8 @@ class DiskDataset(keras.utils.PyDataset):
 
     @property
     def num_batches(self):
+        if self.drop_last:
+            return self.num_samples // self.batch_size
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def __len__(self) -> int:

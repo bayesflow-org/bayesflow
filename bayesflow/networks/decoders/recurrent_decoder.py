@@ -27,8 +27,6 @@ class RecurrentDecoder(keras.Layer):
     output_dim : int or None, optional
         Dimensionality of the projected decoder output. If None, uses the final
         recurrent embedding dimension.
-    layer_norm : bool, optional
-        Whether to apply RMSNorm before the output projection, by default True.
     """
 
     def __init__(
@@ -37,7 +35,6 @@ class RecurrentDecoder(keras.Layer):
         recurrent_type: str | Sequence[str] = "gru",
         include_condition: bool = True,
         output_dim: int | None = None,
-        layer_norm: bool = True,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -61,8 +58,6 @@ class RecurrentDecoder(keras.Layer):
         self.embed_dim = embed_dim
         self.recurrent_type = recurrent_type
         self.include_condition = include_condition
-        self.layer_norm = layer_norm
-        self.output_norm = keras.layers.RMSNormalization(axis=-1) if layer_norm else None
         self.output_projection = keras.layers.Dense(self.output_dim, use_bias=False)
         self.bos_embedding = None
 
@@ -83,8 +78,6 @@ class RecurrentDecoder(keras.Layer):
             recurrent_layer.build(recurrent_input_shape)
             recurrent_input_shape = tuple(recurrent_input_shape[:-1]) + (embed,)
 
-        if self.output_norm is not None:
-            self.output_norm.build(recurrent_input_shape)
         self.output_projection.build(recurrent_input_shape)
 
     def call(
@@ -103,8 +96,6 @@ class RecurrentDecoder(keras.Layer):
         for recurrent_layer in self.recurrent_layers:
             memory, *_ = recurrent_layer(memory, training=training)
 
-        if self.output_norm is not None:
-            memory = self.output_norm(memory, training=training)
         memory = self.output_projection(memory)
 
         if self.include_condition:
@@ -161,8 +152,6 @@ class RecurrentDecoder(keras.Layer):
             condition = result[0]
             new_states.append(tuple(result[1:]))
 
-        if self.output_norm is not None:
-            condition = self.output_norm(condition, training=False)
         condition = self.output_projection(condition)
 
         if self.include_condition:
@@ -183,7 +172,6 @@ class RecurrentDecoder(keras.Layer):
                 "recurrent_type": self.recurrent_type,
                 "include_condition": self.include_condition,
                 "output_dim": self.output_dim,
-                "layer_norm": self.layer_norm,
             }
         )
 

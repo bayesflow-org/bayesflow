@@ -32,8 +32,6 @@ class RecurrentNetwork(SummaryNetwork):
         Whether to wrap recurrent layers in ``Bidirectional``, by default True.
     merge_mode : str or sequence of str, optional
         Merge mode for bidirectional layers, by default ``"sum"``.
-    layer_norm : bool or sequence of bool, optional
-        Whether to apply layer normalization after recurrent layers, by default True.
     time_axis : int or None, optional
         Feature axis containing explicit time values. If None, integer positions
         are used by the time embedding.
@@ -53,7 +51,6 @@ class RecurrentNetwork(SummaryNetwork):
         recurrent_type: str | Sequence[str] = "gru",
         bidirectional: bool | Sequence[bool] = True,
         merge_mode: str | Sequence[str] = "sum",
-        layer_norm: bool | Sequence[bool] = True,
         time_axis: int | None = 0,
         time_embed_dim: int = 16,
         dropout: float = 0.05,
@@ -67,11 +64,9 @@ class RecurrentNetwork(SummaryNetwork):
             recurrent_type=recurrent_type,
             bidirectional=bidirectional,
             merge_mode=merge_mode,
-            layer_norm=layer_norm,
         )
 
         self.recurrent_layers = []
-        self.normalization_layers = []
 
         num_layers = len(recurrent_kwargs["hidden_dim"])
         return_sequences_by_layer = (True,) * (num_layers - 1) + (return_sequences,)
@@ -81,14 +76,13 @@ class RecurrentNetwork(SummaryNetwork):
             return_sequences_by_layer,
             strict=True,
         ):
-            hidden, rnn_type, bidir, merge, norm, layer_return_sequences = recurrent_layer_kwargs
+            hidden, rnn_type, bidir, merge, layer_return_sequences = recurrent_layer_kwargs
             recurrent_layer = find_recurrent_net(rnn_type, units=hidden, return_sequences=layer_return_sequences)
 
             if bidir:
                 recurrent_layer = keras.layers.Bidirectional(recurrent_layer, merge_mode=merge)
 
             self.recurrent_layers.append(recurrent_layer)
-            self.normalization_layers.append(keras.layers.LayerNormalization() if norm else None)
 
         self.summary_stats = keras.layers.Dense(summary_dim)
         self.dropout_layer = keras.layers.Dropout(dropout)
@@ -99,7 +93,6 @@ class RecurrentNetwork(SummaryNetwork):
         self.recurrent_type = recurrent_type
         self.bidirectional = bidirectional
         self.merge_mode = merge_mode
-        self.layer_norm = layer_norm
         self.time_axis = time_axis
         self.time_embed_dim = time_embed_dim
         self.dropout = dropout
@@ -113,15 +106,9 @@ class RecurrentNetwork(SummaryNetwork):
         recurrent_shape = tuple(time_series_shape[:-1]) + (input_dim + self.time_embed_dim,)
         self.time_embedding.build(tuple(time_series_shape[:-1]) + (input_dim,))
 
-        for recurrent_layer, normalization_layer in zip(
-            self.recurrent_layers,
-            self.normalization_layers,
-            strict=True,
-        ):
+        for recurrent_layer in self.recurrent_layers:
             recurrent_layer.build(recurrent_shape)
             recurrent_shape = recurrent_layer.compute_output_shape(recurrent_shape)
-            if normalization_layer is not None:
-                normalization_layer.build(recurrent_shape)
 
         self.summary_stats.build(recurrent_shape)
 
@@ -129,14 +116,8 @@ class RecurrentNetwork(SummaryNetwork):
         out, time = self._split_time_series(time_series)
         out = self.time_embedding(out, t=time)
 
-        for recurrent_layer, normalization_layer in zip(
-            self.recurrent_layers,
-            self.normalization_layers,
-            strict=True,
-        ):
+        for recurrent_layer in self.recurrent_layers:
             out = recurrent_layer(out, training=training, mask=mask)
-            if normalization_layer is not None:
-                out = normalization_layer(out, training=training)
 
         out = self.dropout_layer(out, training=training)
         return self.summary_stats(out)
@@ -154,7 +135,6 @@ class RecurrentNetwork(SummaryNetwork):
                 "recurrent_type": self.recurrent_type,
                 "bidirectional": self.bidirectional,
                 "merge_mode": self.merge_mode,
-                "layer_norm": self.layer_norm,
                 "dropout": self.dropout,
                 "time_axis": self.time_axis,
                 "time_embed_dim": self.time_embed_dim,

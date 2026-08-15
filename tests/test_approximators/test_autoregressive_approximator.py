@@ -261,6 +261,7 @@ def test_recurrent_decoder_cached_decode_matches_teacher_forcing(embed_dim, recu
         atol=1e-5,
     )
 
+
 def test_builds_all_autoregressive_networks(autoregressive_approximator, autoregressive_data):
     build_approximator(autoregressive_approximator, autoregressive_data)
 

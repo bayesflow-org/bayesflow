@@ -87,7 +87,7 @@ class MixtureScore(ParametricDistributionScore):
 
         # Temperature is a non-trainable variable so it can be updated by external schedules.
         self.temperature = keras.Variable(
-            temperature, trainable=False, dtype=keras.backend.floatx(), name="mixture_temperature"
+            temperature, trainable=False, dtype=keras.config.floatx(), name="mixture_temperature"
         )
 
         # Ensure mixture logits are not inverse-standardized like inference variables.

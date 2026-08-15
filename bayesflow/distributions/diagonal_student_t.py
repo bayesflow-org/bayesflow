@@ -73,7 +73,7 @@ class DiagonalStudentT(Distribution):
             return
 
         self.dim = input_shape[-1]
-        dtype = keras.backend.floatx()
+        dtype = keras.config.floatx()
 
         # convert to tensor and broadcast if necessary
         self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), dtype)

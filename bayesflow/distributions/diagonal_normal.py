@@ -67,7 +67,7 @@ class DiagonalNormal(Distribution):
             return
 
         self.dim = input_shape[-1]
-        dtype = keras.backend.floatx()
+        dtype = keras.config.floatx()
 
         self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), dtype)
         self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), dtype)

@@ -43,7 +43,7 @@ class OrderedQuantiles(Ordered):
             )
         else:
             # choose quantile level closest to median as anchor index
-            q = keras.ops.convert_to_tensor(self.q, dtype=keras.backend.floatx())
+            q = keras.ops.convert_to_tensor(self.q, dtype=keras.config.floatx())
             self.anchor_index = int(keras.ops.argmin(keras.ops.abs(q - 0.5)))
 
             if len(self.q) != num_quantile_levels:

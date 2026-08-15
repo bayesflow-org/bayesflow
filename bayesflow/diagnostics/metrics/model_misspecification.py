@@ -59,7 +59,7 @@ def bootstrap_comparison(
             f"but got {observed_samples.shape[1:]} != {reference_samples.shape[1:]}."
         )
 
-    dtype = keras.backend.floatx()
+    dtype = keras.config.floatx()
     observed_samples = keras.ops.convert_to_tensor(observed_samples, dtype=dtype)
     reference_samples = keras.ops.convert_to_tensor(reference_samples, dtype=dtype)
 

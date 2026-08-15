@@ -169,7 +169,7 @@ class ScoringRuleNetwork(keras.Layer):
 
         if conditions is None:
             conditions = keras.ops.convert_to_tensor(
-                [[1.0]], dtype=keras.ops.dtype(xz) if xz is not None else keras.backend.floatx()
+                [[1.0]], dtype=keras.ops.dtype(xz) if xz is not None else keras.config.floatx()
             )
 
         output = self.subnet(conditions, training=training, **kwargs)
@@ -228,7 +228,7 @@ class ScoringRuleNetwork(keras.Layer):
         """
         seed_generator = resolve_seed(seed)
         if conditions is None:
-            conditions = keras.ops.convert_to_tensor([[1.0]], dtype=keras.backend.floatx())
+            conditions = keras.ops.convert_to_tensor([[1.0]], dtype=keras.config.floatx())
 
         output = self.subnet(conditions)
         samples = {}

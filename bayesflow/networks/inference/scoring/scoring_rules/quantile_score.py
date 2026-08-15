@@ -28,7 +28,7 @@ class QuantileScore(ScoringRule):
         # force a conversion to list for proper serialization
         q = list(q)
         self.q = q
-        self._q = keras.ops.convert_to_tensor(q, dtype=keras.backend.floatx())
+        self._q = keras.ops.convert_to_tensor(q, dtype=keras.config.floatx())
         self.links = links or {"value": OrderedQuantiles(q=q)}
 
         self.config = {

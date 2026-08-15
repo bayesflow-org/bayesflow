@@ -358,7 +358,7 @@ def integrate_adaptive(
             raise TypeError(f"Invalid integration method: {other!r}")
 
     # density computation (state carries more than one entry) needs higher accuracy than sampling
-    dtype = keras.backend.floatx()
+    dtype = keras.config.floatx()
     atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=dtype)
     rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=dtype)
     initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=dtype)
@@ -489,7 +489,7 @@ def integrate_scipy(
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
-        time = keras.ops.convert_to_tensor(time, dtype=keras.backend.floatx())
+        time = keras.ops.convert_to_tensor(time, dtype=keras.config.floatx())
         deltas = fn(time, **filter_kwargs(state, fn))
         return state_to_vector(deltas)
 

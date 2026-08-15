@@ -446,7 +446,7 @@ class GraphicalApproximator(Approximator):
 
         # log_det_jac for adapter
         for key in ldj_adapter:
-            ldj = keras.ops.cast(ldj_adapter[key], keras.backend.floatx())
+            ldj = keras.ops.cast(ldj_adapter[key], keras.config.floatx())
             log_prob += keras.ops.sum(keras.ops.reshape(ldj, (batch_size, -1)), axis=-1)
 
         return log_prob

@@ -185,7 +185,7 @@ class ConsistencyModel(InferenceNetwork):
         Section 2, bottom of page 2.
         """
 
-        dtype = keras.backend.floatx()
+        dtype = keras.config.floatx()
         indices = ops.arange(1, n_k + 1, dtype=dtype)
         one_over_rho = 1.0 / self.rho
         discretized_time = (
@@ -247,7 +247,7 @@ class ConsistencyModel(InferenceNetwork):
             discretization_map[n] = i
 
         # Finally, we convert the vectors to tensors
-        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype=keras.backend.floatx())
+        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype=keras.config.floatx())
         self._discretization_map = ops.convert_to_tensor(discretization_map)
 
     def _forward_train(

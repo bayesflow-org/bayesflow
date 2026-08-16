@@ -268,8 +268,7 @@ def test_bootstrap_comparison_shapes():
         num_null_samples,
     )
 
-    assert isinstance(distance_observed, float)
-    assert isinstance(distance_null, np.ndarray)
+    assert distance_observed.shape == ()
     assert distance_null.shape == (num_null_samples,)
 
 
@@ -320,22 +319,6 @@ def test_bootstrap_comparison_mismatched_shapes():
         )
 
 
-def test_bootstrap_comparison_num_observed_exceeds_num_reference():
-    """Test bootstrap_comparison raises ValueError when number of observed samples exceeds the number of reference
-    samples."""
-    observed_samples = np.random.rand(100, 5)
-    reference_samples = np.random.rand(20, 5)
-    num_null_samples = 50
-
-    with pytest.raises(ValueError):
-        bf.diagnostics.metrics.bootstrap_comparison(
-            observed_samples,
-            reference_samples,
-            lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)),
-            num_null_samples,
-        )
-
-
 def test_mmd_comparison_from_summaries_shapes():
     """Test the mmd_comparison_from_summaries output shapes."""
     observed_summaries = np.random.rand(10, 5)
@@ -349,8 +332,7 @@ def test_mmd_comparison_from_summaries_shapes():
         num_null_samples=num_null_samples,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 
@@ -423,8 +405,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 

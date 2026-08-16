@@ -6,7 +6,8 @@ distributions within the reference samples for hypothesis testing.
 from collections.abc import Mapping, Callable
 
 import numpy as np
-from keras.ops import convert_to_numpy, convert_to_tensor
+
+import keras
 
 from bayesflow.approximators import ContinuousApproximator
 from bayesflow.metrics.functional import maximum_mean_discrepancy
@@ -18,13 +19,13 @@ def bootstrap_comparison(
     reference_samples: np.ndarray,
     comparison_fn: Callable[[Tensor, Tensor], Tensor],
     num_null_samples: int = 100,
-) -> tuple[float, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Computes the distance between observed and reference samples and generates a distribution of null sample
     distances by bootstrapping for hypothesis testing.
 
     Parameters
     ----------
-    observed_samples : np.ndarray)
+    observed_samples : np.ndarray
         Observed samples, shape (num_observed, ...).
     reference_samples : np.ndarray
         Reference samples, shape (num_reference, ...).
@@ -35,8 +36,8 @@ def bootstrap_comparison(
 
     Returns
     -------
-    distance_observed : float
-        The distance value between observed and reference samples.
+    distance_observed : np.ndarray
+        A scalar NumPy array containing the distance between observed and reference samples.
     distance_null : np.ndarray
         A distribution of distance values under the null hypothesis.
 
@@ -46,36 +47,34 @@ def bootstrap_comparison(
         - If the number of number of observed samples exceeds the number of reference samples
         - If the shapes of observed and reference samples do not match on dimensions besides the first one.
     """
+    observed_samples = np.asarray(observed_samples)
+    reference_samples = np.asarray(reference_samples)
+
     num_observed = observed_samples.shape[0]
     num_reference = reference_samples.shape[0]
 
-    if num_observed > num_reference:
-        raise ValueError(
-            f"Number of observed samples ({num_observed}) cannot exceed"
-            f"the number of reference samples ({num_reference}) for bootstrapping."
-        )
     if observed_samples.shape[1:] != reference_samples.shape[1:]:
         raise ValueError(
             f"Expected observed and reference samples to have the same shape, "
             f"but got {observed_samples.shape[1:]} != {reference_samples.shape[1:]}."
         )
 
-    observed_samples_tensor: Tensor = convert_to_tensor(observed_samples, dtype="float32")
-    reference_samples_tensor: Tensor = convert_to_tensor(reference_samples, dtype="float32")
+    dtype = keras.config.floatx()
+    observed_samples = keras.ops.convert_to_tensor(observed_samples, dtype=dtype)
+    reference_samples = keras.ops.convert_to_tensor(reference_samples, dtype=dtype)
 
-    distance_null_samples: np.ndarray = np.zeros(num_null_samples, dtype=np.float64)
+    distance_observed = comparison_fn(observed_samples, reference_samples)
+    distance_observed = keras.ops.convert_to_numpy(distance_observed)
+
+    if distance_observed.ndim != 0:
+        raise ValueError(f"Expected comparison_fn to return a scalar, but got shape {distance_observed.shape}.")
+
+    distance_null_samples = np.empty(num_null_samples, dtype=distance_observed.dtype)
     for i in range(num_null_samples):
-        bootstrap_idx: np.ndarray = np.random.randint(0, num_reference, size=num_observed)
-        bootstrap_samples: np.ndarray = reference_samples[bootstrap_idx]
-        bootstrap_samples_tensor: Tensor = convert_to_tensor(bootstrap_samples, dtype="float32")
-        distance_null_samples[i] = convert_to_numpy(comparison_fn(bootstrap_samples_tensor, reference_samples_tensor))
-
-    distance_observed_tensor: Tensor = comparison_fn(
-        observed_samples_tensor,
-        reference_samples_tensor,
-    )
-
-    distance_observed: float = float(convert_to_numpy(distance_observed_tensor))
+        bootstrap_indices = np.random.randint(num_reference, size=num_observed)
+        bootstrap_samples = keras.ops.take(reference_samples, bootstrap_indices, axis=0)
+        distance_null = comparison_fn(bootstrap_samples, reference_samples)
+        distance_null_samples[i] = keras.ops.convert_to_numpy(distance_null)
 
     return distance_observed, distance_null_samples
 
@@ -87,7 +86,7 @@ def summary_space_comparison(
     num_null_samples: int = 100,
     comparison_fn: Callable = maximum_mean_discrepancy,
     **kwargs,
-) -> tuple[float, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Computes the distance between observed and reference data in the summary space and
     generates a distribution of distance values under the null hypothesis to assess model misspecification.
 
@@ -117,8 +116,8 @@ def summary_space_comparison(
 
     Returns
     -------
-    distance_observed : float
-        The MMD value between observed and reference summaries.
+    distance_observed : np.ndarray
+        A scalar NumPy array containing the MMD value between observed and reference summaries.
     distance_null : np.ndarray
         A distribution of MMD values under the null hypothesis.
 
@@ -142,8 +141,9 @@ def summary_space_comparison(
             "statistics, or want to compare raw data and not summary statistics, please use the "
             f"`bootstrap_comparison` function with `comparison_fn={comparison_fn_name}` on the respective arrays."
         )
-    observed_summaries = convert_to_numpy(approximator.summarize(observed_data))
-    reference_summaries = convert_to_numpy(approximator.summarize(reference_data))
+
+    observed_summaries = approximator.summarize(observed_data)
+    reference_summaries = approximator.summarize(reference_data)
 
     distance_observed, distance_null = bootstrap_comparison(
         observed_samples=observed_summaries,

@@ -72,7 +72,7 @@ def build_prior_score_fn(
             prior_score = compute_prior_score(adapted_samples)
 
         for key in adapted_samples:
-            prior_score[key] = keras.ops.cast(prior_score[key], "float32")
+            prior_score[key] = keras.ops.cast(prior_score[key], keras.config.floatx())
         prior_score = keras.tree.map_structure(keras.ops.convert_to_tensor, prior_score)
         return keras.ops.concatenate([prior_score[key] for key in adapted_samples], axis=-1)
 

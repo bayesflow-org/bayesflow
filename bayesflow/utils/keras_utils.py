@@ -25,7 +25,7 @@ def resolve_seed(seed):
 def multinomial_allocation(weights: Mapping[str, float], num_samples: int, seed=None) -> dict[str, int]:
     """Allocate `num_samples` draws across `weights` via multinomial sampling."""
     names = tuple(weights.keys())
-    probs = np.array(list(weights.values()), dtype=keras.backend.floatx())
+    probs = np.array(list(weights.values()), dtype=keras.config.floatx())
 
     num_categories = len(probs)
     logits_broadcast = keras.ops.broadcast_to(

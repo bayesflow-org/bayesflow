@@ -357,12 +357,13 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    # density computation (state carries more than one entry) needs higher accuracy than sampling,
-    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
-    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype="float32")
-    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
-    step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
-    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype="float32")
+    # density computation (state carries more than one entry) needs higher accuracy than sampling
+    dtype = keras.config.floatx()
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=dtype)
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=dtype)
+    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=dtype)
+    step0 = keras.ops.convert_to_tensor(0.0, dtype=dtype)
+    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype=dtype)
 
     # "First Same As Last" (FSAL) property
     k1_0 = fn(start_time, **filter_kwargs(state, fn))
@@ -488,7 +489,7 @@ def integrate_scipy(
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
-        time = keras.ops.convert_to_tensor(time, dtype="float32")
+        time = keras.ops.convert_to_tensor(time, dtype=keras.config.floatx())
         deltas = fn(time, **filter_kwargs(state, fn))
         return state_to_vector(deltas)
 

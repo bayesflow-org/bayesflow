@@ -130,7 +130,6 @@ class StableConsistencyModel(InferenceNetwork):
         self.fixed_target_prob = kwargs.get("fixed_target_prob", 0.0)
         self.missing_target_prob = kwargs.get("missing_target_prob", 0.0)
         self.missing_conditions_prob = kwargs.get("missing_conditions_prob", 0.0)
-        self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
         base_config = super().get_config()

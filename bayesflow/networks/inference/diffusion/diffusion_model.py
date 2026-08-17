@@ -145,8 +145,6 @@ class DiffusionModel(InferenceNetwork):
         self.noise_schedule.validate()
 
         self.integrate_kwargs = DIFFUSION_INTEGRATE_DEFAULTS | (integrate_kwargs or {})
-        self.seed_generator = keras.random.SeedGenerator()
-
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs

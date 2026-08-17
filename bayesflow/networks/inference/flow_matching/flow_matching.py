@@ -138,8 +138,6 @@ class FlowMatching(InferenceNetwork):
         if self.time_power_law_alpha <= -1.0:
             raise ValueError("'time_power_law_alpha' must be greater than -1.0.")
 
-        self.seed_generator = keras.random.SeedGenerator()
-
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs

@@ -216,8 +216,8 @@ class MixtureScore(ParametricDistributionScore):
         probs = keras.ops.softmax(logits / self.temperature, axis=-1)  # (batch_size, K)
 
         # Sample component indices via inverse-CDF on uniform draws
-        seed_generator = resolve_seed(seed, self.seed_generator)
-        u = keras.random.uniform((batch_size, 1), dtype=probs.dtype, seed=seed_generator)
+        seed = resolve_seed(seed, self.seed_generator)
+        u = keras.random.uniform((batch_size, 1), dtype=probs.dtype, seed=seed)
         cdf = keras.ops.cumsum(probs, axis=-1)
         idx = keras.ops.argmax(keras.ops.cast(u <= cdf, "int32"), axis=-1)  # (B,)
 
@@ -225,7 +225,7 @@ class MixtureScore(ParametricDistributionScore):
         comp_samples = []
         for c in self.component_names:
             c_est = self._component_estimates(estimates, c)
-            s = self.components[c].sample((batch_size,), seed=seed_generator, **c_est)
+            s = self.components[c].sample((batch_size,), seed=seed, **c_est)
             comp_samples.append(s)
 
         stacked = keras.ops.stack(comp_samples, axis=0)  # (K, B, ...)

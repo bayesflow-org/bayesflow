@@ -224,7 +224,7 @@ class ScoringRuleNetwork(keras.Layer):
         samples : dict[str, Tensor]
             Samples for every parametric scoring rule.
         """
-        seed_generator = resolve_seed(seed, self.seed_generator)
+        seed = resolve_seed(seed, self.seed_generator)
         if conditions is None:
             conditions = keras.ops.convert_to_tensor([[1.0]], dtype="float32")
 
@@ -243,7 +243,7 @@ class ScoringRuleNetwork(keras.Layer):
                         for k, v in parameters.items()
                     }
 
-                samples[score_key] = score.sample(batch_shape, seed=seed_generator, **parameters)
+                samples[score_key] = score.sample(batch_shape, seed=seed, **parameters)
 
         return samples
 

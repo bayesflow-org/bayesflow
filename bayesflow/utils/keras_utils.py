@@ -20,10 +20,11 @@ def resolve_seed(seed, seed_generator):
     An integer is converted to a fresh ``SeedGenerator``, a ``SeedGenerator`` is passed through
     unchanged, and ``None`` falls back to ``seed_generator``.
 
-    Every object that draws randomness of its own owns a ``self.seed_generator`` and passes it
-    here, so such draws never fall through to Keras' global generator (which cannot be traced
-    under ``jax.jit``). Objects that merely forward ``seed`` to a sub-component without drawing
-    randomness themselves own no generator and do not call this function at all.
+    Every object that owns randomness passes its own ``self.seed_generator`` here, whether it
+    draws itself or fans the seed out to sub-components. Draws therefore never fall through to
+    Keras' global generator (which cannot be traced under ``jax.jit``), and an integer seed
+    becomes one generator shared by all sub-components and batches of the call, rather than one
+    identically seeded generator per draw site.
     """
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)

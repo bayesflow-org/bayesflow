@@ -71,8 +71,6 @@ class ScoringRuleApproximator(ContinuousApproximator):
 
         self.has_distribution = len(self.distribution_keys) > 0
 
-        self.seed_generator = keras.random.SeedGenerator()
-
     def estimate(
         self,
         conditions: Mapping[str, np.ndarray] | None = None,
@@ -225,13 +223,13 @@ class ScoringRuleApproximator(ContinuousApproximator):
                 )
             return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
 
-        seed_generator = resolve_seed(seed, self.seed_generator)
+        seed = resolve_seed(seed, self.seed_generator)
 
         # Single score: _sample_separate already squeezed to a plain result,
         # and mixing with uniform weight is an identity operation.
         if len(self.distribution_keys) == 1:
             return self._sample_separate(
-                num_samples=num_samples, conditions=conditions, split=split, seed=seed_generator, **kwargs
+                num_samples=num_samples, conditions=conditions, split=split, seed=seed, **kwargs
             )
 
         # Allocate samples per score according to weights
@@ -241,9 +239,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         # Sample counts from multinomial
         K = len(probs)
         logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, K))
-        cat_indices = keras.ops.squeeze(
-            keras.random.categorical(logits_broadcast, num_samples=1, seed=seed_generator), axis=-1
-        )
+        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
         one_hot = keras.ops.one_hot(cat_indices, K)
         counts = keras.ops.sum(one_hot, axis=0)
 
@@ -251,7 +247,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         num_samples_per_score = {k: counts[i] for i, k in enumerate(score_weights.keys())}
 
         samples_by_score = self._sample_separate(
-            num_samples=max_count, conditions=conditions, split=split, seed=seed_generator, **kwargs
+            num_samples=max_count, conditions=conditions, split=split, seed=seed, **kwargs
         )
 
         # Crop each score's samples down to its allocated k
@@ -272,7 +268,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
         )
 
         # Shuffle along the sample axis (1) to form the mixture samples.
-        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
+        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed)
         shuffled = keras.tree.map_structure(
             lambda arr: keras.ops.convert_to_numpy(keras.ops.take(arr, shuffle_idx, axis=1)),
             concatenated,

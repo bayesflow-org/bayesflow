@@ -109,18 +109,18 @@ class DiagonalStudentT(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
-        sg = resolve_seed(seed, self.seed_generator)
+        seed = resolve_seed(seed, self.seed_generator)
         # As of writing this code, keras does not support the chi-square distribution
         # nor does it support a scale or rate parameter in Gamma. Hence, we use the relation:
         # chi-square(df) = Gamma(shape = 0.5 * df, scale = 2) = Gamma(shape = 0.5 * df, scale = 1) * 2
-        chi2_samples = keras.random.gamma(batch_shape, alpha=0.5 * self.df, seed=sg) * 2.0
+        chi2_samples = keras.random.gamma(batch_shape, alpha=0.5 * self.df, seed=seed) * 2.0
 
         # The chi-quare samples need to be repeated across self.dim
         # since for each element of batch_shape only one sample is created.
         chi2_samples = expand_tile(chi2_samples, n=self.dim, axis=-1)
         chi2_samples = keras.ops.reshape(chi2_samples, batch_shape + (self.dim,))
 
-        normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=sg)
+        normal_samples = keras.random.normal(batch_shape + (self.dim,), seed=seed)
 
         return self._loc + self._scale * normal_samples * ops.sqrt(self.df / chi2_samples)
 

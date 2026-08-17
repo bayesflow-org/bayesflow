@@ -78,17 +78,17 @@ class Mixture(Distribution):
         Tensor
             Samples with shape ``batch_shape + (event_dim,)``.
         """
-        sg = resolve_seed(seed, self.seed_generator)
+        seed = resolve_seed(seed, self.seed_generator)
         K = len(self.distributions)
         total = math.prod(batch_shape)
 
         # Sample component indices: (total,)
         logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(self._mixture_logits, 0), (total, K))
-        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=sg), axis=-1)
+        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
 
         # Sample from all components and select via one-hot mask (avoids dynamic shapes)
         all_flat = keras.ops.stack(
-            [keras.ops.reshape(dist.sample(batch_shape, seed=sg), (total, self.dim)) for dist in self.distributions]
+            [keras.ops.reshape(dist.sample(batch_shape, seed=seed), (total, self.dim)) for dist in self.distributions]
         )
         all_flat = keras.ops.transpose(all_flat, (1, 0, 2))
 

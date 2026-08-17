@@ -269,14 +269,16 @@ class EnsembleApproximator(Approximator):
         """
         self._warn_ignored_member_weights(member_weights, merge_members)
 
+        seed = resolve_seed(seed, self.seed_generator)
+
         if not merge_members:
             return self._map_members(
                 None,
                 capability="distribution",
-                fn=lambda name, a: a.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs),
+                fn=lambda name, a: a.sample(
+                    num_samples=num_samples, conditions=conditions, split=split, seed=seed, **kwargs
+                ),
             )
-
-        seed_generator = resolve_seed(seed, self.seed_generator)
 
         weights = self._resolve_member_weights(member_weights)
         names = tuple(weights.keys())
@@ -295,12 +297,12 @@ class EnsembleApproximator(Approximator):
             list(alloc.keys()),
             capability="distribution",
             fn=lambda name, a: a.sample(
-                num_samples=alloc[name], conditions=conditions, split=split, seed=seed_generator, **kwargs
+                num_samples=alloc[name], conditions=conditions, split=split, seed=seed, **kwargs
             ),
         )
 
         merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *list(per_member.values()))
-        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
+        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed)
 
         return keras.tree.map_structure(lambda a: np.take(a, shuffle_idx, axis=1), merged)
 

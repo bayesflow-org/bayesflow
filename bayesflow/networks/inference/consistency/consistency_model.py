@@ -133,7 +133,6 @@ class ConsistencyModel(InferenceNetwork):
         self._current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self._current_step.assign(0)
 
-        self.seed_generator = keras.random.SeedGenerator()
         self._discretized_times = None
         self._discretization_map = None
         self._c_huber = None

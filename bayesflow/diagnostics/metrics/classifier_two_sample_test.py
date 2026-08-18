@@ -340,8 +340,7 @@ def _make_splits(
 def _predict_scores(model: keras.Model, inputs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
     """
     Predicted probabilities and monotone ranking scores of the given samples. If the final layer is a
-    dense sigmoid unit, its pre-sigmoid log-odds serve as ranking scores, since saturated float32
-    probabilities produce mass ties in the rank-based statistics (Bansal et al., 2026).
+    dense sigmoid unit, its pre-sigmoid log-odds serve as ranking scores (Bansal et al., 2026).
     """
     last = model.layers[-1] if getattr(model, "layers", None) else None
     if isinstance(last, keras.layers.Dense) and last.units == 1 and last.activation is keras.activations.sigmoid:
@@ -363,21 +362,6 @@ def _predict_scores(model: keras.Model, inputs: np.ndarray) -> tuple[np.ndarray,
 def _split_by_label(fold: Mapping[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
     """Held-out ranking scores of the target samples (label 1) and of the estimates (label 0)."""
     return fold["ranking_scores"][fold["labels"] == 1], fold["ranking_scores"][fold["labels"] == 0]
-
-
-def _summarize_held_out(folds: list[dict], fold_labels: Sequence[np.ndarray]) -> dict:
-    """Test statistics recomputed from the stored held-out predictions and the given labels."""
-    accuracies, regressions, aucs = [], [], []
-    for fold, labels in zip(folds, fold_labels):
-        accuracies.append(np.mean((fold["predictions"] > 0.5) == labels))
-        regressions.append(_regression_statistic(fold["predictions"], labels))
-        aucs.append(_auc(fold["ranking_scores"][labels == 1], fold["ranking_scores"][labels == 0]))
-    mean_accuracy = float(np.mean(accuracies))
-    return {
-        "score": max(mean_accuracy, 1 - mean_accuracy),
-        "regression_statistic": float(np.mean(regressions)),
-        "auc": float(np.mean(aucs)),
-    }
 
 
 def _regression_statistic(scores: np.ndarray, labels: np.ndarray) -> float:

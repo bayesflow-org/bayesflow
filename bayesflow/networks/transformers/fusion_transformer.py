@@ -31,6 +31,7 @@ class FusionTransformer(SummaryNetwork):
         template_type: str = "lstm",
         bidirectional: bool = True,
         template_dim: int = 128,
+        flash_attention: bool | None = None,
         **kwargs,
     ):
         """Creates a fusion transformer used to flexibly compress time series and learn additional time embeddings
@@ -77,6 +78,9 @@ class FusionTransformer(SummaryNetwork):
             units (equiv. output dimensions) of the recurrent network.
         time_axis     : int, optional (default - None)
             The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into t2v.
+        flash_attention : bool or None, optional (default - None)
+            Whether to use flash attention for the internal attention computation. See
+            `MultiHeadAttentionBlock` for details.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -95,6 +99,7 @@ class FusionTransformer(SummaryNetwork):
                 kernel_initializer=kernel_initializer,
                 use_bias=use_bias,
                 layer_norm=layer_norm,
+                flash_attention=flash_attention,
                 num_heads=num_heads[i],
                 embed_dim=embed_dims[i],
                 mlp_depth=mlp_depths[i],

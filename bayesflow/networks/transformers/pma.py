@@ -36,6 +36,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
+        flash_attention: bool | None = None,
         **kwargs,
     ):
         """
@@ -66,6 +67,9 @@ class PoolingByMultiHeadAttention(keras.Layer):
             Whether to include bias terms in dense layers.
         layer_norm : bool, optional (default=True)
             Whether to apply layer normalization before and after attention.
+        flash_attention : bool or None, optional (default - None)
+            Whether to use flash attention for the internal attention computation. See
+            `MultiHeadAttentionBlock` for details.
         **kwargs
             Additional keyword arguments passed to the Keras Layer base class.
         """
@@ -82,6 +86,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
+            flash_attention=flash_attention,
         )
 
         self.seed_vector = self.add_weight(

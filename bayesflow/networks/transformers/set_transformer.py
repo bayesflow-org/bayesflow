@@ -39,6 +39,7 @@ class SetTransformer(SummaryNetwork):
         layer_norm: bool = True,
         num_inducing_points: int = None,
         seed_dim: int = None,
+        flash_attention: bool | None = None,
         **kwargs,
     ):
         """
@@ -75,6 +76,9 @@ class SetTransformer(SummaryNetwork):
             Number of inducing points used, if applicable. If set to None, this option is disabled.
         seed_dim : int or None, optional (default - None)
             Dimensionality of the seed embeddings. If None, it defaults to `summary_dim`.
+        flash_attention : bool or None, optional (default - None)
+            Whether to use flash attention for the internal attention computation. See
+            `MultiHeadAttentionBlock` for details.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -94,6 +98,7 @@ class SetTransformer(SummaryNetwork):
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
+            flash_attention=flash_attention,
         )
 
         for i in range(num_attention_layers):

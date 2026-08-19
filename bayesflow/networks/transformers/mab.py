@@ -7,6 +7,8 @@ from bayesflow.utils import layer_kwargs, filter_kwargs
 from bayesflow.utils.decorators import sanitize_input_shape
 from bayesflow.utils.serialization import serializable
 
+from .attention import FlashMultiHeadAttention
+
 
 @serializable("bayesflow.networks")
 class MultiHeadAttentionBlock(keras.Layer):
@@ -36,6 +38,7 @@ class MultiHeadAttentionBlock(keras.Layer):
         kernel_initializer: str = "lecun_normal",
         use_bias: bool = True,
         layer_norm: bool = True,
+        flash_attention: bool | None = None,
         **kwargs,
     ):
         """Creates a multi-head attention block which will typically be used as part of a
@@ -61,6 +64,13 @@ class MultiHeadAttentionBlock(keras.Layer):
             Whether to include bias terms in dense layers, by default True.
         layer_norm : bool, optional
             Whether to apply layer normalization before and after attention, by default True.
+        flash_attention : bool or None, optional (default - None)
+            Whether to use flash attention for the internal attention computation. Since dropout
+            is a no-op outside of training, this only affects calls made with `training=False`
+            (e.g. during inference/sampling); training calls always use the regular dropout-enabled
+            attention path whenever `dropout > 0`. If `None`, flash attention is attempted
+            opportunistically whenever the backend/hardware supports it. If `True`, flash attention
+            is required and unsupported inputs raise an error. If `False`, flash attention is disabled.
         **kwargs : dict
             Additional keyword arguments passed to the Keras Layer base class.
         """
@@ -68,12 +78,13 @@ class MultiHeadAttentionBlock(keras.Layer):
         super().__init__(**layer_kwargs(kwargs))
 
         self.input_projector = layers.Dense(units=embed_dim, name="input_projector")
-        self.attention = layers.MultiHeadAttention(
+        self.attention = FlashMultiHeadAttention(
             key_dim=embed_dim,
             num_heads=num_heads,
             dropout=dropout,
             use_bias=use_bias,
             output_shape=embed_dim,
+            flash_attention=flash_attention,
             name="attention",
         )
         self.ln_pre = layers.LayerNormalization(name="layer_norm_pre") if layer_norm else None

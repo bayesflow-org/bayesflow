@@ -27,6 +27,7 @@ class TimeSeriesTransformer(SummaryNetwork):
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
         time_axis: int = None,
+        flash_attention: bool | None = None,
         **kwargs,
     ):
         """(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time
@@ -63,6 +64,9 @@ class TimeSeriesTransformer(SummaryNetwork):
             The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into the embedding.
             If an embedding is provided and time_axis is None, a uniform time interval between [0, sequence_len]
             will be assumed.
+        flash_attention : bool or None, optional (default - None)
+            Whether to use flash attention for the internal attention computation. See
+            `MultiHeadAttentionBlock` for details.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -91,6 +95,7 @@ class TimeSeriesTransformer(SummaryNetwork):
                 kernel_initializer=kernel_initializer,
                 use_bias=use_bias,
                 layer_norm=layer_norm,
+                flash_attention=flash_attention,
                 num_heads=num_heads[i],
                 embed_dim=embed_dims[i],
                 mlp_depth=mlp_depths[i],

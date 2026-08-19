@@ -215,15 +215,17 @@ class ScoringRuleApproximator(ContinuousApproximator):
         """
         self._check_has_distribution()
 
+        seed = resolve_seed(seed, self.seed_generator)
+
         if not merge_scores:
             if score_weights is not None:
                 logging.warning(
                     "`score_weights` is ignored when `merge_scores=False`. "
                     "Set `merge_scores=True` to sample from the weighted mixture."
                 )
-            return self._sample_separate(num_samples=num_samples, conditions=conditions, split=split, **kwargs)
-
-        seed = resolve_seed(seed, self.seed_generator)
+            return self._sample_separate(
+                num_samples=num_samples, conditions=conditions, split=split, seed=seed, **kwargs
+            )
 
         # Single score: _sample_separate already squeezed to a plain result,
         # and mixing with uniform weight is an identity operation.

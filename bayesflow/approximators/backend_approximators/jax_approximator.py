@@ -71,7 +71,7 @@ class JAXApproximator(keras.Model):
         state_mapping.extend(zip(self.metrics_variables, metrics_variables))
 
         # perform a stateless call to compute_metrics
-        with keras.StatelessScope(state_mapping) as scope:
+        with keras.StatelessScope(state_mapping, collect_losses=True) as scope:
             kwargs = filter_kwargs(data | {"stage": stage}, self.compute_metrics)
             metrics = self.compute_metrics(**kwargs)
 
@@ -158,7 +158,7 @@ class JAXApproximator(keras.Model):
         """Alias for :meth:`stateless_train_step` (required by :meth:`keras.Model.fit`)."""
         return self.stateless_train_step(*args, **kwargs)
 
-    def _update_metrics(self, loss: jax.Array, metrics_variables: Any, sample_weight: Any = None) -> Any:
+    def _update_metrics(self, loss: jax.Array, metrics_variables: Any, sample_weight: Any | None = None) -> Any:
         """Stateless metric update for JAX.
 
         Enters a :class:`keras.StatelessScope` to update the loss

@@ -1,3 +1,7 @@
+r"""
+Numerical diagnostics for evaluating trained :py:class:`~bayesflow.workflows.Workflow`\ s.
+"""
+
 from .calibration_error import calibration_error
 from .posterior_contraction import posterior_contraction
 from .root_mean_squared_error import root_mean_squared_error
@@ -7,4 +11,10 @@ from .model_misspecification import bootstrap_comparison, summary_space_comparis
 from .calibration_log_gamma import calibration_log_gamma, gamma_null_distribution, gamma_discrepancy
 from .posterior_z_score import posterior_z_score
 from .correlation import correlation
+from .accuracy import accuracy
+from .brier_score import brier_score
 from .accuracy_random_points import accuracy_random_points
+
+from ...utils._docs import _add_imports_to_all
+
+_add_imports_to_all(include_modules=[])

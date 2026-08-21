@@ -117,6 +117,7 @@ def test_multi_block_stages():
     net = ConvolutionalNetwork(
         summary_dim=SUMMARY_DIM,
         widths=(4, 8),
+        kernel_sizes=(2, 2),
         blocks_per_stage=2,
         downsample_stage=(True, False),
     )

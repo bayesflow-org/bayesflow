@@ -25,11 +25,8 @@ class Standardization(keras.Layer):
         else:
             self.standardize = standardize or []
 
-        if self.standardize == "all":
-            # we have to lazily initialize these
-            self.standardize_layers = None
-        else:
-            self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
+        # Lazy init
+        self.standardize_layers = None
 
     def maybe_standardize(
         self,
@@ -39,6 +36,7 @@ class Standardization(keras.Layer):
         forward: bool = True,
         log_det_jac: bool = False,
         transformation_type: str = "location_scale",
+        mask: Tensor | None = None,
     ):
         if x is None:
             if log_det_jac:
@@ -51,23 +49,25 @@ class Standardization(keras.Layer):
             return x
 
         return self.standardize_layers[key](
-            x, forward=forward, stage=stage, log_det_jac=log_det_jac, transformation_type=transformation_type
+            x, forward=forward, stage=stage, log_det_jac=log_det_jac, transformation_type=transformation_type, mask=mask
         )
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:
         if self.standardize == "all":
             # Only include variables present in data_shapes
-            self.standardize = [
+            keys = [
                 var
                 for var in ["inference_variables", "summary_variables", "inference_conditions"]
                 if var in data_shapes
             ]
-            self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
+        else:
+            keys = [var for var in self.standardize if var in data_shapes]
+
+        self.standardize = keys
+        self.standardize_layers = {var: Standardize(trainable=False) for var in self.standardize}
 
         for var, layer in self.standardize_layers.items():
             layer.build(data_shapes[var])
-
-        self.built = True
 
     def get_config(self):
         base_config = super().get_config()

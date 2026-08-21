@@ -58,7 +58,14 @@ def prior3(a, b, c):
 
 Once we agree on an approach in the issue you opened, we can move ahead with the implementation.
 
-First, create a development environment with conda, or any other environment manager of your choice.
+First, create a development environment. We recommend [uv](https://docs.astral.sh/uv/), which is also used by our CI:
+
+```bash
+# install uv if you haven't already (see https://docs.astral.sh/uv/getting-started/installation/)
+uv venv --python 3.11
+```
+
+If you prefer conda or another environment manager:
 
 ```bash
 conda create -n bf python=3.11
@@ -78,8 +85,16 @@ Then, check out the development branch and install dependencies:
 ```bash
 cd bayesflow
 git checkout dev
-conda install pip
-pip install -e .[dev,docs,test]
+uv sync --extra all
+pre-commit install
+```
+
+If you are using pip instead of uv:
+
+```bash
+cd bayesflow
+git checkout dev
+pip install -e .[all]
 pre-commit install
 ```
 
@@ -87,18 +102,23 @@ Finally, install at least one backend of your choice.
 At the moment of writing this, to install all three backends on a machine supporting CUDA 12.6, we would use:
 
 ```bash
-pip install -U jax[cuda12]
-pip install -U tensorflow[and-cuda]
-pip3 install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
+uv pip install -U "jax[cuda12]"
+uv pip install -U "tensorflow[and-cuda]"
+uv pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu126
 ```
 
 You can set an environment variable to choose the default backend. We recommend defaulting to jax:
 
 ```bash
-conda env config vars set KERAS_BACKEND=jax
+# in .env or your shell profile:
+export KERAS_BACKEND=jax
 ```
 
-Note that you will have to re-activate the environment for the changes to take effect.
+If you use conda, you can set this per-environment:
+
+```bash
+conda env config vars set KERAS_BACKEND=jax
+```
 
 ### 3. Implement your changes
 
@@ -110,13 +130,13 @@ In general, we recommend a test-driven development approach:
 You can run tests for your installed environment using `pytest`:
 
 ```bash
-pytest
+uv run pytest
 ```
 
 Make sure to occasionally also run multi-backend tests for your OS using [tox](https://tox.readthedocs.io/en/latest/):
 
 ```bash
-tox --parallel auto
+uv run tox --parallel auto
 ```
 
 See `tox.ini` for details on the environment configurations.
@@ -161,7 +181,7 @@ If you haven't done so earlier, run the following command to install all necessa
 documentation generation:
 
 ```
-pip install .[docs]
+uv sync --extra docs
 ```
 
 The overall *structure* of the documentation is manually designed, but the API documentation is auto-generated.
@@ -171,8 +191,8 @@ You can re-build the for your local state with:
 
 ```bash
 cd docsrc
-make clean && make local-docs
-# in case of issues, try `make clean-all`
+uv run make clean && uv run make local-docs
+# in case of issues, try `uv run make clean-all`
 ```
 
 Note that files ignored by git (i.e., listed in `.gitignore`) are not included in the documentation.
@@ -181,18 +201,18 @@ We also provide a multi-version documentation, which renders the branches `main`
 
 ```bash
 cd docsrc
-make clean && make production-docs
+uv run make clean && uv run make production-docs
 ```
 
 This will create and cache virtual environments for the build at `docsrc/.docs_venvs`.
-To remove them, run `make clean-all` in the `docsrc` directory.
+To remove them, run `uv run make clean-all` in the `docsrc` directory.
 
 The entry point of the rendered documentation will be at `docs/index.html`.
 To view the docs in the browser (which ensures correct redirects), run:
 
 ```bash
 cd docsrc
-make view-docs
+uv run make view-docs
 ```
 
 See `docsrc/README.md` for more details.

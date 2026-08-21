@@ -17,6 +17,8 @@ class DummyNetwork:
     "name,expected_class_path",
     [
         ("mlp", "bayesflow.networks.MLP"),
+        ("time_mlp", "bayesflow.networks.TimeMLP"),
+        ("diffusion_transformer", "bayesflow.networks.DiffusionTransformer"),
     ],
 )
 def test_find_network_by_name(monkeypatch, name, expected_class_path):
@@ -297,3 +299,127 @@ def test_find_noise_schedule_invalid_class():
 def test_find_noise_schedule_invalid_object():
     with pytest.raises(TypeError):
         find_noise_schedule(1.0)
+
+
+# --- Tests for find_scoring_rule.py ---
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("cross_entropy", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("default", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("brier", "bayesflow.scoring_rules.BrierScore"),
+        ("polynomial", "bayesflow.scoring_rules.PolynomialScore"),
+        ("exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("leaky_exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("logistic", "bayesflow.scoring_rules.LogisticScore"),
+        ("power_logistic", "bayesflow.scoring_rules.LogisticScore"),
+    ],
+)
+def test_find_scoring_rule_by_name(name, expected_class):
+    from bayesflow.utils import find_scoring_rule
+    import importlib
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_leaky_default_sets_link():
+    from bayesflow.links import Leaky
+    from bayesflow.scoring_rules import ExponentialScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("leaky_exponential")
+    assert isinstance(rule, ExponentialScore)
+    link = rule.get_link("logits")
+    assert isinstance(link, Leaky)
+    assert link.power == 2.0
+
+
+def test_find_scoring_rule_power_logistic_default_sets_alpha():
+    from bayesflow.scoring_rules import LogisticScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("power_logistic")
+    assert isinstance(rule, LogisticScore)
+    assert rule.alpha == 1.0
+
+
+def test_find_scoring_rule_by_type():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import CrossEntropyScore
+
+    rule = find_scoring_rule(CrossEntropyScore)
+    assert isinstance(rule, CrossEntropyScore)
+
+
+def test_find_scoring_rule_by_instance():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import BrierScore
+
+    existing = BrierScore()
+    result = find_scoring_rule(existing)
+    assert result is existing
+
+
+def test_find_scoring_rule_unknown_name():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(ValueError, match="Unsupported scoring rule name"):
+        find_scoring_rule("unknown_rule")
+
+
+def test_find_scoring_rule_invalid_type():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(TypeError):
+        find_scoring_rule(42)
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("mean", "bayesflow.scoring_rules.MeanScore"),
+        ("median", "bayesflow.scoring_rules.MedianScore"),
+        ("quantile", "bayesflow.scoring_rules.QuantileScore"),
+        ("mv_normal", "bayesflow.scoring_rules.MvNormalScore"),
+        ("multivariate_normal", "bayesflow.scoring_rules.MvNormalScore"),
+    ],
+)
+def test_find_scoring_rule_continuous_by_name(name, expected_class):
+    import importlib
+
+    from bayesflow.utils import find_scoring_rule
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_normed_difference():
+    from bayesflow.scoring_rules import NormedDifferenceScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("normed_difference", k=2)
+    assert isinstance(rule, NormedDifferenceScore)
+
+
+def test_find_scoring_rule_mixture():
+    from bayesflow.scoring_rules import MixtureScore, MvNormalScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("mixture", mvn1=MvNormalScore(), mvn2=MvNormalScore())
+    assert isinstance(rule, MixtureScore)
+
+
+def test_find_scoring_rule_case_insensitive():
+    from bayesflow.scoring_rules import CrossEntropyScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("CROSS_ENTROPY")
+    assert isinstance(rule, CrossEntropyScore)

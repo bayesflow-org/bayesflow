@@ -3,6 +3,7 @@ import numpy as np
 import keras
 
 from bayesflow.networks.helpers import Standardization
+from bayesflow.networks.helpers.standardization.standardize import Standardize
 from bayesflow.utils.serialization import serialize, deserialize
 
 from tests.utils import assert_layers_equal
@@ -27,6 +28,25 @@ def test_forward_standardization_training():
     assert out.shape == random_input.shape
     assert not np.any(np.isnan(out))
     np.testing.assert_allclose(np.std(out, axis=0), 1.0, atol=1e-5)
+
+
+def test_forward_standardization_mask_invariance():
+    real_len, pad_len = 5, 4
+    real_input = keras.random.normal((8, real_len, 3), mean=10)
+    padded_input = keras.ops.concatenate([real_input, keras.ops.zeros((8, pad_len, 3))], axis=-2)
+    mask = keras.ops.concatenate([keras.ops.ones((8, real_len)), keras.ops.zeros((8, pad_len))], axis=-1)
+
+    masked = Standardize()
+    masked(padded_input, stage="training", mask=mask)
+
+    reference = Standardize()
+    reference(real_input, stage="training")
+
+    for attr in ["moving_mean", "moving_m2", "count"]:
+        np.testing.assert_allclose(
+            keras.ops.convert_to_numpy(getattr(masked, attr)[0]),
+            keras.ops.convert_to_numpy(getattr(reference, attr)[0]),
+        )
 
 
 def test_forward_standardization_training_constant_batch():
@@ -165,6 +185,9 @@ def test_transformation_type_identity():
         y, key="x", stage="inference", forward=False, transformation_type="identity"
     )
 
+    # conversion needed for torch on mps
+    should_be_unchanged = keras.ops.convert_to_numpy(should_be_unchanged)
+    y = keras.ops.convert_to_numpy(y)
     np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
 
 
@@ -184,7 +207,7 @@ def test_transformation_type_both_sides_scale():
     # Standardize samples
     standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     # Inverse standardization of covariance matrix in standardized space
     cov_standardized_and_recovered = std.maybe_standardize(
@@ -216,7 +239,7 @@ def test_transformation_type_one_side_scale(transformation_type):
     standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
 
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     chol_standardized = keras.ops.cholesky(cov_standardized)  # (dim, dim)
 
@@ -246,6 +269,38 @@ def test_serialize_deserialize():
     reserialized = serialize(deserialized)
 
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+
+@pytest.mark.parametrize(
+    ("standardize", "data_shapes", "expected"),
+    [
+        (
+            "all",
+            {"inference_conditions": (2, 8), "inference_variables": (2, 2), "mu": (2, 1)},
+            ["inference_variables", "inference_conditions"],
+        ),
+        (
+            ["summary_variables", "inference_conditions"],
+            {"inference_conditions": (2, 8), "mu": (2, 1)},
+            ["inference_conditions"],
+        ),
+    ],
+)
+def test_serialize_deserialize_after_pruning_missing_standardize_keys(standardize, data_shapes, expected):
+    layer = Standardization(standardize=standardize, momentum=0.0)
+    layer.build(data_shapes)
+
+    assert layer.standardize == expected
+    assert list(layer.standardize_layers) == expected
+
+    serialized = serialize(layer)
+    deserialized = deserialize(serialized)
+
+    assert deserialized.standardize == expected
+    assert deserialized.built
+    assert deserialized.standardize_layers is not None
+    assert list(deserialized.standardize_layers) == expected
+    assert all(layer.built for layer in deserialized.standardize_layers.values())
 
 
 def test_save_and_load(tmp_path):

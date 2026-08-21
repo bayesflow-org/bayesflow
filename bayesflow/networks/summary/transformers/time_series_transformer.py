@@ -25,7 +25,7 @@ class TimeSeriesTransformer(Transformer):
         layer_norm: bool = True,
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
-        time_axis: int = None,
+        time_axis: int | None = None,
         return_sequences: bool = False,
         **kwargs,
     ):
@@ -61,7 +61,7 @@ class TimeSeriesTransformer(Transformer):
             Dimensionality of the Time2Vec or recurrent embedding, by default 8.
         time_axis : int or None, optional
             The time axis from which to grab the time vector for the embedding.
-            If None, a uniform time interval between [0, sequence_len] is assumed.
+            If None, integer time steps 0, 1, ..., sequence_len - 1 are assumed.
         return_sequences : bool, optional
             If True, acts as a many-to-many encoder. If False (default), acts as a
             many-to-one embedding network and ``summary_dim`` is the output dimension.
@@ -107,8 +107,11 @@ class TimeSeriesTransformer(Transformer):
 
         self.summary_dim = summary_dim
         self.time_axis = time_axis
+        self.return_sequences = return_sequences
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
+    def call(
+        self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None
+    ) -> Tensor:
         """Compresses the input sequence into a summary vector of size ``summary_dim``.
 
         Parameters
@@ -118,7 +121,13 @@ class TimeSeriesTransformer(Transformer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
+            Boolean mask broadcastable to ``(B, num_heads, T, T)`` where 1 = attend,
+            0 = mask. Takes precedence over any mask derived from ``mask``.
+        mask : Tensor, optional
+            Boolean padding mask of shape ``(B, T)`` where 1 = real time step,
+            0 = padding. Used for variable-length trajectories padded to a common
+            length: it builds a key-padding ``attention_mask`` (when none is given)
+            and excludes padded steps from the pooling average.
 
         Returns
         -------
@@ -139,9 +148,23 @@ class TimeSeriesTransformer(Transformer):
         if self.time_embedding:
             inp = self.time_embedding(inp, t=t)
 
+        if attention_mask is None and mask is not None:
+            # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
+            attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
+
         for layer in self.attention_blocks:
             inp = layer(inp, inp, training=training, attention_mask=attention_mask)
 
-        summary = self.pooling(inp)
+        if self.return_sequences:
+            # sequence returned unreduced so caller needs to mask the padded steps
+            summary = self.pooling(inp)
+        else:
+            summary = self.pooling(inp, mask=mask)
         summary = self.output_projector(summary)
         return summary
+
+    def compute_mask(self, inputs, mask=None):
+        # `mask` (magic keyword in Keras) is terminated here by `return None`
+        # to prevent warnings about inability to inject it downstream.
+        # We explicitly pass mask and do not rely on having it travel with as a tensor attribute.
+        return None

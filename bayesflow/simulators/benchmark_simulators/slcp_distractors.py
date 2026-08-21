@@ -62,7 +62,7 @@ class SLCPDistractors(BenchmarkSimulator):
 
         Returns
         -------
-        student : callable (scipy.stats._multivariate.multivariate_t_frozen)
+        student : Callable (scipy.stats._multivariate.multivariate_t_frozen)
             The student-t generator.
         """
 

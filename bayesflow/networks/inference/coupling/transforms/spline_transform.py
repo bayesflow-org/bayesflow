@@ -13,6 +13,39 @@ from .transform import Transform
 
 @serializable("bayesflow.networks")
 class SplineTransform(Transform):
+    """Elementwise monotonic rational-quadratic spline transformation [1].
+
+    More expressive than :py:class:`AffineTransform`, at the cost of
+    ``3 * bins + 3`` parameters per dimension. Inputs falling outside the learned
+    spline domain are handled by a linear tail that matches the domain's slope,
+    so the transformation stays invertible on the whole real line.
+
+    Parameters
+    ----------
+    bins : int, optional
+        Number of spline bins per dimension. Default is 16.
+    default_domain : tuple, optional
+        Spline domain ``(left, right, bottom, top)`` used when the subnet outputs
+        zeros; the subnet learns offsets from it. Default is (-3.0, 3.0, -3.0, 3.0).
+    min_width : float, optional
+        Lower bound on the total width of the domain, raised to
+        ``bins * min_bin_width`` if that is larger. Default is 1.0.
+    min_height : float, optional
+        Lower bound on the total height of the domain, raised to
+        ``bins * min_bin_height`` if that is larger. Default is 1.0.
+    min_bin_width : float, optional
+        Lower bound on the width of a single bin. Default is 0.1.
+    min_bin_height : float, optional
+        Lower bound on the height of a single bin. Default is 0.1.
+    method : str, optional
+        Spline family. Only ``"rational_quadratic"`` is implemented.
+
+    References
+    ----------
+    [1] Durkan, C., Bekasov, A., Murray, I., & Papamakarios, G. (2019).
+        Neural spline flows. NeurIPS, 32.
+    """
+
     def __init__(
         self,
         bins: int = 16,

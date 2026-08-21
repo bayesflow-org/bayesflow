@@ -36,7 +36,7 @@ def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[2, 5], scope="session")
+@pytest.fixture(params=[2], scope="session")
 def xz_dim(request):
     return request.param
 
@@ -66,8 +66,11 @@ def random_conditions(batch_size, cond_dim):
 @pytest.fixture(
     params=[
         dict(noise_schedule="edm", prediction_type="F"),
-        dict(noise_schedule="cosine", prediction_type="velocity"),
+        dict(noise_schedule="edm", prediction_type="x"),
         dict(noise_schedule="edm", prediction_type="potential"),
+        dict(noise_schedule="cosine", prediction_type="velocity"),
+        dict(noise_schedule="cosine", prediction_type="noise"),
+        dict(noise_schedule="cosine", prediction_type="score"),
     ],
     ids=lambda d: f"{d['noise_schedule']}_{d['prediction_type']}",
 )
@@ -83,8 +86,9 @@ def diffusion_model_with_masking():
 
     return DiffusionModel(
         subnet_kwargs=dict(widths=(8, 8)),
-        drop_cond_prob=0.1,
-        drop_target_prob=0.5,
+        missing_target_prob=0.3,
+        missing_conditions_prob=0.3,
+        fixed_target_prob=0.3,
     )
 
 

@@ -8,7 +8,7 @@ import keras
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import split_arrays
+from bayesflow.utils import split_arrays, MaskName
 from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serialize, serializable
 
@@ -50,8 +50,8 @@ class ContinuousApproximator(Approximator):
         self,
         *,
         inference_network: InferenceNetwork,
-        adapter: Adapter = None,
-        summary_network: SummaryNetwork = None,
+        adapter: Adapter | None = None,
+        summary_network: SummaryNetwork | None = None,
         standardize: str | Sequence[str] | None = "inference_variables",
         **kwargs,
     ):
@@ -67,13 +67,13 @@ class ContinuousApproximator(Approximator):
     def compute_metrics(
         self,
         inference_variables: Tensor,
-        inference_conditions: Tensor = None,
-        summary_variables: Tensor = None,
-        sample_weight: Tensor = None,
-        summary_attention_mask: Tensor = None,
-        summary_mask: Tensor = None,
-        inference_attention_mask: Tensor = None,
-        inference_mask: Tensor = None,
+        inference_conditions: Tensor | None = None,
+        summary_variables: Tensor | None = None,
+        sample_weight: Tensor | None = None,
+        summary_attention_mask: Tensor | None = None,
+        summary_mask: Tensor | None = None,
+        inference_attention_mask: Tensor | None = None,
+        inference_mask: Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -146,10 +146,14 @@ class ContinuousApproximator(Approximator):
         else:
             loss = inference_metrics.pop("loss")
 
-        inference_metrics = {f"{key}/inference_{key}": value for key, value in inference_metrics.items()}
-        summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
+        inference_metrics = {
+            f"{self.inference_network.__class__.__name__}/{key}": value for key, value in inference_metrics.items()
+        }
+        summary_metrics = {
+            f"{self.summary_network.__class__.__name__}/{key}": value for key, value in summary_metrics.items()
+        }
 
-        metrics = {"loss": loss} | inference_metrics | summary_metrics
+        metrics = self._with_layer_losses(loss) | inference_metrics | summary_metrics
         return metrics
 
     def fit(self, *args, **kwargs):
@@ -191,6 +195,22 @@ class ContinuousApproximator(Approximator):
         }
 
         return base_config | serialize(config)
+
+    def _maybe_standardize_fixed_target_value(self, kwargs: Mapping) -> dict:
+        """Standardize a user-provided ``fixed_target_value`` array in place within ``kwargs``.
+
+        ``fixed_target_value`` clamps inferred variables to known values during sampling. Users
+        pass it in the same space as ``inference_variables``.
+        """
+        fixed_target_value = kwargs.get(MaskName.FIXED_TARGET_VALUE)
+        if fixed_target_value is None:
+            return dict(kwargs)
+
+        kwargs = dict(kwargs)
+        kwargs[MaskName.FIXED_TARGET_VALUE] = self.standardizer.maybe_standardize(
+            fixed_target_value, key="inference_variables", stage="inference", forward=True
+        )
+        return kwargs
 
     def sample(
         self,
@@ -245,6 +265,8 @@ class ContinuousApproximator(Approximator):
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
+        kwargs = self._maybe_standardize_fixed_target_value(kwargs)
+        kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(
@@ -398,6 +420,8 @@ class ContinuousApproximator(Approximator):
             summary_outputs=summary_outputs,
         )
 
+        kwargs = self._maybe_standardize_fixed_target_value(kwargs)
+        kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
         inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
 
         samples = self.sampler.sample(

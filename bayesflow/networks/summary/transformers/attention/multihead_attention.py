@@ -5,7 +5,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
-from .feedforward_net import FFN
+from bayesflow.networks.helpers import FFN
 
 
 @serializable("bayesflow.networks")
@@ -119,7 +119,8 @@ class MultiHeadAttention(keras.Layer):
         training : bool, optional
             Toggles dropout and norm training behaviour, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
+            Boolean mask broadcastable to ``(B, num_heads, seq_len_x, seq_len_y)``
+            where 1 = attend, 0 = mask.
 
         Returns
         -------

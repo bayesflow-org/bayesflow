@@ -21,6 +21,7 @@ class DoubleConv(keras.Layer):
     def __init__(
         self,
         width: int,
+        kernel_size: int = 3,
         norm: Literal["layer", "group", "batch"] | None = "group",
         groups: int | None = 8,
         dropout: float = None,
@@ -35,10 +36,10 @@ class DoubleConv(keras.Layer):
             # https://github.com/keras-team/keras/issues/1802#issuecomment-187966878
             gamma_initializer = "zeros" if residual else "ones"
             conv_layers = [
-                keras.layers.Conv2D(width, 3, padding="same"),
+                keras.layers.Conv2D(width, kernel_size=kernel_size, padding="same"),
                 keras.layers.Activation(activation),
                 SimpleNorm(method=norm),
-                keras.layers.Conv2D(width, 3, padding="same"),
+                keras.layers.Conv2D(width, kernel_size=kernel_size, padding="same"),
                 keras.layers.Activation(activation),
                 SimpleNorm(method=norm, gamma_initializer=gamma_initializer),
                 keras.layers.Dropout(0.0 if dropout is None else dropout),
@@ -49,16 +50,19 @@ class DoubleConv(keras.Layer):
             conv_layers = [
                 SimpleNorm(method=norm, groups=groups, center=True, scale=True),
                 keras.layers.Activation(activation),
-                keras.layers.Conv2D(width, 3, padding="same"),
+                keras.layers.Conv2D(width, kernel_size=kernel_size, padding="same"),
                 SimpleNorm(method=norm, groups=groups, center=True, scale=True),
                 keras.layers.Activation(activation),
                 keras.layers.Dropout(0.0 if dropout is None else dropout),
-                keras.layers.Conv2D(width, 3, padding="same", kernel_initializer=kernel_initializer),
+                keras.layers.Conv2D(
+                    width, kernel_size=kernel_size, padding="same", kernel_initializer=kernel_initializer
+                ),
             ]
 
         self.conv_layers = conv_layers
         self.width = width
         self.norm = norm
+        self.kernel_size = kernel_size
         self.groups = groups
         self.dropout = dropout
         self.activation = activation
@@ -75,6 +79,7 @@ class DoubleConv(keras.Layer):
         config = {
             "width": self.width,
             "norm": self.norm,
+            "kernel_size": self.kernel_size,
             "groups": self.groups,
             "dropout": self.dropout,
             "activation": self.activation,

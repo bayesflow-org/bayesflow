@@ -31,6 +31,9 @@ class ConvolutionalNetwork(SummaryNetwork):
         Dimensionality of the output summary vector. Default is 16.
     widths : Sequence[int], optional
         Number of convolutional filters per stage. Default is ``(32, 64, 128)``.
+    kernel_sizes : int or Sequence[int], optional
+        Kernel size of the convolution per stage. Default is ``3``. ``int`` is
+        broadcast to evert width.
     blocks_per_stage : int or Sequence[int], optional
         Residual blocks per stage. A single int is broadcast to every stage.
         Default is 2.
@@ -71,6 +74,7 @@ class ConvolutionalNetwork(SummaryNetwork):
         self,
         summary_dim: int = 16,
         widths: Sequence[int] = (32, 64, 128),
+        kernel_sizes: int | Sequence[int] = 3,
         blocks_per_stage: int | Sequence[int] = 2,
         downsample_stage: Sequence[bool] | bool = True,
         norm: Literal["layer", "group", "batch"] | None = "layer",
@@ -94,6 +98,7 @@ class ConvolutionalNetwork(SummaryNetwork):
 
         self.summary_dim = summary_dim
         self.widths = widths
+        self.kernel_sizes = [kernel_sizes] * len(widths) if isinstance(kernel_sizes, int) else list(kernel_sizes)
 
         self.blocks_per_stage = (
             [blocks_per_stage] * len(widths) if isinstance(blocks_per_stage, int) else list(blocks_per_stage)
@@ -114,9 +119,19 @@ class ConvolutionalNetwork(SummaryNetwork):
 
     def _build_stages(self):
         layers = []
-        for width, num_blocks, downsample in zip(self.widths, self.blocks_per_stage, self.downsample_stage):
+        for width, kernel_size, num_blocks, downsample in zip(
+            self.widths, self.kernel_sizes, self.blocks_per_stage, self.downsample_stage
+        ):
             for _ in range(num_blocks):
-                block = DoubleConv(width, self.norm, self.groups, self.dropout, self.activation, residual=self.residual)
+                block = DoubleConv(
+                    width=width,
+                    kernel_size=kernel_size,
+                    norm=self.norm,
+                    groups=self.groups,
+                    dropout=self.dropout,
+                    activation=self.activation,
+                    residual=self.residual,
+                )
                 layers.append(block)
 
             if downsample:

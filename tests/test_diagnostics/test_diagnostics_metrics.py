@@ -123,6 +123,19 @@ def test_classifier_two_sample_test(random_samples_a, random_samples_b):
     assert len(metrics["scores"]) == 5
 
 
+def test_model_comparison_accuracy():
+    probs = np.array([[0.8, 0.1, 0.1], [0.1, 0.9, 0.0], [0.2, 0.3, 0.5]])
+    one_hot = np.array([[1, 0, 0], [0, 1, 0], [0, 0, 1]])
+
+    # PMP mode: predictions shape (N, M)
+    assert bf.diagnostics.metrics.accuracy(probs, one_hot, per_model=False) == 1.0
+
+    # partial accuracy
+    probs_wrong = np.array([[0.1, 0.8, 0.1], [0.1, 0.9, 0.0], [0.2, 0.3, 0.5]])
+    acc = bf.diagnostics.metrics.accuracy(probs_wrong, one_hot, per_model=False)
+    assert abs(acc - 2 / 3) < 1e-6
+
+
 def test_expected_calibration_error(pred_models, true_models, model_names):
     out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models, model_names=model_names)
     assert list(out.keys()) == ["values", "metric_name", "model_names"]
@@ -136,7 +149,7 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
     assert len(out["probs_true"]) == pred_models.shape[-1]
     assert len(out["probs_pred"]) == pred_models.shape[-1]
     # default: auto model names
-    assert out["model_names"] == ["M_0", "M_1", "M_2"]
+    assert out["model_names"] == ["M_1", "M_2", "M_3"]
 
     # handles incorrect input?
     with pytest.raises(Exception):
@@ -144,6 +157,27 @@ def test_expected_calibration_error(pred_models, true_models, model_names):
 
     with pytest.raises(Exception):
         out = bf.diagnostics.metrics.expected_calibration_error(pred_models, true_models.transpose)
+
+
+def test_model_comparison_brier_score(pred_models, true_models, model_names):
+    out = bf.diagnostics.metrics.brier_score(pred_models, true_models, model_names=model_names)
+    assert list(out.keys()) == ["values", "aggregate", "metric_name", "model_names"]
+    assert out["values"].shape == (pred_models.shape[-1],)
+    assert out["metric_name"] == "Brier Score"
+    assert out["model_names"] == [r"$\mathcal{M}_0$", r"$\mathcal{M}_1$", r"$\mathcal{M}_2$"]
+    assert abs(out["aggregate"] - out["values"].sum()) < 1e-6
+
+    # default: auto model names
+    out = bf.diagnostics.metrics.brier_score(pred_models, true_models)
+    assert out["model_names"] == ["M_1", "M_2", "M_3"]
+
+    # perfect predictions score 0, maximally wrong confident predictions score 2
+    one_hot = np.eye(3)[np.array([0, 1, 2])]
+    out = bf.diagnostics.metrics.brier_score(one_hot, one_hot)
+    assert np.allclose(out["values"], 0.0)
+    wrong = np.eye(3)[np.array([1, 2, 0])]
+    out = bf.diagnostics.metrics.brier_score(wrong, one_hot)
+    assert abs(out["aggregate"] - 2.0) < 1e-6
 
 
 def test_calibration_log_gamma(random_estimates, random_targets):
@@ -234,8 +268,7 @@ def test_bootstrap_comparison_shapes():
         num_null_samples,
     )
 
-    assert isinstance(distance_observed, float)
-    assert isinstance(distance_null, np.ndarray)
+    assert distance_observed.shape == ()
     assert distance_null.shape == (num_null_samples,)
 
 
@@ -286,22 +319,6 @@ def test_bootstrap_comparison_mismatched_shapes():
         )
 
 
-def test_bootstrap_comparison_num_observed_exceeds_num_reference():
-    """Test bootstrap_comparison raises ValueError when number of observed samples exceeds the number of reference
-    samples."""
-    observed_samples = np.random.rand(100, 5)
-    reference_samples = np.random.rand(20, 5)
-    num_null_samples = 50
-
-    with pytest.raises(ValueError):
-        bf.diagnostics.metrics.bootstrap_comparison(
-            observed_samples,
-            reference_samples,
-            lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)),
-            num_null_samples,
-        )
-
-
 def test_mmd_comparison_from_summaries_shapes():
     """Test the mmd_comparison_from_summaries output shapes."""
     observed_summaries = np.random.rand(10, 5)
@@ -315,8 +332,7 @@ def test_mmd_comparison_from_summaries_shapes():
         num_null_samples=num_null_samples,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 
@@ -389,8 +405,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 

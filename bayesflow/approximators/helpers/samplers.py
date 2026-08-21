@@ -6,7 +6,7 @@ import keras
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
-from bayesflow.utils import slice_maybe_nested, dim_maybe_nested, tree_concatenate
+from bayesflow.utils import MaskName, slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
 from bayesflow.types import Tensor
 
 
@@ -52,15 +52,7 @@ class Sampler:
         if conditions is None:
             return None
 
-        shape = keras.ops.shape(conditions)
-        batch_size = shape[0]
-        non_batch_dims = shape[1:]
-
-        conditions = keras.ops.expand_dims(conditions, axis=1)
-        conditions = keras.ops.broadcast_to(conditions, (batch_size, num_samples, *non_batch_dims))
-        conditions = keras.ops.reshape(conditions, (batch_size * num_samples, *non_batch_dims))
-
-        return conditions
+        return repeat_and_flatten(conditions, num_samples)
 
     def unflatten_samples(self, samples, num_samples: int):
         return keras.tree.map_structure(
@@ -85,7 +77,11 @@ class Sampler:
                 conditions=None,
                 sample_shape=sample_shape,
                 seed=seed,
-                masking_names=("target_mask", "targets_fixed"),  # only needed for unconditional sampling
+                masking_names=(
+                    MaskName.FIXED_TARGET,
+                    MaskName.FIXED_TARGET_VALUE,
+                    MaskName.INFER_TARGET,
+                ),  # only needed for unconditional sampling
                 **kwargs,
             )
 
@@ -126,7 +122,8 @@ class Sampler:
     ):
         conditions = self.repeat_and_flatten_conditions(conditions, num_samples)
 
-        # tensors like target_mask (shape [feature_dim]) are passed through unchanged when no conditions are given
+        # tensors like fixed_target_mask (shape [feature_dim]) are passed through
+        # unchanged when no conditions are given
         kwargs = {
             k: self.repeat_and_flatten_conditions(v, num_samples)
             if hasattr(v, "shape") and k not in masking_names

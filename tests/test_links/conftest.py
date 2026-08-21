@@ -56,7 +56,7 @@ def num_quantiles():
 
 @pytest.fixture()
 def quantiles_np(num_quantiles):
-    return np.linspace(0, 1, num_quantiles + 2)[1:-1]
+    return np.linspace(0, 1, num_quantiles + 2, dtype="float32")[1:-1]
 
 
 @pytest.fixture()

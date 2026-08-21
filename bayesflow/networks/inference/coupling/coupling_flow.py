@@ -22,7 +22,8 @@ class CouplingFlow(InferenceNetwork):
 
     Constructs a deep invertible architecture composed of multiple layers,
     including ActNorm, learned permutations, and dual coupling layers.
-    Incorporates ideas from [1-5].
+    Incorporates ideas from [1-5] and can be instantiate either an affine
+    coupling flow or a spline flow.
 
     The specific transformation applied in the coupling layers is determined by
     *transform*, while the subnet type can be either an MLP or another callable
@@ -34,6 +35,13 @@ class CouplingFlow(InferenceNetwork):
     e.g., GMMs for highly multimodal, low-dimensional distributions or
     Multivariate Student-*t* for heavy-tailed distributions.
 
+    Note: Using ``transform="spline"`` produces more flexible estimators and
+    generally needs ``depth < 6``. However, splines can be less stable than the
+    default "affine" transform. Consider increasing the default domain of the spline
+    if you see numerical instabilities (e.g., ``nan`` loss) like so:
+
+    ``CouplingFlow(transform_kwargs={"default_domain": (-5., 5., -5., 5.)})``
+
     Parameters
     ----------
     subnet : str or type, optional
@@ -43,14 +51,21 @@ class CouplingFlow(InferenceNetwork):
     depth : int, optional
         The number of invertible layers in the model.  Default is 6.
     transform : str, optional
-        The type of transformation used in the coupling layers, such as
-        ``"affine"``.  Default is ``"affine"``.
+        The type of transformation used in the coupling layers.  Can be
+        ``"affine"`` (:class:`~bayesflow.networks.inference.coupling.transforms.AffineTransform`)
+        or ``"spline"``
+        (:class:`~bayesflow.networks.inference.coupling.transforms.SplineTransform`).
+        Default is ``"affine"``.
     permutation : str or None, optional
-        The type of permutation applied between layers.  Can be ``"orthogonal"``,
-        ``"random"``, ``"swap"``, or ``None`` (no permutation).  Default is
-        ``"random"``.
+        The type of permutation applied between layers.  Can be ``"orthogonal"``
+        (:class:`~bayesflow.networks.inference.coupling.permutations.OrthogonalPermutation`),
+        ``"random"``
+        (:class:`~bayesflow.networks.inference.coupling.permutations.RandomPermutation`),
+        ``"swap"`` (:class:`~bayesflow.networks.inference.coupling.permutations.Swap`),
+        or ``None`` (no permutation).  Default is ``"random"``.
     use_actnorm : bool, optional
-        Whether to apply ActNorm before each coupling layer.  Default is ``True``.
+        Whether to apply :class:`~bayesflow.networks.inference.coupling.ActNorm`
+        before each coupling layer.  Default is ``True``.
     base_distribution : str or ~bayesflow.distributions.Distribution, optional
         The base probability distribution from which samples are drawn.
         Accepts the string shortcuts ``"normal"``
@@ -60,12 +75,12 @@ class CouplingFlow(InferenceNetwork):
         control, e.g.::
             base_distribution=bf.distributions.DiagonalStudentT(df=10.0)
         Default is ``"normal"``.
-    subnet_kwargs : dict[str, any], optional
+    subnet_kwargs : dict[str, Any], optional
         Keyword arguments forwarded to the subnet (e.g., MLP) constructor within
         each coupling layer, such as hidden sizes or activation choices.
-    transform_kwargs : dict[str, any], optional
-        Keyword arguments forwarded to the affine or spline transforms
-        (e.g., number of bins for splines).
+    transform_kwargs : dict[str, Any], optional
+        Keyword arguments forwarded to the constructor of the transform selected
+        by *transform* (e.g., ``bins`` for splines).
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 

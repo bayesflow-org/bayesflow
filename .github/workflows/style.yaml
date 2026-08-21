@@ -17,22 +17,25 @@ jobs:
 
     runs-on: ubuntu-latest
 
+    permissions: {}
+
     steps:
       - name: Checkout Repository
-        uses: actions/checkout@v6
-
-      - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
-          python-version: "3.11"
+          persist-credentials: false
 
-      - name: Install Ruff
-        run: |
-          pip install -U pip setuptools wheel
-          pip install ruff
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+      - name: Setup Environment
+        run: uv venv
+
+      - name: Install Dependencies
+        run: uv pip install ruff
 
       - name: Run Linter
-        run: ruff check --config pyproject.toml --verbose
+        run: uv run ruff check --config pyproject.toml --verbose
 
       - name: Run Formatter
-        run: ruff format --config pyproject.toml --check --verbose
+        run: uv run ruff format --config pyproject.toml --check --verbose

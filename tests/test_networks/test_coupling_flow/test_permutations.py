@@ -63,16 +63,37 @@ def test_orthogonal_permutation_build_and_call(input_tensor):
         keras.ops.convert_to_numpy(x_inv), keras.ops.convert_to_numpy(input_tensor), rtol=1e-5, atol=1e-5
     )
 
-    # log_det should be scalar or batched scalar
-    if len(log_det.shape) > 0:
-        assert log_det.shape[0] == input_tensor.shape[0]  # batch dim
-    else:
-        assert log_det.shape == ()
+    assert tuple(log_det.shape) == input_shape[:-1]
+    assert tuple(log_det_inv.shape) == input_shape[:-1]
 
     # log_det_inv should be negative of log_det (det(inv) = 1/det)
     log_det_np = keras.ops.convert_to_numpy(log_det)
     log_det_inv_np = keras.ops.convert_to_numpy(log_det_inv)
     np.testing.assert_allclose(log_det_inv_np, -log_det_np, rtol=1e-5, atol=1e-5)
+
+
+def test_orthogonal_permutation_broadcasts_log_det_for_non_vector_inputs():
+    layer = OrthogonalPermutation()
+    x = keras.random.normal((2, 4, 3))
+    input_shape = keras.ops.shape(x)
+    layer.build(input_shape)
+
+    weight = keras.ops.convert_to_tensor(np.diag([2.0, 0.5, 3.0]).astype("float32"))
+    layer.weight.assign(weight)
+
+    z, log_det = layer(x)
+    x_inv, log_det_inv = layer(z, inverse=True)
+
+    expected_log_det = keras.ops.log(keras.ops.abs(keras.ops.det(weight)))
+    expected_log_det = keras.ops.broadcast_to(expected_log_det, input_shape[:-1])
+
+    assert z.shape == x.shape
+    assert x_inv.shape == x.shape
+    assert tuple(log_det.shape) == input_shape[:-1]
+    assert tuple(log_det_inv.shape) == input_shape[:-1]
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(log_det), keras.ops.convert_to_numpy(expected_log_det))
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(log_det_inv), -keras.ops.convert_to_numpy(expected_log_det))
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(x_inv), keras.ops.convert_to_numpy(x), rtol=1e-5, atol=1e-5)
 
 
 def test_random_permutation_and_swap_build_and_call(input_tensor):

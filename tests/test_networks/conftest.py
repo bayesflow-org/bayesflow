@@ -1,37 +1,55 @@
+import keras
 import pytest
 
 from bayesflow.networks import MLP
 
 
-def _make_diffusion_model(noise_schedule, prediction_type):
-    """Factory for DiffusionModel instances, avoiding 6 near-identical fixtures."""
+# ---------------------------------------------------------------------------
+# Shapes
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture(params=[2, 3], scope="session")
+def xz_dim(request):
+    return request.param
+
+
+@pytest.fixture(params=[None, 3], scope="session")
+def cond_dim(request):
+    return request.param
+
+
+@pytest.fixture(scope="session")
+def random_samples(batch_size, xz_dim):
+    return keras.random.normal((batch_size, xz_dim))
+
+
+@pytest.fixture(scope="session")
+def random_conditions(batch_size, cond_dim):
+    if cond_dim is None:
+        return None
+    return keras.random.normal((batch_size, cond_dim))
+
+
+# ---------------------------------------------------------------------------
+# One representative fixture per network family. Configuration variants
+# (noise schedules, prediction types, loss functions, ...) live in the
+# per-model test directories.
+# ---------------------------------------------------------------------------
+
+
+@pytest.fixture()
+def diffusion_model():
     from bayesflow.networks import DiffusionModel
 
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=[8, 8]),
-        noise_schedule=noise_schedule,
-        prediction_type=prediction_type,
-    )
+    return DiffusionModel(subnet_kwargs=dict(widths=[8, 8]))
 
 
 @pytest.fixture()
-def diffusion_model_edm_F():
-    return _make_diffusion_model("edm", "F")
+def diffusion_model_transformer():
+    from bayesflow.networks import DiffusionModel
 
-
-@pytest.fixture()
-def diffusion_model_cosine_velocity():
-    return _make_diffusion_model("cosine", "velocity")
-
-
-@pytest.fixture()
-def diffusion_model_cosine_noise():
-    return _make_diffusion_model("cosine", "noise")
-
-
-@pytest.fixture()
-def diffusion_model_edm_potential():
-    return _make_diffusion_model("edm", "potential")
+    return DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=[8, 8]))
 
 
 @pytest.fixture()
@@ -39,6 +57,16 @@ def flow_matching():
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(
+        subnet_kwargs=dict(widths=[8, 8]),
+    )
+
+
+@pytest.fixture()
+def flow_matching_transformer():
+    from bayesflow.networks import FlowMatching
+
+    return FlowMatching(
+        subnet="diffusion_transformer",
         subnet_kwargs=dict(widths=[8, 8]),
     )
 
@@ -123,19 +151,50 @@ def typical_scoring_rule_network_subnet():
     )
 
 
+@pytest.fixture()
+def latent_diffusion_model():
+    from bayesflow.networks import DiffusionModel, MLP, TimeMLP
+    from bayesflow.experimental import LatentInferenceNetwork, VariationalAutoEncoder
+
+    autoencoder = VariationalAutoEncoder(
+        4,
+        MLP([8, 8]),
+        MLP([8, 8]),
+    )
+    inference_network = DiffusionModel(subnet=TimeMLP([8, 8]))
+
+    return LatentInferenceNetwork(autoencoder, inference_network)
+
+
+@pytest.fixture()
+def latent_coupling_flow():
+    from bayesflow.networks import CouplingFlow, MLP
+    from bayesflow.experimental import LatentInferenceNetwork, VariationalAutoEncoder
+
+    autoencoder = VariationalAutoEncoder(
+        4,
+        MLP([8, 8]),
+        MLP([8, 8]),
+    )
+    inference_network = CouplingFlow(subnet_kwargs=dict(widths=[8, 8]))
+
+    return LatentInferenceNetwork(autoencoder, inference_network)
+
+
 @pytest.fixture(
     params=[
         "typical_scoring_rule_network",
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
+        "flow_matching_transformer",
         "free_form_flow",
         "consistency_model",
         "stable_consistency_model",
-        pytest.param("diffusion_model_edm_F"),
-        pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
-        pytest.param("diffusion_model_cosine_noise", marks=pytest.mark.slow),
-        pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
+        "latent_diffusion_model",
+        "latent_coupling_flow",
+        "diffusion_model",
+        "diffusion_model_transformer",
     ],
     scope="function",
 )
@@ -145,64 +204,20 @@ def inference_network(request):
 
 @pytest.fixture(
     params=[
-        "typical_scoring_rule_network_subnet",
-        "coupling_flow_subnet",
-        "flow_matching_subnet",
-        "free_form_flow_subnet",
-    ],
-    scope="function",
-)
-def inference_network_subnet(request):
-    return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
         "affine_coupling_flow",
         "spline_coupling_flow",
         "flow_matching",
+        "flow_matching_transformer",
         "free_form_flow",
         "consistency_model",
         "stable_consistency_model",
-        pytest.param("diffusion_model_edm_F"),
-        pytest.param("diffusion_model_cosine_velocity", marks=pytest.mark.slow),
-        pytest.param("diffusion_model_edm_potential", marks=pytest.mark.slow),
+        "diffusion_model",
+        "diffusion_model_transformer",
     ],
     scope="function",
 )
 def generative_inference_network(request):
     return request.getfixturevalue(request.param)
-
-
-@pytest.fixture(
-    params=[
-        "flow_matching",
-        "consistency_model",
-        "stable_consistency_model",
-        "diffusion_model",
-    ],
-    scope="function",
-)
-def diffusion_type_inference_network(request):
-    if request.param == "flow_matching":
-        from bayesflow.networks import FlowMatching
-
-        network = FlowMatching
-    elif request.param == "consistency_model":
-        from bayesflow.networks import ConsistencyModel
-
-        network = ConsistencyModel
-    elif request.param == "stable_consistency_model":
-        from bayesflow.networks import StableConsistencyModel
-
-        network = StableConsistencyModel
-    elif request.param == "diffusion_model":
-        from bayesflow.networks import DiffusionModel
-
-        network = DiffusionModel
-    else:
-        raise ValueError(f"Unknown request param: {request.param}")
-    return network
 
 
 @pytest.fixture(scope="function")

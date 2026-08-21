@@ -3,6 +3,17 @@ from ..invertible_layer import InvertibleLayer
 
 
 class Transform(InvertibleLayer):
+    """Base class for the elementwise bijections applied inside a coupling layer.
+
+    A transform declares how many parameters it needs per target dimension, splits
+    the flat parameter vector predicted by the coupling subnet into named parts,
+    constrains those parts to their valid ranges, and applies the resulting
+    bijection.
+
+    Subclasses implement ``params_per_dim``, ``split_parameters``,
+    ``constrain_parameters``, ``_forward`` and ``_inverse``.
+    """
+
     @property
     def params_per_dim(self) -> int:
         raise NotImplementedError

@@ -1,0 +1,132 @@
+name: Experimental Tests
+
+on:
+  workflow_dispatch:
+
+permissions: {}
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  test:
+    name: Run ${{ matrix.backend }} tests on ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12"] # we usually only need to test the oldest python version
+        backend: ["jax", "tensorflow", "torch"]
+
+    runs-on: ${{ matrix.os }}
+
+    permissions: {}
+
+    env:
+      KERAS_BACKEND: ${{ matrix.backend }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Environment
+        run: uv venv
+
+      - name: Install Dependencies
+        run: uv sync --extra test
+
+      - name: Install JAX
+        if: ${{ matrix.backend == 'jax' }}
+        run: |
+          uv pip install -U jax
+
+      - name: Install TensorFlow
+        if: ${{ matrix.backend == 'tensorflow' }}
+        run: |
+          uv pip install -U tensorflow
+
+      - name: Install PyTorch
+        if: ${{ matrix.backend == 'torch' }}
+        run: |
+          uv pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run Tests
+        run: |
+          uv run pytest -x -m "not slow"
+
+      - name: Upload test results to Codecov
+        if: ${{ !cancelled() }}
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+      - name: Create Coverage Report
+        run: |
+          uv run coverage xml
+
+      - name: Upload Coverage Reports to CodeCov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          # do not use the files attribute here, otherwise the reports are not merged correctly
+          token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-experimental:
+    name: Run experimental ${{ matrix.backend }} tests on ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python-version: ["3.12"]
+        backend: ["jax", "tensorflow", "torch"]
+
+    runs-on: ${{ matrix.os }}
+
+    env:
+      KERAS_BACKEND: ${{ matrix.backend }}
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Setup Environment
+        run: uv venv
+
+      - name: Install Dependencies
+        run: uv sync --extra test
+
+      - name: Install JAX
+        if: ${{ matrix.backend == 'jax' }}
+        run: |
+          uv pip install -U jax
+
+      - name: Install TensorFlow
+        if: ${{ matrix.backend == 'tensorflow' }}
+        run: |
+          uv pip install -U tensorflow
+
+      - name: Install PyTorch
+        if: ${{ matrix.backend == 'torch' }}
+        run: |
+          uv pip install -U torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
+
+      - name: Run Experimental Tests
+        run: |
+          uv run pytest -x -m "not slow" --override-ini="addopts=--cov=bayesflow --strict-markers --verbose"
+
+      - name: Upload Coverage Reports to CodeCov
+        uses: codecov/codecov-action@fb8b3582c8e4def4969c97caa2f19720cb33a72f # v7.0.0
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}

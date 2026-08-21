@@ -62,7 +62,7 @@ class GraphicalSimulator(Simulator):
         ----------
         node : str
             Name of the node.
-        sample_fn : callable
+        sample_fn : Callable
             Function that generates samples for this node and returns a dict mapping variable
             names to values. The function may accept arguments whose names correspond to
             variables sampled in ancestors nodes.

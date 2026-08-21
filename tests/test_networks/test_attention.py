@@ -27,7 +27,7 @@ NUM_SEEDS = 2
 
 @pytest.fixture()
 def ffn():
-    from bayesflow.networks.summary.transformers.attention.feedforward_net import FFN
+    from bayesflow.networks.helpers import FFN
 
     return FFN(embed_dim=EMBED_DIM)
 

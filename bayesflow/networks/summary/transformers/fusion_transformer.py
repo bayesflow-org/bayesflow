@@ -102,7 +102,9 @@ class FusionTransformer(Transformer):
         self.output_projector = keras.layers.Dense(units=summary_dim)
         self.summary_dim = summary_dim
 
-    def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
+    def call(
+        self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None
+    ) -> Tensor:
         """Compresses the input sequence into a summary vector of size ``summary_dim``.
 
         Parameters
@@ -112,19 +114,41 @@ class FusionTransformer(Transformer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask of shape ``(B, T, T)`` where 1 = attend, 0 = mask.
+            Boolean mask broadcastable to ``(B, num_heads, T, T)`` where 1 = attend,
+            0 = mask. Takes precedence over any mask derived from ``mask``.
+        mask : Tensor, optional
+            Boolean padding mask of shape ``(B, T)`` where 1 = real time step,
+            0 = padding. Used for variable-length trajectories padded to a common
+            length: it masks the recurrent template, builds a key-padding
+            ``attention_mask`` (when none is given), and excludes padded steps
+            from the final cross-attention.
 
         Returns
         -------
         Tensor
             Output of shape ``(batch_size, summary_dim)``.
         """
-        template = self.template_net(x, training=training)
+        if attention_mask is None and mask is not None:
+            # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
+            attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
+
+        template = self.template_net(x, training=training, mask=mask)
 
         rep = x
         for layer in self.attention_blocks[:-1]:
             rep = layer(rep, rep, training=training, attention_mask=attention_mask)
 
-        summary = self.attention_blocks[-1](keras.ops.expand_dims(template, axis=1), rep, training=training)
+        summary = self.attention_blocks[-1](
+            keras.ops.expand_dims(template, axis=1),
+            rep,
+            training=training,
+            attention_mask=attention_mask,
+        )
         summary = self.output_projector(keras.ops.squeeze(summary, axis=1))
         return summary
+
+    def compute_mask(self, inputs, mask=None):
+        # `mask` (magic keyword in Keras) is terminated here by `return None`
+        # to prevent warnings about inability to inject it downstream.
+        # We explicitly pass mask and do not rely on having it travel with as a tensor attribute.
+        return None

@@ -52,7 +52,7 @@ def root_mean_squared_error(
     normalize      : str or None, optional (default = "prior")
         Whether to normalize the RMSE using statistics of the prior samples.
         Possible options are ("mean", "range", "median", "iqr", "std", "prior", None)
-    aggregation    : callable, optional (default = np.median)
+    aggregation    : Callable, optional (default = np.median)
         Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.
 
     Notes

@@ -1,3 +1,4 @@
+from typing import Any
 from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
@@ -15,7 +16,7 @@ def calibration_error(
     aggregation: Callable = np.median,
     min_quantile: float = 0.005,
     max_quantile: float = 0.995,
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Computes an aggregate score for the marginal calibration error over an ensemble of approximate
     posteriors. The calibration error is given as the aggregate (e.g., median) of the absolute deviation
@@ -51,7 +52,7 @@ def calibration_error(
         sample dimension, as appropriate reshaping is done internally.
     resolution    : int, optional, default: 20
         The number of credibility intervals (CIs) to consider
-    aggregation   : callable or None, optional, default: np.median
+    aggregation   : Callable or None, optional, default: np.median
         The function used to aggregate the marginal calibration errors.
         If ``None`` provided, the per-alpha calibration errors will be returned.
     min_quantile  : float in (0, 1), optional, default: 0.005

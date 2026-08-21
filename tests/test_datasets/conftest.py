@@ -120,15 +120,18 @@ class Simulator:
 
 
 def sample_contexts_unbatched(**kwargs):
-    return dict(r=np.random.standard_normal(), alpha=np.random.standard_normal())
+    return dict(
+        r=np.float32(np.random.standard_normal()),
+        alpha=np.float32(np.random.standard_normal()),
+    )
 
 
 def sample_parameters_unbatched(**kwargs):
-    return dict(theta=np.random.standard_normal(size=2))
+    return dict(theta=np.random.standard_normal(size=2).astype(np.float32))
 
 
 def sample_observables_unbatched(r, alpha, theta, **kwargs):
-    return dict(x=np.random.standard_normal(size=2))
+    return dict(x=np.random.standard_normal(size=2).astype(np.float32))
 
 
 def sample_contexts_batched(shape, **kwargs):

@@ -296,8 +296,11 @@ def add_x_labels(
     """TODO: docstring"""
     if num_row == 1:
         bottom_row = axes
+    elif axes.ndim == 2:
+        bottom_row = axes[num_row - 1, :]
     else:
-        bottom_row = axes[num_row - 1, :] if num_col > 1 else axes
+        # 1D array: single-column layout — bottom axis is the last element
+        bottom_row = axes[-1:]
     for i, ax in enumerate(bottom_row):
         # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
         ax.set_xlabel(xlabel if isinstance(xlabel, str) else xlabel[i], fontsize=label_fontsize)
@@ -306,11 +309,12 @@ def add_x_labels(
 def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | str = None, label_fontsize: int = None):
     """TODO: docstring"""
 
-    if num_row == 1:  # if there is only one row, the ax array is 1D
-        axes[0].set_ylabel(ylabel, fontsize=label_fontsize)
-    # If there is more than one row, the ax array is 2D
+    if num_row == 1:
+        axes.flat[0].set_ylabel(ylabel, fontsize=label_fontsize)
     else:
-        for i, ax in enumerate(axes[:, 0]):
+        # axes[:, 0] for 2D; axes itself for 1D (single-column layout)
+        left_col = axes[:, 0] if axes.ndim == 2 else axes
+        for i, ax in enumerate(left_col):
             # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
             ax.set_ylabel(ylabel if isinstance(ylabel, str) else ylabel[i], fontsize=label_fontsize)
 

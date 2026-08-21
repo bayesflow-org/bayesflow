@@ -27,6 +27,11 @@ class ScoringRule:
     """
 
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING: tuple[str] = tuple()
+
+    # Kernel initializer for the output Dense head.  Subclasses that produce
+    # unbounded outputs fed directly into exp() override this to a near-zero
+    # initializer so that initial log-odds are small and exp() cannot overflow.
+    _head_kernel_initializer = "glorot_uniform"
     """
     Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.
 
@@ -159,7 +164,10 @@ class ScoringRule:
             link_input_shape = output_shape
 
         reshape = keras.layers.Reshape(target_shape=link_input_shape)
-        dense = keras.layers.Dense(units=math.prod(link_input_shape))
+        dense = keras.layers.Dense(
+            units=math.prod(link_input_shape),
+            kernel_initializer=self._head_kernel_initializer,
+        )
         subnet = self.get_subnet(key)
 
         return keras.Sequential([subnet, dense, reshape, link])

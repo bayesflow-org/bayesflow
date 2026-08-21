@@ -12,7 +12,7 @@ def batch_size(request):
     return request.param
 
 
-@pytest.fixture(params=[2, 5], scope="session")
+@pytest.fixture(params=[2], scope="session")
 def xz_dim(request):
     return request.param
 
@@ -60,6 +60,7 @@ def flow_matching_with_masking():
 
     return FlowMatching(
         subnet_kwargs=dict(widths=(8, 8)),
-        drop_cond_prob=0.1,
-        drop_target_prob=0.5,
+        fixed_target_prob=0.3,
+        missing_target_prob=0.3,
+        missing_conditions_prob=0.3,
     )

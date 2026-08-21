@@ -23,7 +23,7 @@ It provides users with:
 </picture>
 </div>
 
-With BayesFlow, you can easily train neural networks for tasks like parameter estimation, model comparison, and validation. It works for both complex simulators that cannot be expressed as parametric models (i.e., simulation-based inference) as well as traditional statistical models. BayesFlow provides a streamlined workflow layer for inference, especially in situations where conventional methods are unavailable or inefficient.
+With BayesFlow, you can easily train neural networks for tasks like parameter estimation, model comparison, and validation. It works for both complex simulators that cannot be expressed as parametric models (i.e., simulation-based inference) as well as traditional statistical models.
 
 ## Install
 
@@ -31,6 +31,12 @@ We currently support Python 3.11 to 3.13. You can install the latest stable vers
 
 ```bash
 pip install "bayesflow>=2.0"
+```
+
+Or with [uv](https://docs.astral.sh/uv/) (recommended for faster installs):
+
+```bash
+uv add bayesflow
 ```
 
 If you want the latest features, you can install from source:
@@ -111,15 +117,16 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 2. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
 3. [Image data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
 4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
-5. [Model comparison](examples/One_Sample_TTest.ipynb) - Learn Bayes factors using probabilistic classification.
-6. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
-7. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
-8. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
-9. [Likelihood estimation and MCMC](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions and plug into the PyMC ecosystem.
-10. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
-11. [Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
-12. [Ratio estimation and MCMC](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling user the classifier trick.
-13. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
+5. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+6. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectuous diseases through an end-to-end Bayesian workflow.
+7. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+8. [Likelihood estimation and MCMC](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions and plug into the PyMC ecosystem.
+9. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+10. [Deep ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine inferences.
+11. [Ratio estimation and MCMC](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling user the classifier trick.
+12. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
+13. [T-Test and model comparison](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
+14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
 
 ### Tutorial papers
 

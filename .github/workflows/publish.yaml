@@ -1,55 +1,111 @@
-name: Publish Python 🐍 distribution 📦 to PyPI
+name: Publish to PyPI and Release
 
 on:
-  release:
-    types: [published]
+  workflow_dispatch:
+    inputs:
+      # The type of version bump to perform automatically. Select none if you have
+      # already updated the version string in pyproject.toml.
+      # We explicitly only support minor and patch releases with this workflow.
+      # Other release types should be handled manually by selecting none.
+      bump_version:
+        description: "Version bump type"
+        required: true
+        type: choice
+        options: [minor, patch, none]
+        default: patch
+      # Whether to create a git tag for the new version.
+      tag_version:
+        description: "Create a git tag for the new version?"
+        required: true
+        type: boolean
+        default: true
+      # Whether to publish the package to PyPI.
+      publish_package:
+        description: "Publish the package to PyPI?"
+        required: true
+        type: boolean
+        default: true
+      # Whether to perform a dry run, which skips tagging and publishing even if
+      # they are selected above.
+      dry_run:
+        description: "Dry run (skip tagging/publishing)?"
+        required: true
+        type: boolean
+        default: true
 
 jobs:
-  build:
-    name: Build distribution 📦
+  publish:
     runs-on: ubuntu-latest
+    env:
+      # Use environment variables to avoid security vulnerabilities from input injection.
+      BUMP_VERSION: ${{ github.event.inputs.bump_version }}
+      TAG_VERSION: ${{ github.event.inputs.tag_version }}
+      PUBLISH_PACKAGE: ${{ github.event.inputs.publish_package }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
 
-    steps:
-    - uses: actions/checkout@v6
-      with:
-        persist-credentials: false
-    - name: Set up Python
-      uses: actions/setup-python@v6
-      with:
-        python-version: "3.x"
-    - name: Install pypa/build
-      run: >-
-        python3 -m
-        pip install
-        build
-        --user
-    - name: Build a binary wheel and a source tarball
-      run: python3 -m build
-    - name: Check wheel contents
-      run: pipx run check-wheel-contents dist/*.whl
-    - name: Store the distribution packages
-      uses: actions/upload-artifact@v7
-      with:
-        name: python-package-distributions
-        path: dist/
-
-  publish-to-pypi:
-    name: >-
-      Publish Python 🐍 distribution 📦 to PyPI
-    needs:
-    - build
-    runs-on: ubuntu-latest
-    environment:
-      name: pypi
-      url: https://pypi.org/p/bayesflow  # Replace <package-name> with your PyPI project name
+    # PyPI trusted publishing permissions
     permissions:
-      id-token: write  # IMPORTANT: mandatory for trusted publishing
+      id-token: write
+      contents: write
 
     steps:
-    - name: Download all the dists
-      uses: actions/download-artifact@v8
+    - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
       with:
-        name: python-package-distributions
-        path: dist/
-    - name: Publish distribution 📦 to PyPI
-      uses: pypa/gh-action-pypi-publish@release/v1
+        # we need the credentials to commit and tag later
+        persist-credentials: 'true'
+
+    - name: Install uv
+      uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+
+    - name: Update version string
+      if: ${{ env.BUMP_VERSION != 'none' }}
+      run: uv version --bump "${BUMP_VERSION}"
+
+    - name: Determine version
+      run: echo "VERSION=$(uv version --short)" >> "$GITHUB_ENV"
+
+    - name: Build wheel
+      run: uv build
+
+    - name: Check wheel contents
+      run: uvx check-wheel-contents dist/*.whl
+
+    - name: Commit and Tag Version
+      if: ${{ env.TAG_VERSION == 'true' }}
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "github-actions[bot]"
+        git add pyproject.toml
+
+        # Skip the commit if there's nothing staged, e.g. bump_version was set to
+        # "none" because the version was already bumped in a prior commit.
+        if git diff --cached --quiet; then
+          echo "No version change to commit."
+        elif [[ $DRY_RUN == true ]]; then
+          echo "Committing version $VERSION (dry run)"
+          git commit -m "🚀 Release $VERSION" --dry-run
+        else
+          echo "Committing version $VERSION"
+          git commit -m "🚀 Release $VERSION"
+        fi
+
+        if [[ $DRY_RUN == true ]]; then
+          echo "Creating git tag v$VERSION (dry run)"
+          git tag v$VERSION
+          git push origin --tags --dry-run
+        else
+          echo "Creating git tag v$VERSION"
+          git tag v$VERSION
+          git push origin --tags
+        fi
+
+    - name: Publish package to PyPI
+      if: ${{ env.PUBLISH_PACKAGE == 'true' }}
+      run: |
+        if [[ $DRY_RUN == true ]]; then
+          echo "Publishing package to PyPI (dry run)"
+          uv publish --dry-run
+        else
+          echo "Publishing package to PyPI."
+          uv publish
+        fi

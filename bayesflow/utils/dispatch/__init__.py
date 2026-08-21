@@ -6,3 +6,5 @@ from .find_recurrent_net import find_recurrent_net
 from .find_inference_network import find_inference_network
 from .find_summary_network import find_summary_network
 from .find_distribution import find_distribution
+from .find_scoring_rule import find_scoring_rule
+from .find_transform import find_transform

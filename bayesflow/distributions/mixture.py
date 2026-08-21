@@ -139,7 +139,7 @@ class Mixture(Distribution):
         self._mixture_logits = self.add_weight(
             shape=(len(self.distributions),),
             initializer=keras.initializers.get(keras.ops.copy(self.mixture_logits)),
-            dtype="float32",
+            dtype=keras.config.floatx(),
             trainable=self.trainable_mixture,
         )
 

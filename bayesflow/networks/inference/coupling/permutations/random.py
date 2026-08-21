@@ -8,6 +8,12 @@ from .fixed_permutation import FixedPermutation
 
 @serializable("bayesflow.networks")
 class RandomPermutation(FixedPermutation):
+    """Random permutation of the target dimensions.
+
+    The permutation is drawn once when the layer is built and then stored as a
+    non-trainable weight.
+    """
+
     # noinspection PyMethodOverriding
     def build(self, xz_shape: Shape, **kwargs) -> None:
         forward_indices = keras.random.shuffle(keras.ops.arange(xz_shape[-1]))

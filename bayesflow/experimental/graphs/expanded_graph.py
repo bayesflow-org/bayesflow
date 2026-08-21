@@ -47,7 +47,7 @@ class ExpandedGraph(nx.DiGraph):
 
         if not node_ordering:
             factorizations = enumerate_factorizations(self)
-            return select_factorization(factorizations)
+            return select_factorization(factorizations).graph
 
         graph = deepcopy(self)
 

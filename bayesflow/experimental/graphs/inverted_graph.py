@@ -465,8 +465,6 @@ class InvertedGraph(nx.DiGraph):
         Maps node names of the inverted graph to node names in the corresponding
         SimulationGraph.
         """
-        # the expanded graph holds the metadata this is derived from, so reuse its
-        # mapping and reindex it in this graph's node order
         mapping = self.expanded_graph.original_node_names()
 
         return {node: mapping[node] for node in self.nodes}

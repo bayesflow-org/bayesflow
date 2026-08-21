@@ -8,6 +8,7 @@ from bayesflow.utils.serialization import serializable, serialize
 
 from .simulation_graph import SimulationGraph
 from .utils import has_open_path, merge_root_nodes
+from .factorizations import enumerate_factorizations, select_factorization
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
@@ -34,7 +35,7 @@ class ExpandedGraph(nx.DiGraph):
             self.add_nodes_from(g.nodes(data=True))
             self.add_edges_from(g.edges(data=True))
 
-    def invert(self, merge_roots: bool = True):
+    def invert(self, node_ordering=None):
         """
         Inverts a graph by following the algorithm described by [1], but sorting
         latent nodes by outer nodes first.
@@ -44,18 +45,16 @@ class ExpandedGraph(nx.DiGraph):
         """
         from .inverted_graph import InvertedGraph
 
+        if not node_ordering:
+            factorizations = enumerate_factorizations(self)
+            return select_factorization(factorizations)
+
         graph = deepcopy(self)
-        if merge_roots:
-            graph = merge_root_nodes(graph)
 
         undirected = graph.to_undirected()
         leaf_nodes = [node for node in graph.nodes() if graph.out_degree(node) == 0]
 
-        # Sort nodes by outer nodes first (instead of last as in Stuhlmüller2013).
-        # We assume that this ordering preserves amortization over exchangeable nodes in most cases.
-        latent_nodes = [
-            node for node in list(nx.lexicographical_topological_sort(graph)) if graph.out_degree(node) != 0
-        ]
+        latent_nodes = node_ordering
 
         inverse = InvertedGraph(expanded_graph=self)
         inverse.add_nodes_from(leaf_nodes)
@@ -75,6 +74,29 @@ class ExpandedGraph(nx.DiGraph):
                     inverse.add_edge(node, x_j)
 
         return inverse
+
+    def original_node_names(self) -> dict[ExpandedNode, SimulationNode]:
+        """
+        Maps node names of the inverted graph to node names in the corresponding
+        SimulationGraph.
+        """
+        mapping = {}
+
+        for node_view in self.nodes:
+            node = self.nodes[node_view]
+
+            if node["merged_from"] != []:
+                merged_from = node["merged_from"]
+                if len(merged_from) == 1:
+                    mapping[node_view] = merged_from[0]
+                else:
+                    mapping[node_view] = merged_from
+            elif node["previous_names"] == []:
+                mapping[node_view] = node
+            else:
+                mapping[node_view] = node["previous_names"][0]
+
+        return mapping
 
     def get_config(self):
         graph_data = json_graph.node_link_data(self)

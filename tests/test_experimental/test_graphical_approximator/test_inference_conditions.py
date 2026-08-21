@@ -48,15 +48,15 @@ def test_inference_conditions_three_level(three_level_simulator, three_level_app
     expected_shape = (2, 33)  # 30 summary dimensions + 3 node reps
     assert keras.ops.shape(conditions[0]) == expected_shape
 
-    expected_shape = (2, data.meta["N_classrooms"], 56)  # 50 summary dimensions + 3 variables + 3 node reps
-    assert keras.ops.shape(conditions[1]) == expected_shape
-
     expected_shape = (
         2,
         data.meta["N_classrooms"],
         data.meta["N_students"],
-        68,
-    )  # 60 summary dimensions + 5 variables + 3 node reps
+        46,
+    )  # 40 summary dimensions + 3 variables + 3 node reps
+    assert keras.ops.shape(conditions[1]) == expected_shape
+
+    expected_shape = (2, data.meta["N_classrooms"], 56)  # 50 summary dimensions + 3 variables + 3 node reps
     assert keras.ops.shape(conditions[2]) == expected_shape
 
 
@@ -113,13 +113,13 @@ def test_inference_condition_shapes_by_network_three_level(three_level_simulator
     data_shapes = three_level_approximator._data_shapes(data)
     expected_shapes = {
         0: (2, 33),  # 30 summary dimensions + 3 node reps
-        1: (2, data.meta["N_classrooms"], 56),  # 50 summary dimensions + 3 variables + 3 node reps
-        2: (
+        1: (
             2,
             data.meta["N_classrooms"],
             data.meta["N_students"],
-            68,
-        ),  # 60 summary dimensions + 5 variables + 3 node reps
+            46,
+        ),  # 40 summary dimensions + 3 variables + 3 node reps
+        2: (2, data.meta["N_classrooms"], 56),  # 50 summary dimensions + 3 variables + 3 node reps
     }
 
     assert inference_condition_shapes_by_network(three_level_approximator, data_shapes) == expected_shapes
@@ -145,7 +145,7 @@ def test_inference_condition_shapes_by_network_crossed_design_irt(
     assert inference_condition_shapes_by_network(crossed_design_irt_approximator, data_shapes) == expected_shapes
 
 
-def test_inference_condition_shapes_by_network_no_data_shapes(single_level_simulator, single_level_approximator):
+def test_inference_condition_shapes_by_network_no_data_shapes(single_level_approximator):
     from bayesflow.experimental.graphical_approximator.inference_conditions import inference_condition_shapes_by_network
 
     result = inference_condition_shapes_by_network(single_level_approximator)

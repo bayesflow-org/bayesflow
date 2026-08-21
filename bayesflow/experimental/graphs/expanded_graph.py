@@ -7,8 +7,7 @@ from networkx.readwrite import json_graph
 from bayesflow.utils.serialization import serializable, serialize
 
 from .simulation_graph import SimulationGraph
-from .utils import has_open_path, merge_root_nodes
-from .factorizations import enumerate_factorizations, select_factorization
+from .utils import has_open_path
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
@@ -44,10 +43,11 @@ class ExpandedGraph(nx.DiGraph):
         In Advances in Neural Information Processing Systems (pp. 3048–3056).
         """
         from .inverted_graph import InvertedGraph
+        from .factorizations import enumerate_factorizations, select_factorization
 
         if not node_ordering:
             factorizations = enumerate_factorizations(self)
-            return select_factorization(factorizations).graph
+            return select_factorization(factorizations)
 
         graph = deepcopy(self)
 
@@ -82,19 +82,16 @@ class ExpandedGraph(nx.DiGraph):
         """
         mapping = {}
 
-        for node_view in self.nodes:
-            node = self.nodes[node_view]
+        for name, attributes in self.nodes(data=True):
+            merged_from = attributes["merged_from"]
+            previous_names = attributes["previous_names"]
 
-            if node["merged_from"] != []:
-                merged_from = node["merged_from"]
-                if len(merged_from) == 1:
-                    mapping[node_view] = merged_from[0]
-                else:
-                    mapping[node_view] = merged_from
-            elif node["previous_names"] == []:
-                mapping[node_view] = node
+            if merged_from:
+                mapping[name] = merged_from[0] if len(merged_from) == 1 else merged_from
+            elif previous_names:
+                mapping[name] = previous_names[0]
             else:
-                mapping[node_view] = node["previous_names"][0]
+                mapping[name] = name
 
         return mapping
 

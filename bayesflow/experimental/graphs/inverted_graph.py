@@ -465,23 +465,11 @@ class InvertedGraph(nx.DiGraph):
         Maps node names of the inverted graph to node names in the corresponding
         SimulationGraph.
         """
-        mapping = {}
+        # the expanded graph holds the metadata this is derived from, so reuse its
+        # mapping and reindex it in this graph's node order
+        mapping = self.expanded_graph.original_node_names()
 
-        for node in self.nodes:
-            expanded_node = self.expanded_graph.nodes[node]
-
-            if expanded_node["merged_from"] != []:
-                merged_from = expanded_node["merged_from"]
-                if len(merged_from) == 1:
-                    mapping[node] = merged_from[0]
-                else:
-                    mapping[node] = merged_from
-            elif expanded_node["previous_names"] == []:
-                mapping[node] = node
-            else:
-                mapping[node] = expanded_node["previous_names"][0]
-
-        return mapping
+        return {node: mapping[node] for node in self.nodes}
 
     def conditions_by_node(self) -> dict[SimulationNode, list[SimulationNode]]:
         """

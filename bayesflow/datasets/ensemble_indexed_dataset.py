@@ -11,11 +11,30 @@ from .helpers import ring_starts, ring_window_indices
 
 
 class EnsembleIndexedDataset(keras.utils.PyDataset):
+    """Ensemble batches drawn from member-specific windows into an indexable dataset.
+
+    See :class:`~bayesflow.datasets.EnsembleDataset`, which is the recommended entry point.
+
+    Parameters
+    ----------
+    dataset : keras.utils.PyDataset
+        An indexable BayesFlow dataset (OfflineDataset, DiskDataset).
+    member_names : Sequence[str]
+        Names of ensemble members, used as dictionary keys.
+    data_reuse : float, default=1.0
+        Degree of independence between ensemble members in ``[0, 1]``.
+    drop_last : bool, optional
+        Whether to drop the last step of each epoch if the member windows have fewer
+        than ``batch_size`` samples left. If ``None`` (the default), the setting is
+        inherited from the wrapped dataset.
+    """
+
     def __init__(
         self,
         dataset: keras.utils.PyDataset,
         member_names: Sequence[str],
         data_reuse: float = 1.0,
+        drop_last: bool | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -35,10 +54,14 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
         self.data_reuse = float(data_reuse)
         self.batch_size = int(dataset.batch_size)
         self.num_samples = int(dataset.num_samples)
+        self.drop_last = bool(getattr(dataset, "drop_last", True) if drop_last is None else drop_last)
 
         self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * self.ensemble_size)
         self.window_size = int(math.ceil(self.num_samples * self.reduction_factor))
-        self.steps_per_epoch = int(math.ceil(self.window_size / self.batch_size))
+        if self.drop_last:
+            self.steps_per_epoch = self.window_size // self.batch_size
+        else:
+            self.steps_per_epoch = int(math.ceil(self.window_size / self.batch_size))
 
         pool = np.arange(self.num_samples, dtype="int64")
 
@@ -53,7 +76,7 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
             f"batch_size={self.batch_size}, num_samples={self.num_samples}, "
             f"data_reuse={self.data_reuse} -> "
             f"reduction_factor={self.reduction_factor:.2f}, window_size={self.window_size}, "
-            f"steps_per_epoch={self.steps_per_epoch}. "
+            f"steps_per_epoch={self.steps_per_epoch}, drop_last={self.drop_last}. "
             "Overlap is enforced at the subdataset level (member-specific windows into the global index pool)."
         )
 
@@ -72,11 +95,17 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
             np.random.shuffle(self.member_indices[name])
 
     def __getitem__(self, step: int) -> dict[str, dict[str, Any]]:
+        # copy so we can give error messages with the original input
+        original_step = step
+
+        if step < 0:
+            step += self.steps_per_epoch
+
         if not 0 <= step < self.steps_per_epoch:
-            raise IndexError(f"Index {step} is out of bounds for dataset with {self.steps_per_epoch} steps.")
+            raise IndexError(f"Index {original_step} is out of bounds for dataset with {self.steps_per_epoch} steps.")
 
         start = step * self.batch_size
-        stop = min((step + 1) * self.batch_size, self.window_size)  # allow shorter last batch
+        stop = min((step + 1) * self.batch_size, self.window_size)  # allow shorter last batch if drop_last is False
 
         out: dict[str, dict[str, Any]] = {}
         for name in self.member_names:

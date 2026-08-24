@@ -52,6 +52,9 @@ class DiskDataset(keras.utils.PyDataset):
     shuffle : bool, optional
         Whether to shuffle the dataset at initialization and at the end of each epoch.
         Default is ``True``.
+    drop_last : bool, optional
+        Whether to drop the last batch if it contains fewer than ``batch_size`` samples.
+        Default is ``True``.
     **kwargs
         Additional keyword arguments passed to the base ``PyDataset``.
     """
@@ -71,6 +74,7 @@ class DiskDataset(keras.utils.PyDataset):
     ):
         super().__init__(**kwargs)
         self.batch_size = batch_size
+        self.drop_last = drop_last
         self.root = pl.Path(root)
         self.load_fn = load_fn or pickle_load
         self.adapter = adapter
@@ -83,8 +87,6 @@ class DiskDataset(keras.utils.PyDataset):
         self._shuffle = shuffle
         if self._shuffle:
             self.shuffle()
-
-        self.drop_last = drop_last
 
     def __getitem__(self, item) -> dict[str, np.ndarray]:
         # copy so we can give error messages with the original input

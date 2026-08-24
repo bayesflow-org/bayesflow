@@ -41,6 +41,9 @@ class OfflineDataset(keras.utils.PyDataset):
     shuffle : bool, optional
         Whether to shuffle the dataset at initialization and at the end of each epoch.
         Default is ``True``.
+    drop_last : bool, optional
+        Whether to drop the last batch if it contains fewer than ``batch_size`` samples.
+        Default is ``True``.
     **kwargs
         Additional keyword arguments passed to the base ``PyDataset``.
     """
@@ -59,6 +62,7 @@ class OfflineDataset(keras.utils.PyDataset):
     ):
         super().__init__(**kwargs)
         self.batch_size = batch_size
+        self.drop_last = drop_last
         self.data = data
         self.adapter = adapter
 
@@ -74,8 +78,6 @@ class OfflineDataset(keras.utils.PyDataset):
         self._shuffle = shuffle
         if self._shuffle:
             self.shuffle()
-
-        self.drop_last = drop_last
 
     @property
     def num_batches(self) -> int:

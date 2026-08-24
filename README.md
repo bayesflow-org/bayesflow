@@ -127,6 +127,7 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 12. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
 13. [T-Test and model comparison](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
 14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+15. [Time-varying parameters](examples/Bivariate_Smoothing.ipynb) - Estimate latent trajectories with autoregressive approximators.
 
 ### Tutorial papers
 

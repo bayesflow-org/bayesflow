@@ -26,6 +26,15 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
+STABLE_CONSISTENCY_TIME_MLP_DEFAULTS = MappingProxyType(
+    dict(TIME_MLP_DEFAULTS)
+    | {
+        "fourier_scale": 30.0,
+        "film_use_gamma": False,
+        "persistent_conditioning": False,
+    }
+)
+
 DIFFUSION_TRANSFORMER_DEFAULTS = MappingProxyType(
     {
         "widths": (128, 128, 128, 128, 128),

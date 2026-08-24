@@ -328,14 +328,15 @@ def test_log_prob_adds_adapter_log_det_after_summing_steps(autoregressive_approx
         "inference_variables": autoregressive_data["inference_variables"],
         "summary_variables": autoregressive_data["summary_variables"],
     }
-    transformed_data = data | {"inference_variables": data["inference_variables"] * 2.0}
+    scale = np.float32(2.0)
+    transformed_data = data | {"inference_variables": data["inference_variables"] * scale}
     expected = autoregressive_approximator.log_prob(transformed_data)
 
-    autoregressive_approximator.adapter = Adapter().scale("inference_variables", by=2.0)
+    autoregressive_approximator.adapter = Adapter().scale("inference_variables", by=scale)
     actual = autoregressive_approximator.log_prob(data)
 
     event_size = np.prod(data["inference_variables"].shape[1:])
-    np.testing.assert_allclose(actual, expected + event_size * np.log(2.0), rtol=1e-5, atol=1e-5)
+    np.testing.assert_allclose(actual, expected + event_size * np.log(scale), rtol=1e-5, atol=1e-5)
 
 
 def test_padding_masks_ignore_masked_values(autoregressive_approximator, autoregressive_data):

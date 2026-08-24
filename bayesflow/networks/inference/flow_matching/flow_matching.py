@@ -69,7 +69,7 @@ class FlowMatching(InferenceNetwork):
     time_power_law_alpha : float
         Changes the distribution of sampled times during training.  Time is sampled
         from a power-law distribution ``p(t) ~ t^(1/(1+alpha))``, where
-        ``alpha`` is the provided value.  Default is 0 (uniform sampling).
+        ``alpha`` is the provided value.  Default is 0.5.
     fixed_target_prob : float
         Probability of fixing each target during training (so the network learns arbitrary
         conditionals). Default is 0.0.
@@ -120,7 +120,7 @@ class FlowMatching(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
-        time_power_law_alpha: float = 0.0,
+        time_power_law_alpha: float = 0.5,
         fixed_target_prob: float = 0.0,
         missing_target_prob: float = 0.0,
         missing_conditions_prob: float = 0.0,
@@ -134,7 +134,8 @@ class FlowMatching(InferenceNetwork):
         self.optimal_transport_kwargs = OPTIMAL_TRANSPORT_DEFAULTS | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
-        self.time_power_law_alpha = float(time_power_law_alpha)
+
+        self.time_power_law_alpha = time_power_law_alpha
         if self.time_power_law_alpha <= -1.0:
             raise ValueError("'time_power_law_alpha' must be greater than -1.0.")
 
@@ -146,6 +147,7 @@ class FlowMatching(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None

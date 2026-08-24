@@ -14,14 +14,15 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     {
         "widths": (256, 256, 256, 256, 256),
         "time_embedding_dim": 32,
-        "fourier_scale": 30.0,
+        "fourier_scale": 16.0,
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
         "dropout": 0.0,
         "norm": "layer",
         "merge": "concat",
-        "film_use_gamma": False,
+        "film_use_gamma": True,
+        "persistent_conditioning": True,
     }
 )
 

@@ -25,8 +25,8 @@ class CosineNoiseSchedule(NoiseSchedule):
 
     def __init__(
         self,
-        min_log_snr: float = -15,
-        max_log_snr: float = 15,
+        min_log_snr: float = -12,
+        max_log_snr: float = 12,
         shift: float = 0.0,
         weighting: Literal["sigmoid", "likelihood_weighting"] = "sigmoid",
     ):
@@ -36,9 +36,9 @@ class CosineNoiseSchedule(NoiseSchedule):
         Parameters
         ----------
         min_log_snr : float, optional
-            The minimum log signal-to-noise ratio (lambda). Default is -15.
+            The minimum log signal-to-noise ratio (lambda). Default is -12.
         max_log_snr : float, optional
-            The maximum log signal-to-noise ratio (lambda). Default is 15.
+            The maximum log signal-to-noise ratio (lambda). Default is 12.
         shift : float, optional
             Shift the log signal-to-noise ratio (lambda) by this amount. Default is 0.0.
             For images, use shift = log(base_resolution / d), where d is the used resolution of the image.

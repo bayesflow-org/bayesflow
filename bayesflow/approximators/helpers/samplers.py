@@ -172,14 +172,13 @@ class AutoregressiveSampler(Sampler):
         decoder_network: keras.Layer,
         num_samples: int,
         conditions: Tensor | None,
-        sample_shape,
-        num_steps: int,
+        sample_shape: Literal["infer"] | Sequence[int] | int,
         time: Tensor | None = None,
         encoder_mask: Tensor | None = None,
         target_mask: Tensor | None = None,
         target_attention_mask: Tensor | None = None,
-        masking_names=(),
-        seed=None,
+        masking_names: Sequence[str] = (),
+        seed: keras.random.SeedGenerator | int | None = None,
         **kwargs,
     ):
         encoder_outputs = self.repeat_and_flatten_conditions(conditions, num_samples)
@@ -187,6 +186,14 @@ class AutoregressiveSampler(Sampler):
         encoder_mask = self.repeat_and_flatten_conditions(encoder_mask, num_samples)
         target_mask = self.repeat_and_flatten_conditions(target_mask, num_samples)
         target_attention_mask = self.repeat_and_flatten_conditions(target_attention_mask, num_samples)
+
+        sample_shape = self.infer_sample_shape(encoder_outputs, sample_shape)
+        if len(sample_shape) != 1:
+            raise ValueError(
+                "Autoregressive sampling requires exactly one structural sample dimension "
+                f"for the sequence length, but got {sample_shape}."
+            )
+        num_steps = sample_shape[0]
 
         kwargs = {
             key: self.repeat_and_flatten_conditions(value, num_samples)

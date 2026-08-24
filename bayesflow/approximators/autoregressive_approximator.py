@@ -177,7 +177,6 @@ class AutoregressiveApproximator(ContinuousApproximator):
             batch_size=batch_size,
             sample_shape=sample_shape,
             seed=resolve_seed(seed),
-            num_steps=keras.ops.shape(encoder_outputs)[1],
             time=decoder_time,
             encoder_mask=adapted.get("summary_mask"),
             target_mask=adapted.get("inference_mask"),
@@ -245,14 +244,18 @@ class AutoregressiveApproximator(ContinuousApproximator):
             conditions=conditions,
             **inference_kwargs,
         )
-        log_det = keras.ops.convert_to_tensor(adapter_log_det.get("inference_variables", 0.0))
-        step_log_prob = step_log_prob + log_det + standardizer_log_det
+        step_log_prob = step_log_prob + standardizer_log_det
         if adapted.get("inference_mask") is not None:
             step_log_prob = step_log_prob * keras.ops.cast(
                 adapted["inference_mask"],
                 step_log_prob.dtype,
             )
-        return keras.ops.convert_to_numpy(keras.ops.sum(step_log_prob, axis=-1))
+        log_prob = keras.ops.sum(step_log_prob, axis=-1)
+        adapter_log_det = keras.ops.cast(
+            keras.ops.convert_to_tensor(adapter_log_det.get("inference_variables", 0.0)),
+            log_prob.dtype,
+        )
+        return keras.ops.convert_to_numpy(log_prob + adapter_log_det)
 
     def get_config(self):
         config = super().get_config()

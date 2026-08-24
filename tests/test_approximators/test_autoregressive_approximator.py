@@ -3,6 +3,7 @@ import keras
 import pytest
 
 from bayesflow import AutoregressiveApproximator
+from bayesflow.adapters import Adapter
 from bayesflow.approximators.helpers import AutoregressiveConditionBuilder, AutoregressiveSampler
 from bayesflow.networks import CouplingFlow, TimeSeriesTransformer
 from bayesflow.networks.decoders import RecurrentDecoder, TransformerDecoder
@@ -165,11 +166,35 @@ def test_autoregressive_sampler_repeats_time_for_each_sample():
         decoder_network=CacheTimeDecoder(),
         num_samples=2,
         conditions=encoder_outputs,
-        num_steps=3,
         time=time,
     )
 
     expected = np.repeat(keras.ops.convert_to_numpy(time)[:, None, :, None], repeats=2, axis=1)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(samples), expected)
+
+
+def test_autoregressive_sampler_uses_sample_shape_as_sequence_length():
+    encoder_outputs = keras.ops.zeros((2, 3, 4))
+    time = keras.ops.convert_to_tensor(
+        np.array(
+            [
+                [0.0, 2.0, 5.0],
+                [1.0, 3.0, 8.0],
+            ],
+            dtype="float32",
+        )
+    )
+
+    samples = AutoregressiveSampler().sample(
+        inference_network=EchoInferenceNetwork(),
+        decoder_network=CacheTimeDecoder(),
+        num_samples=2,
+        conditions=encoder_outputs,
+        sample_shape=2,
+        time=time,
+    )
+
+    expected = np.repeat(keras.ops.convert_to_numpy(time[:, :2])[:, None, :, None], repeats=2, axis=1)
     np.testing.assert_allclose(keras.ops.convert_to_numpy(samples), expected)
 
 
@@ -295,6 +320,22 @@ def test_log_prob_with_each_decoder(autoregressive_approximator, autoregressive_
 
     assert log_prob.shape == (3,)
     assert np.all(np.isfinite(log_prob))
+
+
+def test_log_prob_adds_adapter_log_det_after_summing_steps(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    data = {
+        "inference_variables": autoregressive_data["inference_variables"],
+        "summary_variables": autoregressive_data["summary_variables"],
+    }
+    transformed_data = data | {"inference_variables": data["inference_variables"] * 2.0}
+    expected = autoregressive_approximator.log_prob(transformed_data)
+
+    autoregressive_approximator.adapter = Adapter().scale("inference_variables", by=2.0)
+    actual = autoregressive_approximator.log_prob(data)
+
+    event_size = np.prod(data["inference_variables"].shape[1:])
+    np.testing.assert_allclose(actual, expected + event_size * np.log(2.0), rtol=1e-5, atol=1e-5)
 
 
 def test_padding_masks_ignore_masked_values(autoregressive_approximator, autoregressive_data):

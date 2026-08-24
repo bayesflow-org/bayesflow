@@ -3,7 +3,7 @@ from typing import Sequence, Mapping, Any, Callable, Literal
 import numpy as np
 
 import keras
-from scipy.special import expit
+from scipy.special import expit, logit
 from scipy.stats import norm, rankdata
 
 from bayesflow.utils import logging
@@ -120,11 +120,9 @@ def classifier_two_sample_test(
     num_estimates, num_targets = estimates.shape[0], targets.shape[0]
     if num_estimates != num_targets:
         logging.warning(
-            "Found {} estimates but {} targets. The classifier is trained with class weights to compensate, "
-            "but the classification metric is still dominated by the ratio of the two sample sizes. Prefer "
-            "the AUC and the conformal test, which account for unequal sample sizes.",
-            num_estimates,
-            num_targets,
+            f"Found {num_estimates} estimates but {num_targets} targets. The classifier is trained with class weights "
+            "to compensate, but the classification metric is still dominated by the ratio of the two sample sizes. "
+            "Prefer the AUC and the conformal test, which account for unequal sample sizes.",
         )
 
     # Include the conformal test whenever a dictionary of statistics is returned anyway
@@ -132,9 +130,7 @@ def classifier_two_sample_test(
         conformal = not return_metric_only or num_permutations > 0
 
     rng = np.random.default_rng(seed)
-    if seed is not None:
-        # The weight initialization and batch shuffling of the classifier are not controlled by rng
-        keras.utils.set_random_seed(seed)
+    seed_generator = keras.random.SeedGenerator(seed)
 
     if mlp_widths == "auto":
         widths = 2 ** int(np.ceil(np.log2(10 * num_dims)))
@@ -148,131 +144,50 @@ def classifier_two_sample_test(
         data_std = np.std(data, axis=0)
         data = (data - np.mean(data, axis=0)) / np.where(data_std == 0, 1.0, data_std)
 
-    def build_classifier():
-        """Build a freshly initialized classifier."""
-        if classifier is None:
-            model = keras.Sequential(
-                [
-                    MLP(widths=mlp_widths, **kwargs.get("mlp_kwargs", {})),
-                    keras.layers.Dense(units=1, activation="sigmoid"),
-                ]
-            )
-        elif isinstance(classifier, keras.Model):
-            # Cloning keeps the compile configuration, but re-initializes the weights
-            model = keras.models.clone_model(classifier)
-        elif callable(classifier):
-            model = classifier()
-        else:
-            raise TypeError(f"classifier must be a keras.Model or a callable returning one, but found: {classifier}")
+    split_kwargs = {
+        "data": data,
+        "classifier": classifier,
+        "mlp_widths": mlp_widths,
+        "mlp_kwargs": kwargs.get("mlp_kwargs", {}),
+        "metric": metric,
+        "patience": patience,
+        "min_epochs": min_epochs,
+        "max_epochs": max_epochs,
+        "batch_size": batch_size,
+        "cross_validation_splits": cross_validation_splits,
+        "validation_split": validation_split,
+        "early_stopping_split": early_stopping_split,
+        "rng": rng,
+        "seed_generator": seed_generator,
+    }
 
-        if not model.compiled:
-            model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
-        return model
-
-    def fit_splits(split_labels: np.ndarray) -> list[dict]:
-        """Train one classifier per split and collect its held-out scores."""
-        folds = []
-        for train_idx, val_idx in _make_splits(split_labels, cross_validation_splits, validation_split, rng):
-            data_train, data_val = data[train_idx], data[val_idx]
-            labels_train, labels_val = split_labels[train_idx], split_labels[val_idx]
-
-            # Weight the loss inversely to the class sizes, so that unequal sample sizes do not bias
-            counts = np.bincount(labels_train.astype(int), minlength=2)
-            class_weight = {label: len(labels_train) / (2 * max(count, 1)) for label, count in enumerate(counts)}
-
-            classifier = build_classifier()
-            callbacks = []
-            if early_stopping_split > 0:
-                callbacks.append(
-                    keras.callbacks.EarlyStopping(
-                        monitor=f"val_{metric}",
-                        patience=patience,
-                        restore_best_weights=True,
-                        start_from_epoch=min_epochs,
-                    )
-                )
-            fit_kwargs = dict(
-                x=data_train,
-                y=labels_train,
-                epochs=max_epochs,
-                batch_size=batch_size,
-                verbose=0,
-                callbacks=callbacks,
-                validation_split=early_stopping_split,
-                class_weight=class_weight,
-            )
-
-            # Gradients are disabled by default, so they need to be enabled for training
-            if keras.backend.backend() == "torch":
-                import torch
-
-                with torch.enable_grad():
-                    history = classifier.fit(**fit_kwargs)
-            else:
-                history = classifier.fit(**fit_kwargs)
-
-            # Metric and classifier scores on the held-out fold
-            evaluation = classifier.evaluate(data_val, labels_val, verbose=0, return_dict=True)
-            if metric not in evaluation:
-                raise ValueError(
-                    f"The metric '{metric}' was not found in the evaluation results {sorted(evaluation)}. "
-                    f"Please pass a metric that Keras exposes under this name."
-                )
-            score = evaluation[metric]
-            probabilities, ranking_scores = _predict_scores(classifier, data_val)
-            folds.append(
-                {
-                    "score": float(score),
-                    "predictions": probabilities,
-                    "ranking_scores": ranking_scores,
-                    "labels": labels_val,
-                    "history": history.history,
-                    "classifier": classifier,
-                }
-            )
-        return folds
-
-    def summarize(folds: list[dict]) -> dict:
-        """Aggregate the test statistics of all splits."""
-        scores = np.array([fold["score"] for fold in folds])
-        mean_score = float(np.mean(scores))
-        return {
-            "score": max(mean_score, 1 - mean_score),
-            "scores": scores,
-            "regression_statistic": float(
-                np.mean([_regression_statistic(fold["predictions"], fold["labels"]) for fold in folds])
-            ),
-            "auc": float(np.mean([_auc(*_split_by_label(fold)) for fold in folds])),
-        }
-
-    folds = fit_splits(labels)
+    folds = fit_splits(split_labels=labels, **split_kwargs)
     results = summarize(folds)
 
     if conformal:
         statistics, p_values, held_out_sizes = [], [], []
         for fold in folds:
             target_scores, estimate_scores = _split_by_label(fold)
-            statistic, p_value = _conformal_test(target_scores, estimate_scores, rng)
+            statistic, p_value = conformal_test(target_scores, estimate_scores, rng)
             statistics.append(statistic)
             p_values.append(p_value)
             held_out_sizes.append(min(len(target_scores), len(estimate_scores)))
 
         if min(held_out_sizes) < 30:
             logging.warning(
-                "The conformal test is only asymptotically valid and its normal approximation needs many "
-                "held-out samples from both distributions, but merely {} samples of one distribution are "
-                "held out per split. Consider passing more samples or reducing cross_validation_splits.",
-                min(held_out_sizes),
+                f"The conformal test is only asymptotically valid and its normal approximation needs many "
+                f"held-out samples from both distributions, but only {min(held_out_sizes)} samples of one "
+                f"distribution are used. Consider passing more samples or reducing cross_validation_splits.",
             )
 
         # Combine the p-values of the splits
         if len(p_values) > 1:
-            combined_p_value = min(1.0, 2 * float(np.mean(p_values)))
+            combined_p_value = min(1.0, 2 * np.mean(p_values))
         else:
             combined_p_value = p_values[0]
 
         results |= {
-            "conformal_statistic": float(np.mean(statistics)),
+            "conformal_statistic": np.mean(statistics),
             "conformal_statistics": statistics,
             "conformal_p_value": combined_p_value,
             "conformal_p_values": p_values,
@@ -289,7 +204,9 @@ def classifier_two_sample_test(
         # Under the null hypothesis, the pooled labels are exchangeable, so re-running the whole
         # procedure on permuted labels samples from the null distribution of the statistics
         observed = results
-        null_summaries = (summarize(fit_splits(rng.permutation(labels))) for _ in range(num_permutations))
+        null_summaries = (
+            summarize(fit_splits(split_labels=rng.permutation(labels), **split_kwargs)) for _ in range(num_permutations)
+        )
 
         null_statistics = {key: [] for key in test_statistics}
         for summary in null_summaries:
@@ -297,7 +214,7 @@ def classifier_two_sample_test(
                 null_statistics[key].append(statistic(summary))
 
         results["permutation_p_values"] = {
-            key: float((1 + np.sum(np.array(null_statistics[key]) >= statistic(observed))) / (num_permutations + 1))
+            key: (1 + np.sum(np.array(null_statistics[key]) >= statistic(observed))) / (num_permutations + 1)
             for key, statistic in test_statistics.items()
         }
 
@@ -309,6 +226,135 @@ def classifier_two_sample_test(
         results["histories"] = [fold["history"] for fold in folds]
 
     return results
+
+
+def build_classifier(
+    classifier: keras.Model | Callable[[], keras.Model] | None,
+    mlp_widths: Sequence[int],
+    mlp_kwargs: Mapping[str, Any],
+    metric: str,
+    seed_generator: keras.random.SeedGenerator,
+) -> keras.Model:
+    """Build a freshly initialized classifier."""
+    if classifier is None:
+        mlp_kwargs = dict(mlp_kwargs)
+        initializer = mlp_kwargs.pop("kernel_initializer", "he_normal")
+        mlp_kwargs["kernel_initializer"] = _seed_initializer(initializer, seed_generator)
+        model = keras.Sequential(
+            [
+                MLP(widths=mlp_widths, **mlp_kwargs),
+                keras.layers.Dense(
+                    units=1,
+                    activation="sigmoid",
+                    kernel_initializer=keras.initializers.GlorotUniform(seed=seed_generator),
+                ),
+            ]
+        )
+    elif isinstance(classifier, keras.Model):
+        # Cloning keeps the compile configuration, but re-initializes the weights
+        model = keras.models.clone_model(classifier)
+    elif callable(classifier):
+        model = classifier()
+    else:
+        raise TypeError(f"classifier must be a keras.Model or a callable returning one, but found: {classifier}")
+
+    if not model.compiled:
+        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
+    _seed_random_layers(model, seed_generator)
+    return model
+
+
+def fit_splits(
+    *,
+    data: np.ndarray,
+    split_labels: np.ndarray,
+    classifier: keras.Model | Callable[[], keras.Model] | None,
+    mlp_widths: Sequence[int],
+    mlp_kwargs: Mapping[str, Any],
+    metric: str,
+    patience: int,
+    min_epochs: int,
+    max_epochs: int,
+    batch_size: int,
+    cross_validation_splits: int,
+    validation_split: float,
+    early_stopping_split: float,
+    rng: np.random.Generator,
+    seed_generator: keras.random.SeedGenerator,
+) -> list[dict]:
+    """Train one classifier per split and collect its held-out scores."""
+    folds = []
+    for train_idx, val_idx in _make_splits(split_labels, cross_validation_splits, validation_split, rng):
+        data_train, data_val = data[train_idx], data[val_idx]
+        labels_train, labels_val = split_labels[train_idx], split_labels[val_idx]
+
+        # Weight the loss inversely to the class sizes, so that unequal sample sizes do not bias
+        counts = np.bincount(labels_train.astype(int), minlength=2)
+        class_weight = {label: len(labels_train) / (2 * max(count, 1)) for label, count in enumerate(counts)}
+
+        model = build_classifier(classifier, mlp_widths, mlp_kwargs, metric, seed_generator)
+        callbacks = []
+        if early_stopping_split > 0:
+            callbacks.append(
+                keras.callbacks.EarlyStopping(
+                    monitor=f"val_{metric}",
+                    patience=patience,
+                    restore_best_weights=True,
+                    start_from_epoch=min_epochs,
+                )
+            )
+        fit_kwargs = dict(
+            x=data_train,
+            y=labels_train,
+            epochs=max_epochs,
+            batch_size=batch_size,
+            verbose=0,
+            callbacks=callbacks,
+            validation_split=early_stopping_split,
+            class_weight=class_weight,
+            shuffle=False,
+        )
+
+        # Gradients are disabled by default, so they need to be enabled for training
+        if keras.backend.backend() == "torch":
+            import torch
+
+            with torch.enable_grad():
+                history = model.fit(**fit_kwargs)
+        else:
+            history = model.fit(**fit_kwargs)
+
+        # Metric and classifier scores on the held-out fold
+        evaluation = model.evaluate(data_val, labels_val, verbose=0, return_dict=True)
+        if metric not in evaluation:
+            raise ValueError(
+                f"The metric '{metric}' was not found in the evaluation results {sorted(evaluation)}. "
+                f"Please pass a metric that Keras exposes under this name."
+            )
+        ranking_scores = _predict_scores(model, data_val)
+        folds.append(
+            {
+                "score": evaluation[metric],
+                "predictions": expit(ranking_scores),
+                "ranking_scores": ranking_scores,
+                "labels": labels_val,
+                "history": history.history,
+                "classifier": model,
+            }
+        )
+    return folds
+
+
+def summarize(folds: list[dict]) -> dict:
+    """Aggregate the test statistics of all splits."""
+    scores = np.array([fold["score"] for fold in folds])
+    mean_score = np.mean(scores)
+    return {
+        "score": max(mean_score, 1 - mean_score),
+        "scores": scores,
+        "regression_statistic": np.mean([regression_statistic(fold["predictions"], fold["labels"]) for fold in folds]),
+        "auc": np.mean([area_under_the_curve(*_split_by_label(fold)) for fold in folds]),
+    }
 
 
 def _make_splits(
@@ -337,10 +383,34 @@ def _make_splits(
     return splits
 
 
-def _predict_scores(model: keras.Model, inputs: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+def _seed_initializer(
+    initializer: str | keras.Initializer,
+    seed_generator: keras.random.SeedGenerator,
+) -> keras.Initializer:
+    """Clone a random initializer with a call-local seed generator."""
+    initializer = keras.initializers.get(initializer)
+    config = initializer.get_config()
+    if "seed" in config:
+        config["seed"] = seed_generator
+        initializer = initializer.__class__.from_config(config)
+    return initializer
+
+
+def _seed_random_layers(model: keras.Model, seed_generator: keras.random.SeedGenerator) -> None:
+    """Seed stochastic layers without modifying Keras' global random state."""
+    for layer in model._flatten_layers(include_self=False, recursive=True):
+        layer_seed_generator = getattr(layer, "seed_generator", None)
+        if layer_seed_generator is not None:
+            # Keras' Torch backend only uses the generator path when the layer was created with an explicit seed.
+            layer_seed_generator._initial_seed = True
+            layer_seed_generator.state.assign(seed_generator.next())
+
+
+def _predict_scores(model: keras.Model, inputs: np.ndarray) -> np.ndarray:
     """
-    Predicted probabilities and monotone ranking scores of the given samples. If the final layer is a
-    dense sigmoid unit, its pre-sigmoid log-odds serve as ranking scores (Bansal et al., 2026).
+    Predict monotone ranking scores for the given samples. If the final layer is a dense sigmoid unit,
+    its pre-sigmoid log-odds serve as ranking scores (Bansal et al., 2026). Otherwise, predicted
+    probabilities are mapped to log-odds.
     """
     last = model.layers[-1] if getattr(model, "layers", None) else None
     if isinstance(last, keras.layers.Dense) and last.units == 1 and last.activation is keras.activations.sigmoid:
@@ -350,13 +420,12 @@ def _predict_scores(model: keras.Model, inputs: np.ndarray) -> tuple[np.ndarray,
             # The model does not expose a symbolic graph, e.g. a subclassed model
             feature_model = None
         if feature_model is not None:
-            features = np.asarray(feature_model.predict(inputs, verbose=0), dtype=np.float64)
+            features = np.asarray(feature_model.predict(inputs, verbose=0))
             weights = last.get_weights()
-            log_odds = (features @ weights[0] + (weights[1] if len(weights) > 1 else 0.0)).reshape(-1)
-            return expit(log_odds), log_odds
+            return (features @ weights[0] + (weights[1] if len(weights) > 1 else 0.0)).reshape(-1)
 
-    probabilities = np.asarray(model.predict(inputs, verbose=0), dtype=np.float64).reshape(-1)
-    return probabilities, probabilities
+    probabilities = np.asarray(model.predict(inputs, verbose=0)).reshape(-1)
+    return logit(probabilities)
 
 
 def _split_by_label(fold: Mapping[str, np.ndarray]) -> tuple[np.ndarray, np.ndarray]:
@@ -364,21 +433,23 @@ def _split_by_label(fold: Mapping[str, np.ndarray]) -> tuple[np.ndarray, np.ndar
     return fold["ranking_scores"][fold["labels"] == 1], fold["ranking_scores"][fold["labels"] == 0]
 
 
-def _regression_statistic(scores: np.ndarray, labels: np.ndarray) -> float:
+def regression_statistic(scores: np.ndarray, labels: np.ndarray) -> float:
     """Global regression statistic ``mean((m(x) - pi)^2)`` of Kim et al. (2019)."""
-    return float(np.mean((scores - np.mean(labels)) ** 2))
+    return np.mean((scores - np.mean(labels)) ** 2)
 
 
-def _auc(target_scores: np.ndarray, estimate_scores: np.ndarray) -> float:
+def area_under_the_curve(target_scores: np.ndarray, estimate_scores: np.ndarray) -> float:
     """Area under the ROC curve ``P(s_tar > s_est) + P(s_tar = s_est) / 2`` via mid-ranks."""
     num_targets, num_estimates = len(target_scores), len(estimate_scores)
     ranks = rankdata(np.concatenate([target_scores, estimate_scores]))
     u_statistic = ranks[:num_targets].sum() - num_targets * (num_targets + 1) / 2
-    return float(u_statistic / (num_targets * num_estimates))
+    return u_statistic / (num_targets * num_estimates)
 
 
-def _conformal_test(
-    target_scores: np.ndarray, estimate_scores: np.ndarray, rng: np.random.Generator
+def conformal_test(
+    target_scores: np.ndarray,
+    estimate_scores: np.ndarray,
+    seed: int | np.random.Generator | None = None,
 ) -> tuple[float, float]:
     """
     Budget-matched conformal ("multiple") test of Bansal et al. (2026): one conformal p-value per
@@ -386,6 +457,7 @@ def _conformal_test(
     asymptotically standard normal under the null. Returns the test statistic and its one-sided
     p-value; large statistics and small p-values indicate a difference.
     """
+    rng = np.random.default_rng(seed)
     num_calibration, num_test = len(target_scores), len(estimate_scores)
     if num_calibration < 2 or num_test < 2:
         raise ValueError(
@@ -409,4 +481,4 @@ def _conformal_test(
     variance = np.var((cdf + cdf_left) / 2, ddof=1) + num_calibration / (12 * num_test)
 
     statistic = (0.5 - np.mean(conformal_p_values)) / np.sqrt(variance / num_calibration)
-    return float(statistic), float(norm.sf(statistic))
+    return statistic, norm.sf(statistic)

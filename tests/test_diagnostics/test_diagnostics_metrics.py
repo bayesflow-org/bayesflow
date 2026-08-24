@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 import pytest
+from scipy.special import expit
 from scipy.stats import binom
 
 import bayesflow as bf
@@ -207,11 +208,11 @@ def test_classifier_two_sample_test(random_samples_a, random_samples_b):
 def test_classifier_two_sample_test_statistics():
     """Unit tests for the test statistics, using synthetic classifier scores."""
     from bayesflow.diagnostics.metrics.classifier_two_sample_test import (
-        _auc,
-        _conformal_test,
         _make_splits,
         _predict_scores,
-        _regression_statistic,
+        area_under_the_curve,
+        conformal_test,
+        regression_statistic,
     )
 
     rng = np.random.default_rng(2026)
@@ -220,12 +221,12 @@ def test_classifier_two_sample_test_statistics():
     scores_a = rng.integers(0, 5, size=50).astype(float)
     scores_b = rng.integers(0, 5, size=70).astype(float)
     pairwise = (scores_a[:, None] > scores_b[None, :]) + 0.5 * (scores_a[:, None] == scores_b[None, :])
-    assert _auc(scores_a, scores_b) == pytest.approx(np.mean(pairwise))
+    assert area_under_the_curve(scores_a, scores_b) == pytest.approx(np.mean(pairwise))
 
     # the regression statistic is zero for an uninformative and maximal for a perfect classifier
     labels = np.r_[np.zeros(500), np.ones(500)]
-    assert _regression_statistic(np.full(1000, 0.5), labels) == pytest.approx(0.0)
-    assert _regression_statistic(labels, labels) == pytest.approx(0.25)
+    assert regression_statistic(np.full(1000, 0.5), labels) == pytest.approx(0.0)
+    assert regression_statistic(labels, labels) == pytest.approx(0.25)
 
     # the ranking scores are the pre-sigmoid log-odds when the classifier ends in a dense sigmoid unit,
     # so they stay distinct where the float32 probabilities saturate to 1
@@ -233,22 +234,23 @@ def test_classifier_two_sample_test_statistics():
     model.build((None, 1))
     model.layers[-1].set_weights([np.array([[20.0]]), np.array([0.0])])
     x = np.array([[1.0], [2.0], [3.0], [4.0]], dtype="float32")
-    probabilities, ranking_scores = _predict_scores(model, x)
+    ranking_scores = _predict_scores(model, x)
     assert len(np.unique(np.asarray(model.predict(x, verbose=0)))) == 1
     assert np.allclose(ranking_scores, [20.0, 40.0, 60.0, 80.0])
-    assert np.all((probabilities > 0.5) & (probabilities <= 1.0))
 
     # away from saturation, the probabilities match the model output
     model.layers[-1].set_weights([np.array([[0.5]]), np.array([0.1])])
-    probabilities, ranking_scores = _predict_scores(model, x)
-    assert np.allclose(probabilities, np.asarray(model.predict(x, verbose=0)).reshape(-1), atol=1e-6)
+    ranking_scores = _predict_scores(model, x)
+    probabilities = np.asarray(model.predict(x, verbose=0)).reshape(-1)
+    assert np.allclose(expit(ranking_scores), probabilities, atol=1e-6)
     assert np.allclose(ranking_scores, 0.5 * x.reshape(-1) + 0.1)
 
-    # models that do not end in a dense sigmoid unit fall back to the probabilities as ranking scores
+    # models that do not end in a dense sigmoid unit fall back to the log-odds of their probabilities
     fallback = keras.Sequential([keras.layers.Dense(1), keras.layers.Activation("sigmoid")])
     fallback.build((None, 1))
-    probabilities, ranking_scores = _predict_scores(fallback, x)
-    assert np.array_equal(probabilities, ranking_scores)
+    ranking_scores = _predict_scores(fallback, x)
+    probabilities = np.asarray(fallback.predict(x, verbose=0)).reshape(-1)
+    assert np.allclose(expit(ranking_scores), probabilities)
 
     # the splits are stratified, disjoint from the training data and cover all samples
     labels = np.r_[np.zeros(97), np.ones(103)]
@@ -265,7 +267,7 @@ def test_classifier_two_sample_test_statistics():
         for _ in range(num_reps):
             reference = rng.normal(shift, 1, size=200)
             estimates = rng.normal(0, 1, size=100)
-            rejected += _conformal_test(reference, estimates, rng)[1] < 0.05
+            rejected += conformal_test(reference, estimates, rng)[1] < 0.05
         return rejected / num_reps
 
     # the conformal test is calibrated if the scores of both samples follow the same distribution ...

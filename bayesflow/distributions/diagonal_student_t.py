@@ -69,22 +69,23 @@ class DiagonalStudentT(Distribution):
             return
 
         self.dim = input_shape[-1]
+        dtype = keras.config.floatx()
 
         # convert to tensor and broadcast if necessary
-        self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), "float32")
-        self.scale = ops.cast(ops.broadcast_to(self.scale, (self.dim,)), "float32")
+        self.loc = ops.cast(ops.broadcast_to(self.loc, (self.dim,)), dtype)
+        self.scale = ops.cast(ops.broadcast_to(self.scale, (self.dim,)), dtype)
 
         if self.trainable_parameters:
             self._loc = self.add_weight(
                 shape=ops.shape(self.loc),
                 initializer=keras.initializers.get(keras.ops.copy(self.loc)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
             self._scale = self.add_weight(
                 shape=ops.shape(self.scale),
                 initializer=keras.initializers.get(keras.ops.copy(self.scale)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
         else:

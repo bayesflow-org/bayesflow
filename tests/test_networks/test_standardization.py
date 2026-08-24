@@ -185,6 +185,9 @@ def test_transformation_type_identity():
         y, key="x", stage="inference", forward=False, transformation_type="identity"
     )
 
+    # conversion needed for torch on mps
+    should_be_unchanged = keras.ops.convert_to_numpy(should_be_unchanged)
+    y = keras.ops.convert_to_numpy(y)
     np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
 
 
@@ -204,7 +207,7 @@ def test_transformation_type_both_sides_scale():
     # Standardize samples
     standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     # Inverse standardization of covariance matrix in standardized space
     cov_standardized_and_recovered = std.maybe_standardize(
@@ -236,7 +239,7 @@ def test_transformation_type_one_side_scale(transformation_type):
     standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
 
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     chol_standardized = keras.ops.cholesky(cov_standardized)  # (dim, dim)
 

@@ -18,7 +18,4 @@ class NormalSimulator(Simulator):
         # flatten observations for use without summary network
         x = x.reshape(x.shape[0], -1)
 
-        mean = mean.astype("float32")
-        std = std.astype("float32")
-        x = x.astype("float32")
         return dict(mean=mean, std=std, x=x)

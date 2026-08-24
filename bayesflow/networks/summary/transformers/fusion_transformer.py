@@ -27,7 +27,7 @@ class FusionTransformer(Transformer):
         dropout: float = 0.05,
         expansion_factor: float = 4.0,
         glu_variant: str = "swiglu",
-        kernel_initializer: str = "glorot_uniform",
+        kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
         template_type: str = "lstm",
@@ -55,7 +55,8 @@ class FusionTransformer(Transformer):
             GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
             ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
         kernel_initializer : str, optional
-            Initializer for kernel weights, by default ``"glorot_uniform"``.
+            Initializer for kernel weights and the final summary projection,
+            by default ``"orthogonal"``.
         use_bias : bool, optional
             Whether to include bias terms in dense layers, by default False.
         layer_norm : bool, optional
@@ -99,7 +100,10 @@ class FusionTransformer(Transformer):
 
         self.template_net = layers.Bidirectional(rnn) if bidirectional else rnn
 
-        self.output_projector = keras.layers.Dense(units=summary_dim)
+        self.output_projector = keras.layers.Dense(
+            units=summary_dim,
+            kernel_initializer=kernel_initializer,
+        )
         self.summary_dim = summary_dim
 
     def call(

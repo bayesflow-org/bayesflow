@@ -105,6 +105,36 @@ def test_root_mean_squared_error(random_estimates, random_targets):
     assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
 
+def test_canonical_correlation_metric_with_dict_inputs():
+    summaries = {
+        "summary": np.array(
+            [
+                [0.0, 1.0],
+                [1.0, 0.0],
+                [2.0, 1.0],
+                [3.0, 2.0],
+            ]
+        )
+    }
+    sims = {"x": summaries["summary"][:, None, :]}
+
+    out = bf.diagnostics.metrics.canonical_correlation_metric(
+        summaries,
+        sims,
+        summary_keys="summary",
+        target_keys="x",
+    )
+
+    assert list(out.keys()) == [
+        "values",
+        "metric_name",
+        "variable_names",
+    ]
+    assert np.allclose(out["values"], [1.0, 1.0])
+    assert out["metric_name"] == "Canonical Correlation Metric"
+    assert out["variable_names"] == ["canonical_correlation_1", "canonical_correlation_2"]
+
+
 def test_classifier_two_sample_test(random_samples_a, random_samples_b):
     metric = bf.diagnostics.metrics.classifier_two_sample_test(
         estimates=random_samples_a, targets=random_samples_a, cross_validation_splits=1

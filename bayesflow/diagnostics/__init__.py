@@ -10,6 +10,7 @@ from .metrics import (
     calibration_error,
     calibration_log_gamma,
     classifier_two_sample_test,
+    canonical_correlation_metric,
     expected_calibration_error,
     gamma_discrepancy,
     gamma_null_distribution,

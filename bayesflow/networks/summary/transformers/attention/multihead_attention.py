@@ -32,9 +32,11 @@ class MultiHeadAttention(keras.Layer):
         dropout: float = 0.05,
         expansion_factor: float = 4.0,
         glu_variant: str = "swiglu",
-        kernel_initializer: str = "glorot_uniform",
+        kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        gate_attention: bool = True,
+        gate_ffn: bool = True,
         **kwargs,
     ):
         """
@@ -54,12 +56,18 @@ class MultiHeadAttention(keras.Layer):
             ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
         kernel_initializer : str, optional
             Weight initializer for all Dense projections, by default
-            ``"glorot_uniform"``.
+            ``"orthogonal"``.
         use_bias : bool, optional
             Whether to include bias terms in all Dense projections, by default
             False (SOTA practice for transformer blocks).
         layer_norm : bool, optional
             Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+        gate_attention : bool, optional
+            Whether to multiply the attention residual branch by a trainable scalar
+            initialized to zero, by default True.
+        gate_ffn : bool, optional
+            Whether to multiply the feedforward residual branch by a trainable scalar
+            initialized to zero, by default True.
         **kwargs
             Additional keyword arguments passed to ``keras.Layer``.
         """
@@ -76,8 +84,10 @@ class MultiHeadAttention(keras.Layer):
         self.kernel_initializer = kernel_initializer
         self.use_bias = use_bias
         self.layer_norm = layer_norm
+        self.gate_attention = gate_attention
+        self.gate_ffn = gate_ffn
 
-        self.input_projector = layers.Dense(units=embed_dim, use_bias=use_bias, kernel_initializer=kernel_initializer)
+        self.input_projector = None
 
         self.attention = layers.MultiHeadAttention(
             key_dim=embed_dim // num_heads,
@@ -100,6 +110,15 @@ class MultiHeadAttention(keras.Layer):
         self.ln_attn = layers.RMSNormalization() if layer_norm else None
         self.ln_kv = layers.RMSNormalization() if layer_norm else None
         self.ln_ffn = layers.RMSNormalization() if layer_norm else None
+
+        self.attention_scale = None
+        self.ffn_scale = None
+        if gate_attention:
+            self.attention_scale = self.add_weight(
+                shape=(), initializer="zeros", trainable=True, name="attention_scale"
+            )
+        if gate_ffn:
+            self.ffn_scale = self.add_weight(shape=(), initializer="zeros", trainable=True, name="ffn_scale")
 
     def call(
         self,
@@ -132,13 +151,19 @@ class MultiHeadAttention(keras.Layer):
         # Attention sublayer: Pre-LN -> attention -> residual
         query = self.ln_attn(x, training=training) if self.ln_attn is not None else x
         key_value = self.ln_kv(y, training=training) if self.ln_kv is not None else y
-        x = x + self.attention(
+        attention_out = self.attention(
             query=query, key=key_value, value=key_value, training=training, attention_mask=attention_mask
         )
+        if self.attention_scale is not None:
+            attention_out = self.attention_scale * attention_out
+        x = x + attention_out
 
         # FFN sublayer: Pre-LN -> FFN -> residual
         ffn_in = self.ln_ffn(x, training=training) if self.ln_ffn is not None else x
-        x = x + self.feedforward(ffn_in, training=training)
+        ffn_out = self.feedforward(ffn_in, training=training)
+        if self.ffn_scale is not None:
+            ffn_out = self.ffn_scale * ffn_out
+        x = x + ffn_out
 
         return x
 
@@ -146,7 +171,17 @@ class MultiHeadAttention(keras.Layer):
         if self.built:
             return
 
+        if x_shape[-1] != self.embed_dim:
+            self.input_projector = layers.Dense(
+                units=self.embed_dim,
+                use_bias=self.use_bias,
+                kernel_initializer=self.kernel_initializer,
+            )
+        else:
+            self.input_projector = keras.layers.Identity()
+
         self.input_projector.build(x_shape)
+
         proj_shape = self.input_projector.compute_output_shape(x_shape)
 
         if self.ln_attn is not None:
@@ -178,6 +213,8 @@ class MultiHeadAttention(keras.Layer):
                 "kernel_initializer": self.kernel_initializer,
                 "use_bias": self.use_bias,
                 "layer_norm": self.layer_norm,
+                "gate_attention": self.gate_attention,
+                "gate_ffn": self.gate_ffn,
             }
         )
 

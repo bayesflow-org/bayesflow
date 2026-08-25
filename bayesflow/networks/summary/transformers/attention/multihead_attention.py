@@ -219,10 +219,16 @@ class MultiHeadAttention(keras.Layer):
             training=training,
             return_attention_scores=False,
         )
-        x = x + self.attention.output_dense(attended)
+        attention_out = self.attention.output_dense(attended)
+        if self.attention_scale is not None:
+            attention_out = self.attention_scale * attention_out
+        x = x + attention_out
 
         ffn_in = self.ln_ffn(x, training=training) if self.ln_ffn is not None else x
-        return x + self.feedforward(ffn_in, training=training), key_value_cache
+        ffn_out = self.feedforward(ffn_in, training=training)
+        if self.ffn_scale is not None:
+            ffn_out = self.ffn_scale * ffn_out
+        return x + ffn_out, key_value_cache
 
     def build(self, x_shape, y_shape):
         if self.built:

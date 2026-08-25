@@ -23,3 +23,5 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    _examples/Ensembles
    _examples/Ratio_Estimation
    _examples/Compositional_Diffusion
+   _examples/Model_Comparison_Deep_Dive
+   _examples/Bivariate_Smoothing

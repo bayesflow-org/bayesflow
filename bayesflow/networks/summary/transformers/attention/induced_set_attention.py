@@ -15,6 +15,31 @@ class InducedSetAttention(keras.Layer):
     [1] Lee, J., Lee, Y., Kim, J., Kosiorek, A., Choi, S., & Teh, Y. W. (2019).
         Set transformer: A framework for attention-based permutation-invariant neural networks.
         In International conference on machine learning (pp. 3744-3753). PMLR.
+
+    Parameters
+    ----------
+    num_inducing_points : int
+        Number of inducing points for set-based dimensionality reduction.
+    embed_dim : int, optional
+        Dimensionality of the embedding space, by default 64.
+    num_heads : int, optional
+        Number of attention heads, by default 4.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    kernel_initializer : str, optional
+        Initializer for kernel weights, by default ``"glorot_uniform"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense layers, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    gate_attention : bool, optional
+        Whether to gate the attention residual branch, by default True.
+    gate_ffn : bool, optional
+        Whether to gate the feedforward residual branch, by default True.
     """
 
     def __init__(
@@ -28,35 +53,10 @@ class InducedSetAttention(keras.Layer):
         kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        gate_attention: bool = True,
+        gate_ffn: bool = True,
         **kwargs,
     ):
-        """Creates a self-attention block with inducing points (ISAB).
-
-        Parameters
-        ----------
-        num_inducing_points : int
-            The number of inducing points for set-based dimensionality reduction.
-        embed_dim : int, optional
-            Dimensionality of the embedding space, by default 64.
-        num_heads : int, optional
-            Number of attention heads, by default 4.
-        dropout : float, optional
-            Dropout rate applied inside the attention sublayer, by default 0.05.
-        expansion_factor : float, optional
-            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
-        glu_variant : str, optional
-            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
-            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
-        kernel_initializer : str, optional
-            Initializer for kernel weights and inducing points, by default ``"orthogonal"``.
-        use_bias : bool, optional
-            Whether to include bias terms in dense layers, by default False.
-        layer_norm : bool, optional
-            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
-        **kwargs
-            Additional keyword arguments passed to the Keras Layer base class.
-        """
-
         super().__init__(**layer_kwargs(kwargs))
 
         self.num_inducing_points = num_inducing_points
@@ -68,6 +68,8 @@ class InducedSetAttention(keras.Layer):
         self.kernel_initializer = kernel_initializer
         self.use_bias = use_bias
         self.layer_norm = layer_norm
+        self.gate_attention = gate_attention
+        self.gate_ffn = gate_ffn
 
         self.inducing_points = self.add_weight(
             shape=(self.num_inducing_points, embed_dim),
@@ -84,6 +86,8 @@ class InducedSetAttention(keras.Layer):
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
+            gate_attention=gate_attention,
+            gate_ffn=gate_ffn,
         )
         self.mab0 = MultiHeadAttention(**mab_kwargs)
         self.mab1 = MultiHeadAttention(**mab_kwargs)
@@ -138,6 +142,8 @@ class InducedSetAttention(keras.Layer):
                 "kernel_initializer": self.kernel_initializer,
                 "use_bias": self.use_bias,
                 "layer_norm": self.layer_norm,
+                "gate_attention": self.gate_attention,
+                "gate_ffn": self.gate_ffn,
             }
         )
 

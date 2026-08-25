@@ -10,15 +10,54 @@ from .attention import SetAttention, InducedSetAttention, PoolingByMultiHeadAtte
 
 @serializable("bayesflow.networks")
 class SetTransformer(Transformer):
-    """(SN) Implements the set transformer architecture from [1] which ultimately represents
-    a learnable permutation-invariant function. Designed to naturally model interactions in
-    the input set, which may be hard to capture with the simpler ``DeepSet`` architecture.
+    """Set transformer summary network.
+
+    Implements the set transformer architecture from [1], a learnable
+    permutation-invariant function for set-based data. It naturally models
+    interactions in the input set, which may be hard to capture with simpler
+    ``DeepSet`` architectures. Uses modernized attention settings from [2, 3]
+    as well as custom tweaks for improving SBI training dynamics.
 
     [1] Lee, J., Lee, Y., Kim, J., Kosiorek, A., Choi, S., & Teh, Y. W. (2019).
         Set transformer: A framework for attention-based permutation-invariant neural networks.
         In International conference on machine learning (pp. 3744-3753). PMLR.
+    [2] Xiong, R. et al. (2020). On layer normalization in the transformer architecture. ICML.
+    [3] Shazeer, N. (2020). GLU variants improve transformer. arXiv:2002.05202.
 
-    Note: Currently works only on 3D inputs but can easily be expanded by using ``keras.layers.TimeDistributed``.
+    Note: Currently works only on 3D inputs but can easily be expanded by using
+    ``keras.layers.TimeDistributed(SetTransformer())``.
+
+    Parameters
+    ----------
+    summary_dim : int, optional
+        Dimensionality of the final summary output, by default 16.
+    embed_dims : tuple of int, optional
+        Embedding dimensionality for each attention block, by default ``(64, 64)``.
+    num_heads : tuple of int, optional
+        Number of attention heads for each block, by default ``(4, 4)``.
+    num_seeds : int, optional
+        Number of seed vectors used for PMA pooling, by default 4.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    kernel_initializer : str, optional
+        Initializer for kernel weights, by default ``"glorot_uniform"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense layers, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    gate_attention : bool, optional
+        Whether to gate attention residual branches in SAB/ISAB blocks, by default True.
+    gate_ffn : bool, optional
+        Whether to gate feedforward residual branches in SAB/ISAB blocks, by default True.
+    num_inducing_points : int or None, optional
+        If set, uses ISAB blocks with this many inducing points instead of
+        standard SAB blocks.
+    seed_dim : int or None, optional
+        Dimensionality of the PMA seed vectors. If None, defaults to ``embed_dims[-1]``.
     """
 
     def __init__(
@@ -33,48 +72,12 @@ class SetTransformer(Transformer):
         kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        gate_attention: bool = True,
+        gate_ffn: bool = True,
         num_inducing_points: int = None,
         seed_dim: int = None,
         **kwargs,
     ):
-        """
-        Creates a many-to-one permutation-invariant encoder, typically used as a summary network
-        for embedding set-based (i.e., exchangeable or IID) data.
-
-        Parameters
-        ----------
-        summary_dim : int, optional
-            Dimensionality of the final summary output, by default 16.
-        embed_dims : tuple of int, optional
-            Embedding dimensionality for each attention block, by default (64, 64).
-        num_heads : tuple of int, optional
-            Number of attention heads for each block, by default (4, 4).
-        num_seeds : int, optional
-            Number of seed vectors used for PMA pooling. Increase if performance
-            appears subpar. By default 4.
-        dropout : float, optional
-            Dropout rate applied inside the attention sublayer, by default 0.05.
-        expansion_factor : float, optional
-            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
-        glu_variant : str, optional
-            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
-            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
-        kernel_initializer : str, optional
-            Initializer for kernel weights, PMA seed vectors, and the final summary
-            projection, by default ``"orthogonal"``.
-        use_bias : bool, optional
-            Whether to include bias terms in dense layers, by default False.
-        layer_norm : bool, optional
-            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
-        num_inducing_points : int or None, optional
-            If set, uses InducedSetAttention (ISAB) blocks with this many inducing
-            points instead of standard SetAttention (SAB) blocks.
-        seed_dim : int or None, optional
-            Dimensionality of the PMA seed vectors. If None, defaults to ``embed_dims[-1]``.
-        **kwargs
-            Additional keyword arguments passed to the base layer.
-        """
-
         super().__init__(**kwargs)
 
         check_lengths_same(embed_dims, num_heads)
@@ -87,10 +90,14 @@ class SetTransformer(Transformer):
             use_bias=use_bias,
             layer_norm=layer_norm,
         )
+        block_kwargs_base = shared_kwargs | dict(
+            gate_attention=gate_attention,
+            gate_ffn=gate_ffn,
+        )
 
         self.attention_blocks = []
         for i in range(len(embed_dims)):
-            block_kwargs = shared_kwargs | dict(num_heads=num_heads[i], embed_dim=embed_dims[i])
+            block_kwargs = block_kwargs_base | dict(num_heads=num_heads[i], embed_dim=embed_dims[i])
             if num_inducing_points is None:
                 block = SetAttention(**block_kwargs)
             else:
@@ -110,6 +117,8 @@ class SetTransformer(Transformer):
         )
 
         self.summary_dim = summary_dim
+        self.gate_attention = gate_attention
+        self.gate_ffn = gate_ffn
 
     def call(
         self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None

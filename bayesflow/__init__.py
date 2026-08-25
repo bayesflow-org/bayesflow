@@ -118,6 +118,7 @@ from .adapters import Adapter
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
 from .approximators import (
     ContinuousApproximator,
+    AutoregressiveApproximator,
     CompositionalApproximator,
     ModelComparisonApproximator,
     ScoringRuleApproximator,

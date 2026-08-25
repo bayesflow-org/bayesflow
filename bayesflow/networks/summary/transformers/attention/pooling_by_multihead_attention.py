@@ -20,6 +20,31 @@ class PoolingByMultiHeadAttention(keras.Layer):
 
     Note: Currently works only on 3D inputs but can easily be expanded by changing
     the internals slightly or using ``keras.layers.TimeDistributed``.
+
+    Parameters
+    ----------
+    num_seeds : int, optional
+        Number of seed vectors used for pooling, by default 1.
+    embed_dim : int, optional
+        Dimensionality of the embedding space, by default 64.
+    num_heads : int, optional
+        Number of attention heads, by default 4.
+    seed_dim : int or None, optional
+        Dimensionality of each seed vector. If None, defaults to ``embed_dim``.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    kernel_initializer : str, optional
+        Initializer for kernel weights, by default ``"glorot_uniform"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense layers, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    **kwargs
+        Additional keyword arguments passed to the Keras Layer base class.
     """
 
     def __init__(
@@ -36,39 +61,6 @@ class PoolingByMultiHeadAttention(keras.Layer):
         layer_norm: bool = True,
         **kwargs,
     ):
-        """
-        Creates a PoolingByMultiHeadAttention (PMA) block for permutation-invariant set encoding using
-        multi-head attention pooling. Can also be used as a building block for ``DeepSet`` architectures.
-
-        Parameters
-        ----------
-        num_seeds : int, optional
-            Number of seed vectors used for pooling. Acts as the number of summary outputs,
-            by default 1.
-        embed_dim : int, optional
-            Dimensionality of the embedding space used in the attention mechanism, by default 64.
-        num_heads : int, optional
-            Number of attention heads in the multi-head attention block, by default 4.
-        seed_dim : int or None, optional
-            Dimensionality of each seed vector. If None, defaults to ``embed_dim``.
-        dropout : float, optional
-            Dropout rate applied inside the attention sublayer, by default 0.05.
-        expansion_factor : float, optional
-            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
-        glu_variant : str, optional
-            GLU activation variant for both the pre-attention FFN and the MAB's internal FFN.
-            One of ``"swiglu"``, ``"geglu"``, ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
-        kernel_initializer : str, optional
-            Initializer for kernel weights in all dense layers and the seed vectors,
-            by default ``"orthogonal"``.
-        use_bias : bool, optional
-            Whether to include bias terms in dense layers, by default False.
-        layer_norm : bool, optional
-            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
-        **kwargs
-            Additional keyword arguments passed to the Keras Layer base class.
-        """
-
         super().__init__(**layer_kwargs(kwargs))
 
         self.num_seeds = num_seeds
@@ -103,7 +95,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
 
         # Pre-attention FFN: starts as the raw set path, then learns residual features.
         self.pre_ffn_norm = layers.RMSNormalization() if layer_norm else None
-        self.pre_ffn_scale = self.add_weight(shape=(), initializer="zeros", trainable=True, name="pre_ffn_scale")
+        self.pre_ffn_scale = self.add_weight(shape=(), initializer="zeros", trainable=True)
         self.pre_ffn_skip_projector = None
         self.feedforward = FFN(
             embed_dim=embed_dim,

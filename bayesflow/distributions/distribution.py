@@ -43,4 +43,7 @@ class Distribution(keras.Layer):
 
     @classmethod
     def from_config(cls, config, custom_objects=None):
+        # remove the legacy seed_generator arg
+        config = {key: value for key, value in config.items() if key != "seed_generator"}
+
         return cls(**deserialize(config, custom_objects=custom_objects))

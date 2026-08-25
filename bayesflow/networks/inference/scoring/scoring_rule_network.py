@@ -64,6 +64,8 @@ class ScoringRuleNetwork(keras.Layer):
             **kwargs,
         }
 
+        self.seed_generator = keras.random.SeedGenerator()
+
     def build(self, xz_shape: Shape, conditions_shape: Shape | None = None) -> None:
         """Builds all network components based on shapes of conditions and targets.
 
@@ -213,20 +215,16 @@ class ScoringRuleNetwork(keras.Layer):
         conditions : Tensor or None, default None
             Optional inference conditions. If not given, unconditional samples are returned.
         seed : int, keras.random.SeedGenerator, or None, optional
-            Seed for reproducible sampling. An integer is converted to a
-            ``keras.random.SeedGenerator`` and shared across all random draws in
-            the call. A ``SeedGenerator`` is passed through as-is, advancing its
-            state with each use. If ``None`` (default), the instance seed
-            generator is used.
-
-
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), this instance's own seed generator is used.
 
         Returns
         -------
         samples : dict[str, Tensor]
             Samples for every parametric scoring rule.
         """
-        seed_generator = resolve_seed(seed)
+        seed = resolve_seed(seed, self.seed_generator)
         if conditions is None:
             conditions = keras.ops.convert_to_tensor([[1.0]], dtype=keras.config.floatx())
 
@@ -245,7 +243,7 @@ class ScoringRuleNetwork(keras.Layer):
                         for k, v in parameters.items()
                     }
 
-                samples[score_key] = score.sample(batch_shape, seed=seed_generator, **parameters)
+                samples[score_key] = score.sample(batch_shape, seed=seed, **parameters)
 
         return samples
 

@@ -100,8 +100,6 @@ class FreeFormFlow(InferenceNetwork):
         self.hutchinson_sampling = hutchinson_sampling
         self.beta = beta
 
-        self.seed_generator = keras.random.SeedGenerator()
-
     # noinspection PyMethodOverriding
     def build(self, xz_shape, conditions_shape=None):
         if self.built:

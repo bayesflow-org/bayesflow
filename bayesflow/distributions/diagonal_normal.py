@@ -22,7 +22,6 @@ class DiagonalNormal(Distribution):
         mean: int | float | np.ndarray | Tensor = 0.0,
         std: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
-        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -43,9 +42,6 @@ class DiagonalNormal(Distribution):
             Default is 1.0.
         trainable_parameters : bool, optional
             Whether to treat the mean and standard deviation as learnable parameters. Default is False.
-        seed_generator : keras.random.SeedGenerator, optional
-            A Keras seed generator for reproducible random sampling. If None, a new seed
-            generator is created. Default is None.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
 
@@ -56,7 +52,7 @@ class DiagonalNormal(Distribution):
         self.std = std
 
         self.trainable_parameters = trainable_parameters
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.dim = None
         self._mean = None
@@ -100,8 +96,8 @@ class DiagonalNormal(Distribution):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
-        sg = resolve_seed(seed) or self.seed_generator
-        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=sg)
+        seed = resolve_seed(seed, self.seed_generator)
+        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=seed)
         z = self._mean + self._std * z
         return z
 
@@ -112,7 +108,6 @@ class DiagonalNormal(Distribution):
             "mean": self.mean,
             "std": self.std,
             "trainable_parameters": self.trainable_parameters,
-            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

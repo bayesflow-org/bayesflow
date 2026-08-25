@@ -56,6 +56,8 @@ class EnsembleApproximator(Approximator):
 
         self.has_distribution = bool(self.distribution_members)
 
+        self.seed_generator = keras.random.SeedGenerator()
+
     @classmethod
     def _warn_if_shared_approximator_components(cls, approximators):
         """Warn if approximators share component instances (not safely serializable yet)."""
@@ -253,6 +255,10 @@ class EnsembleApproximator(Approximator):
             Must be nonnegative, will be normalized to sum to 1.
         merge_members : bool, optional
             Whether to merge samples from all approximators into a single (weighted) marginal sample.
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         **kwargs
             Additional arguments passed to approximator.sample().
 
@@ -263,14 +269,16 @@ class EnsembleApproximator(Approximator):
         """
         self._warn_ignored_member_weights(member_weights, merge_members)
 
+        seed = resolve_seed(seed, self.seed_generator)
+
         if not merge_members:
             return self._map_members(
                 None,
                 capability="distribution",
-                fn=lambda name, a: a.sample(num_samples=num_samples, conditions=conditions, split=split, **kwargs),
+                fn=lambda name, a: a.sample(
+                    num_samples=num_samples, conditions=conditions, split=split, seed=seed, **kwargs
+                ),
             )
-
-        seed_generator = resolve_seed(seed)
 
         weights = self._resolve_member_weights(member_weights)
         counts = multinomial_allocation(weights, num_samples, seed=seed)
@@ -280,12 +288,12 @@ class EnsembleApproximator(Approximator):
             list(alloc.keys()),
             capability="distribution",
             fn=lambda name, a: a.sample(
-                num_samples=alloc[name], conditions=conditions, split=split, seed=seed_generator, **kwargs
+                num_samples=alloc[name], conditions=conditions, split=split, seed=seed, **kwargs
             ),
         )
 
         merged = keras.tree.map_structure(lambda *xs: np.concatenate(xs, axis=1), *per_member.values())
-        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed_generator)
+        shuffle_idx = keras.random.shuffle(keras.ops.arange(num_samples), seed=seed)
         shuffle_idx = keras.ops.convert_to_numpy(shuffle_idx)
         return keras.tree.map_structure(lambda a: np.take(a, shuffle_idx, axis=1), merged)
 

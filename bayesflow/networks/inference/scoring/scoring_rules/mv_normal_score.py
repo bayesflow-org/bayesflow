@@ -111,7 +111,7 @@ class MvNormalScore(ParametricDistributionScore):
         Generate samples from a multivariate Gaussian distribution.
 
         Draws one sample per parameter set by transforming standard normal samples
-        using the Cholesky factor of the covariance matrix.
+        with the Cholesky factor of the precision matrix.
 
         Parameters
         ----------
@@ -133,8 +133,10 @@ class MvNormalScore(ParametricDistributionScore):
         Tensor
             Samples with the same shape as ``mean``.
         """
-        covariance_cholesky_factor = keras.ops.inv(precision_cholesky_factor)
         normal_samples = keras.random.normal(keras.ops.shape(mean), seed=resolve_seed(seed, self.seed_generator))
-        scaled_normal = keras.ops.einsum("...ij,...j->...i", covariance_cholesky_factor, normal_samples)
-        samples = mean + scaled_normal
-        return samples
+        scaled_normal = keras.ops.solve_triangular(
+            precision_cholesky_factor, keras.ops.expand_dims(normal_samples, axis=-1), lower=True
+        )
+        scaled_normal = keras.ops.squeeze(scaled_normal, axis=-1)
+
+        return mean + scaled_normal

@@ -6,7 +6,14 @@ import keras
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils.logging import warning
-from bayesflow.utils import MaskName, slice_maybe_nested, dim_maybe_nested, repeat_and_flatten, tree_concatenate
+from bayesflow.utils import (
+    MaskName,
+    dim_maybe_nested,
+    filter_kwargs,
+    repeat_and_flatten,
+    slice_maybe_nested,
+    tree_concatenate,
+)
 from bayesflow.types import Tensor
 
 
@@ -152,3 +159,97 @@ class Sampler:
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Sampler":
         return cls(**deserialize(config, custom_objects=custom_objects))
+
+
+@serializable("bayesflow.approximators")
+class AutoregressiveSampler(Sampler):
+    """Sample trajectories with an incrementally cached autoregressive decoder."""
+
+    def _sample_batch(
+        self,
+        *,
+        inference_network: keras.Layer,
+        decoder_network: keras.Layer,
+        num_samples: int,
+        conditions: Tensor | None,
+        sample_shape: Literal["infer"] | Sequence[int] | int,
+        time: Tensor | None = None,
+        encoder_mask: Tensor | None = None,
+        target_mask: Tensor | None = None,
+        target_attention_mask: Tensor | None = None,
+        masking_names: Sequence[str] = (),
+        seed: keras.random.SeedGenerator | int | None = None,
+        **kwargs,
+    ):
+        encoder_outputs = self.repeat_and_flatten_conditions(conditions, num_samples)
+        time = self.repeat_and_flatten_conditions(time, num_samples)
+        encoder_mask = self.repeat_and_flatten_conditions(encoder_mask, num_samples)
+        target_mask = self.repeat_and_flatten_conditions(target_mask, num_samples)
+        target_attention_mask = self.repeat_and_flatten_conditions(target_attention_mask, num_samples)
+
+        sample_shape = self.infer_sample_shape(encoder_outputs, sample_shape)
+        if len(sample_shape) != 1:
+            raise ValueError(
+                "Autoregressive sampling requires exactly one structural sample dimension "
+                f"for the sequence length, but got {sample_shape}."
+            )
+        num_steps = sample_shape[0]
+
+        kwargs = {
+            key: self.repeat_and_flatten_conditions(value, num_samples)
+            if hasattr(value, "shape") and key not in masking_names
+            else value
+            for key, value in kwargs.items()
+        }
+
+        cache_kwargs = filter_kwargs(
+            {
+                "encoder_mask": encoder_mask,
+                "time": time,
+            },
+            decoder_network.initialize_cache,
+        )
+        cache_kwargs = {key: value for key, value in cache_kwargs.items() if value is not None}
+        cache = decoder_network.initialize_cache(encoder_outputs, **cache_kwargs)
+        decode_kwargs = filter_kwargs(
+            {
+                "target_mask": target_mask,
+                "attention_mask": target_attention_mask,
+            },
+            decoder_network.decode_step,
+        )
+        decode_kwargs = {key: value for key, value in decode_kwargs.items() if value is not None}
+        previous_target = None
+        generated = []
+
+        for step in range(num_steps):
+            step_conditions, cache = decoder_network.decode_step(
+                previous_target,
+                step=step,
+                cache=cache,
+                **decode_kwargs,
+            )
+            step_kwargs = {
+                key: value[:, step]
+                if hasattr(value, "shape") and len(value.shape) >= 3 and value.shape[1] == num_steps
+                else value
+                for key, value in kwargs.items()
+            }
+
+            current_target = inference_network.sample(
+                (keras.ops.shape(encoder_outputs)[0],),
+                conditions=step_conditions,
+                seed=seed,
+                **step_kwargs,
+            )
+
+            if target_mask is not None:
+                current_target = current_target * keras.ops.cast(
+                    target_mask[:, step : step + 1],
+                    current_target.dtype,
+                )
+
+            generated.append(current_target)
+            previous_target = current_target
+
+        return self.unflatten_samples(keras.ops.stack(generated, axis=1), num_samples)

@@ -15,6 +15,27 @@ class InducedSetAttention(keras.Layer):
     [1] Lee, J., Lee, Y., Kim, J., Kosiorek, A., Choi, S., & Teh, Y. W. (2019).
         Set transformer: A framework for attention-based permutation-invariant neural networks.
         In International conference on machine learning (pp. 3744-3753). PMLR.
+
+    Parameters
+    ----------
+    num_inducing_points : int
+        Number of inducing points for set-based dimensionality reduction.
+    embed_dim : int, optional
+        Dimensionality of the embedding space, by default 64.
+    num_heads : int, optional
+        Number of attention heads, by default 4.
+    dropout : float, optional
+        Dropout rate applied inside attention sublayers, by default 0.05.
+    expansion_factor : float, optional
+        FFN intermediate width multiplier, by default 4.0.
+    glu_variant : str, optional
+        GLU activation variant for the FFN, by default ``"swiglu"``.
+    kernel_initializer : str, optional
+        Initializer for kernel weights, by default ``"glorot_uniform"``.
+    use_bias : bool, optional
+        Whether to include bias terms in dense layers, by default False.
+    layer_norm : bool, optional
+        Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
     """
 
     def __init__(
@@ -30,33 +51,6 @@ class InducedSetAttention(keras.Layer):
         layer_norm: bool = True,
         **kwargs,
     ):
-        """Creates a self-attention block with inducing points (ISAB).
-
-        Parameters
-        ----------
-        num_inducing_points : int
-            The number of inducing points for set-based dimensionality reduction.
-        embed_dim : int, optional
-            Dimensionality of the embedding space, by default 64.
-        num_heads : int, optional
-            Number of attention heads, by default 4.
-        dropout : float, optional
-            Dropout rate applied inside the attention sublayer, by default 0.05.
-        expansion_factor : float, optional
-            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.
-        glu_variant : str, optional
-            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,
-            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.
-        kernel_initializer : str, optional
-            Initializer for kernel weights, by default ``"glorot_uniform"``.
-        use_bias : bool, optional
-            Whether to include bias terms in dense layers, by default False.
-        layer_norm : bool, optional
-            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
-        **kwargs
-            Additional keyword arguments passed to the Keras Layer base class.
-        """
-
         super().__init__(**layer_kwargs(kwargs))
 
         self.num_inducing_points = num_inducing_points

@@ -176,7 +176,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
             conditions=encoder_outputs,
             batch_size=batch_size,
             sample_shape=sample_shape,
-            seed=resolve_seed(seed),
+            seed=resolve_seed(seed, self.seed_generator),
             time=decoder_time,
             encoder_mask=adapted.get("summary_mask"),
             target_mask=adapted.get("inference_mask"),

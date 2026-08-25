@@ -54,7 +54,7 @@ class EnsembleIndexedDataset(keras.utils.PyDataset):
         self.data_reuse = float(data_reuse)
         self.batch_size = int(dataset.batch_size)
         self.num_samples = int(dataset.num_samples)
-        self.drop_last = bool(getattr(dataset, "drop_last", True) if drop_last is None else drop_last)
+        self.drop_last = bool(getattr(dataset, "drop_last", False) if drop_last is None else drop_last)
 
         self.reduction_factor = 1 / (data_reuse + (1 - data_reuse) * self.ensemble_size)
         self.window_size = int(math.ceil(self.num_samples * self.reduction_factor))

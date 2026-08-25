@@ -54,7 +54,7 @@ class DiskDataset(keras.utils.PyDataset):
         Default is ``True``.
     drop_last : bool, optional
         Whether to drop the last batch if it contains fewer than ``batch_size`` samples.
-        Default is ``True``.
+        Default is ``False``.
     **kwargs
         Additional keyword arguments passed to the base ``PyDataset``.
     """
@@ -69,7 +69,7 @@ class DiskDataset(keras.utils.PyDataset):
         adapter: Adapter | None,
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
-        drop_last: bool = True,
+        drop_last: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)

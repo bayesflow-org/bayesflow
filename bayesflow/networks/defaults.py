@@ -26,7 +26,7 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     }
 )
 
-STABLE_CONSISTENCY_TIME_MLP_DEFAULTS = MappingProxyType(
+CONSISTENCY_MODEL_DEFAULTS = MappingProxyType(
     dict(TIME_MLP_DEFAULTS)
     | {
         "fourier_scale": 30.0,

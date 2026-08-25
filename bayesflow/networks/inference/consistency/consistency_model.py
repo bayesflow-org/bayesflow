@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 import keras
@@ -19,7 +20,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
+from ...defaults import CONSISTENCY_MODEL_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -99,7 +100,7 @@ class ConsistencyModel(InferenceNetwork):
         rho: float = 7.0,
         noise_dist_mean: float = -1.1,
         noise_dist_std: float = 2.0,
-        subnet_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -108,7 +109,7 @@ class ConsistencyModel(InferenceNetwork):
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+            subnet_kwargs = CONSISTENCY_MODEL_DEFAULTS | subnet_kwargs
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)

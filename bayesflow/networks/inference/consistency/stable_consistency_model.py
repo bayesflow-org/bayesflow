@@ -58,7 +58,7 @@ class StableConsistencyModel(InferenceNetwork):
         target for stability (``c`` in [1]). Default is ``0.1``.
     r_scale : float
         Scale of the second stable tangent term in the continuous-time
-        consistency target. Default is ``0.0``.
+        consistency target. Default is ``0.5``.
     steps : int
         Default number of steps used by the multistep sampler. Can be overridden
         per call by passing ``steps=`` to sampling. Default is ``15``.
@@ -99,7 +99,7 @@ class StableConsistencyModel(InferenceNetwork):
         noise_dist_mean: float = -1.1,
         noise_dist_std: float = 2.0,
         tangent_norm_eps: float = 0.1,
-        r_scale: float = 0.0,
+        r_scale: float = 0.5,
         steps: int = 15,
         rho: float = 3.5,
         subnet_kwargs: dict[str, Any] = None,

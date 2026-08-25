@@ -21,6 +21,24 @@ def canonical_correlation_metric(
     Dictionary inputs are flattened per key and concatenated along the feature
     axis. Array inputs are flattened after the leading dataset axis.
 
+    This is useful for checking whether learned summaries preserve the
+    information directions contained in chosen target features. For summaries
+    ``S`` and targets ``T``, the returned values are the singular values of
+    ``Cov(S)^(-1/2) Cov(S, T) Cov(T)^(-1/2)``. Equivalently, each value is the
+    maximum correlation between a linear projection of ``S`` and a linear
+    projection of ``T``, constrained to be orthogonal to earlier canonical
+    directions. If all target-dimensional values are close to one, then the
+    target feature vector is linearly recoverable from the summaries up to an
+    invertible change of coordinates; small values indicate target directions
+    that the summaries have collapsed or failed to expose.
+
+    The diagnostic is most interpretable for unimodal or sufficient-statistic
+    settings where the chosen targets (e.g., posterior means, parameters, or
+    analytic sufficient statistics), are good single-vector summaries of
+    the posterior. For multimodal or symmetry-heavy posteriors, low or high
+    canonical correlations with one target vector need not imply poor or good
+    posterior calibration.
+
     Examples
     --------
     >>> summaries = {"summary": np.array([[0.0, 1.0], [1.0, 0.0], [2.0, 1.0]])}

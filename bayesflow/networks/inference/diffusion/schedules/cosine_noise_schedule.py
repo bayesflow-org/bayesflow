@@ -21,6 +21,18 @@ class CosineNoiseSchedule(NoiseSchedule):
     Advances in Neural Information Processing Systems, 34, 8780-8794.
     [2] Ho, J., Jain, A., & Abbeel, P. (2020). Denoising diffusion probabilistic models.
     Advances in Neural Information Processing Systems, 33, 6840-6851.
+
+    Parameters
+    ----------
+    min_log_snr : float, optional
+        The minimum log signal-to-noise ratio (lambda). Default is -12.
+    max_log_snr : float, optional
+        The maximum log signal-to-noise ratio (lambda). Default is 12.
+    shift : float, optional
+        Shift the log signal-to-noise ratio (lambda) by this amount. Default is 0.0.
+        For images, use shift = log(base_resolution / d), where d is the used resolution of the image.
+    weighting : Literal["sigmoid", "likelihood_weighting"], optional
+        The type of weighting function to use for the noise schedule. Default is "sigmoid".
     """
 
     def __init__(
@@ -30,21 +42,6 @@ class CosineNoiseSchedule(NoiseSchedule):
         shift: float = 0.0,
         weighting: Literal["sigmoid", "likelihood_weighting"] = "sigmoid",
     ):
-        """
-        Initialize the cosine noise schedule.
-
-        Parameters
-        ----------
-        min_log_snr : float, optional
-            The minimum log signal-to-noise ratio (lambda). Default is -12.
-        max_log_snr : float, optional
-            The maximum log signal-to-noise ratio (lambda). Default is 12.
-        shift : float, optional
-            Shift the log signal-to-noise ratio (lambda) by this amount. Default is 0.0.
-            For images, use shift = log(base_resolution / d), where d is the used resolution of the image.
-        weighting : Literal["sigmoid", "likelihood_weighting"], optional
-            The type of weighting function to use for the noise schedule. Default is "sigmoid".
-        """
         super().__init__(name="cosine_noise_schedule", variance_type="preserving", weighting=weighting)
         self._shift = shift
         self._weighting = weighting

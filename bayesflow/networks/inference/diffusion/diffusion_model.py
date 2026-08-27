@@ -65,7 +65,7 @@ class DiffusionModel(InferenceNetwork):
     prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}
         Output format of the model's prediction.  Default is ``"velocity"``.
     loss_type : {'velocity', 'noise', 'F'}
-        Loss function used to train the model.  Default is ``"velocity"``.
+        Loss function used to train the model.  Default is ``"noise"``.
     subnet_kwargs : dict[str, Any], optional
         Additional keyword arguments passed to the subnet constructor.
     schedule_kwargs : dict[str, Any], optional
@@ -114,7 +114,7 @@ class DiffusionModel(InferenceNetwork):
         subnet: str | type | keras.Layer = "time_mlp",
         noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
         prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "velocity",
-        loss_type: Literal["velocity", "noise", "F"] = "velocity",
+        loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, Any] = None,
         schedule_kwargs: dict[str, Any] = None,
         integrate_kwargs: dict[str, Any] = None,
@@ -130,6 +130,12 @@ class DiffusionModel(InferenceNetwork):
 
         if loss_type not in ["noise", "velocity", "F"]:
             raise ValueError(f"Unknown loss type: {loss_type}")
+
+        if loss_type != "noise":
+            logging.warning(
+                "The standard schedules have weighting functions defined for the noise prediction loss. "
+                "You might want to replace them if you are using a different loss function."
+            )
 
         self._prediction_type = prediction_type
         self._loss_type = loss_type

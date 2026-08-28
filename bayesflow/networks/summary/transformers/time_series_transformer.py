@@ -1,10 +1,11 @@
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import check_lengths_same
-from bayesflow.utils.serialization import serializable
+from bayesflow.utils import check_lengths_same, expand_tile
+from bayesflow.utils.serialization import serializable, serialize
 
 from .attention import MultiHeadAttention
+from .helpers import Downsample, SummaryToken
 from .transformer import Transformer
 
 from ...helpers import Time2Vec, RecurrentEmbedding
@@ -43,15 +44,20 @@ class TimeSeriesTransformer(Transformer):
     gate_ffn : bool, optional
         Whether to gate feedforward residual branches, by default True.
     time_embedding : str, optional
-        Time embedding type. Must be one of ``"time2vec"``, ``"lstm"``, or ``"gru"``.
+        Time embedding type. Must be one of ``"time2vec"``, ``"lstm"``, ``"gru"``,
+        or None. If None, raw time values are concatenated to the sequence features.
     time_embed_dim : int, optional
         Dimensionality of the time embedding, by default 8.
     time_axis : int or None, optional
         Feature axis containing explicit time values. If None, integer positions
         are used.
+    downsample : int or None, optional
+        Optional temporal downsampling factor applied before the transformer blocks.
+        If None, an identity layer is used. If an integer greater than one, a strided
+        ``Conv1D`` reduces the sequence length by the requested factor.
     return_sequences : bool, optional
         Whether to return one summary per time step. If False, returns a single
-        summary vector.
+        summary vector from a learned summary token appended to the sequence.
     """
 
     def __init__(
@@ -70,12 +76,18 @@ class TimeSeriesTransformer(Transformer):
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,
         time_axis: int | None = None,
+        downsample: int | None = None,
         return_sequences: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
         check_lengths_same(embed_dims, num_heads)
+        if isinstance(downsample, bool) or (
+            downsample is not None and (not isinstance(downsample, int) or downsample < 1)
+        ):
+            raise ValueError(f"downsample must be None or a positive integer, got {downsample!r}.")
+        downsample = None if downsample in (None, 1) else downsample
 
         if time_embedding is None:
             self.time_embedding = None
@@ -87,6 +99,13 @@ class TimeSeriesTransformer(Transformer):
             raise ValueError(
                 f"Invalid time embedding type: {time_embedding}. Expected one of ['time2vec', 'lstm', 'gru']."
             )
+
+        self.downsampler = Downsample(
+            factor=downsample,
+            filters=embed_dims[0],
+            kernel_initializer=kernel_initializer,
+            use_bias=use_bias,
+        )
 
         self.attention_blocks = []
         for i in range(len(embed_dims)):
@@ -104,10 +123,7 @@ class TimeSeriesTransformer(Transformer):
             )
             self.attention_blocks.append(block)
 
-        if return_sequences:
-            self.pooling = keras.layers.Identity()
-        else:
-            self.pooling = keras.layers.GlobalAveragePooling1D()
+        self.summary_token = None if return_sequences else SummaryToken(kernel_initializer=kernel_initializer)
 
         self.output_projector = keras.layers.Dense(
             units=summary_dim,
@@ -115,10 +131,41 @@ class TimeSeriesTransformer(Transformer):
         )
 
         self.summary_dim = summary_dim
+        self.embed_dims = embed_dims
+        self.num_heads = num_heads
+        self.dropout_rate = dropout
+        self.expansion_factor = expansion_factor
+        self.glu_variant = glu_variant
+        self.kernel_initializer = kernel_initializer
+        self.use_bias = use_bias
+        self.layer_norm = layer_norm
+        self.time_embedding_type = time_embedding
+        self.time_embed_dim = time_embed_dim
         self.time_axis = time_axis
+        self.downsample = downsample
         self.return_sequences = return_sequences
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
+
+    @staticmethod
+    def make_default_time(x: Tensor) -> Tensor:
+        t = keras.ops.arange(keras.ops.shape(x)[1], dtype=x.dtype)
+        return expand_tile(t, keras.ops.shape(x)[0], axis=0)
+
+    @staticmethod
+    def make_attention_mask(attention_mask: Tensor | None = None, mask: Tensor | None = None) -> Tensor | None:
+        if attention_mask is None:
+            attention_mask = mask
+
+        if attention_mask is None:
+            return None
+
+        if len(attention_mask.shape) != 2:
+            raise ValueError(f"Expected mask with shape (batch, sequence_length), got {attention_mask.shape}.")
+
+        attention_mask = keras.ops.cast(attention_mask, "bool")
+        # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
+        return keras.ops.expand_dims(attention_mask, axis=1)
 
     def call(
         self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None
@@ -132,45 +179,56 @@ class TimeSeriesTransformer(Transformer):
         training : bool, optional
             Passed to dropout and norm layers, by default False.
         attention_mask : Tensor, optional
-            Boolean mask broadcastable to ``(B, num_heads, T, T)`` where 1 = attend,
-            0 = mask. Takes precedence over any mask derived from ``mask``.
+            Boolean sequence mask of shape ``(B, T)`` where 1 = observed feature
+            token and 0 = padded or missing feature token. Takes precedence over
+            any mask derived from ``mask``.
         mask : Tensor, optional
-            Boolean padding mask of shape ``(B, T)`` where 1 = real time step,
-            0 = padding. Used for variable-length trajectories padded to a common
-            length: it builds a key-padding ``attention_mask`` (when none is given)
-            and excludes padded steps from the pooling average.
+            Boolean sequence mask of shape ``(B, T)`` where 1 = observed feature
+            token and 0 = padded or missing feature token. If ``attention_mask`` is
+            not provided, this is converted to a key-padding attention mask before
+            downsampling. Explicit time values are downsampled separately and are
+            not masked by this feature-token mask.
 
         Returns
         -------
         Tensor
             Shape ``(batch_size, summary_dim)`` if ``return_sequences=False``, otherwise
-            ``(batch_size, sequence_length, summary_dim)``.
+            ``(batch_size, sequence_length, summary_dim)`` or the corresponding
+            downsampled sequence length when ``downsample`` is set.
         """
 
         if self.time_axis is not None:
-            t = x[..., self.time_axis]
+            time_vec = x[..., self.time_axis]
             indices = list(range(keras.ops.shape(x)[-1]))
             indices.pop(self.time_axis)
             inp = keras.ops.take(x, indices, axis=-1)
         else:
-            t = None
+            time_vec = self.make_default_time(x)
             inp = x
 
-        if self.time_embedding:
-            inp = self.time_embedding(inp, t=t)
+        attention_mask = self.make_attention_mask(attention_mask=attention_mask, mask=mask)
 
-        if attention_mask is None and mask is not None:
-            # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
-            attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
+        inp = self.downsampler(inp)
+        attention_mask = self.downsampler.downsample_mask(attention_mask)
+        time_vec = self.downsampler.downsample_time(time_vec)
+
+        if self.time_embedding is not None:
+            inp = self.time_embedding(inp, t=time_vec)
+        else:
+            inp = keras.ops.concatenate([inp, time_vec[..., None]], axis=-1)
+
+        if not self.return_sequences:
+            inp = self.summary_token(inp)
+            attention_mask = self.summary_token.update_mask(attention_mask)
 
         for layer in self.attention_blocks:
             inp = layer(inp, inp, training=training, attention_mask=attention_mask)
 
         if self.return_sequences:
             # sequence returned unreduced so caller needs to mask the padded steps
-            summary = self.pooling(inp)
+            summary = inp
         else:
-            summary = self.pooling(inp, mask=mask)
+            summary = self.summary_token.take(inp)
         summary = self.output_projector(summary)
         return summary
 
@@ -179,3 +237,26 @@ class TimeSeriesTransformer(Transformer):
         # to prevent warnings about inability to inject it downstream.
         # We explicitly pass mask and do not rely on having it travel with as a tensor attribute.
         return None
+
+    def get_config(self) -> dict:
+        base_config = super().get_config()
+        return base_config | serialize(
+            {
+                "summary_dim": self.summary_dim,
+                "embed_dims": self.embed_dims,
+                "num_heads": self.num_heads,
+                "dropout": self.dropout_rate,
+                "expansion_factor": self.expansion_factor,
+                "glu_variant": self.glu_variant,
+                "kernel_initializer": self.kernel_initializer,
+                "use_bias": self.use_bias,
+                "layer_norm": self.layer_norm,
+                "gate_attention": self.gate_attention,
+                "gate_ffn": self.gate_ffn,
+                "time_embedding": self.time_embedding_type,
+                "time_embed_dim": self.time_embed_dim,
+                "time_axis": self.time_axis,
+                "downsample": self.downsample,
+                "return_sequences": self.return_sequences,
+            }
+        )

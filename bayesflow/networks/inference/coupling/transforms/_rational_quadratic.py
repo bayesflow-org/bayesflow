@@ -46,7 +46,7 @@ def _rational_quadratic_spline(
     sk = dy / dx
 
     if not inverse:
-        xi = (x - xk) / dx
+        xi = keras.ops.clip((x - xk) / dx, 0.0, 1.0)
 
         # Eq. 4 in the paper
         numerator = dy * (sk * xi**2 + dk * xi * (1 - xi))
@@ -67,7 +67,7 @@ def _rational_quadratic_spline(
         # the discriminant must be positive, even when the spline is called out of bounds
         discriminant = keras.ops.maximum(discriminant, 0)
 
-        xi = 2 * c / (-b - keras.ops.sqrt(discriminant))
+        xi = keras.ops.clip(2 * c / (-b - keras.ops.sqrt(discriminant)), 0.0, 1.0)
         result = xi * dx + xk
 
     # Eq 5 in the paper

@@ -99,6 +99,14 @@ def test_return_sequences_false():
     assert net.summary_token.__class__.__name__ == "SummaryToken"
 
 
+def test_attention_is_ungated_by_default():
+    net = _make()
+
+    assert net.gate_attention is False
+    assert all(block.gate_attention is False for block in net.attention_blocks)
+    assert all(block.attention_scale is None for block in net.attention_blocks)
+
+
 @pytest.mark.parametrize("glu_variant", ["swiglu", "geglu"])
 def test_glu_variants(glu_variant):
     net = _make(glu_variant=glu_variant)

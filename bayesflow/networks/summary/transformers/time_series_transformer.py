@@ -40,7 +40,7 @@ class TimeSeriesTransformer(Transformer):
     layer_norm : bool, optional
         Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
     gate_attention : bool, optional
-        Whether to gate attention residual branches, by default True.
+        Whether to gate attention residual branches, by default False.
     gate_ffn : bool, optional
         Whether to gate feedforward residual branches, by default True.
     time_embedding : str, optional
@@ -71,7 +71,7 @@ class TimeSeriesTransformer(Transformer):
         kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
-        gate_attention: bool = True,
+        gate_attention: bool = False,
         gate_ffn: bool = True,
         time_embedding: str = "time2vec",
         time_embed_dim: int = 8,

@@ -25,7 +25,7 @@ class TimeSeriesNetwork(SummaryNetwork):
         kernel_sizes: int | list | tuple = 3,
         strides: int | list | tuple = 1,
         activation: str = "mish",
-        kernel_initializer: str = "glorot_uniform",
+        kernel_initializer: str = "orthogonal",
         groups: int = None,
         recurrent_type: str = "gru",
         recurrent_dim: int = 128,
@@ -59,8 +59,8 @@ class TimeSeriesNetwork(SummaryNetwork):
         activation : str, optional
             Activation function applied in the convolutional layers. Default is "mish".
         kernel_initializer : str, optional
-            Initialization strategy for convolutional kernels, such as "glorot_uniform".
-            Default is "glorot_uniform".
+            Initializer for convolutional, recurrent input, and projection kernels.
+            Default is ``"orthogonal"``.
         groups : int, optional
             Number of groups for group normalization applied after each convolutional layer.
             Default is None.
@@ -72,7 +72,7 @@ class TimeSeriesNetwork(SummaryNetwork):
         bidirectional : bool, optional
             Whether to use a bidirectional recurrent network. Default is True.
         dropout : float, optional
-            Dropout rate applied in the recurrent module. Default is 0.05.
+            Dropout rate applied after the convolutional and recurrent layers.
         skip_steps : int, optional
             Number of steps to skip in the recurrent network for efficiency. Default is 4.
         **kwargs
@@ -99,13 +99,13 @@ class TimeSeriesNetwork(SummaryNetwork):
                     activation=activation,
                     kernel_initializer=kernel_initializer,
                     padding="same",
-                    name=f"conv_{i}",
                 )
             )
             if groups is not None:
                 conv_blocks.append(keras.layers.GroupNormalization(groups=groups, name=f"group_norm_{i}"))
 
-        self.conv = keras.Sequential(conv_blocks, name="conv")
+        self.conv = keras.Sequential(conv_blocks)
+        self.dropout_layer = keras.layers.Dropout(dropout)
 
         self.recurrent = SkipRecurrentNet(
             hidden_dim=recurrent_dim,
@@ -113,12 +113,15 @@ class TimeSeriesNetwork(SummaryNetwork):
             bidirectional=bidirectional,
             input_channels=filters[-1],
             skip_steps=skip_steps,
-            dropout=dropout,
-            name="recurrent",
+            kernel_initializer=kernel_initializer,
         )
-        self.output_projector = keras.layers.Dense(units=summary_dim, name="output_projector")
+        self.output_projector = keras.layers.Dense(
+            units=summary_dim,
+            kernel_initializer=kernel_initializer,
+        )
 
         self.summary_dim = summary_dim
+        self.kernel_initializer = kernel_initializer
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         """
@@ -147,5 +150,6 @@ class TimeSeriesNetwork(SummaryNetwork):
         """
         x = self.conv(x, training=training)
         x = self.recurrent(x, training=training)
+        x = self.dropout_layer(x, training=training)
         x = self.output_projector(x)
         return x

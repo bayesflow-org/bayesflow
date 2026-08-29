@@ -19,15 +19,15 @@ It provides users with:
 <picture>
   <source media="(prefers-color-scheme: dark)" srcset="./img/bf_landing_dark.png">
   <source media="(prefers-color-scheme: light)" srcset="./img/bf_landing_light.png">
-  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="./img/bf_landing_light.png">
+  <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the workflow layer for simulation-based inference." src="./img/bf_landing_light.png">
 </picture>
 </div>
 
-With BayesFlow, you can easily train neural networks for tasks like parameter estimation, model comparison, and validation. It works for both complex simulators that cannot be expressed as parametric models (i.e., simulation-based inference) as well as traditional statistical models.
+BayesFlow is a flexible framework for Bayesian inference with deep learning—from idea to results in just a few lines of code. Train neural posterior, likelihood, ratio, or point estimators; ensemble or compose them; tackle filtering, smoothing, or arbitrary hierachies using modern generative AI. BayesFlow works with both complex simulators and traditional parametric models, with seamless PyMC integration and a rich suite of diagnostics for validating and understanding results.
 
 ## Install
 
-We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.12 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -56,10 +56,7 @@ Note that BayesFlow **will not run** without a backend.
 - [Install PyTorch](https://pytorch.org/get-started/locally/)
 - [Install TensorFlow](https://www.tensorflow.org/install)
 
-If you don't know which backend to use, we recommend JAX as it is currently the fastest backend.
-
-As of version ``2.0.7``, the backend will be set automatically. If you have multiple backends, you can manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend).
-For example, inside your Python script write:
+If you don't know which backend to use, we recommend JAX as it is currently the fastest backend. The backend is set automatically using a priority order. You can also manually [set the backend environment variable as described by keras](https://keras.io/getting_started/#configuring-your-backend). For example, inside your Python script write:
 
 ```python
 import os

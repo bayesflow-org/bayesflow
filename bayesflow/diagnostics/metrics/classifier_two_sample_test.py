@@ -103,7 +103,8 @@ def classifier_two_sample_test(
     **kwargs
         Additional keyword arguments. Recognized keyword:
             mlp_kwargs : dict
-                Dictionary of additional parameters to pass to the MLP constructor.
+                Dictionary of additional parameters to pass to the MLP constructor. The default MLP is
+                regularized with ``dropout=0.1`` and an L2 penalty of 1e-4.
 
     Returns
     -------
@@ -240,6 +241,8 @@ def build_classifier(
         mlp_kwargs = dict(mlp_kwargs)
         initializer = mlp_kwargs.pop("kernel_initializer", "he_normal")
         mlp_kwargs["kernel_initializer"] = _seed_initializer(initializer, seed_generator)
+        mlp_kwargs.setdefault("dropout", 0.1)
+        mlp_kwargs.setdefault("kernel_regularizer", keras.regularizers.L2(1e-4))
         model = keras.Sequential(
             [
                 MLP(widths=mlp_widths, **mlp_kwargs),
@@ -247,6 +250,7 @@ def build_classifier(
                     units=1,
                     activation="sigmoid",
                     kernel_initializer=keras.initializers.GlorotUniform(seed=seed_generator),
+                    kernel_regularizer=mlp_kwargs["kernel_regularizer"],
                 ),
             ]
         )

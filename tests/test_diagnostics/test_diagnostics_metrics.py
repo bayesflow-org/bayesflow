@@ -36,6 +36,10 @@ def test_metric_calibration_error(random_estimates, random_targets, var_names):
     assert out["values"].shape == (random_estimates["sigma"].shape[-1],)
     assert out["variable_names"] == ["sigma"]
 
+    # test without aggregation
+    out = bf.diagnostics.metrics.calibration_error(random_estimates, random_targets, resolution=20, aggregation=None)
+    assert out["values"].shape == (20, num_variables(random_estimates))
+
     # test quantities
     test_quantities = {
         r"$\beta_1 + \beta_2$": lambda data: np.sum(data["beta"], axis=-1),

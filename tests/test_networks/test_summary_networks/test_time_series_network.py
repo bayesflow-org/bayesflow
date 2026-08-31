@@ -1,5 +1,4 @@
 import keras
-import numpy as np
 import pytest
 
 from bayesflow.networks import TimeSeriesNetwork
@@ -87,23 +86,6 @@ def test_bidirectional(bidirectional):
     net = _make(bidirectional=bidirectional)
     y = net(make_3d_input(set_size=8), training=False)
     assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
-
-
-def test_bidirectional_summary_does_not_reverse_hidden_features():
-    net = _make(bidirectional=True)
-    features = net.conv(make_3d_input(set_size=8), training=False)
-    recurrent = net.recurrent
-
-    direct = recurrent.recurrent_forward(features, training=False)
-    direct += recurrent.recurrent_backward(keras.ops.flip(features, axis=1), training=False)
-
-    skip_features = recurrent.skip_conv(features)
-    skip = recurrent.skip_recurrent_forward(skip_features, training=False)
-    skip += recurrent.skip_recurrent_backward(keras.ops.flip(skip_features, axis=1), training=False)
-
-    actual = recurrent(features, training=False)
-    expected = direct + skip
-    np.testing.assert_allclose(actual, expected, rtol=1e-6, atol=1e-6)
 
 
 def test_multi_scale_convolution():

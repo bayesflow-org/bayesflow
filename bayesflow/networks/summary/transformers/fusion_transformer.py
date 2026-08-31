@@ -7,6 +7,7 @@ from bayesflow.utils.serialization import serializable
 
 from .transformer import Transformer
 from .attention import MultiHeadAttention
+from .helpers import Downsample
 
 
 @serializable("bayesflow.networks")
@@ -41,12 +42,19 @@ class FusionTransformer(Transformer):
         Whether to include bias terms in dense layers, by default False.
     layer_norm : bool, optional
         Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    gate_attention : bool, optional
+        Whether to gate attention residual branches, by default True.
+    gate_ffn : bool, optional
+        Whether to gate feedforward residual branches, by default True.
     template_type : str, optional
         Recurrent architecture for the template network, by default ``"lstm"``.
     bidirectional : bool, optional
         Whether the template recurrent network is bidirectional, by default True.
     template_dim : int, optional
         Hidden units of the recurrent template network, by default 128.
+    downsample : int or None, optional
+        Optional temporal downsampling factor applied before the recurrent
+        template and transformer blocks. If None, no downsampling is applied.
     """
 
     def __init__(
@@ -57,17 +65,32 @@ class FusionTransformer(Transformer):
         dropout: float = 0.05,
         expansion_factor: float = 4.0,
         glu_variant: str = "swiglu",
-        kernel_initializer: str = "glorot_uniform",
+        kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        gate_attention: bool = True,
+        gate_ffn: bool = True,
         template_type: str = "lstm",
         bidirectional: bool = True,
         template_dim: int = 128,
+        downsample: int | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
         check_lengths_same(embed_dims, num_heads)
+        if isinstance(downsample, bool) or (
+            downsample is not None and (not isinstance(downsample, int) or downsample < 1)
+        ):
+            raise ValueError(f"downsample must be None or a positive integer, got {downsample!r}.")
+        downsample = None if downsample in (None, 1) else downsample
+
+        self.downsampler = Downsample(
+            factor=downsample,
+            filters=embed_dims[0],
+            kernel_initializer=kernel_initializer,
+            use_bias=use_bias,
+        )
 
         self.attention_blocks = []
         for i in range(len(embed_dims)):
@@ -80,21 +103,30 @@ class FusionTransformer(Transformer):
                 kernel_initializer=kernel_initializer,
                 use_bias=use_bias,
                 layer_norm=layer_norm,
+                gate_attention=gate_attention,
+                gate_ffn=gate_ffn,
             )
             self.attention_blocks.append(block)
 
         template_type_upper = template_type.upper()
         if template_type_upper == "LSTM":
-            rnn = layers.LSTM(template_dim // 2 if bidirectional else template_dim, dropout=dropout)
+            rnn = layers.LSTM(template_dim)
         elif template_type_upper == "GRU":
-            rnn = layers.GRU(template_dim // 2 if bidirectional else template_dim, dropout=dropout)
+            rnn = layers.GRU(template_dim)
         else:
             raise ValueError(f"Argument `template_type` must be 'lstm' or 'gru', got '{template_type}'.")
 
-        self.template_net = layers.Bidirectional(rnn) if bidirectional else rnn
+        self.template_net = layers.Bidirectional(rnn, merge_mode="sum") if bidirectional else rnn
 
-        self.output_projector = keras.layers.Dense(units=summary_dim)
+        self.output_projector = keras.layers.Dense(
+            units=summary_dim,
+            kernel_initializer=kernel_initializer,
+        )
+        self.dropout_layer = keras.layers.Dropout(dropout)
         self.summary_dim = summary_dim
+        self.gate_attention = gate_attention
+        self.gate_ffn = gate_ffn
+        self.downsample = downsample
 
     def call(
         self, x: Tensor, training: bool = False, attention_mask: Tensor | None = None, mask: Tensor | None = None
@@ -126,7 +158,24 @@ class FusionTransformer(Transformer):
             # key-padding mask; keras broadcasts (B, 1, T) over heads and query steps
             attention_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
 
+        if self.downsample is not None and attention_mask is not None:
+            if len(attention_mask.shape) == 2:
+                attention_mask = keras.ops.expand_dims(attention_mask, axis=1)
+            if len(attention_mask.shape) != 3 or attention_mask.shape[-2] != 1:
+                raise ValueError(
+                    "Downsampled FusionTransformer only supports key-padding attention masks "
+                    f"with shape (B, T) or (B, 1, T), got {attention_mask.shape}."
+                )
+            attention_mask = self.downsampler.downsample_mask(attention_mask)
+
+        if self.downsample is not None and mask is not None:
+            recurrent_mask = keras.ops.expand_dims(keras.ops.cast(mask, "bool"), axis=1)
+            recurrent_mask = self.downsampler.downsample_mask(recurrent_mask)
+            mask = keras.ops.squeeze(recurrent_mask, axis=1)
+
+        x = self.downsampler(x)
         template = self.template_net(x, training=training, mask=mask)
+        template = self.dropout_layer(template, training=training)
 
         rep = x
         for layer in self.attention_blocks[:-1]:

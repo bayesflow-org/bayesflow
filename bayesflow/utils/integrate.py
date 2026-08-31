@@ -1157,9 +1157,7 @@ def integrate_stochastic_adaptive(
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
-    if keras.backend.backend() == "jax":
-        seed = None  # not needed, noise is generated upfront
-    seed_body = seed
+    seed_body = None if keras.backend.backend() == "jax" else seed
 
     def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))

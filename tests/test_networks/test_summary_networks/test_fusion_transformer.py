@@ -103,3 +103,28 @@ def test_custom_template_dim():
 def test_save_and_load_no_layer_norm(tmp_path):
     net = _make(layer_norm=False)
     check_save_and_load(net, make_3d_input(set_size=9), tmp_path)
+
+
+def test_downsample_output_shape():
+    net = _make(downsample=2)
+    y = net(make_3d_input(set_size=12), training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_downsample_with_padding_mask():
+    net = _make(downsample=3)
+    x = make_3d_input(set_size=12)
+    mask = keras.ops.ones((BATCH, 12), dtype="bool")
+    y = net(x, training=False, mask=mask)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_save_and_load_downsample(tmp_path):
+    net = _make(downsample=2)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+@pytest.mark.parametrize("downsample", [0, -1, 1.5, True])
+def test_invalid_downsample(downsample):
+    with pytest.raises(ValueError):
+        _make(downsample=downsample)

@@ -96,6 +96,15 @@ def test_return_sequences_false():
     y = net(x, training=False)
     assert len(keras.ops.shape(y)) == 2
     assert keras.ops.shape(y)[-1] == SUMMARY_DIM
+    assert net.summary_token.__class__.__name__ == "SummaryToken"
+
+
+def test_attention_is_ungated_by_default():
+    net = _make()
+
+    assert net.gate_attention is False
+    assert all(block.gate_attention is False for block in net.attention_blocks)
+    assert all(block.attention_scale is None for block in net.attention_blocks)
 
 
 @pytest.mark.parametrize("glu_variant", ["swiglu", "geglu"])
@@ -117,6 +126,55 @@ def test_return_sequences_true():
 def test_save_and_load_return_sequences_true(tmp_path):
     net = _make(return_sequences=True)
     check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+def test_make_attention_mask_prefers_attention_mask():
+    mask = keras.ops.ones((BATCH, 12), dtype="bool")
+    attention_mask = keras.ops.zeros((BATCH, 12), dtype="bool")
+    out = TimeSeriesTransformer.make_attention_mask(attention_mask=attention_mask, mask=mask)
+
+    assert keras.ops.shape(out) == (BATCH, 1, 12)
+    assert not np.any(keras.ops.convert_to_numpy(out))
+
+
+def test_make_attention_mask_rejects_non_sequence_mask():
+    attention_mask = keras.ops.ones((BATCH, 12, 12), dtype="bool")
+
+    with pytest.raises(ValueError):
+        TimeSeriesTransformer.make_attention_mask(attention_mask=attention_mask)
+
+
+def test_downsample_output_shape():
+    net = _make(downsample=2)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_downsample_return_sequences_true():
+    net = _make(return_sequences=True, downsample=3)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, 4, SUMMARY_DIM)
+
+
+def test_downsample_explicit_attention_mask():
+    net = _make(downsample=3)
+    x = make_3d_input(set_size=12)
+    attention_mask = keras.ops.ones((BATCH, 12), dtype="bool")
+    y = net(x, training=False, attention_mask=attention_mask)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_save_and_load_downsample(tmp_path):
+    net = _make(downsample=2)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+@pytest.mark.parametrize("downsample", [0, -1, 1.5, True])
+def test_invalid_downsample(downsample):
+    with pytest.raises(ValueError):
+        _make(downsample=downsample)
 
 
 def test_no_layer_norm():

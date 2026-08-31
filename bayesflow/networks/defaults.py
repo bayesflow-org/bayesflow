@@ -14,14 +14,24 @@ TIME_MLP_DEFAULTS = MappingProxyType(
     {
         "widths": (256, 256, 256, 256, 256),
         "time_embedding_dim": 32,
-        "fourier_scale": 30.0,
+        "fourier_scale": 16.0,
         "activation": "mish",
         "kernel_initializer": "he_normal",
         "residual": True,
-        "dropout": 0.05,
+        "dropout": 0.0,
         "norm": "layer",
         "merge": "concat",
+        "film_use_gamma": True,
+        "persistent_conditioning": True,
+    }
+)
+
+CONSISTENCY_MODEL_DEFAULTS = MappingProxyType(
+    dict(TIME_MLP_DEFAULTS)
+    | {
+        "fourier_scale": 30.0,
         "film_use_gamma": False,
+        "persistent_conditioning": False,
     }
 )
 
@@ -31,7 +41,7 @@ DIFFUSION_TRANSFORMER_DEFAULTS = MappingProxyType(
         "time_embedding_dim": 32,
         "fourier_scale": 30.0,
         "num_heads": 4,
-        "dropout": 0.05,
+        "dropout": 0.0,
         "expansion_factor": 3,
         "glu_variant": "swiglu",
         "use_bias": False,

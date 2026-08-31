@@ -39,6 +39,9 @@ class RecurrentNetwork(SummaryNetwork):
         Number of time embedding features, by default 16.
     dropout : float, optional
         Dropout rate after the recurrent stack, by default 0.05.
+    kernel_initializer : str, optional
+        Initializer for recurrent input kernels and the output projection, by
+        default ``"orthogonal"``.
     return_sequences : bool, optional
         Whether to return one summary per time step. If False, returns only the
         final recurrent output projected to ``summary_dim``.
@@ -46,14 +49,15 @@ class RecurrentNetwork(SummaryNetwork):
 
     def __init__(
         self,
-        summary_dim: int = 64,
+        summary_dim: int = 16,
         hidden_dim: int | Sequence[int] = (128, 128),
         recurrent_type: str | Sequence[str] = "gru",
         bidirectional: bool | Sequence[bool] = True,
         merge_mode: str | Sequence[str] = "sum",
-        time_axis: int | None = 0,
+        time_axis: int | None = None,
         time_embed_dim: int = 16,
         dropout: float = 0.05,
+        kernel_initializer: str = "orthogonal",
         return_sequences: bool = False,
         **kwargs,
     ):
@@ -77,16 +81,25 @@ class RecurrentNetwork(SummaryNetwork):
             strict=True,
         ):
             hidden, rnn_type, bidir, merge, layer_return_sequences = recurrent_layer_kwargs
-            recurrent_layer = find_recurrent_net(rnn_type, units=hidden, return_sequences=layer_return_sequences)
+            recurrent_layer = find_recurrent_net(
+                rnn_type,
+                units=hidden,
+                return_sequences=layer_return_sequences,
+                kernel_initializer=kernel_initializer,
+            )
 
             if bidir:
                 recurrent_layer = keras.layers.Bidirectional(recurrent_layer, merge_mode=merge)
 
             self.recurrent_layers.append(recurrent_layer)
 
-        self.summary_stats = keras.layers.Dense(summary_dim)
         self.dropout_layer = keras.layers.Dropout(dropout)
         self.time_embedding = Time2Vec(num_periodic_features=time_embed_dim - 1)
+
+        self.output_projector = keras.layers.Dense(
+            summary_dim,
+            kernel_initializer=kernel_initializer,
+        )
 
         self.summary_dim = summary_dim
         self.hidden_dim = hidden_dim
@@ -96,6 +109,7 @@ class RecurrentNetwork(SummaryNetwork):
         self.time_axis = time_axis
         self.time_embed_dim = time_embed_dim
         self.dropout = dropout
+        self.kernel_initializer = kernel_initializer
         self.return_sequences = return_sequences
 
     def build(self, time_series_shape):
@@ -110,17 +124,17 @@ class RecurrentNetwork(SummaryNetwork):
             recurrent_layer.build(recurrent_shape)
             recurrent_shape = recurrent_layer.compute_output_shape(recurrent_shape)
 
-        self.summary_stats.build(recurrent_shape)
+        self.output_projector.build(recurrent_shape)
 
     def call(self, time_series: Tensor, training: bool = False, mask: Tensor | None = None, **kwargs) -> Tensor:
-        out, time = self._split_time_series(time_series)
-        out = self.time_embedding(out, t=time)
+        out, time_vec = self._split_time_series(time_series)
+        out = self.time_embedding(out, t=time_vec)
 
         for recurrent_layer in self.recurrent_layers:
             out = recurrent_layer(out, training=training, mask=mask)
 
         out = self.dropout_layer(out, training=training)
-        return self.summary_stats(out)
+        return self.output_projector(out)
 
     def compute_output_shape(self, time_series_shape):
         if self.return_sequences:
@@ -138,6 +152,7 @@ class RecurrentNetwork(SummaryNetwork):
                 "dropout": self.dropout,
                 "time_axis": self.time_axis,
                 "time_embed_dim": self.time_embed_dim,
+                "kernel_initializer": self.kernel_initializer,
                 "return_sequences": self.return_sequences,
             }
         )

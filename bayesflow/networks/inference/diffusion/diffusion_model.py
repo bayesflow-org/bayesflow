@@ -61,9 +61,9 @@ class DiffusionModel(InferenceNetwork):
     noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type
         Noise schedule controlling the diffusion dynamics.  Can be a string
         identifier, a schedule class, or a pre-initialised schedule instance.
-        Default is ``"edm"``.
+        Default is ``"cosine"``.
     prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}
-        Output format of the model's prediction.  Default is ``"F"``.
+        Output format of the model's prediction.  Default is ``"velocity"``.
     loss_type : {'velocity', 'noise', 'F'}
         Loss function used to train the model.  Default is ``"noise"``.
     subnet_kwargs : dict[str, Any], optional
@@ -112,8 +112,8 @@ class DiffusionModel(InferenceNetwork):
         self,
         *,
         subnet: str | type | keras.Layer = "time_mlp",
-        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
-        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "F",
+        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
+        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "velocity",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, Any] = None,
         schedule_kwargs: dict[str, Any] = None,

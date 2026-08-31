@@ -16,9 +16,10 @@ def classifier_two_sample_test(
     targets: np.ndarray,
     metric: str = "accuracy",
     patience: int = 5,
-    min_epochs: int = 0,
-    max_epochs: int = 1000,
+    min_epochs: int = 5,
+    max_epochs: int = 100,
     batch_size: int = 128,
+    initial_learning_rate: float = 5e-4,
     return_metric_only: bool = True,
     cross_validation_splits: int = 5,
     validation_split: float = 0.5,
@@ -64,11 +65,14 @@ def classifier_two_sample_test(
     patience : int
         Number of epochs without improvement after which training stops. Default is 5.
     min_epochs : int
-        Number of warm-up epochs during which early stopping is disabled. Default is 0.
+        Number of warm-up epochs during which early stopping is disabled. Default is 5.
     max_epochs : int
-        Maximum number of epochs to train the classifier. Default is 1000.
+        Maximum number of epochs to train the classifier. Default is 100.
     batch_size : int
         Number of samples per batch during training. Default is 128.
+    initial_learning_rate : float
+        Peak learning rate of the default AdamW optimizer. Ignored if ``classifier`` is an already compiled model.
+        Default is 5e-4.
     return_metric_only : bool
         If True, only the validation metric is returned; otherwise, also the other statistics, classifiers
         and histories. Ignored if ``conformal`` is True or ``num_permutations`` is set. Default is True.
@@ -88,7 +92,7 @@ def classifier_two_sample_test(
     classifier : keras.Model or callable, optional
         Classifier to use instead of the default MLP: a Keras model (cloned) or a callable returning one.
         It must map (num_samples, num_variables) to a probability in [0, 1]; uncompiled models are compiled
-        with Adam, binary cross-entropy and `metric``. If it ends in a dense sigmoid unit (like the default MLP),
+        with AdamW, binary cross-entropy and `metric``. If it ends in a dense sigmoid unit (like the default MLP),
         its pre-sigmoid log-odds are used as scores for the rank-based statistics. Default is None.
     conformal : bool, optional
         Whether to additionally compute the conformal two-sample test of [3] (their budget-matched
@@ -103,7 +107,8 @@ def classifier_two_sample_test(
     **kwargs
         Additional keyword arguments. Recognized keyword:
             mlp_kwargs : dict
-                Dictionary of additional parameters to pass to the MLP constructor.
+                Dictionary of additional parameters to pass to the MLP constructor. The default MLP is
+                regularized with ``dropout=0.1``.
 
     Returns
     -------
@@ -154,6 +159,7 @@ def classifier_two_sample_test(
         "min_epochs": min_epochs,
         "max_epochs": max_epochs,
         "batch_size": batch_size,
+        "initial_learning_rate": initial_learning_rate,
         "cross_validation_splits": cross_validation_splits,
         "validation_split": validation_split,
         "early_stopping_split": early_stopping_split,
@@ -233,6 +239,7 @@ def build_classifier(
     mlp_widths: Sequence[int],
     mlp_kwargs: Mapping[str, Any],
     metric: str,
+    learning_rate: float | keras.optimizers.schedules.LearningRateSchedule,
     seed_generator: keras.random.SeedGenerator,
 ) -> keras.Model:
     """Build a freshly initialized classifier."""
@@ -240,6 +247,7 @@ def build_classifier(
         mlp_kwargs = dict(mlp_kwargs)
         initializer = mlp_kwargs.pop("kernel_initializer", "he_normal")
         mlp_kwargs["kernel_initializer"] = _seed_initializer(initializer, seed_generator)
+        mlp_kwargs.setdefault("dropout", 0.1)
         model = keras.Sequential(
             [
                 MLP(widths=mlp_widths, **mlp_kwargs),
@@ -259,7 +267,11 @@ def build_classifier(
         raise TypeError(f"classifier must be a keras.Model or a callable returning one, but found: {classifier}")
 
     if not model.compiled:
-        model.compile(optimizer="adam", loss="binary_crossentropy", metrics=[metric])
+        model.compile(
+            optimizer=keras.optimizers.AdamW(learning_rate, weight_decay=5e-3, clipnorm=1.5),
+            loss="binary_crossentropy",
+            metrics=[metric],
+        )
     _seed_random_layers(model, seed_generator)
     return model
 
@@ -276,6 +288,7 @@ def fit_splits(
     min_epochs: int,
     max_epochs: int,
     batch_size: int,
+    initial_learning_rate: float,
     cross_validation_splits: int,
     validation_split: float,
     early_stopping_split: float,
@@ -292,7 +305,19 @@ def fit_splits(
         counts = np.bincount(labels_train.astype(int), minlength=2)
         class_weight = {label: len(labels_train) / (2 * max(count, 1)) for label, count in enumerate(counts)}
 
-        model = build_classifier(classifier, mlp_widths, mlp_kwargs, metric, seed_generator)
+        num_batches = int(np.ceil(len(train_idx) * (1 - early_stopping_split) / batch_size))
+        total_steps = num_batches * max_epochs
+        warmup_steps = int(0.05 * max_epochs * num_batches)
+        decay_steps = total_steps - warmup_steps
+        learning_rate = keras.optimizers.schedules.CosineDecay(
+            initial_learning_rate=0.1 * initial_learning_rate,
+            warmup_target=initial_learning_rate,
+            warmup_steps=warmup_steps,
+            decay_steps=decay_steps,
+            alpha=0.0,
+        )
+
+        model = build_classifier(classifier, mlp_widths, mlp_kwargs, metric, learning_rate, seed_generator)
         callbacks = []
         if early_stopping_split > 0:
             callbacks.append(

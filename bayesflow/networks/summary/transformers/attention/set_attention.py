@@ -36,6 +36,12 @@ class SetAttention(keras.Layer):
         Whether to include bias terms in dense layers, by default False.
     layer_norm : bool, optional
         Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    gate_attention : bool, optional
+        Whether to gate the attention residual branch, by default True.
+    gate_ffn : bool, optional
+        Whether to gate the feedforward residual branch, by default True.
+    **kwargs
+        Additional keyword arguments passed to ``keras.Layer``.
     """
 
     def __init__(
@@ -45,9 +51,11 @@ class SetAttention(keras.Layer):
         dropout: float = 0.05,
         expansion_factor: float = 4.0,
         glu_variant: str = "swiglu",
-        kernel_initializer: str = "glorot_uniform",
+        kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        gate_attention: bool = True,
+        gate_ffn: bool = True,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -60,6 +68,8 @@ class SetAttention(keras.Layer):
         self.kernel_initializer = kernel_initializer
         self.use_bias = use_bias
         self.layer_norm = layer_norm
+        self.gate_attention = gate_attention
+        self.gate_ffn = gate_ffn
 
         self.mab = MultiHeadAttention(
             embed_dim=embed_dim,
@@ -70,6 +80,8 @@ class SetAttention(keras.Layer):
             kernel_initializer=kernel_initializer,
             use_bias=use_bias,
             layer_norm=layer_norm,
+            gate_attention=gate_attention,
+            gate_ffn=gate_ffn,
         )
 
     def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
@@ -110,6 +122,8 @@ class SetAttention(keras.Layer):
                 "kernel_initializer": self.kernel_initializer,
                 "use_bias": self.use_bias,
                 "layer_norm": self.layer_norm,
+                "gate_attention": self.gate_attention,
+                "gate_ffn": self.gate_ffn,
             }
         )
 

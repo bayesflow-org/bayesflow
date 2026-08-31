@@ -1,5 +1,5 @@
-import pytest
 import keras
+import pytest
 
 from bayesflow.networks import TimeSeriesNetwork
 
@@ -144,3 +144,19 @@ def test_custom_activation():
     net = _make(activation="relu")
     y = net(make_3d_input(set_size=8), training=False)
     assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_kernel_initializer_propagates():
+    net = _make(kernel_initializer="he_normal", bidirectional=True)
+    net(make_3d_input(set_size=8), training=False)
+
+    initialized_layers = (
+        net.conv.layers[0],
+        net.recurrent.skip_conv,
+        net.recurrent.recurrent_forward,
+        net.recurrent.recurrent_backward,
+        net.recurrent.skip_recurrent_forward,
+        net.recurrent.skip_recurrent_backward,
+        net.output_projector,
+    )
+    assert all(type(layer.kernel_initializer).__name__ == "HeNormal" for layer in initialized_layers)

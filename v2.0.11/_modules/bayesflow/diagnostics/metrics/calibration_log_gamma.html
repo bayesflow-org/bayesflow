@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/metrics/calibration_log_gamma';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -500,7 +500,7 @@
     <span class="n">num_null_draws</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="n">quantile</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the log gamma discrepancy statistic to test posterior calibration,</span>
 <span class="sd">    see [1] for additional information.</span>
 <span class="sd">    Log gamma is log(gamma/gamma_null), where gamma_null is the 5th percentile of the</span>
@@ -512,8 +512,8 @@
 
 <span class="sd">    [1]  Martin Modrák. Angie H. Moon. Shinyoung Kim. Paul Bürkner. Niko Huurre.</span>
 <span class="sd">    Kateřina Faltejsková. Andrew Gelman. Aki Vehtari.</span>
-<span class="sd">    &quot;Simulation-Based Calibration Checking for Bayesian Computation:</span>
-<span class="sd">    The Choice of Test Quantities Shapes Sensitivity.&quot;</span>
+<span class="sd">    "Simulation-Based Calibration Checking for Bayesian Computation:</span>
+<span class="sd">    The Choice of Test Quantities Shapes Sensitivity."</span>
 <span class="sd">    Bayesian Anal. 20 (2) 461 - 488, June 2025. https://doi.org/10.1214/23-BA1404</span>
 
 <span class="sd">    Parameters</span>
@@ -548,13 +548,13 @@
 <span class="sd">    result : dict</span>
 <span class="sd">        Dictionary containing:</span>
 
-<span class="sd">        - &quot;values&quot; : float or np.ndarray</span>
+<span class="sd">        - "values" : float or np.ndarray</span>
 <span class="sd">            The log gamma values per variable</span>
-<span class="sd">        - &quot;metric_name&quot; : str</span>
-<span class="sd">            The name of the metric (&quot;Log Gamma&quot;).</span>
-<span class="sd">        - &quot;variable_names&quot; : str</span>
+<span class="sd">        - "metric_name" : str</span>
+<span class="sd">            The name of the metric ("Log Gamma").</span>
+<span class="sd">        - "variable_names" : str</span>
 <span class="sd">            The (inferred) variable names.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
     <span class="k">if</span> <span class="n">test_quantities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -565,10 +565,10 @@
             <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
             <span class="n">test_quantities</span><span class="o">=</span><span class="n">test_quantities</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
-        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_keys&quot;</span><span class="p">]</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">]</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_keys"</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">]</span>
 
     <span class="n">samples</span> <span class="o">=</span> <span class="n">dicts_to_arrays</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
@@ -577,11 +577,11 @@
         <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">num_ranks</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">num_post_draws</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="n">num_ranks</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">num_post_draws</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
     <span class="c1"># rank statistics</span>
-    <span class="n">ranks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ranks</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
     <span class="c1"># null distribution and threshold</span>
     <span class="n">null_distribution</span> <span class="o">=</span> <span class="n">gamma_null_distribution</span><span class="p">(</span><span class="n">num_ranks</span><span class="p">,</span> <span class="n">num_post_draws</span><span class="p">,</span> <span class="n">num_null_draws</span><span class="p">)</span>
@@ -595,9 +595,9 @@
         <span class="n">log_gammas</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">gamma</span> <span class="o">/</span> <span class="n">null_quantile</span><span class="p">)</span>
 
     <span class="n">output</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">log_gammas</span><span class="p">,</span>
-        <span class="s2">&quot;metric_name&quot;</span><span class="p">:</span> <span class="s2">&quot;Log Gamma&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;variable_names&quot;</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">variable_names</span><span class="p">,</span>
+        <span class="s2">"values"</span><span class="p">:</span> <span class="n">log_gammas</span><span class="p">,</span>
+        <span class="s2">"metric_name"</span><span class="p">:</span> <span class="s2">"Log Gamma"</span><span class="p">,</span>
+        <span class="s2">"variable_names"</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">variable_names</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="k">return</span> <span class="n">output</span></div>
@@ -605,7 +605,7 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gamma_null_distribution</span><span class="p">(</span><span class="n">num_ranks</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">num_post_draws</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span> <span class="n">num_null_draws</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes the distribution of expected gamma values under uniformity of ranks.</span>
 
 <span class="sd">    Parameters</span>
@@ -621,7 +621,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    result : np.ndarray</span>
 <span class="sd">        Array of shape (num_null_draws,) containing gamma values under uniformity of ranks.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">z_i</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_post_draws</span> <span class="o">+</span> <span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="n">num_post_draws</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">gamma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="n">num_null_draws</span><span class="p">)</span>
 
@@ -638,15 +638,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gamma_discrepancy</span><span class="p">(</span><span class="n">ranks</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span> <span class="n">num_post_draws</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">100</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Quantifies deviation from uniformity by the likelihood of observing the</span>
 <span class="sd">    most extreme point on the empirical CDF of the given rank distribution</span>
 <span class="sd">    according to [1] (equation 7).</span>
 
 <span class="sd">    [1]  Martin Modrák. Angie H. Moon. Shinyoung Kim. Paul Bürkner. Niko Huurre.</span>
 <span class="sd">    Kateřina Faltejsková. Andrew Gelman. Aki Vehtari.</span>
-<span class="sd">    &quot;Simulation-Based Calibration Checking for Bayesian Computation:</span>
-<span class="sd">    The Choice of Test Quantities Shapes Sensitivity.&quot;</span>
+<span class="sd">    "Simulation-Based Calibration Checking for Bayesian Computation:</span>
+<span class="sd">    The Choice of Test Quantities Shapes Sensitivity."</span>
 <span class="sd">    Bayesian Anal. 20 (2) 461 - 488, June 2025. https://doi.org/10.1214/23-BA1404</span>
 
 <span class="sd">    Parameters</span>
@@ -660,7 +660,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    result : float</span>
 <span class="sd">        Gamma discrepancy values for each parameter.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">num_ranks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">ranks</span><span class="p">)</span>
 
     <span class="c1"># observed count of ranks smaller than i</span>
@@ -704,8 +704,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -739,7 +739,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

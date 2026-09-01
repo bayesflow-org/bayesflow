@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/adapters/transforms/filter_transform';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,13 +499,13 @@
 
 <div class="viewcode-block" id="FilterTransform">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.FilterTransform.html#bayesflow.adapters.transforms.FilterTransform">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.adapters&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.adapters"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FilterTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implements a transform that applies a different transform on a subset of the data.</span>
 
 <span class="sd">    Used by other transforms and base adapter class.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -537,29 +537,29 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">e</span> <span class="o">:=</span> <span class="bp">self</span><span class="o">.</span><span class="n">extra_repr</span><span class="p">():</span>
-            <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">transform_constructor</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">)&quot;</span>
+            <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">transform_constructor</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="n">e</span><span class="si">}</span><span class="s2">)"</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_constructor</span><span class="o">.</span><span class="vm">__name__</span>
 
 <div class="viewcode-block" id="FilterTransform.extra_repr">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.FilterTransform.html#bayesflow.adapters.transforms.FilterTransform.extra_repr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="n">result</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="s2">""</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;predicate=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"predicate=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">"</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">+=</span> <span class="s2">&quot;, &quot;</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="s2">", "</span>
 
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;include=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"include=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="si">!r}</span><span class="s2">"</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">result</span><span class="p">:</span>
-                <span class="n">result</span> <span class="o">+=</span> <span class="s2">&quot;, &quot;</span>
+                <span class="n">result</span> <span class="o">+=</span> <span class="s2">", "</span>
 
-            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;exclude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exclude</span><span class="si">!r}</span><span class="s2">&quot;</span>
+            <span class="n">result</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">"exclude=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">exclude</span><span class="si">!r}</span><span class="s2">"</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -568,11 +568,11 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.FilterTransform.html#bayesflow.adapters.transforms.FilterTransform.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;include&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="p">,</span>
-            <span class="s2">&quot;transform_constructor&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_constructor</span><span class="p">,</span>
-            <span class="s2">&quot;predicate&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">,</span>
-            <span class="s2">&quot;exclude&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude</span><span class="p">,</span>
-            <span class="s2">&quot;transform_map&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_map</span><span class="p">,</span>
+            <span class="s2">"include"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="p">,</span>
+            <span class="s2">"transform_constructor"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_constructor</span><span class="p">,</span>
+            <span class="s2">"predicate"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">predicate</span><span class="p">,</span>
+            <span class="s2">"exclude"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">exclude</span><span class="p">,</span>
+            <span class="s2">"transform_map"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_map</span><span class="p">,</span>
             <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
@@ -586,7 +586,7 @@
         <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">missing_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">missing_keys</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_transform</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -603,7 +603,7 @@
         <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">missing_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">missing_keys</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_transform</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
@@ -667,7 +667,7 @@
         <span class="k">if</span> <span class="n">strict</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">include</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">missing_keys</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">include</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
             <span class="k">if</span> <span class="n">missing_keys</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Missing keys from include list: </span><span class="si">{</span><span class="n">missing_keys</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_should_transform</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">value</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
@@ -712,8 +712,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -747,7 +747,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/summary/convolutional/convolutional_network';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,9 +499,9 @@
 
 <div class="viewcode-block" id="ConvolutionalNetwork">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.ConvolutionalNetwork.html#bayesflow.networks.summary.ConvolutionalNetwork">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ConvolutionalNetwork</span><span class="p">(</span><span class="n">SummaryNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A convolutional summary network with residual blocks.</span>
+<span class="w">    </span><span class="sd">"""A convolutional summary network with residual blocks.</span>
 
 <span class="sd">    Uses a ResNet-style architecture [1]_ to compress 2D spatial inputs</span>
 <span class="sd">    (e.g., images) into fixed-dimensional summary statistics.</span>
@@ -522,8 +522,8 @@
 <span class="sd">    downsample_stage : bool or Sequence[bool], optional</span>
 <span class="sd">        Whether to spatially downsample after each stage. ``True`` is broadcast</span>
 <span class="sd">        to every stage. Default is ``True``.</span>
-<span class="sd">    norm : {&quot;layer&quot;, &quot;group&quot;, &quot;batch&quot;} or None, optional</span>
-<span class="sd">        Normalization strategy inside residual blocks. Default is ``&quot;layer&quot;``.</span>
+<span class="sd">    norm : {"layer", "group", "batch"} or None, optional</span>
+<span class="sd">        Normalization strategy inside residual blocks. Default is ``"layer"``.</span>
 <span class="sd">    residual: bool, optional</span>
 <span class="sd">        Whether to include skip connections around each double convolution block.</span>
 <span class="sd">        Highly recommended for deeper networks. Default is ``True``.</span>
@@ -532,14 +532,14 @@
 <span class="sd">    dropout : float, optional</span>
 <span class="sd">        Dropout rate applied inside each residual block. Default is 0.0.</span>
 <span class="sd">    activation : str, optional</span>
-<span class="sd">        Activation function name. Default is ``&quot;mish&quot;``.</span>
-<span class="sd">    down_mode : {&quot;max_pool&quot;, &quot;avg_pool&quot;, &quot;conv&quot;}, optional</span>
-<span class="sd">        Spatial downsampling method. Default is ``&quot;avg_pool&quot;``.</span>
-<span class="sd">    pool_head : {&quot;flatten&quot;, &quot;global_avg&quot;, &quot;global_max&quot;, &quot;attention&quot;} or keras.Layer, optional</span>
+<span class="sd">        Activation function name. Default is ``"mish"``.</span>
+<span class="sd">    down_mode : {"max_pool", "avg_pool", "conv"}, optional</span>
+<span class="sd">        Spatial downsampling method. Default is ``"avg_pool"``.</span>
+<span class="sd">    pool_head : {"flatten", "global_avg", "global_max", "attention"} or keras.Layer, optional</span>
 <span class="sd">        Spatial-to-vector reduction before the dense head. Default is</span>
-<span class="sd">        ``&quot;global_avg&quot;``.</span>
+<span class="sd">        ``"global_avg"``.</span>
 <span class="sd">    pool_num_heads : int, optional</span>
-<span class="sd">        Number of attention heads when ``pool_head=&quot;attention&quot;``. Default is 4.</span>
+<span class="sd">        Number of attention heads when ``pool_head="attention"``. Default is 4.</span>
 <span class="sd">    hidden : int or None, optional</span>
 <span class="sd">        Width of the penultimate dense layer. Defaults to ``widths[-1]``.</span>
 <span class="sd">    **kwargs</span>
@@ -550,7 +550,7 @@
 <span class="sd">    .. [1] He, K., Zhang, X., Ren, S., &amp; Sun, J. (2016). Deep residual</span>
 <span class="sd">       learning for image recognition. *Proceedings of the IEEE Conference on</span>
 <span class="sd">       Computer Vision and Pattern Recognition*, 770-778. arXiv:1512.03385</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -558,23 +558,23 @@
         <span class="n">widths</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
         <span class="n">blocks_per_stage</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span>
         <span class="n">downsample_stage</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;layer&quot;</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span> <span class="s2">&quot;batch&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span>
+        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"layer"</span><span class="p">,</span> <span class="s2">"group"</span><span class="p">,</span> <span class="s2">"batch"</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"layer"</span><span class="p">,</span>
         <span class="n">residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="n">down_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;max_pool&quot;</span><span class="p">,</span> <span class="s2">&quot;avg_pool&quot;</span><span class="p">,</span> <span class="s2">&quot;conv&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;avg_pool&quot;</span><span class="p">,</span>
-        <span class="n">pool_head</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;flatten&quot;</span><span class="p">,</span> <span class="s2">&quot;global_avg&quot;</span><span class="p">,</span> <span class="s2">&quot;global_max&quot;</span><span class="p">,</span> <span class="s2">&quot;attention&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;global_avg&quot;</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="n">down_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"max_pool"</span><span class="p">,</span> <span class="s2">"avg_pool"</span><span class="p">,</span> <span class="s2">"conv"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"avg_pool"</span><span class="p">,</span>
+        <span class="n">pool_head</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"flatten"</span><span class="p">,</span> <span class="s2">"global_avg"</span><span class="p">,</span> <span class="s2">"global_max"</span><span class="p">,</span> <span class="s2">"attention"</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">"global_avg"</span><span class="p">,</span>
         <span class="n">pool_num_heads</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">norm</span> <span class="o">!=</span> <span class="s2">&quot;batch&quot;</span> <span class="ow">and</span> <span class="n">activation</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;relu&quot;</span><span class="p">,</span> <span class="s2">&quot;relu6&quot;</span><span class="p">,</span> <span class="s2">&quot;leaky_relu&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">norm</span> <span class="o">!=</span> <span class="s2">"batch"</span> <span class="ow">and</span> <span class="n">activation</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"relu"</span><span class="p">,</span> <span class="s2">"relu6"</span><span class="p">,</span> <span class="s2">"leaky_relu"</span><span class="p">):</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Using ReLU-family activations with pre-activation ordering of </span><span class="si">{</span><span class="n">norm</span><span class="si">}</span><span class="s2"> norm &quot;</span>
-                <span class="s2">&quot;can suppress negative inputs. Consider using &#39;swish&#39; or &#39;mish&#39;, &quot;</span>
-                <span class="s2">&quot;or set norm=&#39;batch&#39; for post-activation ordering.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Using ReLU-family activations with pre-activation ordering of </span><span class="si">{</span><span class="n">norm</span><span class="si">}</span><span class="s2"> norm "</span>
+                <span class="s2">"can suppress negative inputs. Consider using 'swish' or 'mish', "</span>
+                <span class="s2">"or set norm='batch' for post-activation ordering."</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
@@ -619,14 +619,14 @@
         <span class="p">)</span>
 
         <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="p">:</span>
-            <span class="k">case</span> <span class="s2">&quot;max_pool&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"max_pool"</span><span class="p">:</span>
                 <span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">MaxPool2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;avg_pool&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"avg_pool"</span><span class="p">:</span>
                 <span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">AveragePooling2D</span><span class="p">(</span><span class="n">pool_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
-            <span class="k">case</span> <span class="s2">&quot;conv&quot;</span><span class="p">:</span>
-                <span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">)</span>
+            <span class="k">case</span> <span class="s2">"conv"</span><span class="p">:</span>
+                <span class="n">pool</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">strides</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="s2">"same"</span><span class="p">)</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported downsampling mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported downsampling mode: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="p">[</span><span class="n">pad</span><span class="p">,</span> <span class="n">pool</span><span class="p">]</span>
 
@@ -639,13 +639,13 @@
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
             <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="p">]</span>
         <span class="k">match</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="p">:</span>
-            <span class="k">case</span> <span class="s2">&quot;flatten&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"flatten"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Flatten</span><span class="p">()]</span>
-            <span class="k">case</span> <span class="s2">&quot;global_avg&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"global_avg"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GlobalAveragePooling2D</span><span class="p">()]</span>
-            <span class="k">case</span> <span class="s2">&quot;global_max&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"global_max"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GlobalMaxPooling2D</span><span class="p">()]</span>
-            <span class="k">case</span> <span class="s2">&quot;attention&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="s2">"attention"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="p">[</span>
                     <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])),</span>
                     <span class="n">PoolingByMultiHeadAttention</span><span class="p">(</span>
@@ -653,7 +653,7 @@
                     <span class="p">),</span>
                 <span class="p">]</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unsupported pooling head: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unsupported pooling head: </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
 <div class="viewcode-block" id="ConvolutionalNetwork.call">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.ConvolutionalNetwork.html#bayesflow.networks.summary.ConvolutionalNetwork.call">[docs]</a>
@@ -668,18 +668,18 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;summary_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">,</span>
-            <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
-            <span class="s2">&quot;blocks_per_stage&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks_per_stage</span><span class="p">,</span>
-            <span class="s2">&quot;downsample_stage&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample_stage</span><span class="p">,</span>
-            <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
-            <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
-            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
-            <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
-            <span class="s2">&quot;down_mode&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="p">,</span>
-            <span class="s2">&quot;pool_head&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="p">,</span>
-            <span class="s2">&quot;pool_num_heads&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_num_heads</span><span class="p">,</span>
+            <span class="s2">"summary_dim"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span><span class="p">,</span>
+            <span class="s2">"widths"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
+            <span class="s2">"blocks_per_stage"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">blocks_per_stage</span><span class="p">,</span>
+            <span class="s2">"downsample_stage"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">downsample_stage</span><span class="p">,</span>
+            <span class="s2">"norm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
+            <span class="s2">"residual"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
+            <span class="s2">"groups"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
+            <span class="s2">"dropout"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="s2">"activation"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+            <span class="s2">"down_mode"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="p">,</span>
+            <span class="s2">"pool_head"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_head</span><span class="p">,</span>
+            <span class="s2">"pool_num_heads"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">pool_num_heads</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 </div>
@@ -713,8 +713,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -748,7 +748,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/From_BayesFlow_1.1_to_2.0';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,9 +499,9 @@
 
 <span class="c1"># ensure the backend is set</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-    <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+<span class="k">if</span> <span class="s2">"KERAS_BACKEND"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="c1"># set this to "torch", "tensorflow", or "jax"</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"tensorflow"</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
@@ -556,8 +556,8 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim_draws</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">sim_draws</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">sim_draws</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sim_draws</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">sim_draws</span><span class="p">[</span><span class="s2">"theta"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -579,11 +579,11 @@
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="s2">&quot;n_obs&quot;</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s2">&quot;theta&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="n">from_dtype</span><span class="o">=</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="n">to_dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;n_obs&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="s2">"n_obs"</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s2">"theta"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="n">from_dtype</span><span class="o">=</span><span class="s2">"float64"</span><span class="p">,</span> <span class="n">to_dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"theta"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"n_obs"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -785,8 +785,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -820,7 +820,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

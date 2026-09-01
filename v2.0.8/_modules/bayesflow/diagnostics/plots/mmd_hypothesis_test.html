@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/mmd_hypothesis_test';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,29 +494,29 @@
     <span class="n">mmd_null</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">mmd_observed</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">alpha_level</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-    <span class="n">null_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
-    <span class="n">observed_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
-    <span class="n">alpha_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;orange&quot;</span><span class="p">,</span>
+    <span class="n">null_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"#132a70"</span><span class="p">,</span>
+    <span class="n">observed_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"red"</span><span class="p">,</span>
+    <span class="n">alpha_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"orange"</span><span class="p">,</span>
     <span class="n">truncate_v_lines_at_kde</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="n">x_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">x_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">bw_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.5</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    mmd_null       : np.ndarray</span>
-<span class="sd">        The samples from the MMD sampling distribution under the null hypothesis &quot;the model is well-specified&quot;</span>
+<span class="sd">        The samples from the MMD sampling distribution under the null hypothesis "the model is well-specified"</span>
 <span class="sd">    mmd_observed   : float</span>
 <span class="sd">        The observed MMD value</span>
 <span class="sd">    alpha_level    : float, optional, default: 0.05</span>
 <span class="sd">        The rejection probability (type I error)</span>
 <span class="sd">    null_color     : str or tuple, optional, default: (0.16407, 0.020171, 0.577478)</span>
 <span class="sd">        The color of the H0 sampling distribution</span>
-<span class="sd">    observed_color : str or tuple, optional, default: &quot;red&quot;</span>
+<span class="sd">    observed_color : str or tuple, optional, default: "red"</span>
 <span class="sd">        The color of the observed MMD</span>
-<span class="sd">    alpha_color    : str or tuple, optional, default: &quot;orange&quot;</span>
+<span class="sd">    alpha_color    : str or tuple, optional, default: "orange"</span>
 <span class="sd">        The color of the rejection area</span>
 <span class="sd">    truncate_v_lines_at_kde: bool, optional, default: False</span>
 <span class="sd">        true: cut off the vlines at the kde</span>
@@ -531,7 +531,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    f : plt.Figure - the figure instance for optional saving</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">draw_v_line_to_kde</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">kde_object</span><span class="p">,</span> <span class="n">color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="n">kde_x</span><span class="p">,</span> <span class="n">kde_y</span> <span class="o">=</span> <span class="n">kde_object</span><span class="o">.</span><span class="n">lines</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">get_data</span><span class="p">()</span>
@@ -551,7 +551,7 @@
     <span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">mmd_null</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.12</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">null_color</span><span class="p">,</span> <span class="n">bw_adjust</span><span class="o">=</span><span class="n">bw_factor</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">truncate_v_lines_at_kde</span><span class="p">:</span>
-        <span class="n">draw_v_line_to_kde</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">mmd_observed</span><span class="p">,</span> <span class="n">kde_object</span><span class="o">=</span><span class="n">kde</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">observed_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Observed data&quot;</span><span class="p">)</span>
+        <span class="n">draw_v_line_to_kde</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">mmd_observed</span><span class="p">,</span> <span class="n">kde_object</span><span class="o">=</span><span class="n">kde</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">observed_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">"Observed data"</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span>
             <span class="n">x</span><span class="o">=</span><span class="n">mmd_observed</span><span class="p">,</span>
@@ -559,12 +559,12 @@
             <span class="n">ymax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">],</span>
             <span class="n">color</span><span class="o">=</span><span class="n">observed_color</span><span class="p">,</span>
             <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-            <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;Observed data&quot;</span><span class="p">,</span>
+            <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">"Observed data"</span><span class="p">,</span>
         <span class="p">)</span>
 
     <span class="n">mmd_critical</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">mmd_null</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">alpha_level</span><span class="p">)</span>
     <span class="n">fill_area_under_kde</span><span class="p">(</span>
-        <span class="n">kde</span><span class="p">,</span> <span class="n">mmd_critical</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">alpha_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">alpha_level</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">% rejection area&quot;</span>
+        <span class="n">kde</span><span class="p">,</span> <span class="n">mmd_critical</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">alpha_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">alpha_level</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">% rejection area"</span>
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">truncate_v_lines_at_kde</span><span class="p">:</span>
@@ -572,13 +572,13 @@
     <span class="k">else</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">vlines</span><span class="p">(</span><span class="n">x</span><span class="o">=</span><span class="n">mmd_critical</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">alpha_color</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">ymin</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ymax</span><span class="o">=</span><span class="n">plt</span><span class="o">.</span><span class="n">gca</span><span class="p">()</span><span class="o">.</span><span class="n">get_ylim</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">mmd_null</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">null_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$H_0$&quot;</span><span class="p">,</span> <span class="n">bw_adjust</span><span class="o">=</span><span class="n">bw_factor</span><span class="p">)</span>
+    <span class="n">sns</span><span class="o">.</span><span class="n">kdeplot</span><span class="p">(</span><span class="n">mmd_null</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">null_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">r</span><span class="s2">"$H_0$"</span><span class="p">,</span> <span class="n">bw_adjust</span><span class="o">=</span><span class="n">bw_factor</span><span class="p">)</span>
 
-    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;MMD&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"MMD"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">""</span><span class="p">)</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">([])</span>
     <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="n">x_min</span><span class="p">,</span> <span class="n">x_max</span><span class="p">)</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">&quot;major&quot;</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="s2">"both"</span><span class="p">,</span> <span class="n">which</span><span class="o">=</span><span class="s2">"major"</span><span class="p">,</span> <span class="n">labelsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
 
     <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">()</span>
@@ -614,8 +614,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -649,7 +649,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

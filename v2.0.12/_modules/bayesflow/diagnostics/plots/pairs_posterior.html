@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/pairs_posterior';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -504,22 +504,22 @@
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">3.0</span><span class="p">,</span>
-    <span class="n">post_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
-    <span class="n">prior_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;gray&quot;</span><span class="p">,</span>
-    <span class="n">target_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">&quot;red&quot;</span><span class="p">,</span>
+    <span class="n">post_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"#132a70"</span><span class="p">,</span>
+    <span class="n">prior_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"gray"</span><span class="p">,</span>
+    <span class="n">target_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="s2">"red"</span><span class="p">,</span>
     <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
     <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
     <span class="n">target_markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">40</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">legend_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
-    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;center left&quot;</span><span class="p">,</span>
+    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"center left"</span><span class="p">,</span>
     <span class="n">legend_anchor</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">),</span>
     <span class="n">legend_ncol</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
     <span class="n">place_legend_below</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">sns</span><span class="o">.</span><span class="n">PairGrid</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a bivariate pair plot given posterior draws and optional prior or prior draws.</span>
+<span class="w">    </span><span class="sd">"""Generates a bivariate pair plot given posterior draws and optional prior or prior draws.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -549,14 +549,14 @@
 <span class="sd">        will be ignored and overwritten by presets.</span>
 <span class="sd">    legend_fontsize   : int, optional, default: 16</span>
 <span class="sd">        The font size of the legend text</span>
-<span class="sd">    legend_location  : str, optional, default: &quot;center left&quot;</span>
+<span class="sd">    legend_location  : str, optional, default: "center left"</span>
 <span class="sd">        Anchoring location of the legend bounding box to position the legends</span>
 <span class="sd">        globally</span>
 <span class="sd">    legend_anchor  : tuple, optional, default: (1, 0.5)</span>
 <span class="sd">        Anchor coordinate to globally position the legends</span>
 <span class="sd">    legend_ncol  : int, optional, default: 1</span>
 <span class="sd">        Number of legend columns</span>
-<span class="sd">    post_color        : str, optional, default: &#39;#132a70&#39;</span>
+<span class="sd">    post_color        : str, optional, default: '#132a70'</span>
 <span class="sd">        The color for the posterior histograms and KDEs</span>
 <span class="sd">    prior_color      : str, optional, default: gray</span>
 <span class="sd">        The color for the optional prior histograms and KDEs</span>
@@ -580,7 +580,7 @@
 <span class="sd">    ------</span>
 <span class="sd">    AssertionError</span>
 <span class="sd">        If the shape of posterior_draws is not 2-dimensional.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">dicts_to_arrays</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
@@ -593,9 +593,9 @@
 
     <span class="c1"># dicts_to_arrays will keep the dataset axis even if it is of length 1</span>
     <span class="c1"># however, pairs plotting requires the dataset axis to be removed</span>
-    <span class="n">estimates_shape</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+    <span class="n">estimates_shape</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimates_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">estimates_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c1"># plot posterior first</span>
     <span class="n">g</span> <span class="o">=</span> <span class="n">_pairs_samples</span><span class="p">(</span>
@@ -616,7 +616,7 @@
         <span class="n">place_legend_below</span><span class="o">=</span><span class="n">place_legend_below</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">targets</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;targets&quot;</span><span class="p">)</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"targets"</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># Ensure targets is at least 2D</span>
         <span class="k">if</span> <span class="n">targets</span><span class="o">.</span><span class="n">ndim</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
@@ -624,7 +624,7 @@
 
         <span class="c1"># Create DataFrame with variable names as columns</span>
         <span class="n">g</span><span class="o">.</span><span class="n">data</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">columns</span><span class="o">=</span><span class="n">targets</span><span class="o">.</span><span class="n">variable_names</span><span class="p">)</span>
-        <span class="n">g</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;_source&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;True Parameter&quot;</span>
+        <span class="n">g</span><span class="o">.</span><span class="n">data</span><span class="p">[</span><span class="s2">"_source"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"True Parameter"</span>
         <span class="n">g</span><span class="o">.</span><span class="n">map_diag</span><span class="p">(</span><span class="n">plot_true_params_as_lines</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">)</span>
         <span class="n">g</span><span class="o">.</span><span class="n">map_offdiag</span><span class="p">(</span><span class="n">plot_true_params_as_points</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">target_color</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="n">target_markersize</span><span class="p">)</span>
 
@@ -648,15 +648,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params_as_lines</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">hue</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom function to plot true parameters on the diagonal as dashed lines.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Custom function to plot true parameters on the diagonal as dashed lines."""</span>
     <span class="c1"># hue needs to be added to handle the case of plotting both posterior and prior</span>
     <span class="n">param</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>  <span class="c1"># Get the single true value for the diagonal</span>
     <span class="c1"># only plot on the diagonal a vertical line for the true parameter</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;--&quot;</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"--"</span><span class="p">)</span>
 
 
-<span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params_as_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Custom function to plot true parameters on the off-diagonal as a single point.&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_true_params_as_points</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Custom function to plot true parameters on the off-diagonal as a single point."""</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">y</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="o">.</span><span class="n">iloc</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="n">marker</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
@@ -688,8 +688,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -723,7 +723,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

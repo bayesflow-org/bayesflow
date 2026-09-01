@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/experimental/cif/cif';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,9 +495,9 @@
 <span class="c1"># disable module check, use potential module after moving from experimental</span>
 <div class="viewcode-block" id="CIF">
 <a class="viewcode-back" href="../../../../api/bayesflow.experimental.CIF.html#bayesflow.experimental.CIF">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CIF</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;(IN) Implements a continuously indexed flow (CIF) with a `CouplingFlow`</span>
+<span class="w">    </span><span class="sd">"""(IN) Implements a continuously indexed flow (CIF) with a `CouplingFlow`</span>
 <span class="sd">    bijection and `ConditionalGaussian` distributions p and q. Improves on</span>
 <span class="sd">    eliminating leaky sampling found topologically in normalizing flows.</span>
 <span class="sd">    Built in reference to [1].</span>
@@ -506,10 +506,10 @@
 <span class="sd">    Relaxing Bijectivity Constraints with Continuously Indexed Normalising</span>
 <span class="sd">    Flows.</span>
 <span class="sd">    arXiv:1909.13833.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pq_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pq_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span> <span class="n">pq_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;swish&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an instance of a `CIF` with configurable</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">pq_depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="n">pq_width</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span> <span class="n">pq_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"swish"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">"""Creates an instance of a `CIF` with configurable</span>
 <span class="sd">        `ConditionalGaussian` distributions p and q, each containing MLP</span>
 <span class="sd">        networks</span>
 
@@ -519,11 +519,11 @@
 <span class="sd">            The number of MLP hidden layers (minimum: 1)</span>
 <span class="sd">        pq_width: int, optional, default: 128</span>
 <span class="sd">            The dimensionality of the MLP hidden layers</span>
-<span class="sd">        pq_activation: str, optional, default: &#39;tanh&#39;</span>
+<span class="sd">        pq_activation: str, optional, default: 'tanh'</span>
 <span class="sd">            The MLP activation function</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_distribution</span><span class="o">=</span><span class="s2">"normal"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">bijection</span> <span class="o">=</span> <span class="n">CouplingFlow</span><span class="p">()</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p_dist</span> <span class="o">=</span> <span class="n">ConditionalGaussian</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="n">pq_depth</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">pq_width</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">pq_activation</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q_dist</span> <span class="o">=</span> <span class="n">ConditionalGaussian</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="n">pq_depth</span><span class="p">,</span> <span class="n">width</span><span class="o">=</span><span class="n">pq_width</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="n">pq_activation</span><span class="p">)</span>
@@ -589,14 +589,14 @@
 
 <div class="viewcode-block" id="CIF.compute_metrics">
 <a class="viewcode-back" href="../../../../api/bayesflow.experimental.CIF.html#bayesflow.experimental.CIF.compute_metrics">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="n">base_metrics</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
 
-        <span class="n">elbo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+        <span class="n">elbo</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">)</span>
 
         <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">elbo</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">base_metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="n">base_metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
@@ -628,8 +628,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -663,7 +663,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

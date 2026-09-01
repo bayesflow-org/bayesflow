@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/SIR_Posterior_Estimation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -541,8 +541,8 @@
 Defaulting to JAX.
 To override, set the KERAS_BACKEND environment variable before importing bayesflow.
 See: https://keras.io/getting_started/#configuring-your-backend
-INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
-INFO:bayesflow:Using backend &#39;jax&#39;
+INFO:jax._src.xla_bridge:Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend 'jax'
 </pre></div>
 </div>
 </div>
@@ -605,14 +605,14 @@ Finally, we will also treat the number of initially infected individuals, <span 
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generates a random draw from the joint prior.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Generates a random draw from the joint prior."""</span>
 
     <span class="n">lambd</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.4</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">mu</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
     <span class="n">D</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">8</span><span class="p">),</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.2</span><span class="p">)</span>
     <span class="n">I0</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">gamma</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mi">20</span><span class="p">)</span>
     <span class="n">psi</span> <span class="o">=</span> <span class="n">RNG</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;lambd&quot;</span><span class="p">:</span> <span class="n">lambd</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">:</span> <span class="n">D</span><span class="p">,</span> <span class="s2">&quot;I0&quot;</span><span class="p">:</span> <span class="n">I0</span><span class="p">,</span> <span class="s2">&quot;psi&quot;</span><span class="p">:</span> <span class="n">psi</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"lambd"</span><span class="p">:</span> <span class="n">lambd</span><span class="p">,</span> <span class="s2">"mu"</span><span class="p">:</span> <span class="n">mu</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">:</span> <span class="n">D</span><span class="p">,</span> <span class="s2">"I0"</span><span class="p">:</span> <span class="n">I0</span><span class="p">,</span> <span class="s2">"psi"</span><span class="p">:</span> <span class="n">psi</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -623,11 +623,11 @@ Finally, we will also treat the number of initially infected individuals, <span 
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">convert_params</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">phi</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to convert mean/dispersion parameterization of a negative binomial to N and p,</span>
-<span class="sd">    as expected by numpy&#39;s negative_binomial.</span>
+<span class="w">    </span><span class="sd">"""Helper function to convert mean/dispersion parameterization of a negative binomial to N and p,</span>
+<span class="sd">    as expected by numpy's negative_binomial.</span>
 
 <span class="sd">    See https://en.wikipedia.org/wiki/Negative_binomial_distribution#Alternative_formulations</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">r</span> <span class="o">=</span> <span class="n">phi</span>
     <span class="n">var</span> <span class="o">=</span> <span class="n">mu</span> <span class="o">+</span> <span class="mi">1</span> <span class="o">/</span> <span class="n">r</span> <span class="o">*</span> <span class="n">mu</span><span class="o">**</span><span class="mi">2</span>
@@ -636,7 +636,7 @@ Finally, we will also treat the number of initially infected individuals, <span 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">stationary_SIR</span><span class="p">(</span><span class="n">lambd</span><span class="p">,</span> <span class="n">mu</span><span class="p">,</span> <span class="n">D</span><span class="p">,</span> <span class="n">I0</span><span class="p">,</span> <span class="n">psi</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mf">83e6</span><span class="p">,</span> <span class="n">T</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-5</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Performs a forward simulation from the stationary SIR model given a random draw from the prior.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Performs a forward simulation from the stationary SIR model given a random draw from the prior."""</span>
 
     <span class="c1"># Extract parameters and round I0 and D</span>
     <span class="n">I0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">I0</span><span class="p">)</span>
@@ -679,19 +679,19 @@ Finally, we will also treat the number of initially infected individuals, <span 
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_data</span><span class="p">():</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to load cumulative cases and transform them to new cases.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Helper function to load cumulative cases and transform them to new cases."""</span>
 
-    <span class="n">confirmed_cases_url</span> <span class="o">=</span> <span class="s2">&quot;https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv&quot;</span>
-    <span class="n">confirmed_cases</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">confirmed_cases_url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">&quot;,&quot;</span><span class="p">)</span>
+    <span class="n">confirmed_cases_url</span> <span class="o">=</span> <span class="s2">"https://raw.githubusercontent.com/CSSEGISandData/COVID-19/master/csse_covid_19_data/csse_covid_19_time_series/time_series_covid19_confirmed_global.csv"</span>
+    <span class="n">confirmed_cases</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">confirmed_cases_url</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s2">","</span><span class="p">)</span>
 
     <span class="n">date_data_begin</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">date_data_end</span> <span class="o">=</span> <span class="n">datetime</span><span class="o">.</span><span class="n">date</span><span class="p">(</span><span class="mi">2020</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
-    <span class="n">format_date</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">date_py</span><span class="p">:</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">date_py</span><span class="o">.</span><span class="n">month</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date_py</span><span class="o">.</span><span class="n">day</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">date_py</span><span class="o">.</span><span class="n">year</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+    <span class="n">format_date</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">date_py</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">date_py</span><span class="o">.</span><span class="n">month</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="n">date_py</span><span class="o">.</span><span class="n">day</span><span class="si">}</span><span class="s2">/</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">date_py</span><span class="o">.</span><span class="n">year</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="mi">4</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
     <span class="n">date_formatted_begin</span> <span class="o">=</span> <span class="n">format_date</span><span class="p">(</span><span class="n">date_data_begin</span><span class="p">)</span>
     <span class="n">date_formatted_end</span> <span class="o">=</span> <span class="n">format_date</span><span class="p">(</span><span class="n">date_data_end</span><span class="p">)</span>
 
     <span class="n">cases_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
-        <span class="n">confirmed_cases</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">confirmed_cases</span><span class="p">[</span><span class="s2">&quot;Country/Region&quot;</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;Germany&quot;</span><span class="p">,</span> <span class="n">date_formatted_begin</span><span class="p">:</span><span class="n">date_formatted_end</span><span class="p">]</span>
+        <span class="n">confirmed_cases</span><span class="o">.</span><span class="n">loc</span><span class="p">[</span><span class="n">confirmed_cases</span><span class="p">[</span><span class="s2">"Country/Region"</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"Germany"</span><span class="p">,</span> <span class="n">date_formatted_begin</span><span class="p">:</span><span class="n">date_formatted_end</span><span class="p">]</span>
     <span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">new_cases_obs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">cases_obs</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">new_cases_obs</span>
@@ -715,9 +715,9 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">batch_size</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">&quot;lambd&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">&quot;D&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">&quot;cases&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">"lambd"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">"D"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">test_sims</span><span class="p">[</span><span class="s2">"cases"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -739,7 +739,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_samples</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">simulators</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 
 <span class="n">grid</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">pairs_samples</span><span class="p">(</span>
-    <span class="n">prior_samples</span><span class="p">,</span> <span class="n">variable_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;lambd&quot;</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">]</span>
+    <span class="n">prior_samples</span><span class="p">,</span> <span class="n">variable_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"lambd"</span><span class="p">,</span> <span class="s2">"mu"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -762,13 +762,13 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">as_time_series</span><span class="p">(</span><span class="s2">&quot;cases&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">&quot;lambd&quot;</span><span class="p">,</span> <span class="s2">&quot;mu&quot;</span><span class="p">,</span> <span class="s2">&quot;D&quot;</span><span class="p">,</span> <span class="s2">&quot;I0&quot;</span><span class="p">,</span> <span class="s2">&quot;psi&quot;</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;cases&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">as_time_series</span><span class="p">(</span><span class="s2">"cases"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">"lambd"</span><span class="p">,</span> <span class="s2">"mu"</span><span class="p">,</span> <span class="s2">"D"</span><span class="p">,</span> <span class="s2">"I0"</span><span class="p">,</span> <span class="s2">"psi"</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"cases"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
     <span class="c1"># since all our variables are non-negative (zero or larger), the next call transforms them</span>
     <span class="c1"># to the unconstrained real space and can be back-transformed under the hood</span>
-    <span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">],</span> <span class="n">p1</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="s2">"inference_variables"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">],</span> <span class="n">p1</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -781,17 +781,17 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ConvertDType -&gt; 1: AsTimeSeries -&gt; 2: Concatenate([&#39;lambd&#39;, &#39;mu&#39;, &#39;D&#39;, &#39;I0&#39;, &#39;psi&#39;] -&gt; &#39;inference_variables&#39;) -&gt; 3: Rename(&#39;cases&#39; -&gt; &#39;summary_variables&#39;) -&gt; 4: Log])
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ConvertDType -&gt; 1: AsTimeSeries -&gt; 2: Concatenate(['lambd', 'mu', 'D', 'I0', 'psi'] -&gt; 'inference_variables') -&gt; 3: Rename('cases' -&gt; 'summary_variables') -&gt; 4: Log])
 </pre></div>
 </div>
 </div>
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let&#39;s check out the new shapes</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Let's check out the new shapes</span>
 <span class="n">adapted_sims</span> <span class="o">=</span> <span class="n">adapter</span><span class="p">(</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">adapted_sims</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">adapted_sims</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adapted_sims</span><span class="p">[</span><span class="s2">"summary_variables"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">adapted_sims</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -813,7 +813,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <p>The custom network is decorated with a <code class="docutils literal notranslate"><span class="pre">serializeable</span></code> decorator, which is necessary for saving / loading the full model later on.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@bf</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">serialization</span><span class="o">.</span><span class="n">serializable</span><span class="p">(</span><span class="s2">&quot;custom&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@bf</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">serialization</span><span class="o">.</span><span class="n">serializable</span><span class="p">(</span><span class="s2">"custom"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">GRU</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -822,7 +822,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
         
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses time_series of shape (batch_size, T, 1) into summaries of shape (batch_size, 8).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compresses time_series of shape (batch_size, T, 1) into summaries of shape (batch_size, 8)."""</span>
         <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">gru</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">summary</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span><span class="p">(</span><span class="n">summary</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">summary</span>
@@ -843,7 +843,7 @@ The resulting object can now generate <em>batches</em> of simulations.</p>
 <p>As a backbone inference network, we choose the all-time classic coupling flow (i.e., a type of normalizing flow).</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -910,7 +910,7 @@ Wall time: 3.95 ms
 <div class="cell_output docutils container">
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OfflineDataset.
 INFO:bayesflow:Building on a test batch.
-WARNING:bayesflow:searchsorted is not yet optimized for backend &#39;jax&#39;
+WARNING:bayesflow:searchsorted is not yet optimized for backend 'jax'
 </pre></div>
 </div>
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/100
@@ -1288,11 +1288,11 @@ Epoch 100/100
     <span class="n">test_data</span><span class="o">=</span><span class="n">test_sims</span><span class="p">,</span>
     <span class="n">samples</span><span class="o">=</span><span class="n">samples</span><span class="p">,</span>
     <span class="c1"># optional kwargs for the different diagnostic plots can be passed as follows</span>
-    <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
-    <span class="n">recovery_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
-    <span class="n">calibration_ecdf_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;legend_fontsize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
-    <span class="n">coverage_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;legend_fontsize&quot;</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
-    <span class="n">z_score_contraction_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;figsize&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">&quot;label_fontsize&quot;</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>    
+    <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">"label_fontsize"</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">recovery_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">"label_fontsize"</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">calibration_ecdf_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">"legend_fontsize"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">"label_fontsize"</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">coverage_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">"legend_fontsize"</span><span class="p">:</span> <span class="mi">8</span><span class="p">,</span> <span class="s2">"label_fontsize"</span><span class="p">:</span> <span class="mi">12</span><span class="p">},</span>
+    <span class="n">z_score_contraction_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"figsize"</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="s2">"label_fontsize"</span><span class="p">:</span> <span class="mi">12</span><span class="p">}</span>    
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -1316,7 +1316,7 @@ Epoch 100/100
 <span class="n">obs_cases</span> <span class="o">=</span> <span class="n">load_data</span><span class="p">()</span>
 
 <span class="c1"># Note that we transform the 1D array into shape (1, T), indicating one time series</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;cases&quot;</span><span class="p">:</span> <span class="n">obs_cases</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]},</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"cases"</span><span class="p">:</span> <span class="n">obs_cases</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]},</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
 
 <span class="c1"># Convert into a nice format 2D data frame</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">samples_to_data_frame</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
@@ -1405,12 +1405,12 @@ Epoch 100/100
 <p>Here, we will create a custom function which plots the observed data and then overlays draws from the posterior predictive.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_ppc</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">obs_cases</span><span class="p">,</span> <span class="n">logscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#132a70&quot;</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">plot_ppc</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">obs_cases</span><span class="p">,</span> <span class="n">logscale</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#132a70"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">),</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">18</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to perform some plotting of the posterior predictive.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Plot settings</span>
-    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;font.size&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">font_size</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"font.size"</span><span class="p">]</span> <span class="o">=</span> <span class="n">font_size</span>
     <span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">)</span>
     <span class="n">T</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">obs_cases</span><span class="p">)</span>
 
@@ -1419,7 +1419,7 @@ Epoch 100/100
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="c1"># Note - simulator returns 2D arrays of shape (T, 1), so we remove trailing dim</span>
         <span class="n">sim_cases</span> <span class="o">=</span> <span class="n">stationary_SIR</span><span class="p">(</span><span class="o">*</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
-        <span class="n">sims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim_cases</span><span class="p">[</span><span class="s2">&quot;cases&quot;</span><span class="p">])</span>
+        <span class="n">sims</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sim_cases</span><span class="p">[</span><span class="s2">"cases"</span><span class="p">])</span>
     <span class="n">sims</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">sims</span><span class="p">)</span>
 
     <span class="c1"># Compute quantiles for each t = 1,...,T</span>
@@ -1428,23 +1428,23 @@ Epoch 100/100
     <span class="n">qs_95</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">quantile</span><span class="p">(</span><span class="n">sims</span><span class="p">,</span> <span class="n">q</span><span class="o">=</span><span class="p">[</span><span class="mf">0.025</span><span class="p">,</span> <span class="mf">0.975</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
     <span class="c1"># Plot median predictions and observed data</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">sims</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Median predicted cases&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">obs_cases</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;o&quot;</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Reported cases&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dashed&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">sims</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Median predicted cases"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">obs_cases</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">"o"</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Reported cases"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"dashed"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.8</span><span class="p">)</span>
 
     <span class="c1"># Add compatibility intervals (also called credible intervals)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_50</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_50</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;50% CI&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_90</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_90</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;90% CI&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_95</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_95</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;95% CI&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_50</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_50</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"50% CI"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_90</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_90</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"90% CI"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">T</span><span class="p">),</span> <span class="n">qs_95</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">qs_95</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"95% CI"</span><span class="p">)</span>
 
     <span class="c1"># Grid and schmuck</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;-&quot;</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;right&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">&quot;top&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Days since pandemic onset&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;Number of cases&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="s2">"grey"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"-"</span><span class="p">,</span> <span class="n">linewidth</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">"right"</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[</span><span class="s2">"top"</span><span class="p">]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Days since pandemic onset"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Number of cases"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">minorticks_off</span><span class="p">()</span>
     <span class="k">if</span> <span class="n">logscale</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_yscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">font_size</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">f</span>
 </pre></div>
@@ -1578,8 +1578,8 @@ Epoch 100/100
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1613,7 +1613,7 @@ Epoch 100/100
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

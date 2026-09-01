@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/coupling/coupling_flow';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,9 +499,9 @@
 
 <div class="viewcode-block" id="CouplingFlow">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.inference.coupling.CouplingFlow.html#bayesflow.networks.inference.coupling.CouplingFlow">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CouplingFlow</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Coupling-based normalizing flow for simulation-based inference.</span>
+<span class="w">    </span><span class="sd">"""Coupling-based normalizing flow for simulation-based inference.</span>
 
 <span class="sd">    Constructs a deep invertible architecture composed of multiple layers,</span>
 <span class="sd">    including ActNorm, learned permutations, and dual coupling layers.</span>
@@ -520,23 +520,23 @@
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    subnet : str or type, optional</span>
-<span class="sd">        Architecture for the transformation network.  Can be ``&quot;mlp&quot;``, a custom</span>
+<span class="sd">        Architecture for the transformation network.  Can be ``"mlp"``, a custom</span>
 <span class="sd">        network class, or a ``Layer`` object, e.g.,</span>
-<span class="sd">        ``bayesflow.networks.MLP(widths=[32, 32])``.  Default is ``&quot;mlp&quot;``.</span>
+<span class="sd">        ``bayesflow.networks.MLP(widths=[32, 32])``.  Default is ``"mlp"``.</span>
 <span class="sd">    depth : int, optional</span>
 <span class="sd">        The number of invertible layers in the model.  Default is 6.</span>
 <span class="sd">    transform : str, optional</span>
 <span class="sd">        The type of transformation used in the coupling layers, such as</span>
-<span class="sd">        ``&quot;affine&quot;``.  Default is ``&quot;affine&quot;``.</span>
+<span class="sd">        ``"affine"``.  Default is ``"affine"``.</span>
 <span class="sd">    permutation : str or None, optional</span>
-<span class="sd">        The type of permutation applied between layers.  Can be ``&quot;orthogonal&quot;``,</span>
-<span class="sd">        ``&quot;random&quot;``, ``&quot;swap&quot;``, or ``None`` (no permutation).  Default is</span>
-<span class="sd">        ``&quot;random&quot;``.</span>
+<span class="sd">        The type of permutation applied between layers.  Can be ``"orthogonal"``,</span>
+<span class="sd">        ``"random"``, ``"swap"``, or ``None`` (no permutation).  Default is</span>
+<span class="sd">        ``"random"``.</span>
 <span class="sd">    use_actnorm : bool, optional</span>
 <span class="sd">        Whether to apply ActNorm before each coupling layer.  Default is ``True``.</span>
 <span class="sd">    base_distribution : str, optional</span>
 <span class="sd">        The base probability distribution from which samples are drawn.</span>
-<span class="sd">        Default is ``&quot;normal&quot;``.</span>
+<span class="sd">        Default is ``"normal"``.</span>
 <span class="sd">    subnet_kwargs : dict[str, any], optional</span>
 <span class="sd">        Keyword arguments forwarded to the subnet (e.g., MLP) constructor within</span>
 <span class="sd">        each coupling layer, such as hidden sizes or activation choices.</span>
@@ -557,16 +557,16 @@
 <span class="sd">        models with invertible neural networks. IEEE TNNLS.</span>
 <span class="sd">    [5] Alexanderson, S., &amp; Henter, G. E. (2020). Robust model training and</span>
 <span class="sd">        generalisation with Studentising flows. arXiv:2006.06599.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">=</span> <span class="s2">"mlp"</span><span class="p">,</span>
         <span class="n">depth</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">6</span><span class="p">,</span>
-        <span class="n">transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;affine&quot;</span><span class="p">,</span>
-        <span class="n">permutation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;random&quot;</span><span class="p">,</span>
+        <span class="n">transform</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"affine"</span><span class="p">,</span>
+        <span class="n">permutation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"random"</span><span class="p">,</span>
         <span class="n">use_actnorm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">base_distribution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span><span class="p">,</span>
+        <span class="n">base_distribution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"normal"</span><span class="p">,</span>
         <span class="n">subnet_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">transform_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -612,14 +612,14 @@
         <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;subnet&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">,</span>
-            <span class="s2">&quot;depth&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span>
-            <span class="s2">&quot;transform&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
-            <span class="s2">&quot;permutation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation</span><span class="p">,</span>
-            <span class="s2">&quot;use_actnorm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_actnorm</span><span class="p">,</span>
-            <span class="s2">&quot;base_distribution&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span><span class="p">,</span>
-            <span class="s2">&quot;subnet_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet_kwargs</span><span class="p">,</span>
-            <span class="s2">&quot;transform_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_kwargs</span><span class="p">,</span>
+            <span class="s2">"subnet"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">,</span>
+            <span class="s2">"depth"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">depth</span><span class="p">,</span>
+            <span class="s2">"transform"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">,</span>
+            <span class="s2">"permutation"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">permutation</span><span class="p">,</span>
+            <span class="s2">"use_actnorm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_actnorm</span><span class="p">,</span>
+            <span class="s2">"base_distribution"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span><span class="p">,</span>
+            <span class="s2">"subnet_kwargs"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet_kwargs</span><span class="p">,</span>
+            <span class="s2">"transform_kwargs"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform_kwargs</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
@@ -660,14 +660,14 @@
 <div class="viewcode-block" id="CouplingFlow.compute_metrics">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.inference.coupling.CouplingFlow.html#bayesflow.networks.inference.coupling.CouplingFlow.compute_metrics">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="n">_</span><span class="p">,</span> <span class="n">log_density</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span>
-            <span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="o">-</span><span class="n">log_density</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
@@ -699,8 +699,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -734,7 +734,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

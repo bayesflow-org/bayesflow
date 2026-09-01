@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/transformers/fusion_transformer';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,11 +495,11 @@
 
 <div class="viewcode-block" id="FusionTransformer">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.FusionTransformer.html#bayesflow.networks.FusionTransformer">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FusionTransformer</span><span class="p">(</span><span class="n">SummaryNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    (SN) Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention layers</span>
-<span class="sd">    followed by cross-attention between the representation and a learnable template summarized via a recurrent net.&quot;&quot;&quot;</span>
+<span class="sd">    followed by cross-attention between the representation and a learnable template summarized via a recurrent net."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -509,18 +509,18 @@
         <span class="n">mlp_depths</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span>
         <span class="n">mlp_widths</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gelu&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lecun_normal&quot;</span><span class="p">,</span>
+        <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"gelu"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"lecun_normal"</span><span class="p">,</span>
         <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">template_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lstm&quot;</span><span class="p">,</span>
+        <span class="n">template_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"lstm"</span><span class="p">,</span>
         <span class="n">bidirectional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">template_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a fusion transformer used to flexibly compress time series and learn additional time embeddings</span>
+<span class="w">        </span><span class="sd">"""Creates a fusion transformer used to flexibly compress time series and learn additional time embeddings</span>
 <span class="sd">        using a recurrent neural network. If the time intervals vary across batches, it is highly recommended that</span>
-<span class="sd">        your simulator also returns a &quot;time&quot; vector appended to the simulator outputs.</span>
+<span class="sd">        your simulator also returns a "time" vector appended to the simulator outputs.</span>
 
 <span class="sd">        Important: This network needs at least 2 transformer blocks and will generally be slower than the</span>
 <span class="sd">        corresponding TimeSeriesTransformer.</span>
@@ -539,17 +539,17 @@
 <span class="sd">            Width of each MLP layer in each block for each component.</span>
 <span class="sd">        dropout     : float, optional (default - 0.05)</span>
 <span class="sd">            Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.</span>
-<span class="sd">        mlp_activation : str, optional (default - &#39;gelu&#39;)</span>
-<span class="sd">            Activation function used in the dense layers. Common choices include &quot;relu&quot;, &quot;elu&quot;, and &quot;gelu&quot;.</span>
-<span class="sd">        kernel_initializer : str, optional (default - &#39;lecun_normal&#39;)</span>
-<span class="sd">            Initializer for the kernel weights matrix. Common choices include &quot;glorot_uniform&quot;, &quot;he_normal&quot;, etc.</span>
+<span class="sd">        mlp_activation : str, optional (default - 'gelu')</span>
+<span class="sd">            Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".</span>
+<span class="sd">        kernel_initializer : str, optional (default - 'lecun_normal')</span>
+<span class="sd">            Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.</span>
 <span class="sd">        use_bias : bool, optional (default - True)</span>
 <span class="sd">            Whether to include a bias term in the dense layers.</span>
 <span class="sd">        layer_norm : bool, optional (default - True)</span>
 <span class="sd">            Whether to apply layer normalization after the attention and MLP layers.</span>
 <span class="sd">        t2v_embed_dim : int, optional (default - 8)</span>
 <span class="sd">            The dimensionality of the Time2Vec embedding.</span>
-<span class="sd">        template_type        : str or callable, optional, default: &#39;lstm&#39;</span>
+<span class="sd">        template_type        : str or callable, optional, default: 'lstm'</span>
 <span class="sd">            The many-to-one (learnable) transformation of the time series.</span>
 <span class="sd">            if ``lstm``, an LSTM network will be used.</span>
 <span class="sd">            if ``gru``, a GRU unit will be used.</span>
@@ -558,13 +558,13 @@
 <span class="sd">            and backward in time) or unidirectional (forward in time). Defaults to False, but may</span>
 <span class="sd">            increase performance in some applications.</span>
 <span class="sd">        template_dim         : int, optional (default - 128)</span>
-<span class="sd">            Only used if ``template_type`` in [&#39;lstm&#39;, &#39;gru&#39;]. The number of hidden</span>
+<span class="sd">            Only used if ``template_type`` in ['lstm', 'gru']. The number of hidden</span>
 <span class="sd">            units (equiv. output dimensions) of the recurrent network.</span>
 <span class="sd">        time_axis     : int, optional (default - None)</span>
 <span class="sd">            The time axis (e.g., -1 for last axis) from which to grab the time vector that goes into t2v.</span>
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Additional keyword arguments passed to the base layer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -590,20 +590,20 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">attention_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
         <span class="c1"># A recurrent network will learn a dynamic many-to-one template</span>
-        <span class="k">if</span> <span class="n">template_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">template_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"LSTM"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">template_net</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">layers</span><span class="o">.</span><span class="n">Bidirectional</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">template_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">bidirectional</span>
                 <span class="k">else</span> <span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">template_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">))</span>
             <span class="p">)</span>
-        <span class="k">elif</span> <span class="n">template_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;GRU&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">template_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"GRU"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">template_net</span> <span class="o">=</span> <span class="p">(</span>
                 <span class="n">layers</span><span class="o">.</span><span class="n">Bidirectional</span><span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="n">template_dim</span> <span class="o">//</span> <span class="mi">2</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">))</span>
                 <span class="k">if</span> <span class="n">bidirectional</span>
                 <span class="k">else</span> <span class="p">(</span><span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="n">template_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">))</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Argument `template_dim` should be in [&#39;lstm&#39;, &#39;gru&#39;]&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Argument `template_dim` should be in ['lstm', 'gru']"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
@@ -611,7 +611,7 @@
 <div class="viewcode-block" id="FusionTransformer.call">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.FusionTransformer.html#bayesflow.networks.FusionTransformer.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">input_sequence</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses the input sequence into a summary vector of size `summary_dim`.</span>
+<span class="w">        </span><span class="sd">"""Compresses the input sequence into a summary vector of size `summary_dim`.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -628,7 +628,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        out : Tensor</span>
 <span class="sd">            Output of shape (batch_size, set_size, output_dim)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_net</span><span class="p">(</span><span class="n">input_sequence</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
@@ -670,8 +670,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -705,7 +705,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/optimal_transport/optimal_transport';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -487,17 +487,17 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.sinkhorn</span><span class="w"> </span><span class="kn">import</span> <span class="n">sinkhorn</span>
 
 <span class="n">methods</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;sinkhorn&quot;</span><span class="p">:</span> <span class="n">sinkhorn</span><span class="p">,</span>
-    <span class="s2">&quot;sinkhorn_knopp&quot;</span><span class="p">:</span> <span class="n">sinkhorn</span><span class="p">,</span>
-    <span class="s2">&quot;log_sinkhorn&quot;</span><span class="p">:</span> <span class="n">log_sinkhorn</span><span class="p">,</span>
-    <span class="s2">&quot;log_sinkhorn_knopp&quot;</span><span class="p">:</span> <span class="n">log_sinkhorn</span><span class="p">,</span>
+    <span class="s2">"sinkhorn"</span><span class="p">:</span> <span class="n">sinkhorn</span><span class="p">,</span>
+    <span class="s2">"sinkhorn_knopp"</span><span class="p">:</span> <span class="n">sinkhorn</span><span class="p">,</span>
+    <span class="s2">"log_sinkhorn"</span><span class="p">:</span> <span class="n">log_sinkhorn</span><span class="p">,</span>
+    <span class="s2">"log_sinkhorn_knopp"</span><span class="p">:</span> <span class="n">log_sinkhorn</span><span class="p">,</span>
 <span class="p">}</span>
 
 
 <div class="viewcode-block" id="optimal_transport">
 <a class="viewcode-back" href="../../../../api/bayesflow.utils.optimal_transport.html#bayesflow.utils.optimal_transport">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">optimal_transport</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;log_sinkhorn&quot;</span><span class="p">,</span> <span class="n">return_assignments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">optimal_transport</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"log_sinkhorn"</span><span class="p">,</span> <span class="n">return_assignments</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Matches elements from x2 onto x1, such that the transport cost between them is minimized, according to the method</span>
 <span class="sd">    and cost matrix used.</span>
 
 <span class="sd">    Depending on the method used, elements in either tensor may be permuted, dropped, duplicated, or otherwise modified,</span>
@@ -513,7 +513,7 @@
 <span class="sd">        Samples from the second distribution.</span>
 
 <span class="sd">    :param method: Method used to compute the transport cost.</span>
-<span class="sd">        Default: &#39;log_sinkhorn&#39;</span>
+<span class="sd">        Default: 'log_sinkhorn'</span>
 
 <span class="sd">    :param return_assignments: Whether to return the assignment indices.</span>
 <span class="sd">        Default: False</span>
@@ -522,7 +522,7 @@
 
 <span class="sd">    :return: Tensors of shapes (n, ...) and (m, ...)</span>
 <span class="sd">        x1 and x2 in optimal transport permutation order.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">assignments</span> <span class="o">=</span> <span class="n">methods</span><span class="p">[</span><span class="n">method</span><span class="o">.</span><span class="n">lower</span><span class="p">()](</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="n">x2</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">assignments</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
@@ -560,8 +560,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -595,7 +595,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

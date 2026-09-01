@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/masks';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,7 +492,7 @@
 <div class="viewcode-block" id="MaskName">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.MaskName.html#bayesflow.utils.MaskName">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">MaskName</span><span class="p">(</span><span class="n">StrEnum</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Canonical kwarg names for the diffusion-type input-masking scheme.</span>
+<span class="w">    </span><span class="sd">"""Canonical kwarg names for the diffusion-type input-masking scheme.</span>
 
 <span class="sd">    These identify the three optional masks that diffusion-type inference networks</span>
 <span class="sd">    (diffusion, flow matching, consistency).</span>
@@ -508,19 +508,19 @@
 <span class="sd">        Governed by ``missing_conditions_prob``.</span>
 <span class="sd">    FIXED_TARGET_VALUE :</span>
 <span class="sd">        Value of the fixed target.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">INFER_TARGET</span> <span class="o">=</span> <span class="s2">&quot;infer_target_mask&quot;</span>
-    <span class="n">FIXED_TARGET</span> <span class="o">=</span> <span class="s2">&quot;fixed_target_mask&quot;</span>
-    <span class="n">OBSERVED_CONDITION</span> <span class="o">=</span> <span class="s2">&quot;observed_condition_mask&quot;</span>
-    <span class="n">FIXED_TARGET_VALUE</span> <span class="o">=</span> <span class="s2">&quot;fixed_target_value&quot;</span></div>
+    <span class="n">INFER_TARGET</span> <span class="o">=</span> <span class="s2">"infer_target_mask"</span>
+    <span class="n">FIXED_TARGET</span> <span class="o">=</span> <span class="s2">"fixed_target_mask"</span>
+    <span class="n">OBSERVED_CONDITION</span> <span class="o">=</span> <span class="s2">"observed_condition_mask"</span>
+    <span class="n">FIXED_TARGET_VALUE</span> <span class="o">=</span> <span class="s2">"fixed_target_value"</span></div>
 
 
 
 <div class="viewcode-block" id="maybe_mask_tensor">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.maybe_mask_tensor.html#bayesflow.utils.maybe_mask_tensor">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">maybe_mask_tensor</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">replacement</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Apply a binary mask to a tensor if a mask is passed, blending with a replacement where masked.</span>
+<span class="w">    </span><span class="sd">"""Apply a binary mask to a tensor if a mask is passed, blending with a replacement where masked.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -537,7 +537,7 @@
 <span class="sd">    Tensor</span>
 <span class="sd">        ``mask * data + (1 - mask) * replacement``, or *data* when *mask* is</span>
 <span class="sd">        ``None``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">data</span>
 
@@ -551,7 +551,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">random_mask</span><span class="p">(</span>
     <span class="n">shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">drop_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">keep_one</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">seed_generator</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span> <span class="o">=</span> <span class="kc">None</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate an element-wise random mask.</span>
+<span class="w">    </span><span class="sd">"""Generate an element-wise random mask.</span>
 
 <span class="sd">    Each element is independently drawn as 1 (keep) with probability</span>
 <span class="sd">    ``1 - drop_prob`` and 0 (drop) with probability ``drop_prob``.</span>
@@ -571,7 +571,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    Tensor or float</span>
 <span class="sd">        A mask tensor of the given *shape*, or ``1.0`` when *drop_prob* &lt;= 0.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">drop_prob</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">return</span> <span class="mf">1.0</span>
 
@@ -598,7 +598,7 @@
     <span class="n">missing_conditions_prob</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
     <span class="n">seed_generator</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="nb">dict</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate the target and condition masks and populate ``subnet_kwargs``.</span>
+<span class="w">    </span><span class="sd">"""Generate the target and condition masks and populate ``subnet_kwargs``.</span>
 
 <span class="sd">    The diffusion type inference networks (diffusion, flow matching, consistency) share</span>
 <span class="sd">    the same input-masking scheme: ``fixed_target_prob`` randomly fixes some targets to</span>
@@ -615,7 +615,7 @@
 <span class="sd">        The mask the caller applies to the loss.</span>
 <span class="sd">    subnet_kwargs : dict</span>
 <span class="sd">        The keyword arguments, with mask entries added for subnets that accept them.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">mask_x</span> <span class="o">=</span> <span class="n">random_mask</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">fixed_target_prob</span><span class="p">,</span> <span class="n">keep_one</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">seed_generator</span><span class="o">=</span><span class="n">seed_generator</span><span class="p">)</span>
     <span class="k">if</span> <span class="p">(</span>
         <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mask_x</span><span class="p">,</span> <span class="nb">float</span><span class="p">)</span>
@@ -646,7 +646,7 @@
 <div class="viewcode-block" id="feature_mask">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.feature_mask.html#bayesflow.utils.feature_mask">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">feature_mask</span><span class="p">(</span><span class="n">mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert a feature mask to shape ``(batch, features, 1)``.</span>
+<span class="w">    </span><span class="sd">"""Convert a feature mask to shape ``(batch, features, 1)``.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -662,7 +662,7 @@
 <span class="sd">    Tensor or None</span>
 <span class="sd">        The mask cast to ``x.dtype`` and expanded to ``(batch, features, 1)``,</span>
 <span class="sd">        or ``None`` if no mask is passed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">mask</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">return</span> <span class="kc">None</span>
 
@@ -706,8 +706,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -741,7 +741,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

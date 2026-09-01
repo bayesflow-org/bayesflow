@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/scoring/scoring_rules/logistic_score';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -497,9 +497,9 @@
 
 <div class="viewcode-block" id="LogisticScore">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.LogisticScore.html#bayesflow.networks.inference.scoring.scoring_rules.LogisticScore">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.scoring_rules&quot;</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.scoring_rules"</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">LogisticScore</span><span class="p">(</span><span class="n">CategoricalScoringRule</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:math:`S(\{f_k\}, m; \alpha) = \sum_{k \neq m} \left(1 + e^{(f_k - f_m)/(\alpha+1)}\right)^\alpha`</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">""":math:`S(\{f_k\}, m; \alpha) = \sum_{k \neq m} \left(1 + e^{(f_k - f_m)/(\alpha+1)}\right)^\alpha`</span>
 <span class="sd">    for :math:`\alpha &gt; 0`, and its :math:`\alpha \to 0` limit</span>
 
 <span class="sd">    .. math::</span>
@@ -525,18 +525,18 @@
 <span class="sd">    Power logistic rule:</span>
 
 <span class="sd">    &gt;&gt;&gt; LogisticScore(alpha=1.0)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;logits&quot;</span><span class="p">,)</span>
+    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"logits"</span><span class="p">,)</span>
     <span class="c1"># Small-stddev init keeps initial logits near zero, preventing exp() overflow at the start of training.</span>
     <span class="n">_head_kernel_initializer</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">TruncatedNormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">stddev</span><span class="o">=</span><span class="mf">0.01</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">alpha</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">alpha</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;alpha must be non-negative, got </span><span class="si">{</span><span class="n">alpha</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"alpha must be non-negative, got </span><span class="si">{</span><span class="n">alpha</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">=</span> <span class="n">alpha</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"alpha"</span><span class="p">:</span> <span class="n">alpha</span><span class="p">}</span>
 
 <div class="viewcode-block" id="LogisticScore.get_head_shapes_from_target_shape">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.LogisticScore.html#bayesflow.networks.inference.scoring.scoring_rules.LogisticScore.get_head_shapes_from_target_shape">[docs]</a>
@@ -548,13 +548,13 @@
 <div class="viewcode-block" id="LogisticScore.score">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.LogisticScore.html#bayesflow.networks.inference.scoring.scoring_rules.LogisticScore.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes the (power) logistic Bayes factor score.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        estimates : dict[str, Tensor]</span>
-<span class="sd">            Must contain ``&quot;logits&quot;`` of shape ``(..., M)``.</span>
+<span class="sd">            Must contain ``"logits"`` of shape ``(..., M)``.</span>
 <span class="sd">        targets : Tensor</span>
 <span class="sd">            One-hot encoded true model labels of shape ``(..., M)``.</span>
 <span class="sd">        weights : Tensor, optional</span>
@@ -564,14 +564,14 @@
 <span class="sd">        -------</span>
 <span class="sd">        Tensor</span>
 <span class="sd">            (Optionally weighted) mean (power) logistic score over the batch.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">diff</span> <span class="o">=</span> <span class="n">logits_relative_to_target</span><span class="p">(</span><span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;logits&quot;</span><span class="p">],</span> <span class="n">targets</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">diff</span> <span class="o">=</span> <span class="n">logits_relative_to_target</span><span class="p">(</span><span class="n">estimates</span><span class="p">[</span><span class="s2">"logits"</span><span class="p">],</span> <span class="n">targets</span><span class="p">)</span>
         <span class="n">mask</span> <span class="o">=</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">targets</span>
         <span class="n">log_terms</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">diff</span> <span class="o">/</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">))</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">mask</span> <span class="o">*</span> <span class="n">log_terms</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">M</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">diff</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+            <span class="n">M</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">diff</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
             <span class="n">clip_max</span> <span class="o">=</span> <span class="n">FLOAT32_EXP_MAX</span> <span class="o">-</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">M</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">))</span>
             <span class="n">scores</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
                 <span class="n">mask</span> <span class="o">*</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">alpha</span> <span class="o">*</span> <span class="n">log_terms</span><span class="p">,</span> <span class="n">clip_max</span><span class="p">)),</span>
@@ -615,8 +615,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -650,7 +650,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

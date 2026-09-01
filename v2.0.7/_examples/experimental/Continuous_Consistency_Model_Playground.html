@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/experimental/Continuous_Consistency_Model_Playground';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -498,16 +498,16 @@
 <span class="c1"># Ensure the backend is set</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
 
-<span class="k">if</span> <span class="s2">&quot;KERAS_BACKEND&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
-    <span class="c1"># set this to &quot;torch&quot;, &quot;tensorflow&quot;, or &quot;jax&quot;</span>
-    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
+<span class="k">if</span> <span class="s2">"KERAS_BACKEND"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">:</span>
+    <span class="c1"># set this to "torch", "tensorflow", or "jax"</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"jax"</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="c1"># For BayesFlow devs: this ensures that the latest dev version can be found</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
 
-<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">&quot;../..&quot;</span><span class="p">)</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s2">"../.."</span><span class="p">)</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.experimental.continuous_time_consistency_model</span><span class="w"> </span><span class="kn">import</span> <span class="p">(</span>
@@ -536,22 +536,22 @@
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Type of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample_data</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keys of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Types of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shapes of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Type of sample_data:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample_data</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Keys of sample_data:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Types of sample_data values:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Shapes of sample_data values:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Type of sample_data:
-	 &lt;class &#39;dict&#39;&gt;
+	 &lt;class 'dict'&gt;
 Keys of sample_data:
-	 dict_keys([&#39;r&#39;, &#39;alpha&#39;, &#39;theta&#39;, &#39;x&#39;])
+	 dict_keys(['r', 'alpha', 'theta', 'x'])
 Types of sample_data values:
-	 {&#39;r&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;, &#39;alpha&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;, &#39;theta&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;, &#39;x&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;}
+	 {'r': &lt;class 'numpy.ndarray'&gt;, 'alpha': &lt;class 'numpy.ndarray'&gt;, 'theta': &lt;class 'numpy.ndarray'&gt;, 'x': &lt;class 'numpy.ndarray'&gt;}
 Shapes of sample_data values:
-	 {&#39;r&#39;: (20, 1), &#39;alpha&#39;: (20, 1), &#39;theta&#39;: (20, 2), &#39;x&#39;: (20, 2)}
+	 {'r': (20, 1), 'alpha': (20, 1), 'theta': (20, 2), 'x': (20, 2)}
 </pre></div>
 </div>
 </div>
@@ -561,20 +561,20 @@ Shapes of sample_data values:
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
     <span class="c1"># drop data that we do not need</span>
-    <span class="o">.</span><span class="n">keep</span><span class="p">((</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;x&quot;</span><span class="p">))</span>
+    <span class="o">.</span><span class="n">keep</span><span class="p">((</span><span class="s2">"theta"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">))</span>
     <span class="c1"># convert any non-arrays to numpy arrays</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    <span class="c1"># convert from numpy&#39;s default float64 to deep learning friendly float32</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="c1"># convert from numpy's default float64 to deep learning friendly float32</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
     <span class="c1"># rename the variables to match the required approximator inputs</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"theta"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="n">adapter</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: Keep([&#39;theta&#39;, &#39;x&#39;]) -&gt; 1: ToArray -&gt; 2: ConvertDType -&gt; 3: Standardize -&gt; 4: Rename(&#39;theta&#39; -&gt; &#39;inference_variables&#39;) -&gt; 5: Rename(&#39;x&#39; -&gt; &#39;inference_conditions&#39;)])
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: Keep(['theta', 'x']) -&gt; 1: ToArray -&gt; 2: ConvertDType -&gt; 3: Standardize -&gt; 4: Rename('theta' -&gt; 'inference_variables') -&gt; 5: Rename('x' -&gt; 'inference_conditions')])
 </pre></div>
 </div>
 </div>
@@ -621,13 +621,13 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_network</span> <span class="o">=</span> <span class="n">ContinuousTimeConsistencyModel</span><span class="p">(</span>
-    <span class="n">subnet</span><span class="o">=</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+    <span class="n">subnet</span><span class="o">=</span><span class="s2">"mlp"</span><span class="p">,</span>
     <span class="n">sigma_data</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># as we have standardized our parameters, the standard deviation is 1.0</span>
     <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">6</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span> <span class="o">*</span> <span class="mi">6</span><span class="p">,</span>
+        <span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
     <span class="p">},</span>  <span class="c1"># use an inner network with 6 hidden layers of 256 units</span>
-    <span class="n">embedding_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;embed_dim&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
+    <span class="n">embedding_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"embed_dim"</span><span class="p">:</span> <span class="mi">2</span><span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -646,7 +646,7 @@ Shapes of sample_data values:
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">cm_approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">inference_network</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
-    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -771,32 +771,32 @@ Wall time: 1min 17s
 
 <span class="c1"># Obtain samples from amortized posterior</span>
 
-<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)}</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)}</span>
 <span class="n">samples_0</span> <span class="o">=</span> <span class="n">cm_approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
     <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">steps</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span>
-<span class="p">)[</span><span class="s2">&quot;theta&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="p">)[</span><span class="s2">"theta"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="c1"># Prepare figure</span>
 <span class="n">f</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
 <span class="c1"># Plot samples (once without limits to see outliers/problems</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">samples_0</span><span class="p">,</span> <span class="n">samples_0</span><span class="p">]</span>
-<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Continuous-time CM&quot;</span><span class="p">,</span> <span class="s2">&quot;Without Axis Limits&quot;</span><span class="p">]</span>
-<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#153c7a&quot;</span><span class="p">,</span> <span class="s2">&quot;#7a1515&quot;</span><span class="p">]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Continuous-time CM"</span><span class="p">,</span> <span class="s2">"Without Axis Limits"</span><span class="p">]</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"#153c7a"</span><span class="p">,</span> <span class="s2">"#7a1515"</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">thetas</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">colors</span><span class="p">):</span>
 
     <span class="c1"># Plot samples</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">thetas</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">thetas</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">&quot;box&quot;</span><span class="p">)</span>
-    <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;without&quot;</span><span class="p">):</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">"equal"</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">"box"</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">"without"</span><span class="p">):</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_1$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_2$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\theta_1$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\theta_2$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
 
 <span class="n">f</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
@@ -814,17 +814,17 @@ Wall time: 1min 17s
         <span class="n">cm_approximator</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">_discretize_time</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">)</span>
     <span class="p">)</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">&quot;dotted&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;step&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"dotted"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"t"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"step"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">discretized_time</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span>
     <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">3</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">8</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span>
-    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/8$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/4$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$3\pi/8$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/2$&quot;</span><span class="p">],</span>
+    <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/8$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/4$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$3\pi/8$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/2$"</span><span class="p">],</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Discretization schedule&quot;</span><span class="p">)</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Discretization schedule"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -838,10 +838,10 @@ Wall time: 1min 17s
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">500</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">]</span>
 <span class="n">emb</span> <span class="o">=</span> <span class="n">inference_network</span><span class="o">.</span><span class="n">time_emb</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">t</span><span class="p">)[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">emb</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;emb(t)&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/4$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/2$&quot;</span><span class="p">])</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Time embedding&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"emb(t)"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"t"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/4$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/2$"</span><span class="p">])</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Time embedding"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -859,11 +859,11 @@ Wall time: 1min 17s
     <span class="n">inference_network</span><span class="o">.</span><span class="n">weight_fn_projector</span><span class="p">(</span><span class="n">inference_network</span><span class="o">.</span><span class="n">weight_fn</span><span class="p">(</span><span class="n">t</span><span class="p">))</span>
     <span class="o">/</span> <span class="p">(</span><span class="n">inference_network</span><span class="o">.</span><span class="n">sigma_data</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">t</span><span class="p">)),</span>
 <span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$w_\phi(t)$&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;t&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s2">&quot;log&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;0&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/4$&quot;</span><span class="p">,</span> <span class="sa">r</span><span class="s2">&quot;$\pi/2$&quot;</span><span class="p">])</span>
-<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Learned adaptive weighting function&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$w_\phi(t)$"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"t"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">yscale</span><span class="p">(</span><span class="s2">"log"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">4</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">],</span> <span class="n">labels</span><span class="o">=</span><span class="p">[</span><span class="s2">"0"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/4$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\pi/2$"</span><span class="p">])</span>
+<span class="n">_</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Learned adaptive weighting function"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -942,8 +942,8 @@ Wall time: 1min 17s
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -977,7 +977,7 @@ Wall time: 1min 17s
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

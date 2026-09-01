@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/dispatch/find_permutation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -489,22 +489,22 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.utils.find_permutation.html#bayesflow.utils.find_permutation">[docs]</a>
 <span class="nd">@singledispatch</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_permutation</span><span class="p">(</span><span class="n">arg</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot infer permutation from </span><span class="si">{</span><span class="n">arg</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot infer permutation from </span><span class="si">{</span><span class="n">arg</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
 
 <span class="nd">@find_permutation</span><span class="o">.</span><span class="n">register</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">_</span><span class="p">(</span><span class="n">name</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
     <span class="k">match</span> <span class="n">name</span><span class="o">.</span><span class="n">lower</span><span class="p">():</span>
-        <span class="k">case</span> <span class="s2">&quot;random&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"random"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.networks.inference.coupling.permutations</span><span class="w"> </span><span class="kn">import</span> <span class="n">RandomPermutation</span>
 
             <span class="k">return</span> <span class="n">RandomPermutation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;swap&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"swap"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.networks.inference.coupling.permutations</span><span class="w"> </span><span class="kn">import</span> <span class="n">Swap</span>
 
             <span class="k">return</span> <span class="n">Swap</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;learnable&quot;</span> <span class="o">|</span> <span class="s2">&quot;orthogonal&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"learnable"</span> <span class="o">|</span> <span class="s2">"orthogonal"</span><span class="p">:</span>
             <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.networks.inference.coupling.permutations</span><span class="w"> </span><span class="kn">import</span> <span class="n">OrthogonalPermutation</span>
 
             <span class="k">return</span> <span class="n">OrthogonalPermutation</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -547,8 +547,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -582,7 +582,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

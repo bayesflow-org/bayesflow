@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -485,7 +485,7 @@ complex to be described analytically.</p>
 <section id="install">
 <h2>Install<a class="headerlink" href="#install" title="Link to this heading">#</a></h2>
 <p>We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:</p>
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;bayesflow&gt;=2.0&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"bayesflow&gt;=2.0"</span>
 </pre></div>
 </div>
 <p>If you want the latest features, you can install from source:</p>
@@ -506,7 +506,7 @@ Note that BayesFlow <strong>will not run</strong> without a backend.</p>
 <p>As of version <code class="docutils literal notranslate"><span class="pre">2.0.7</span></code>, the backend will be set automatically. If you have multiple backends, you can manually <a class="reference external" href="https://keras.io/getting_started/#configuring-your-backend">set the backend environment variable as described by keras</a>.
 For example, inside your Python script write:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"jax"</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span>
 </pre></div>
 </div>
@@ -527,8 +527,8 @@ For example, inside your Python script write:</p>
 
 <span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">],</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">()</span>
 <span class="p">)</span>
 
@@ -676,7 +676,7 @@ You can find and install the old Bayesflow version via the <code class="docutils
 The corresponding <a class="reference external" href="https://bayesflow.org/stable-legacy/index.html">documentation</a> can be
 accessed by selecting the “stable-legacy” entry in the version picker of the documentation.</p>
 <p>You can also install the latest version of BayesFlow v1.x from PyPI using</p>
-<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">&quot;bayesflow&lt;2.0&quot;</span>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">pip</span> <span class="n">install</span> <span class="s2">"bayesflow&lt;2.0"</span>
 </pre></div>
 </div>
 </section>
@@ -798,8 +798,8 @@ The source code is hosted on the public <a class="reference external" href="http
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -833,7 +833,7 @@ The source code is hosted on the public <a class="reference external" href="http
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/inference_network';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,7 +495,7 @@
 <div class="viewcode-block" id="InferenceNetwork">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.inference.inference_network.InferenceNetwork.html#bayesflow.networks.inference.inference_network.InferenceNetwork">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">InferenceNetwork</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Abstract base class for all inference networks in BayesFlow.</span>
+<span class="w">    </span><span class="sd">"""Abstract base class for all inference networks in BayesFlow.</span>
 
 <span class="sd">    An inference network learns a mapping between a data space and a latent space,</span>
 <span class="sd">    optionally conditioned on external variables.  Concrete subclasses power the</span>
@@ -516,7 +516,7 @@
 
 <span class="sd">    ``compute_metrics(x, conditions, sample_weight, stage)``</span>
 <span class="sd">        Compute and return a ``dict[str, Tensor]`` of training metrics.  The dict</span>
-<span class="sd">        **must** contain at least a ``&quot;loss&quot;`` key. This is where you implement</span>
+<span class="sd">        **must** contain at least a ``"loss"`` key. This is where you implement</span>
 <span class="sd">        the training objective for your custom inference network.</span>
 
 <span class="sd">    Optionally override:</span>
@@ -534,29 +534,29 @@
 <span class="sd">    ----------</span>
 <span class="sd">    base_distribution : str or ~bayesflow.distributions.Distribution, optional</span>
 <span class="sd">        The base (latent) distribution.  Accepts the string shortcuts</span>
-<span class="sd">        ``&quot;normal&quot;`` (:class:`~bayesflow.distributions.DiagonalNormal`) and</span>
-<span class="sd">        ``&quot;student_t&quot;`` (:class:`~bayesflow.distributions.DiagonalStudentT`),</span>
+<span class="sd">        ``"normal"`` (:class:`~bayesflow.distributions.DiagonalNormal`) and</span>
+<span class="sd">        ``"student_t"`` (:class:`~bayesflow.distributions.DiagonalStudentT`),</span>
 <span class="sd">        or an explicit :class:`~bayesflow.distributions.Distribution` instance</span>
-<span class="sd">        for full control.  Default is ``&quot;normal&quot;``.</span>
+<span class="sd">        for full control.  Default is ``"normal"``.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Forwarded to ``keras.Layer`` after filtering with</span>
 <span class="sd">        :func:`~bayesflow.utils.layer_kwargs`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Valid mask keys to pass to subnet</span>
-    <span class="n">_SUBNET_MASK_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span> <span class="s2">&quot;mask&quot;</span><span class="p">}</span>
+    <span class="n">_SUBNET_MASK_KEYS</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"attention_mask"</span><span class="p">,</span> <span class="s2">"mask"</span><span class="p">}</span>
 
-    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_distribution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">base_distribution</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">"normal"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span> <span class="o">=</span> <span class="n">find_distribution</span><span class="p">(</span><span class="n">base_distribution</span><span class="p">)</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_collect_mask_kwargs</span><span class="p">(</span><span class="n">keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">source</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract mask kwargs from source dict.</span>
+<span class="w">        </span><span class="sd">"""Extract mask kwargs from source dict.</span>
 
 <span class="sd">        Looks up each key in *keys* and includes it in the result if its value</span>
 <span class="sd">        is not ``None``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span> <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
 
 <div class="viewcode-block" id="InferenceNetwork.call">
@@ -609,7 +609,7 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">seed</span> <span class="o">=</span> <span class="n">resolve_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_distribution</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-        <span class="k">if</span> <span class="s2">&quot;compute_prior_score&quot;</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"compute_prior_score"</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
             <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_inverse_compositional</span><span class="p">(</span>
                 <span class="n">samples</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
             <span class="p">)</span>
@@ -628,7 +628,7 @@
 <div class="viewcode-block" id="InferenceNetwork.compute_metrics">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.inference.inference_network.InferenceNetwork.html#bayesflow.networks.inference.inference_network.InferenceNetwork.compute_metrics">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
@@ -669,8 +669,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -704,7 +704,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

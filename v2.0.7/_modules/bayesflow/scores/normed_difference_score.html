@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/scores/normed_difference_score';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,12 +492,12 @@
 
 <div class="viewcode-block" id="NormedDifferenceScore">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.NormedDifferenceScore.html#bayesflow.scores.NormedDifferenceScore">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.scores&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.scores"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">NormedDifferenceScore</span><span class="p">(</span><span class="n">ScoringRule</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">""":math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`</span>
 
 <span class="sd">    Scores a point estimate with the k-norm of the error.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">k</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -505,7 +505,7 @@
         <span class="c1">#: Exponent to absolute difference</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">k</span> <span class="o">=</span> <span class="n">k</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"k"</span><span class="p">:</span> <span class="n">k</span><span class="p">}</span>
 
 <div class="viewcode-block" id="NormedDifferenceScore.get_head_shapes_from_target_shape">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.NormedDifferenceScore.html#bayesflow.scores.NormedDifferenceScore.get_head_shapes_from_target_shape">[docs]</a>
@@ -518,12 +518,12 @@
 <div class="viewcode-block" id="NormedDifferenceScore.score">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.NormedDifferenceScore.html#bayesflow.scores.NormedDifferenceScore.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Computes the scoring function based on the absolute difference between **estimates** and **targets**.</span>
 
 <span class="sd">        :math:`S(\hat \theta, \theta; k) = | \hat \theta - \theta |^k`</span>
 
-<span class="sd">        This function extracts the Tensor named ``&quot;value&quot;`` from the **estimates** dictionary and computes</span>
+<span class="sd">        This function extracts the Tensor named ``"value"`` from the **estimates** dictionary and computes</span>
 <span class="sd">        the element-wise absolute difference between the estimates and the true targets. The</span>
 <span class="sd">        difference is then exponentiated by :py:attr:`k`. The final score is computed using the</span>
 <span class="sd">        :py:func:`aggregate()` method, which optionally applies weighting.</span>
@@ -531,7 +531,7 @@
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        estimates : dict[str, Tensor]</span>
-<span class="sd">            A dictionary containing tensors of estimated values. The &quot;value&quot; key must be present.</span>
+<span class="sd">            A dictionary containing tensors of estimated values. The "value" key must be present.</span>
 <span class="sd">        targets : Tensor</span>
 <span class="sd">            A tensor of true target values.</span>
 <span class="sd">        weights : Tensor, optional</span>
@@ -543,8 +543,8 @@
 <span class="sd">        Tensor</span>
 <span class="sd">            The aggregated score based on the element-wise absolute difference raised to the power</span>
 <span class="sd">            of `self.k`, optionally weighted.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+<span class="sd">        """</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]</span>
         <span class="n">scores</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">estimates</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span> <span class="o">**</span> <span class="bp">self</span><span class="o">.</span><span class="n">k</span>
         <span class="n">score</span> <span class="o">=</span> <span class="n">weighted_mean</span><span class="p">(</span><span class="n">scores</span><span class="p">,</span> <span class="n">weights</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">score</span></div>
@@ -586,8 +586,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -621,7 +621,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

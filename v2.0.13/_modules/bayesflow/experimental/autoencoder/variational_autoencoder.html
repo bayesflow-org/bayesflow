@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/experimental/autoencoder/variational_autoencoder';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,9 +492,9 @@
 
 <div class="viewcode-block" id="VariationalAutoEncoder">
 <a class="viewcode-back" href="../../../../api/bayesflow.experimental.VariationalAutoEncoder.html#bayesflow.experimental.VariationalAutoEncoder">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.experimental&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.experimental"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">VariationalAutoEncoder</span><span class="p">(</span><span class="n">AutoEncoder</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Information-Maximizing Variational Autoencoder according to [1].</span>
+<span class="w">    </span><span class="sd">"""Information-Maximizing Variational Autoencoder according to [1].</span>
 
 <span class="sd">    The loss is computed as</span>
 
@@ -533,7 +533,7 @@
 <span class="sd">        is named lambda.</span>
 <span class="sd">    mmd_kwargs</span>
 <span class="sd">        Optional keyword arguments forwarded to ``maximum_mean_discrepancy``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -571,7 +571,7 @@
 <a class="viewcode-back" href="../../../../api/bayesflow.experimental.VariationalAutoEncoder.html#bayesflow.experimental.VariationalAutoEncoder.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
-        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="s2">&quot;lambd&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="s2">&quot;mmd_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmd_kwargs</span><span class="p">}</span>
+        <span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"alpha"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">alpha</span><span class="p">,</span> <span class="s2">"lambd"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">beta</span><span class="p">,</span> <span class="s2">"mmd_kwargs"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">mmd_kwargs</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
 
@@ -613,7 +613,7 @@
         <span class="k">return</span> <span class="n">sample</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_conditional_kl</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">log_var</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-example KL[q(z | x) || p(z)] for diagonal Gaussian q and standard normal p.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Per-example KL[q(z | x) || p(z)] for diagonal Gaussian q and standard normal p."""</span>
 
         <span class="k">return</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span>
             <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="o">+</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_var</span><span class="p">)</span> <span class="o">-</span> <span class="mf">1.0</span> <span class="o">-</span> <span class="n">log_var</span><span class="p">,</span>
@@ -621,7 +621,7 @@
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_marginal_mmd</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sample</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;MMD[q(z), p(z)] using samples from the aggregate posterior and prior.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""MMD[q(z), p(z)] using samples from the aggregate posterior and prior."""</span>
 
         <span class="n">targets</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span>
             <span class="n">shape</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">sample</span><span class="p">),</span>
@@ -632,7 +632,7 @@
         <span class="k">return</span> <span class="n">maximum_mean_discrepancy</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">mmd_kwargs</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_reconstruction_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">reconstruction</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Per-example mean squared reconstruction error.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Per-example mean squared reconstruction error."""</span>
 
         <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
             <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">square</span><span class="p">(</span><span class="n">x</span> <span class="o">-</span> <span class="n">reconstruction</span><span class="p">),</span>
@@ -645,11 +645,11 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span>
         <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span>
+        <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">,</span>
         <span class="n">seed</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="n">training</span> <span class="o">=</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span>
+        <span class="n">training</span> <span class="o">=</span> <span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span>
         <span class="n">seed</span> <span class="o">=</span> <span class="n">resolve_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
 
         <span class="n">_</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">log_var</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_encode</span><span class="p">(</span>
@@ -677,7 +677,7 @@
         <span class="k">else</span><span class="p">:</span>
             <span class="n">mmd_loss</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">sample</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s2">&quot;recon_loss&quot;</span><span class="p">:</span> <span class="n">recon_loss</span><span class="p">,</span> <span class="s2">&quot;kl_loss&quot;</span><span class="p">:</span> <span class="n">kl_loss</span><span class="p">,</span> <span class="s2">&quot;mmd_loss&quot;</span><span class="p">:</span> <span class="n">mmd_loss</span><span class="p">,</span> <span class="s2">&quot;z&quot;</span><span class="p">:</span> <span class="n">sample</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="p">,</span> <span class="s2">"recon_loss"</span><span class="p">:</span> <span class="n">recon_loss</span><span class="p">,</span> <span class="s2">"kl_loss"</span><span class="p">:</span> <span class="n">kl_loss</span><span class="p">,</span> <span class="s2">"mmd_loss"</span><span class="p">:</span> <span class="n">mmd_loss</span><span class="p">,</span> <span class="s2">"z"</span><span class="p">:</span> <span class="n">sample</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
@@ -709,8 +709,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -744,7 +744,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

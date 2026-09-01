@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.utils.parse_bytes';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -856,15 +856,15 @@ flooring to the nearest integer.</p>
 <p>The parsing is case-sensitive. E.g., uppercase ‘K’ will <em>not</em> be recognized as ‘kilo’,
 and lowercase ‘b’ will be recognized as ‘bit’ rather than ‘byte’.</p>
 <dl>
-<dt>Examples:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">&quot;8 GB&quot;</span><span class="p">)</span>  <span class="c1"># 8 Gigabyte</span>
+<dt>Examples:</dt><dd><div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">"8 GB"</span><span class="p">)</span>  <span class="c1"># 8 Gigabyte</span>
 <span class="go">8000000000</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">&quot;32 kiB&quot;</span><span class="p">)</span>  <span class="c1"># 32 Kibibyte</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">"32 kiB"</span><span class="p">)</span>  <span class="c1"># 32 Kibibyte</span>
 <span class="go">32768</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">&quot;1 Tb&quot;</span><span class="p">)</span>  <span class="c1"># 1 Terrabit</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">"1 Tb"</span><span class="p">)</span>  <span class="c1"># 1 Terrabit</span>
 <span class="go">125000000000</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">&quot;2.5 kB&quot;</span><span class="p">)</span>  <span class="c1"># 2.5 Kilobyte</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">"2.5 kB"</span><span class="p">)</span>  <span class="c1"># 2.5 Kilobyte</span>
 <span class="go">2500</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">&quot;1e9 B&quot;</span><span class="p">)</span>  <span class="c1"># 10^9 Bytes</span>
+<span class="gp">&gt;&gt;&gt; </span><span class="n">parse_bytes</span><span class="p">(</span><span class="s2">"1e9 B"</span><span class="p">)</span>  <span class="c1"># 10^9 Bytes</span>
 <span class="go">1000000000</span>
 </pre></div>
 </div>
@@ -958,8 +958,8 @@ and lowercase ‘b’ will be recognized as ‘bit’ rather than ‘byte’.</p
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -993,7 +993,7 @@ and lowercase ‘b’ will be recognized as ‘bit’ rather than ‘byte’.</p
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

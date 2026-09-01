@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/coupling/transforms/spline_transform';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -496,13 +496,13 @@
 
 <div class="viewcode-block" id="SplineTransform">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.coupling.transforms.SplineTransform.html#bayesflow.networks.inference.coupling.transforms.SplineTransform">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SplineTransform</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Elementwise monotonic rational-quadratic spline transformation [1].</span>
+<span class="w">    </span><span class="sd">"""Elementwise monotonic rational-quadratic spline transformation [1].</span>
 
 <span class="sd">    More expressive than :py:class:`AffineTransform`, at the cost of</span>
 <span class="sd">    ``3 * bins + 3`` parameters per dimension. Inputs falling outside the learned</span>
-<span class="sd">    spline domain are handled by a linear tail that matches the domain&#39;s slope,</span>
+<span class="sd">    spline domain are handled by a linear tail that matches the domain's slope,</span>
 <span class="sd">    so the transformation stays invertible on the whole real line.</span>
 
 <span class="sd">    Parameters</span>
@@ -523,13 +523,13 @@
 <span class="sd">    min_bin_height : float, optional</span>
 <span class="sd">        Lower bound on the height of a single bin. Default is 0.1.</span>
 <span class="sd">    method : str, optional</span>
-<span class="sd">        Spline family. Only ``&quot;rational_quadratic&quot;`` is implemented.</span>
+<span class="sd">        Spline family. Only ``"rational_quadratic"`` is implemented.</span>
 
 <span class="sd">    References</span>
 <span class="sd">    ----------</span>
 <span class="sd">    [1] Durkan, C., Bekasov, A., Murray, I., &amp; Papamakarios, G. (2019).</span>
 <span class="sd">        Neural spline flows. NeurIPS, 32.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -539,18 +539,18 @@
         <span class="n">min_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">min_bin_width</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
         <span class="n">min_bin_height</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
-        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rational_quadratic&quot;</span><span class="p">,</span>
+        <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"rational_quadratic"</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="k">if</span> <span class="n">bins</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of bins must be strictly positive.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Number of bins must be strictly positive."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="ow">or</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">&lt;=</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">2</span><span class="p">]:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Invalid default domain. Must be (left, right, bottom, top).&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Invalid default domain. Must be (left, right, bottom, top)."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">&quot;rational_quadratic&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Currently, only &#39;rational_quadratic&#39; spline method is supported.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">!=</span> <span class="s2">"rational_quadratic"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Currently, only 'rational_quadratic' spline method is supported."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">=</span> <span class="n">bins</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">min_width</span><span class="p">,</span> <span class="n">bins</span> <span class="o">*</span> <span class="n">min_bin_width</span><span class="p">)</span>
@@ -564,13 +564,13 @@
         <span class="c1"># we slightly over-parametrize to allow for better constraints</span>
         <span class="c1"># this may also improve convergence due to redundancy</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">parameter_sizes</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;left_edge&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;bottom_edge&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;total_width&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;total_height&quot;</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
-            <span class="s2">&quot;bin_widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
-            <span class="s2">&quot;bin_heights&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
-            <span class="s2">&quot;derivatives&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"left_edge"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"bottom_edge"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"total_width"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"total_height"</span><span class="p">:</span> <span class="mi">1</span><span class="p">,</span>
+            <span class="s2">"bin_widths"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
+            <span class="s2">"bin_heights"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
+            <span class="s2">"derivatives"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">default_left</span> <span class="o">=</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
@@ -579,10 +579,10 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">default_height</span> <span class="o">=</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">default_domain</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_width</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Default width must be greater than minimum width (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Default width must be greater than minimum width (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_height</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Default height must be greater than minimum height (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Default height must be greater than minimum height (</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sinh</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">-</span> <span class="mf">1.0</span><span class="p">)</span>
 
@@ -590,18 +590,18 @@
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.coupling.transforms.SplineTransform.html#bayesflow.networks.inference.coupling.transforms.SplineTransform.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;bins&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
-            <span class="s2">&quot;default_domain&quot;</span><span class="p">:</span> <span class="p">(</span>
+            <span class="s2">"bins"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">,</span>
+            <span class="s2">"default_domain"</span><span class="p">:</span> <span class="p">(</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">default_left</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">default_left</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_width</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">default_bottom</span><span class="p">,</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">default_bottom</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_height</span><span class="p">,</span>
             <span class="p">),</span>
-            <span class="s2">&quot;min_width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="p">,</span>
-            <span class="s2">&quot;min_height&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="p">,</span>
-            <span class="s2">&quot;min_bin_width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_width</span><span class="p">,</span>
-            <span class="s2">&quot;min_bin_height&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_height</span><span class="p">,</span>
-            <span class="s2">&quot;method&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
+            <span class="s2">"min_width"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="p">,</span>
+            <span class="s2">"min_height"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="p">,</span>
+            <span class="s2">"min_bin_width"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_width</span><span class="p">,</span>
+            <span class="s2">"min_bin_height"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_height</span><span class="p">,</span>
+            <span class="s2">"method"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">method</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
@@ -624,21 +624,21 @@
 <div class="viewcode-block" id="SplineTransform.constrain_parameters">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.coupling.transforms.SplineTransform.html#bayesflow.networks.inference.coupling.transforms.SplineTransform.constrain_parameters">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">constrain_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">parameters</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="n">left_edge</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;left_edge&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_left</span>
-        <span class="n">bottom_edge</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;bottom_edge&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_bottom</span>
+        <span class="n">left_edge</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="s2">"left_edge"</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_left</span>
+        <span class="n">bottom_edge</span> <span class="o">=</span> <span class="n">parameters</span><span class="p">[</span><span class="s2">"bottom_edge"</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">default_bottom</span>
 
         <span class="c1"># strictly positive (softplus)</span>
         <span class="c1"># scales logarithmically to infinity (arcsinh)</span>
         <span class="c1"># 1 when network outputs 0 (shift)</span>
-        <span class="n">total_width</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">arcsinh</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;total_width&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">))</span>
+        <span class="n">total_width</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">arcsinh</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"total_width"</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">))</span>
         <span class="n">total_width</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span><span class="p">)</span> <span class="o">*</span> <span class="n">total_width</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_width</span>
 
-        <span class="n">total_height</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">arcsinh</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;total_height&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">))</span>
+        <span class="n">total_height</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">arcsinh</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"total_height"</span><span class="p">]</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">))</span>
         <span class="n">total_height</span> <span class="o">=</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">default_height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span><span class="p">)</span> <span class="o">*</span> <span class="n">total_height</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_height</span>
 
-        <span class="n">bin_widths</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;bin_widths&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">bin_widths</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"bin_widths"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">bin_widths</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_width</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_width</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_widths</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_width</span>
-        <span class="n">bin_heights</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;bin_heights&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">bin_heights</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"bin_heights"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">bin_heights</span> <span class="o">=</span> <span class="p">(</span><span class="n">total_height</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_height</span><span class="p">)</span> <span class="o">*</span> <span class="n">bin_heights</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">min_bin_height</span>
 
         <span class="c1"># dy / dx</span>
@@ -647,22 +647,22 @@
         <span class="n">affine_shift</span> <span class="o">=</span> <span class="n">bottom_edge</span> <span class="o">-</span> <span class="n">affine_scale</span> <span class="o">*</span> <span class="n">left_edge</span>
 
         <span class="n">horizontal_edges</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">bin_widths</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">horizontal_edges</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">horizontal_edges</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="n">horizontal_edges</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">horizontal_edges</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
         <span class="n">horizontal_edges</span> <span class="o">=</span> <span class="n">left_edge</span> <span class="o">+</span> <span class="n">horizontal_edges</span>
 
         <span class="n">vertical_edges</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cumsum</span><span class="p">(</span><span class="n">bin_heights</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-        <span class="n">vertical_edges</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">vertical_edges</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;left&quot;</span><span class="p">)</span>
+        <span class="n">vertical_edges</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">vertical_edges</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"left"</span><span class="p">)</span>
         <span class="n">vertical_edges</span> <span class="o">=</span> <span class="n">bottom_edge</span> <span class="o">+</span> <span class="n">vertical_edges</span>
 
-        <span class="n">derivatives</span> <span class="o">=</span> <span class="n">shifted_softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;derivatives&quot;</span><span class="p">])</span>
-        <span class="n">derivatives</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">derivatives</span><span class="p">,</span> <span class="n">affine_scale</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">&quot;both&quot;</span><span class="p">)</span>
+        <span class="n">derivatives</span> <span class="o">=</span> <span class="n">shifted_softplus</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"derivatives"</span><span class="p">])</span>
+        <span class="n">derivatives</span> <span class="o">=</span> <span class="n">pad</span><span class="p">(</span><span class="n">derivatives</span><span class="p">,</span> <span class="n">affine_scale</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"both"</span><span class="p">)</span>
 
         <span class="n">constrained_parameters</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;horizontal_edges&quot;</span><span class="p">:</span> <span class="n">horizontal_edges</span><span class="p">,</span>
-            <span class="s2">&quot;vertical_edges&quot;</span><span class="p">:</span> <span class="n">vertical_edges</span><span class="p">,</span>
-            <span class="s2">&quot;derivatives&quot;</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">,</span>
-            <span class="s2">&quot;affine_scale&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">affine_scale</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;affine_shift&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">affine_shift</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"horizontal_edges"</span><span class="p">:</span> <span class="n">horizontal_edges</span><span class="p">,</span>
+            <span class="s2">"vertical_edges"</span><span class="p">:</span> <span class="n">vertical_edges</span><span class="p">,</span>
+            <span class="s2">"derivatives"</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">,</span>
+            <span class="s2">"affine_scale"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">affine_scale</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"affine_shift"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">affine_shift</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">constrained_parameters</span></div>
@@ -673,13 +673,13 @@
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># affine transform for outside</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;affine_scale&quot;</span><span class="p">)</span>
-        <span class="n">shift</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;affine_shift&quot;</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"affine_scale"</span><span class="p">)</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"affine_shift"</span><span class="p">)</span>
         <span class="n">affine</span> <span class="o">=</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">x</span> <span class="o">+</span> <span class="n">shift</span>
         <span class="n">affine_log_jac</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">affine</span><span class="p">))</span>
 
         <span class="c1"># spline transform for inside</span>
-        <span class="n">bins</span> <span class="o">=</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;horizontal_edges&quot;</span><span class="p">],</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"horizontal_edges"</span><span class="p">],</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">bins</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bins</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">)</span>
 
@@ -696,20 +696,20 @@
         <span class="n">lower</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">edges</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;horizontal_edges&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;horizontal_edges&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;bottom&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;vertical_edges&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;top&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;vertical_edges&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"left"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"horizontal_edges"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"right"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"horizontal_edges"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"bottom"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"vertical_edges"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"top"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"vertical_edges"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="n">derivatives</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;derivatives&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;derivatives&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"left"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"derivatives"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"right"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"derivatives"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">derivatives</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">derivatives</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span> <span class="s2">&quot;derivatives&quot;</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">}</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"edges"</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span> <span class="s2">"derivatives"</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">}</span>
 
         <span class="c1"># compute the spline and jacobian</span>
         <span class="n">spline</span><span class="p">,</span> <span class="n">spline_log_jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_fn</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">**</span><span class="n">parameters</span><span class="p">)</span>
@@ -726,13 +726,13 @@
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
 
         <span class="c1"># affine transform for outside</span>
-        <span class="n">scale</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;affine_scale&quot;</span><span class="p">)</span>
-        <span class="n">shift</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;affine_shift&quot;</span><span class="p">)</span>
+        <span class="n">scale</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"affine_scale"</span><span class="p">)</span>
+        <span class="n">shift</span> <span class="o">=</span> <span class="n">parameters</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"affine_shift"</span><span class="p">)</span>
         <span class="n">affine</span> <span class="o">=</span> <span class="p">(</span><span class="n">z</span> <span class="o">-</span> <span class="n">shift</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span>
         <span class="n">affine_log_jac</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="o">-</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">),</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">affine</span><span class="p">))</span>
 
         <span class="c1"># spline transform for inside</span>
-        <span class="n">bins</span> <span class="o">=</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;vertical_edges&quot;</span><span class="p">],</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
+        <span class="n">bins</span> <span class="o">=</span> <span class="n">searchsorted</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"vertical_edges"</span><span class="p">],</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">))</span>
         <span class="n">bins</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">bins</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="n">inside</span> <span class="o">=</span> <span class="p">(</span><span class="n">bins</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">bins</span> <span class="o">&lt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">bins</span><span class="p">)</span>
 
@@ -749,20 +749,20 @@
         <span class="n">lower</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="n">edges</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;horizontal_edges&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;horizontal_edges&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;bottom&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;vertical_edges&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;top&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;vertical_edges&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"left"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"horizontal_edges"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"right"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"horizontal_edges"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"bottom"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"vertical_edges"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"top"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"vertical_edges"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">edges</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">edges</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="n">derivatives</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;left&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;derivatives&quot;</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
-            <span class="s2">&quot;right&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">&quot;derivatives&quot;</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"left"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"derivatives"</span><span class="p">],</span> <span class="n">lower</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+            <span class="s2">"right"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">parameters</span><span class="p">[</span><span class="s2">"derivatives"</span><span class="p">],</span> <span class="n">upper</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
         <span class="p">}</span>
         <span class="n">derivatives</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">derivatives</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
-        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;edges&quot;</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span> <span class="s2">&quot;derivatives&quot;</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">}</span>
+        <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"edges"</span><span class="p">:</span> <span class="n">edges</span><span class="p">,</span> <span class="s2">"derivatives"</span><span class="p">:</span> <span class="n">derivatives</span><span class="p">}</span>
 
         <span class="c1"># compute the spline and jacobian</span>
         <span class="n">spline</span><span class="p">,</span> <span class="n">spline_log_jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">method_fn</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="o">**</span><span class="n">parameters</span><span class="p">,</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -803,8 +803,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -838,7 +838,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

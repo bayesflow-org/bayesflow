@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=594047cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.workflows';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -859,8 +859,8 @@ to start; for ensemble-based inference see <a class="reference internal" href="b
 <span class="gp">&gt;&gt;&gt; </span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
 <span class="gp">... </span>    <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">(),</span>
 <span class="gp">... </span>    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
-<span class="gp">... </span>    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-<span class="gp">... </span>    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+<span class="gp">... </span>    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">],</span>
 <span class="gp">... </span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">200</span><span class="p">)</span>
 <span class="gp">&gt;&gt;&gt; </span><span class="n">diagnostics</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_default_diagnostics</span><span class="p">(</span><span class="n">test_data</span><span class="o">=</span><span class="mi">300</span><span class="p">)</span>
@@ -968,8 +968,8 @@ to start; for ensemble-based inference see <a class="reference internal" href="b
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1003,7 +1003,7 @@ to start; for ensemble-based inference see <a class="reference internal" href="b
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

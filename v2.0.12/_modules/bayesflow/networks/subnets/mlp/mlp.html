@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/subnets/mlp/mlp';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,9 +494,9 @@
 
 <div class="viewcode-block" id="MLP">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.subnets.MLP.html#bayesflow.networks.subnets.MLP">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MLP</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-layer perceptron built from :class:`DenseBlock` layers.</span>
+<span class="w">    </span><span class="sd">"""Multi-layer perceptron built from :class:`DenseBlock` layers.</span>
 
 <span class="sd">    Accepts a single tensor input.  When used inside a coupling layer the</span>
 <span class="sd">    caller (e.g. :class:`SingleCoupling`) concatenates any non-time</span>
@@ -507,34 +507,34 @@
 <span class="sd">    widths : Sequence[int], optional</span>
 <span class="sd">        Number of hidden units per layer. Default is ``(256, 256)``.</span>
 <span class="sd">    activation : str or callable, optional</span>
-<span class="sd">        Activation function for hidden layers. Default is ``&quot;mish&quot;``.</span>
+<span class="sd">        Activation function for hidden layers. Default is ``"mish"``.</span>
 <span class="sd">    kernel_initializer : str or keras.Initializer, optional</span>
-<span class="sd">        Weight initialization strategy. Default is ``&quot;he_normal&quot;``.</span>
+<span class="sd">        Weight initialization strategy. Default is ``"he_normal"``.</span>
 <span class="sd">    residual : bool, optional</span>
 <span class="sd">        Whether to use residual (skip) connections. Default is ``True``.</span>
 <span class="sd">    dropout : float or None, optional</span>
 <span class="sd">        Dropout rate for regularization. Default is ``0.05``.</span>
-<span class="sd">    norm : ``&quot;batch&quot;``, ``&quot;layer&quot;``, ``&quot;rms&quot;``, keras.Layer, or None, optional</span>
+<span class="sd">    norm : ``"batch"``, ``"layer"``, ``"rms"``, keras.Layer, or None, optional</span>
 <span class="sd">        Normalization applied after each hidden layer. Default is ``None``.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Additional keyword arguments passed to ``keras.Layer``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">widths</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">"he_normal"</span><span class="p">,</span>
         <span class="n">residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span> <span class="s2">&quot;rms&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"batch"</span><span class="p">,</span> <span class="s2">"layer"</span><span class="p">,</span> <span class="s2">"rms"</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;MLP requires at least one hidden width.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"MLP requires at least one hidden width."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">widths</span> <span class="o">=</span> <span class="n">widths</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span>
@@ -598,12 +598,12 @@
         <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
-            <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
-            <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
-            <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
-            <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
+            <span class="s2">"widths"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
+            <span class="s2">"activation"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+            <span class="s2">"kernel_initializer"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
+            <span class="s2">"residual"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
+            <span class="s2">"dropout"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="s2">"norm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 </div>
@@ -637,8 +637,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -672,7 +672,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

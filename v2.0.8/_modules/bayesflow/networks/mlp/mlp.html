@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/mlp/mlp';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,28 +495,28 @@
 
 <div class="viewcode-block" id="MLP">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.MLP.html#bayesflow.networks.MLP">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MLP</span><span class="p">(</span><span class="n">Sequential</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implements a simple configurable MLP with optional residual connections and dropout.</span>
 
 <span class="sd">    If used in conjunction with a coupling net, a diffusion model, or a flow matching model, it assumes</span>
 <span class="sd">    that the input and conditions are already concatenated (i.e., this is a single-input model).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">widths</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Callable</span><span class="p">[[],</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">"he_normal"</span><span class="p">,</span>
         <span class="n">residual</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;batch&quot;</span><span class="p">,</span> <span class="s2">&quot;layer&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"batch"</span><span class="p">,</span> <span class="s2">"layer"</span><span class="p">]</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">spectral_normalization</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Implements a flexible multi-layer perceptron (MLP) with optional residual connections, dropout, and</span>
 <span class="sd">        spectral normalization.</span>
 
@@ -533,9 +533,9 @@
 <span class="sd">        widths : Sequence[int], optional</span>
 <span class="sd">            Defines the number of hidden units per layer, as well as the number of layers to be used.</span>
 <span class="sd">        activation : str, optional</span>
-<span class="sd">            Activation function applied in the hidden layers, such as &quot;mish&quot;. Default is &quot;mish&quot;.</span>
+<span class="sd">            Activation function applied in the hidden layers, such as "mish". Default is "mish".</span>
 <span class="sd">        kernel_initializer : str, optional</span>
-<span class="sd">            Initialization strategy for kernel weights, such as &quot;he_normal&quot;. Default is &quot;he_normal&quot;.</span>
+<span class="sd">            Initialization strategy for kernel weights, such as "he_normal". Default is "he_normal".</span>
 <span class="sd">        residual : bool, optional</span>
 <span class="sd">            Whether to use residual connections for improved training stability. Default is False.</span>
 <span class="sd">        dropout : float or None, optional</span>
@@ -546,7 +546,7 @@
 <span class="sd">            Whether to apply spectral normalization to stabilize training. Default is False.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to the Keras layer initialization.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">widths</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">widths</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">activation</span> <span class="o">=</span> <span class="n">activation</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span> <span class="o">=</span> <span class="n">kernel_initializer</span>
@@ -572,13 +572,13 @@
         <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
-            <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
-            <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
-            <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
-            <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
-            <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_normalization</span><span class="p">,</span>
+            <span class="s2">"widths"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
+            <span class="s2">"activation"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+            <span class="s2">"kernel_initializer"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
+            <span class="s2">"residual"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">residual</span><span class="p">,</span>
+            <span class="s2">"dropout"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="s2">"norm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
+            <span class="s2">"spectral_normalization"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">spectral_normalization</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
@@ -602,18 +602,18 @@
 
         <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">activation</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;batch&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">"batch"</span><span class="p">:</span>
             <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">BatchNormalization</span><span class="p">())</span>
-        <span class="k">elif</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">&quot;layer&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">norm</span> <span class="o">==</span> <span class="s2">"layer"</span><span class="p">:</span>
             <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">LayerNormalization</span><span class="p">())</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown normalization strategy: </span><span class="si">{</span><span class="n">norm</span><span class="si">!r}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown normalization strategy: </span><span class="si">{</span><span class="n">norm</span><span class="si">!r}</span><span class="s2">."</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">norm</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
             <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span>
         <span class="k">elif</span> <span class="n">norm</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot infer norm from </span><span class="si">{</span><span class="n">norm</span><span class="si">!r}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot infer norm from </span><span class="si">{</span><span class="n">norm</span><span class="si">!r}</span><span class="s2"> of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">norm</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">residual</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">Residual</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
@@ -649,8 +649,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -684,7 +684,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

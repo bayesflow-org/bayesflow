@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/approximators/point_approximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -506,15 +506,15 @@
 
 <div class="viewcode-block" id="PointApproximator">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.PointApproximator.html#bayesflow.approximators.PointApproximator">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.approximators&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.approximators"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PointApproximator</span><span class="p">(</span><span class="n">ContinuousApproximator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    A workflow for fast amortized point estimation of a conditional distribution.</span>
 
 <span class="sd">    The distribution is approximated by point estimators, parameterized by a feed-forward</span>
 <span class="sd">    :py:class:`~bayesflow.networks.PointInferenceNetwork`. Conditions can be compressed by an optional summary network</span>
 <span class="sd">    (inheriting from :py:class:`~bayesflow.networks.SummaryNetwork`) or used directly as input to the inference network.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
 <div class="viewcode-block" id="PointApproximator.estimate">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.PointApproximator.html#bayesflow.approximators.PointApproximator.estimate">[docs]</a>
@@ -524,7 +524,7 @@
         <span class="n">split</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Estimates point summaries of inference variables based on specified conditions.</span>
 
 <span class="sd">        This method processes input conditions, computes estimates, applies necessary adapter transformations,</span>
@@ -551,7 +551,7 @@
 
 <span class="sd">            Each estimator output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, point_estimate_size, variable_block_size).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Adapt, optionally standardize and convert conditions to tensor.</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="c1"># Remove any superfluous keys, just retain actual conditions.</span>
@@ -559,11 +559,11 @@
 
         <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_estimate</span><span class="p">(</span><span class="o">**</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"inference_variables"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">score</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">for</span> <span class="n">head_key</span> <span class="ow">in</span> <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="n">transformation_type</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">TRANSFORMATION_TYPE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">head_key</span><span class="p">,</span> <span class="s2">&quot;location_scale&quot;</span><span class="p">)</span>
-                    <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span>
+                    <span class="n">transformation_type</span> <span class="o">=</span> <span class="n">score</span><span class="o">.</span><span class="n">TRANSFORMATION_TYPE</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">head_key</span><span class="p">,</span> <span class="s2">"location_scale"</span><span class="p">)</span>
+                    <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">](</span>
                         <span class="n">estimates</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">transformation_type</span><span class="o">=</span><span class="n">transformation_type</span>
                     <span class="p">)</span>
 
@@ -591,7 +591,7 @@
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Draws samples from a parametric distribution based on point estimates for given input conditions.</span>
 
 <span class="sd">        These samples will generally not correspond to samples from the fully Bayesian posterior, since</span>
@@ -623,9 +623,9 @@
 
 <span class="sd">            Each output (i.e., dictionary value that is not itself a dictionary) is an array</span>
 <span class="sd">            of shape (num_datasets, num_samples, variable_block_size).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;split=True is currently not supported for `PointApproximator`.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"split=True is currently not supported for `PointApproximator`."</span><span class="p">)</span>
 
         <span class="n">conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">conditions</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">CONDITION_KEYS</span><span class="p">}</span>
@@ -637,7 +637,7 @@
             <span class="n">batch_size</span> <span class="o">=</span> <span class="n">num_conditions</span>
 
         <span class="n">samples</span> <span class="o">=</span> <span class="p">[]</span>
-        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_conditions</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">&quot;Sampling&quot;</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">&quot;batch&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">num_conditions</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">),</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Sampling"</span><span class="p">,</span> <span class="n">unit</span><span class="o">=</span><span class="s2">"batch"</span><span class="p">):</span>
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">conditions</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
                 <span class="n">batch_conditions</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">else</span><span class="p">:</span>
@@ -651,17 +651,17 @@
         <span class="c1"># Optionally unstandardize and back-transform samples via adapter</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_post_process_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 
-        <span class="c1"># Squeeze sample dictionary if there&#39;s only one key-value pair.</span>
+        <span class="c1"># Squeeze sample dictionary if there's only one key-value pair.</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">samples</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_post_process_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Undo optional standardization and make dict of samples.&quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
+<span class="w">        </span><span class="sd">"""Undo optional standardization and make dict of samples."""</span>
+        <span class="k">if</span> <span class="s2">"inference_variables"</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">score_key</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                <span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">](</span><span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+                <span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardize_layers</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">](</span><span class="n">samples</span><span class="p">[</span><span class="n">score_key</span><span class="p">],</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_apply_inverse_adapter_to_samples</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">samples</span>
@@ -675,10 +675,10 @@
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot use summary variables without a summary network.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot use summary variables without a summary network."</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables are required when a summary network is present.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Summary variables are required when a summary network is present."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
@@ -701,7 +701,7 @@
 <div class="viewcode-block" id="PointApproximator.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.PointApproximator.html#bayesflow.approximators.PointApproximator.log_prob">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes the log-probability of given data under the parametric distribution(s) for given input conditions.</span>
 
 <span class="sd">        Parameters</span>
@@ -723,7 +723,7 @@
 <span class="sd">            Then, each key is the name of a score and values are corresponding log-probabilities.</span>
 
 <span class="sd">            Log-probabilities have shape (num_datasets,).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># Adapt, optionally standardize and convert to tensor. Keep track of log_det_jac</span>
         <span class="n">data</span><span class="p">,</span> <span class="n">log_det_jac</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_data</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">log_det_jac</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -743,7 +743,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_inverse_adapter_to_estimates</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]],</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the inverse adapter on each inner element of the _estimate output dictionary.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Applies the inverse adapter on each inner element of the _estimate output dictionary."""</span>
         <span class="n">estimates</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">,</span> <span class="n">estimates</span><span class="p">)</span>
         <span class="n">processed</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">score_val</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -751,12 +751,12 @@
             <span class="k">for</span> <span class="n">head_key</span><span class="p">,</span> <span class="n">estimate</span> <span class="ow">in</span> <span class="n">score_val</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">head_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">scores</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span><span class="o">.</span><span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span><span class="p">:</span>
                     <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                        <span class="sa">f</span><span class="s2">&quot;Estimate &#39;</span><span class="si">{</span><span class="n">score_key</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">&#39; is marked to not transform like a vector. &quot;</span>
-                        <span class="sa">f</span><span class="s2">&quot;It was treated like a vector by the adapter. Handle &#39;</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">&#39; estimates with care.&quot;</span>
+                        <span class="sa">f</span><span class="s2">"Estimate '</span><span class="si">{</span><span class="n">score_key</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">' is marked to not transform like a vector. "</span>
+                        <span class="sa">f</span><span class="s2">"It was treated like a vector by the adapter. Handle '</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">' estimates with care."</span>
                     <span class="p">)</span>
 
                 <span class="n">adapted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span>
-                    <span class="p">{</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span> <span class="n">estimate</span><span class="p">},</span>
+                    <span class="p">{</span><span class="s2">"inference_variables"</span><span class="p">:</span> <span class="n">estimate</span><span class="p">},</span>
                     <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                     <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -767,12 +767,12 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_apply_inverse_adapter_to_samples</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Applies the inverse adapter to a dictionary of samples.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Applies the inverse adapter to a dictionary of samples."""</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">,</span> <span class="n">samples</span><span class="p">)</span>
         <span class="n">processed</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">score_key</span><span class="p">,</span> <span class="n">score_value</span> <span class="ow">in</span> <span class="n">samples</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">processed</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span>
-                <span class="p">{</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span> <span class="n">score_value</span><span class="p">},</span>
+                <span class="p">{</span><span class="s2">"inference_variables"</span><span class="p">:</span> <span class="n">score_value</span><span class="p">},</span>
                 <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
                 <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
                 <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -783,7 +783,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_reorder_estimates</span><span class="p">(</span>
         <span class="n">estimates</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Reorders the nested dictionary so that the inference variable names become the top-level keys.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Reorders the nested dictionary so that the inference variable names become the top-level keys."""</span>
         <span class="c1"># Grab the variable names from one sample inner dictionary.</span>
         <span class="n">sample_inner</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
         <span class="n">variable_names</span> <span class="o">=</span> <span class="n">sample_inner</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
@@ -798,7 +798,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_squeeze_estimates</span><span class="p">(</span>
         <span class="n">estimates</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]],</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Squeezes each inner estimate dictionary to remove unnecessary nesting.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Squeezes each inner estimate dictionary to remove unnecessary nesting."""</span>
         <span class="n">squeezed</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">variable</span><span class="p">,</span> <span class="n">variable_estimates</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">squeezed</span><span class="p">[</span><span class="n">variable</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
@@ -809,9 +809,9 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_squeeze_parametric_score_major_dict</span><span class="p">(</span><span class="n">samples</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Squeezes the dictionary to just the value if there is only one key-value pair.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Squeezes the dictionary to just the value if there is only one key-value pair."""</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="c1"># Extract and return the only item&#39;s value</span>
+            <span class="c1"># Extract and return the only item's value</span>
             <span class="k">return</span> <span class="nb">next</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">samples</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
         <span class="k">return</span> <span class="n">samples</span>
 
@@ -822,7 +822,7 @@
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]:</span>
         <span class="k">if</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">summary_variables</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary variables and summary network must be used together.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Summary variables and summary network must be used together."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">(</span>
@@ -864,8 +864,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -899,7 +899,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

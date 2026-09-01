@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/workflows/ensemble_workflow';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -507,65 +507,65 @@
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">simulator</span><span class="p">:</span> <span class="n">Simulator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">inference_networks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InferenceNetwork</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">InferenceNetwork</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;coupling_flow&quot;</span><span class="p">,</span>
+        <span class="n">inference_networks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">InferenceNetwork</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">InferenceNetwork</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"coupling_flow"</span><span class="p">,</span>
         <span class="n">summary_networks</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">SummaryNetwork</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="n">SummaryNetwork</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">ensemble_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">share_inference_network</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">initial_learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-4</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Optimizer</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">checkpoint_filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">checkpoint_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+        <span class="n">checkpoint_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"model"</span><span class="p">,</span>
         <span class="n">save_weights_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">save_best_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">inference_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"inference_variables"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="n">_inference_networks</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inference_networks</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">ensemble_size</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;Ignoring argument ensemble_size=</span><span class="si">{ensemble_size}</span><span class="s2">, &quot;</span>
-                    <span class="s2">&quot;because a dictionary was passed for `inference_networks`.&quot;</span><span class="p">,</span>
+                    <span class="s2">"Ignoring argument ensemble_size=</span><span class="si">{ensemble_size}</span><span class="s2">, "</span>
+                    <span class="s2">"because a dictionary was passed for `inference_networks`."</span><span class="p">,</span>
                     <span class="n">ensemble_size</span><span class="o">=</span><span class="n">ensemble_size</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">if</span> <span class="n">share_inference_network</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-                    <span class="s2">&quot;Ignoring argument share_inference_network=</span><span class="si">{share_inference_network}</span><span class="s2">, &quot;</span>
-                    <span class="s2">&quot;because a dictionary was passed for `inference_networks`.&quot;</span><span class="p">,</span>
+                    <span class="s2">"Ignoring argument share_inference_network=</span><span class="si">{share_inference_network}</span><span class="s2">, "</span>
+                    <span class="s2">"because a dictionary was passed for `inference_networks`."</span><span class="p">,</span>
                     <span class="n">share_inference_network</span><span class="o">=</span><span class="n">share_inference_network</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">inference_networks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">_inference_networks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_inference_network</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="n">_inference_networks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_inference_network</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"inference_kwargs"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}))</span>
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">ensemble_size</span> <span class="ow">and</span> <span class="n">ensemble_size</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="n">inference_network</span> <span class="o">=</span> <span class="n">find_inference_network</span><span class="p">(</span><span class="n">inference_networks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="n">inference_network</span> <span class="o">=</span> <span class="n">find_inference_network</span><span class="p">(</span><span class="n">inference_networks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"inference_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
                 <span class="k">for</span> <span class="n">member_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ensemble_size</span><span class="p">):</span>
-                    <span class="n">member_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">member_idx</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">member_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">member_idx</span><span class="si">}</span><span class="s2">"</span>
                     <span class="k">if</span> <span class="n">share_inference_network</span><span class="p">:</span>
                         <span class="n">_inference_networks</span><span class="p">[</span><span class="n">member_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">inference_network</span>
                     <span class="k">else</span><span class="p">:</span>
                         <span class="n">_inference_networks</span><span class="p">[</span><span class="n">member_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">clone_model</span><span class="p">(</span><span class="n">inference_network</span><span class="p">)</span>
             <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">ensemble_size</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">ensemble_size</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;`ensemble_size` should be an integer greater than 1.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"`ensemble_size` should be an integer greater than 1."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Either `inference_networks` is a dictionary of `InferenceNetwork`s &quot;</span>
-                    <span class="s2">&quot;or `ensemble_size` must be specified.&quot;</span>
+                    <span class="s2">"Either `inference_networks` is a dictionary of `InferenceNetwork`s "</span>
+                    <span class="s2">"or `ensemble_size` must be specified."</span>
                 <span class="p">)</span>
 
         <span class="n">_summary_networks</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">summary_networks</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
             <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">summary_networks</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">_inference_networks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;A summary network was specified for </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">, but no inference network.&quot;</span><span class="p">)</span>
+                    <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"A summary network was specified for </span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s2">, but no inference network."</span><span class="p">)</span>
                 <span class="k">if</span> <span class="n">v</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                    <span class="n">_summary_networks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_summary_network</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}))</span>
+                    <span class="n">_summary_networks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">find_summary_network</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary_kwargs"</span><span class="p">,</span> <span class="p">{})</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="p">{}))</span>
         <span class="k">elif</span> <span class="n">summary_networks</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">summary_network</span> <span class="o">=</span> <span class="n">find_summary_network</span><span class="p">(</span><span class="n">summary_networks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="n">summary_network</span> <span class="o">=</span> <span class="n">find_summary_network</span><span class="p">(</span><span class="n">summary_networks</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
             <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">_inference_networks</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
                 <span class="n">_summary_networks</span><span class="p">[</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_network</span>
 
@@ -594,7 +594,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">member_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">approximators</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_init_optimizer</span><span class="p">(</span><span class="n">initial_learning_rate</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizer_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_optimizer</span><span class="p">(</span><span class="n">initial_learning_rate</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"optimizer_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_checkpointing</span><span class="p">(</span><span class="n">checkpoint_filepath</span><span class="p">,</span> <span class="n">checkpoint_name</span><span class="p">,</span> <span class="n">save_weights_only</span><span class="p">,</span> <span class="n">save_best_only</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="kc">None</span>
 
@@ -611,7 +611,7 @@
         <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Train the ensemble of approximators offline using a fixed dataset. This approach will be faster than online</span>
 <span class="sd">        training, since no computation time is spent in generating new data for each batch,</span>
 <span class="sd">        but it assumes that simulations can fit in memory.</span>
@@ -655,7 +655,7 @@
 <span class="sd">            A history object containing training history, where keys correspond to</span>
 <span class="sd">            logged metrics (e.g., loss values) and values are arrays tracking</span>
 <span class="sd">            metric evolution over epochs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">OfflineDataset</span><span class="p">(</span><span class="n">data</span><span class="o">=</span><span class="n">data</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span> <span class="n">augmentations</span><span class="o">=</span><span class="n">augmentations</span><span class="p">)</span>
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">EnsembleDataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">member_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">member_names</span><span class="p">,</span> <span class="n">data_reuse</span><span class="o">=</span><span class="n">data_reuse</span><span class="p">)</span>
@@ -663,7 +663,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
             <span class="n">dataset</span><span class="p">,</span>
             <span class="n">epochs</span><span class="p">,</span>
-            <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;offline&quot;</span><span class="p">,</span>
+            <span class="n">strategy</span><span class="o">=</span><span class="s2">"offline"</span><span class="p">,</span>
             <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span>
             <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -683,7 +683,7 @@
         <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Train the ensemble of approximators using an online data-generating process. The dataset is dynamically</span>
 <span class="sd">        generated during training, making this approach suitable for scenarios where generating new simulations</span>
 <span class="sd">        is computationally cheap.</span>
@@ -725,7 +725,7 @@
 <span class="sd">            A history object containing training history, where keys correspond to</span>
 <span class="sd">            logged metrics (e.g., loss values) and values are arrays tracking</span>
 <span class="sd">            metric evolution over epochs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">OnlineDataset</span><span class="p">(</span>
             <span class="n">simulator</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">simulator</span><span class="p">,</span>
@@ -737,7 +737,7 @@
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">EnsembleDataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">member_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">member_names</span><span class="p">,</span> <span class="n">data_reuse</span><span class="o">=</span><span class="n">data_reuse</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
-            <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;online&quot;</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="p">,</span> <span class="n">strategy</span><span class="o">=</span><span class="s2">"online"</span><span class="p">,</span> <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
         <span class="p">)</span></div>
 
 
@@ -746,7 +746,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fit_disk</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">,</span>
-        <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;*.pkl&quot;</span><span class="p">,</span>
+        <span class="n">pattern</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"*.pkl"</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">data_reuse</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">load_fn</span><span class="p">:</span> <span class="nb">callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -756,16 +756,16 @@
         <span class="n">augmentations</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Train the ensemble of approximators using data stored on disk. This approach is suitable for large sets of</span>
-<span class="sd">        simulations that don&#39;t fit in memory.</span>
+<span class="sd">        simulations that don't fit in memory.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        root : os.PathLike</span>
 <span class="sd">            The root directory containing the dataset files.</span>
 <span class="sd">        pattern : str, optional</span>
-<span class="sd">            A filename pattern to match dataset files, by default ``&quot;*.pkl&quot;``.</span>
+<span class="sd">            A filename pattern to match dataset files, by default ``"*.pkl"``.</span>
 <span class="sd">        batch_size : int, optional</span>
 <span class="sd">            The batch size used for training, by default 32.</span>
 <span class="sd">        data_reuse : float, optional</span>
@@ -803,7 +803,7 @@
 <span class="sd">            A history object containing training history, where keys correspond to</span>
 <span class="sd">            logged metrics (e.g., loss values) and values are arrays tracking</span>
 <span class="sd">            metric evolution over epochs.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">dataset</span> <span class="o">=</span> <span class="n">DiskDataset</span><span class="p">(</span>
             <span class="n">root</span><span class="o">=</span><span class="n">root</span><span class="p">,</span>
@@ -819,7 +819,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_fit</span><span class="p">(</span>
             <span class="n">dataset</span><span class="p">,</span>
             <span class="n">epochs</span><span class="p">,</span>
-            <span class="n">strategy</span><span class="o">=</span><span class="s2">&quot;offline&quot;</span><span class="p">,</span>
+            <span class="n">strategy</span><span class="o">=</span><span class="s2">"offline"</span><span class="p">,</span>
             <span class="n">keep_optimizer</span><span class="o">=</span><span class="n">keep_optimizer</span><span class="p">,</span>
             <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
@@ -855,8 +855,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -890,7 +890,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

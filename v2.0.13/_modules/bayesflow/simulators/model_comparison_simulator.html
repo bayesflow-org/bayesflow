@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/simulators/model_comparison_simulator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,7 +499,7 @@
 <div class="viewcode-block" id="ModelComparisonSimulator">
 <a class="viewcode-back" href="../../../api/bayesflow.simulators.ModelComparisonSimulator.html#bayesflow.simulators.ModelComparisonSimulator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModelComparisonSimulator</span><span class="p">(</span><span class="n">Simulator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;A multimodel simulator useful for model comparison tasks.</span>
+<span class="w">    </span><span class="sd">"""A multimodel simulator useful for model comparison tasks.</span>
 
 <span class="sd">    This class wraps multiple :class:`~bayesflow.simulators.Simulator` instances and</span>
 <span class="sd">    produces batched outputs that include a one-hot ``inference_variables`` vector</span>
@@ -513,7 +513,7 @@
 <span class="sd">      simulator chosen according to the model probabilities.</span>
 
 <span class="sd">    A shared simulator may optionally provide additional data that is passed to</span>
-<span class="sd">    every model&#39;s sampling call. Key-conflict policies control how incompatible</span>
+<span class="sd">    every model's sampling call. Key-conflict policies control how incompatible</span>
 <span class="sd">    outputs across simulators are handled (drop, fill, or error).</span>
 
 <span class="sd">    Parameters</span>
@@ -534,20 +534,20 @@
 <span class="sd">          model.</span>
 <span class="sd">        * If ``False``, the entire batch is drawn from a single model selected</span>
 <span class="sd">          according to the model probabilities.</span>
-<span class="sd">    key_conflicts : {&quot;drop&quot;, &quot;fill&quot;, &quot;error&quot;}, optional</span>
+<span class="sd">    key_conflicts : {"drop", "fill", "error"}, optional</span>
 <span class="sd">        Policy for handling keys missing from some model outputs when mixing</span>
 <span class="sd">        batches.</span>
 
-<span class="sd">        * ``&quot;drop&quot;`` (default): drop conflicting keys from the batch output.</span>
-<span class="sd">        * ``&quot;fill&quot;``: fill missing keys with ``fill_value``.</span>
-<span class="sd">        * ``&quot;error&quot;``: raise an error on conflicts.</span>
+<span class="sd">        * ``"drop"`` (default): drop conflicting keys from the batch output.</span>
+<span class="sd">        * ``"fill"``: fill missing keys with ``fill_value``.</span>
+<span class="sd">        * ``"error"``: raise an error on conflicts.</span>
 <span class="sd">    fill_value : float, optional</span>
-<span class="sd">        If ``key_conflicts==&quot;fill&quot;``, missing keys are filled with this value.</span>
+<span class="sd">        If ``key_conflicts=="fill"``, missing keys are filled with this value.</span>
 <span class="sd">    shared_simulator : Simulator or Callable, optional</span>
 <span class="sd">        A shared simulator providing outputs to every model. If a callable is</span>
 <span class="sd">        passed it is wrapped in a</span>
 <span class="sd">        :class:`~bayesflow.simulators.LambdaSimulator` with batching enabled.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -555,12 +555,12 @@
         <span class="n">p</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">logits</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">use_mixed_batches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">key_conflicts</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;drop&quot;</span><span class="p">,</span> <span class="s2">&quot;fill&quot;</span><span class="p">,</span> <span class="s2">&quot;error&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;drop&quot;</span><span class="p">,</span>
+        <span class="n">key_conflicts</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"drop"</span><span class="p">,</span> <span class="s2">"fill"</span><span class="p">,</span> <span class="s2">"error"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"drop"</span><span class="p">,</span>
         <span class="n">fill_value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">,</span>
         <span class="n">shared_simulator</span><span class="p">:</span> <span class="n">Simulator</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;This class requires at least 2 simulators, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"This class requires at least 2 simulators, got </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">simulators</span> <span class="o">=</span> <span class="n">simulators</span>
 
@@ -569,21 +569,21 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">shared_simulator</span> <span class="o">=</span> <span class="n">shared_simulator</span>
 
         <span class="k">if</span> <span class="n">logits</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Received conflicting arguments. At most one of `p` or `logits` must be provided.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Received conflicting arguments. At most one of `p` or `logits` must be provided."</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">p</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">p</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">p</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">p</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;All probabilities must be positive.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"All probabilities must be positive."</span><span class="p">)</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">p</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Probabilities must sum to 1.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Probabilities must sum to 1."</span><span class="p">)</span>
             <span class="n">logits</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
 
         <span class="k">elif</span> <span class="n">logits</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">logits</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Length of logits (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span><span class="si">}</span><span class="s2">) must match number of simulators (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2">).&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Length of logits (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">logits</span><span class="p">)</span><span class="si">}</span><span class="s2">) must match number of simulators (</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2">)."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">logits</span> <span class="o">=</span> <span class="n">logits</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">use_mixed_batches</span> <span class="o">=</span> <span class="n">use_mixed_batches</span>
@@ -595,7 +595,7 @@
 <a class="viewcode-back" href="../../../api/bayesflow.simulators.ModelComparisonSimulator.html#bayesflow.simulators.ModelComparisonSimulator.sample">[docs]</a>
     <span class="nd">@allow_batch_size</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Sample from the model comparison simulator.</span>
 
 <span class="sd">        Parameters</span>
@@ -613,8 +613,8 @@
 <span class="sd">            A dictionary containing the sampled outputs. Includes:</span>
 <span class="sd">              - outputs from the selected simulator(s)</span>
 <span class="sd">              - optionally, outputs from the shared simulator</span>
-<span class="sd">              - &quot;inference_variables&quot;: an array indicating the model origin of each sample</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">              - "inference_variables": an array indicating the model origin of each sample</span>
+<span class="sd">        """</span>
         <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_simulator</span><span class="p">:</span>
             <span class="n">data</span> <span class="o">|=</span> <span class="bp">self</span><span class="o">.</span><span class="n">shared_simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -633,16 +633,16 @@
             <span class="n">sims</span> <span class="o">=</span> <span class="n">tree_concatenate</span><span class="p">(</span><span class="n">sims</span><span class="p">,</span> <span class="n">numpy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">data</span> <span class="o">|=</span> <span class="n">sims</span>
 
-            <span class="n">model_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">num_models</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">),</span> <span class="n">model_counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="n">model_indices</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">num_models</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">),</span> <span class="n">model_counts</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="c1"># draw one model index for the whole batch (faster)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">model_index</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">num_models</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">softmax_logits</span><span class="p">)</span>
 
             <span class="n">data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulators</span><span class="p">[</span><span class="n">model_index</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="o">**</span><span class="p">(</span><span class="n">kwargs</span> <span class="o">|</span> <span class="n">data</span><span class="p">))</span>
-            <span class="n">model_indices</span> <span class="o">=</span> <span class="n">one_hot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">model_index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">),</span> <span class="n">num_models</span><span class="p">)</span>
+            <span class="n">model_indices</span> <span class="o">=</span> <span class="n">one_hot</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">model_index</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">),</span> <span class="n">num_models</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">data</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;model_indices&quot;</span><span class="p">:</span> <span class="n">model_indices</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="n">data</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"model_indices"</span><span class="p">:</span> <span class="n">model_indices</span><span class="p">}</span></div>
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_handle_key_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sims</span><span class="p">,</span> <span class="n">batch_sizes</span><span class="p">):</span>
@@ -654,10 +654,10 @@
         <span class="k">if</span> <span class="n">all_keys</span> <span class="o">==</span> <span class="n">common_keys</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">sims</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
             <span class="n">sims</span> <span class="o">=</span> <span class="p">[{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sim</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">common_keys</span><span class="p">}</span> <span class="k">for</span> <span class="n">sim</span> <span class="ow">in</span> <span class="n">sims</span><span class="p">]</span>
             <span class="k">return</span> <span class="n">sims</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">&quot;fill&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">"fill"</span><span class="p">:</span>
             <span class="n">combined_sims</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">sim</span> <span class="ow">in</span> <span class="n">sims</span><span class="p">:</span>
                 <span class="n">combined_sims</span> <span class="o">=</span> <span class="n">combined_sims</span> <span class="o">|</span> <span class="n">sim</span>
@@ -668,9 +668,9 @@
                     <span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
                     <span class="n">sim</span><span class="p">[</span><span class="n">missing_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="n">shape</span><span class="p">,</span> <span class="n">fill_value</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_value</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">sims</span>
-        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">&quot;error&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">"error"</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Different simulators provide outputs with different keys, cannot combine them into one batch.&quot;</span>
+                <span class="s2">"Different simulators provide outputs with different keys, cannot combine them into one batch."</span>
             <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_determine_key_conflicts</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sims</span><span class="p">):</span>
@@ -686,16 +686,16 @@
             <span class="c1"># issue warning only once</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_key_conflicts_warning</span> <span class="o">=</span> <span class="kc">False</span>
 
-            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">&quot;drop&quot;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">"drop"</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Incompatible simulator output. &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;The following keys will be dropped: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_keys</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">common_keys</span><span class="p">))</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Incompatible simulator output. "</span>
+                    <span class="sa">f</span><span class="s2">"The following keys will be dropped: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_keys</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">common_keys</span><span class="p">))</span><span class="si">}</span><span class="s2">."</span>
                 <span class="p">)</span>
-            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">&quot;fill&quot;</span><span class="p">:</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">key_conflicts</span> <span class="o">==</span> <span class="s2">"fill"</span><span class="p">:</span>
                 <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Incompatible simulator output. &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;Attempting to replace keys: </span><span class="si">{</span><span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_keys</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">common_keys</span><span class="p">))</span><span class="si">}</span><span class="s2">, where missing &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;with value </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_value</span><span class="si">}</span><span class="s2">.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Incompatible simulator output. "</span>
+                    <span class="sa">f</span><span class="s2">"Attempting to replace keys: </span><span class="si">{</span><span class="s1">', '</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">sorted</span><span class="p">(</span><span class="n">all_keys</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">common_keys</span><span class="p">))</span><span class="si">}</span><span class="s2">, where missing "</span>
+                    <span class="sa">f</span><span class="s2">"with value </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill_value</span><span class="si">}</span><span class="s2">."</span>
                 <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">keys</span><span class="p">,</span> <span class="n">all_keys</span><span class="p">,</span> <span class="n">common_keys</span><span class="p">,</span> <span class="n">missing_keys</span></div>
@@ -729,8 +729,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -764,7 +764,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

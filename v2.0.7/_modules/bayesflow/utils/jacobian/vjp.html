@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/jacobian/vjp';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -490,16 +490,16 @@
 <div class="viewcode-block" id="vjp">
 <a class="viewcode-back" href="../../../../api/bayesflow.utils.vjp.html#bayesflow.utils.vjp">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">vjp</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">return_output</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the vector-Jacobian product of f at x.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute the vector-Jacobian product of f at x."""</span>
     <span class="k">match</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">():</span>
-        <span class="k">case</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"jax"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
 
             <span class="n">fx</span><span class="p">,</span> <span class="n">_vjp_fn</span> <span class="o">=</span> <span class="n">jax</span><span class="o">.</span><span class="n">vjp</span><span class="p">(</span><span class="n">f</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 
             <span class="k">def</span><span class="w"> </span><span class="nf">vjp_fn</span><span class="p">(</span><span class="n">projector</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">_vjp_fn</span><span class="p">(</span><span class="n">projector</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="k">case</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tensorflow"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
             <span class="k">with</span> <span class="n">tf</span><span class="o">.</span><span class="n">GradientTape</span><span class="p">(</span><span class="n">persistent</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> <span class="k">as</span> <span class="n">tape</span><span class="p">:</span>
@@ -508,7 +508,7 @@
 
             <span class="k">def</span><span class="w"> </span><span class="nf">vjp_fn</span><span class="p">(</span><span class="n">projector</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">tape</span><span class="o">.</span><span class="n">gradient</span><span class="p">(</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">projector</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"torch"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
             <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -520,7 +520,7 @@
             <span class="k">def</span><span class="w"> </span><span class="nf">vjp_fn</span><span class="p">(</span><span class="n">projector</span><span class="p">):</span>
                 <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">autograd</span><span class="o">.</span><span class="n">grad</span><span class="p">(</span><span class="n">fx</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">projector</span><span class="p">,</span> <span class="n">retain_graph</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot build a vjp function for backend &#39;</span><span class="si">{</span><span class="n">other</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot build a vjp function for backend '</span><span class="si">{</span><span class="n">other</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">return_output</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">fx</span><span class="p">,</span> <span class="n">vjp_fn</span>
@@ -556,8 +556,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -591,7 +591,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

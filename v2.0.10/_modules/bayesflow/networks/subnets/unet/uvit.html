@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/subnets/unet/uvit';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -502,9 +502,9 @@
 
 <div class="viewcode-block" id="UViT">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.subnets.UViT.html#bayesflow.networks.subnets.UViT">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">UViT</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Time-conditioned U-ViT backbone for diffusion models.</span>
 
 <span class="sd">    Expects inputs `(x, t, cond)`, where `cond` is concatenated channel-wise to `x` and a learned time embedding</span>
@@ -516,11 +516,11 @@
 <span class="sd">    Follows the UViT architecture from [1], with some modifications and generalizations:</span>
 <span class="sd">      - Flexible widths and block counts per stage (not necessarily doubling channels at each downsample).</span>
 <span class="sd">      - Optional self-attention blocks after each residual block within a stage.</span>
-<span class="sd">      - Configurable downsampling mode (&quot;conv&quot; vs &quot;average&quot;).</span>
+<span class="sd">      - Configurable downsampling mode ("conv" vs "average").</span>
 <span class="sd">      - More flexible time embedding options (custom layer, FiLM vs additive, etc.).</span>
 
 <span class="sd">    [1] Hoogeboom et al. (2023), simple diffusion: End-to-end diffusion for high-resolution images</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -535,18 +535,18 @@
         <span class="n">time_emb_include_identity</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">time_emb_use_residual_mlp</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">use_film</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;swish&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"swish"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">initializers</span><span class="o">.</span><span class="n">Initializer</span> <span class="o">=</span> <span class="s2">"he_normal"</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">|</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;layer&quot;</span><span class="p">,</span> <span class="s2">&quot;group&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;group&quot;</span><span class="p">,</span>
+        <span class="n">norm</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"layer"</span><span class="p">,</span> <span class="s2">"group"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"group"</span><span class="p">,</span>
         <span class="n">groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
         <span class="n">attn_stage</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">bool</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">down_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;conv&quot;</span><span class="p">,</span> <span class="s2">&quot;average&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;average&quot;</span><span class="p">,</span>
+        <span class="n">down_mode</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"conv"</span><span class="p">,</span> <span class="s2">"average"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"average"</span><span class="p">,</span>
         <span class="n">up_kernel_size</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">up_conv_first</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Time-conditioned U-ViT backbone for diffusion models.</span>
 
 <span class="sd">        Parameters</span>
@@ -580,22 +580,22 @@
 <span class="sd">            Kernel initializer used for convolution and dense layers (except explicitly zero-initialized projections).</span>
 <span class="sd">        dropout : Sequence[float] or float, optional</span>
 <span class="sd">            Dropout rate used inside residual blocks. Default is 0.0.</span>
-<span class="sd">        norm : {&quot;layer&quot;, &quot;group&quot;}, optional</span>
+<span class="sd">        norm : {"layer", "group"}, optional</span>
 <span class="sd">            Normalization type used throughout the backbone.</span>
 <span class="sd">        groups : int, optional</span>
 <span class="sd">            Number of groups for group normalization where applicable.</span>
 <span class="sd">        attn_stage : Sequence[bool] or None, optional</span>
 <span class="sd">            Whether to insert an additional self-attention block after each residual block within a stage.</span>
-<span class="sd">        down_mode : {&quot;average&quot;, &quot;conv&quot;}, optional</span>
-<span class="sd">            Downsampling mode. &quot;conv&quot; uses a strided convolution; &quot;average&quot; uses average pooling followed by a</span>
-<span class="sd">            convolution/projection. Default is &quot;average&quot;.</span>
+<span class="sd">        down_mode : {"average", "conv"}, optional</span>
+<span class="sd">            Downsampling mode. "conv" uses a strided convolution; "average" uses average pooling followed by a</span>
+<span class="sd">            convolution/projection. Default is "average".</span>
 <span class="sd">        up_kernel_size : {1, 3}, optional</span>
 <span class="sd">            Kernel size for the convolution used in the upsampling block. Default is 1.</span>
 <span class="sd">        up_conv_first : bool, optional</span>
 <span class="sd">            If True, applies the convolution before upsampling in the upsampling block. Default is True.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">widths</span> <span class="o">=</span> <span class="n">widths</span>
@@ -640,7 +640,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">input_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span>
             <span class="n">filters</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
             <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-            <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="s2">"same"</span><span class="p">,</span>
             <span class="n">kernel_initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
         <span class="p">)</span>
 
@@ -668,12 +668,12 @@
                         <span class="n">SelfAttention2D</span><span class="p">(</span>
                             <span class="n">num_heads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
                             <span class="n">groups</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
-                            <span class="n">residual</span><span class="o">=</span><span class="s2">&quot;norm&quot;</span><span class="p">,</span>
+                            <span class="n">residual</span><span class="o">=</span><span class="s2">"norm"</span><span class="p">,</span>
                             <span class="n">kernel_initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
 
-            <span class="n">stage_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;down_stage_</span><span class="si">{</span><span class="n">si</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">stage_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"down_stage_</span><span class="si">{</span><span class="n">si</span><span class="si">}</span><span class="s2">"</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">,</span> <span class="n">blocks</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">down_stage_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">downsamples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
@@ -722,7 +722,7 @@
                         <span class="n">dropout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">[</span><span class="n">si</span><span class="p">],</span>
                         <span class="n">kernel_initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
                         <span class="n">use_film</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">use_film</span><span class="p">,</span>
-                        <span class="n">skip_fuse_case</span><span class="o">=</span><span class="s2">&quot;add_sqrt2&quot;</span><span class="p">,</span>
+                        <span class="n">skip_fuse_case</span><span class="o">=</span><span class="s2">"add_sqrt2"</span><span class="p">,</span>
                     <span class="p">)</span>
                 <span class="p">)</span>
                 <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_stage</span><span class="p">[</span><span class="n">si</span><span class="p">]:</span>
@@ -730,11 +730,11 @@
                         <span class="n">SelfAttention2D</span><span class="p">(</span>
                             <span class="n">num_heads</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
                             <span class="n">groups</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
-                            <span class="n">residual</span><span class="o">=</span><span class="s2">&quot;norm&quot;</span><span class="p">,</span>
+                            <span class="n">residual</span><span class="o">=</span><span class="s2">"norm"</span><span class="p">,</span>
                             <span class="n">kernel_initializer</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
                         <span class="p">)</span>
                     <span class="p">)</span>
-            <span class="n">stage_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;up_stage_</span><span class="si">{</span><span class="n">ri</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="n">stage_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"up_stage_</span><span class="si">{</span><span class="n">ri</span><span class="si">}</span><span class="s2">"</span>
             <span class="nb">setattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">stage_name</span><span class="p">,</span> <span class="n">blocks</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">up_stage_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stage_name</span><span class="p">)</span>
 
@@ -755,26 +755,26 @@
         <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
-            <span class="s2">&quot;res_blocks&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_blocks</span><span class="p">,</span>
-            <span class="s2">&quot;transformer_blocks&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_blocks</span><span class="p">,</span>
-            <span class="s2">&quot;transformer_dropout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_dropout</span><span class="p">,</span>
-            <span class="s2">&quot;transformer_width&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_width</span><span class="p">,</span>
-            <span class="s2">&quot;num_heads&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
-            <span class="s2">&quot;time_emb_dim&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_dim</span><span class="p">,</span>
-            <span class="s2">&quot;time_emb&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb</span><span class="p">,</span>
-            <span class="s2">&quot;time_emb_include_identity&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_include_identity</span><span class="p">,</span>
-            <span class="s2">&quot;time_emb_use_residual_mlp&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_use_residual_mlp</span><span class="p">,</span>
-            <span class="s2">&quot;use_film&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_film</span><span class="p">,</span>
-            <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
-            <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
-            <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
-            <span class="s2">&quot;groups&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
-            <span class="s2">&quot;attn_stage&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_stage</span><span class="p">,</span>
-            <span class="s2">&quot;down_mode&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="p">,</span>
-            <span class="s2">&quot;up_kernel_size&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">up_kernel_size</span><span class="p">,</span>
-            <span class="s2">&quot;up_conv_first&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">up_conv_first</span><span class="p">,</span>
+            <span class="s2">"widths"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">widths</span><span class="p">,</span>
+            <span class="s2">"res_blocks"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">res_blocks</span><span class="p">,</span>
+            <span class="s2">"transformer_blocks"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_blocks</span><span class="p">,</span>
+            <span class="s2">"transformer_dropout"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_dropout</span><span class="p">,</span>
+            <span class="s2">"transformer_width"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformer_width</span><span class="p">,</span>
+            <span class="s2">"num_heads"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_heads</span><span class="p">,</span>
+            <span class="s2">"time_emb_dim"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_dim</span><span class="p">,</span>
+            <span class="s2">"time_emb"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb</span><span class="p">,</span>
+            <span class="s2">"time_emb_include_identity"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_include_identity</span><span class="p">,</span>
+            <span class="s2">"time_emb_use_residual_mlp"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_emb_use_residual_mlp</span><span class="p">,</span>
+            <span class="s2">"use_film"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">use_film</span><span class="p">,</span>
+            <span class="s2">"activation"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">activation</span><span class="p">,</span>
+            <span class="s2">"kernel_initializer"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_initializer</span><span class="p">,</span>
+            <span class="s2">"dropout"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">,</span>
+            <span class="s2">"norm"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">norm</span><span class="p">,</span>
+            <span class="s2">"groups"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">groups</span><span class="p">,</span>
+            <span class="s2">"attn_stage"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_stage</span><span class="p">,</span>
+            <span class="s2">"down_mode"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">down_mode</span><span class="p">,</span>
+            <span class="s2">"up_kernel_size"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">up_kernel_size</span><span class="p">,</span>
+            <span class="s2">"up_conv_first"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">up_conv_first</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -785,10 +785,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
             <span class="k">return</span>
 
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">&quot;UViT expects input shape to be a tuple of (x_shape, t_shape, cond_shape)&quot;</span>
+        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">,</span> <span class="s2">"UViT expects input shape to be a tuple of (x_shape, t_shape, cond_shape)"</span>
         <span class="n">x_shape</span><span class="p">,</span> <span class="n">t_shape</span><span class="p">,</span> <span class="n">cond_shape</span> <span class="o">=</span> <span class="n">input_shape</span>
-        <span class="k">assert</span> <span class="n">x_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;UViT requires a known channel dimension for x.&quot;</span>
-        <span class="k">assert</span> <span class="n">x_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">x_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">&quot;UViT requires known spatial dimensions for x.&quot;</span>
+        <span class="k">assert</span> <span class="n">x_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"UViT requires a known channel dimension for x."</span>
+        <span class="k">assert</span> <span class="n">x_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">x_shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">,</span> <span class="s2">"UViT requires known spatial dimensions for x."</span>
 
         <span class="n">t_shape</span> <span class="o">=</span> <span class="p">(</span><span class="n">t_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">time_emb</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">t_shape</span><span class="p">)</span>
@@ -863,8 +863,8 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">out_conv</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Conv2D</span><span class="p">(</span>
             <span class="n">filters</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">x_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]),</span>
             <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
-            <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
-            <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span>
+            <span class="n">padding</span><span class="o">=</span><span class="s2">"same"</span><span class="p">,</span>
+            <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">"zeros"</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">out_conv</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">h_shape</span><span class="p">)</span></div>
 
@@ -940,7 +940,7 @@
 
             <span class="n">x</span> <span class="o">=</span> <span class="n">layer</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">t_emb</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span> <span class="k">if</span> <span class="n">is_residual</span> <span class="k">else</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
-            <span class="c1"># Don&#39;t store the residual output because the next layer is attention.</span>
+            <span class="c1"># Don't store the residual output because the next layer is attention.</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="n">is_residual</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">attn_stage</span><span class="p">[</span><span class="n">idx</span><span class="p">]):</span>
                 <span class="n">skips</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
@@ -988,8 +988,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1023,7 +1023,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

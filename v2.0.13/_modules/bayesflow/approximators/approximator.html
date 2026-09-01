@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/approximators/approximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -502,55 +502,55 @@
 <div class="viewcode-block" id="Approximator">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">Approximator</span><span class="p">(</span><span class="n">BackendApproximator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for all BayesFlow approximators.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Base class for all BayesFlow approximators."""</span>
 
     <span class="c1"># Mask routing: {data_key -&gt; network_kwarg_name}.</span>
     <span class="c1"># Subclasses can narrow these to the masks they actually support.</span>
     <span class="n">_SUMMARY_MASK_KEYS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;summary_attention_mask&quot;</span><span class="p">:</span> <span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;summary_mask&quot;</span><span class="p">:</span> <span class="s2">&quot;mask&quot;</span><span class="p">,</span>
+        <span class="s2">"summary_attention_mask"</span><span class="p">:</span> <span class="s2">"attention_mask"</span><span class="p">,</span>
+        <span class="s2">"summary_mask"</span><span class="p">:</span> <span class="s2">"mask"</span><span class="p">,</span>
     <span class="p">}</span>
     <span class="n">_INFERENCE_MASK_KEYS</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;inference_attention_mask&quot;</span><span class="p">:</span> <span class="s2">&quot;attention_mask&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;inference_mask&quot;</span><span class="p">:</span> <span class="s2">&quot;mask&quot;</span><span class="p">,</span>
+        <span class="s2">"inference_attention_mask"</span><span class="p">:</span> <span class="s2">"attention_mask"</span><span class="p">,</span>
+        <span class="s2">"inference_mask"</span><span class="p">:</span> <span class="s2">"mask"</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_collect_mask_kwargs</span><span class="p">(</span><span class="n">mapping</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">],</span> <span class="n">source</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build a kwargs dict from a ``{source_key: target_kwarg_name}`` mapping.</span>
+<span class="w">        </span><span class="sd">"""Build a kwargs dict from a ``{source_key: target_kwarg_name}`` mapping.</span>
 
 <span class="sd">        Looks up each *source_key* in *source*; when the value is not ``None``,</span>
 <span class="sd">        it is added to the result under *target_kwarg_name*.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">target</span><span class="p">:</span> <span class="n">source</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">target</span> <span class="ow">in</span> <span class="n">mapping</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">source</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">)</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">}</span>
 
     <span class="nd">@property</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">standardize_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Shortcut to the standardizer&#39;s per-variable layers.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Shortcut to the standardizer's per-variable layers."""</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;standardizer&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"standardizer"</span><span class="p">):</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">standardize_layers</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_maybe_inject_guidance_unstandardize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Inject an ``unstandardize`` callable into ``guidance_kwargs`` for sampling.</span>
+<span class="w">        </span><span class="sd">"""Inject an ``unstandardize`` callable into ``guidance_kwargs`` for sampling.</span>
 
 <span class="sd">        Only acts when ``guidance_kwargs`` is present.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">guidance_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;guidance_kwargs&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">guidance_kwargs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;standardizer&quot;</span><span class="p">):</span>
+<span class="sd">        """</span>
+        <span class="n">guidance_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"guidance_kwargs"</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">guidance_kwargs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"standardizer"</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">kwargs</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">unstandardize</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">"inference"</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
 
         <span class="n">kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;guidance_kwargs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;unstandardize&quot;</span><span class="p">:</span> <span class="n">unstandardize</span><span class="p">,</span> <span class="o">**</span><span class="n">guidance_kwargs</span><span class="p">}</span>
+        <span class="n">kwargs</span><span class="p">[</span><span class="s2">"guidance_kwargs"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"unstandardize"</span><span class="p">:</span> <span class="n">unstandardize</span><span class="p">,</span> <span class="o">**</span><span class="n">guidance_kwargs</span><span class="p">}</span>
         <span class="k">return</span> <span class="n">kwargs</span>
 
 <div class="viewcode-block" id="Approximator.build">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.build">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">]]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Template method for building all network components.</span>
 
 <span class="sd">        This method orchestrates the build process by:</span>
@@ -559,9 +559,9 @@
 <span class="sd">        3. Calling hook methods in the proper sequence</span>
 <span class="sd">        4. Marking as built</span>
 
-<span class="sd">        Hooks receive an enriched data_shapes dict that includes &quot;_summary_outputs&quot; if a</span>
-<span class="sd">        summary network was built, so they don&#39;t need to recompute this value.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        Hooks receive an enriched data_shapes dict that includes "_summary_outputs" if a</span>
+<span class="sd">        summary network was built, so they don't need to recompute this value.</span>
+<span class="sd">        """</span>
         <span class="c1"># Build standardizer first</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_build_standardization_layers</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">)</span>
 
@@ -571,7 +571,7 @@
         <span class="c1"># Enrich data_shapes with computed summary output shape for hooks to access (if summary network was built)</span>
         <span class="n">enriched_shapes</span> <span class="o">=</span> <span class="n">data_shapes</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
         <span class="k">if</span> <span class="n">summary_outputs_shape</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">enriched_shapes</span><span class="p">[</span><span class="s2">&quot;_summary_outputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_outputs_shape</span>
+            <span class="n">enriched_shapes</span><span class="p">[</span><span class="s2">"_summary_outputs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_outputs_shape</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">_build_inference_network</span><span class="p">(</span><span class="n">enriched_shapes</span><span class="p">)</span>
 
@@ -579,14 +579,14 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_standardization_layers</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Helper method: builds the standardizer if present (default behavior for most approximators).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;standardizer&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"standardizer"</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_summary_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">dict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Helper method: builds the summary network if present.</span>
 <span class="sd">        Subclasses can call this to build their summary network.</span>
 
@@ -594,38 +594,38 @@
 <span class="sd">        -------</span>
 <span class="sd">        output_shape : tuple or dict or None</span>
 <span class="sd">            The output shape of the summary network, or None if no summary network.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_network&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+<span class="sd">        """</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"summary_network"</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">"summary_variables"</span><span class="p">])</span>
 
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">])</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">compute_output_shape</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">"summary_variables"</span><span class="p">])</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_build_inference_network</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data_shapes</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Hook method: subclasses implement to build their inference network(s).</span>
 <span class="sd">        Subclasses should call _build_summary_network() internally if needed.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
-            <span class="n">summary_outputs_shape</span> <span class="o">=</span> <span class="n">data_shapes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;_summary_outputs&quot;</span><span class="p">)</span>
+            <span class="n">summary_outputs_shape</span> <span class="o">=</span> <span class="n">data_shapes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"_summary_outputs"</span><span class="p">)</span>
             <span class="n">inference_conditions_shape</span> <span class="o">=</span> <span class="n">concatenate_valid_shapes</span><span class="p">(</span>
-                <span class="p">[</span><span class="n">data_shapes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">),</span> <span class="n">summary_outputs_shape</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
+                <span class="p">[</span><span class="n">data_shapes</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"inference_conditions"</span><span class="p">),</span> <span class="n">summary_outputs_shape</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span>
             <span class="p">)</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">],</span> <span class="n">inference_conditions_shape</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">data_shapes</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">],</span> <span class="n">inference_conditions_shape</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_prepare_conditions</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;inference&quot;</span><span class="p">,</span>
+        <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"inference"</span><span class="p">,</span>
         <span class="n">summary_outputs</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Adapt raw user data, tensorize, standardize conditions, and resolve.</span>
+<span class="w">        </span><span class="sd">"""Adapt raw user data, tensorize, standardize conditions, and resolve.</span>
 
 <span class="sd">        Standard inference-time pipeline shared across all approximators:</span>
 
@@ -639,7 +639,7 @@
 <span class="sd">        data : Mapping[str, np.ndarray]</span>
 <span class="sd">            Raw user data dictionary.</span>
 <span class="sd">        stage : str, optional</span>
-<span class="sd">            Stage for standardization (default is ``&quot;inference&quot;``).</span>
+<span class="sd">            Stage for standardization (default is ``"inference"``).</span>
 <span class="sd">        summary_outputs: Tensor, optional</span>
 <span class="sd">            Summarized data from a summary network, if already computed. If provided, this will be used instead of</span>
 <span class="sd">            summarizing the raw data.</span>
@@ -656,7 +656,7 @@
 <span class="sd">            The full adapted and tensorized dictionary or {} if data is None or empty.</span>
 <span class="sd">        summary_outputs : Tensor or None</span>
 <span class="sd">            Raw summary network outputs, or ``None`` if no summary network.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="n">data</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">adapted</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
@@ -670,8 +670,8 @@
             <span class="k">return</span> <span class="kc">None</span><span class="p">,</span> <span class="p">{},</span> <span class="kc">None</span>
 
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_standardize_and_resolve</span><span class="p">(</span>
-            <span class="n">inference_conditions</span><span class="o">=</span><span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">),</span>
-            <span class="n">summary_variables</span><span class="o">=</span><span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">),</span>
+            <span class="n">inference_conditions</span><span class="o">=</span><span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"inference_conditions"</span><span class="p">),</span>
+            <span class="n">summary_variables</span><span class="o">=</span><span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary_variables"</span><span class="p">),</span>
             <span class="n">summary_outputs</span><span class="o">=</span><span class="n">summary_outputs</span><span class="p">,</span>
             <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span>
             <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
@@ -695,7 +695,7 @@
         <span class="n">num_parent_samples</span> <span class="o">=</span> <span class="n">first_ancestral_arr</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
 
         <span class="c1"># If a summary network is present, summarize child conditions before expansion</span>
-        <span class="n">summary_network</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_network&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">summary_network</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"summary_network"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">flat_child_batch</span> <span class="o">=</span> <span class="n">num_datasets</span> <span class="o">*</span> <span class="n">num_children</span>
             <span class="n">flattened_conditions</span> <span class="o">=</span> <span class="p">{</span>
@@ -707,7 +707,7 @@
 
             <span class="n">summary_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_mask_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_SUMMARY_MASK_KEYS</span><span class="p">,</span> <span class="n">adapted_child</span><span class="p">)</span>
             <span class="n">child_summary_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span>
-                <span class="n">adapted_child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span>
+                <span class="n">adapted_child</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary_variables"</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="s2">"summary_variables"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">"inference"</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">summary_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
@@ -735,7 +735,7 @@
         <span class="n">adapted</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">adapted</span><span class="p">)</span>
 
         <span class="n">inference_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span>
-            <span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span>
+            <span class="n">adapted</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"inference_conditions"</span><span class="p">),</span> <span class="n">key</span><span class="o">=</span><span class="s2">"inference_conditions"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">"inference"</span>
         <span class="p">)</span>
 
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_builder</span><span class="o">.</span><span class="n">resolve_ancestral</span><span class="p">(</span>
@@ -760,10 +760,10 @@
         <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">summary_outputs</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;call&quot;</span><span class="p">,</span>
+        <span class="n">purpose</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"call"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">summary_kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Standardize condition tensors and resolve via the summary network.</span>
+<span class="w">        </span><span class="sd">"""Standardize condition tensors and resolve via the summary network.</span>
 
 <span class="sd">        Shared by both inference-time methods (via :meth:`_prepare_conditions`)</span>
 <span class="sd">        and training-time ``compute_metrics`` implementations.</span>
@@ -775,19 +775,19 @@
 <span class="sd">        summary_variables : Tensor or None</span>
 <span class="sd">            Summary variables (pre-adapted tensors).</span>
 <span class="sd">        stage : str</span>
-<span class="sd">            Current stage (``&quot;training&quot;``, ``&quot;validation&quot;``, or ``&quot;inference&quot;``).</span>
+<span class="sd">            Current stage (``"training"``, ``"validation"``, or ``"inference"``).</span>
 <span class="sd">        summary_outputs : Tensor or None</span>
 <span class="sd">            If already computed, the output of the summary network. If provided, this will be used instead of</span>
 <span class="sd">            computing summaries again from summary variables.</span>
 <span class="sd">        batch_size : int, optional</span>
 <span class="sd">            Batch size for the summary network (default is ``None``).</span>
 <span class="sd">        purpose : str, optional</span>
-<span class="sd">            Passed to :meth:`ConditionBuilder.resolve` — ``&quot;call&quot;`` for forward</span>
-<span class="sd">            passes, ``&quot;metrics&quot;`` for training/validation (default is ``&quot;call&quot;``).</span>
+<span class="sd">            Passed to :meth:`ConditionBuilder.resolve` — ``"call"`` for forward</span>
+<span class="sd">            passes, ``"metrics"`` for training/validation (default is ``"call"``).</span>
 <span class="sd">        **summary_kwargs</span>
 <span class="sd">            Extra keyword arguments forwarded to</span>
 <span class="sd">            :meth:`ConditionBuilder.resolve` and ultimately to the summary</span>
-<span class="sd">            network&#39;s ``call`` / ``compute_metrics`` method (e.g.</span>
+<span class="sd">            network's ``call`` / ``compute_metrics`` method (e.g.</span>
 <span class="sd">            ``attention_mask``).</span>
 
 <span class="sd">        Returns</span>
@@ -795,13 +795,13 @@
 <span class="sd">        resolved_conditions : Tensor or None</span>
 <span class="sd">            Standardized inference conditions concatenated with summary outputs.</span>
 <span class="sd">        summary_outputs : Tensor, dict, or None</span>
-<span class="sd">            For ``purpose=&quot;call&quot;``: summary network output tensor or ``None``.</span>
-<span class="sd">            For ``purpose=&quot;metrics&quot;``: dict of summary metrics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            For ``purpose="call"``: summary network output tensor or ``None``.</span>
+<span class="sd">            For ``purpose="metrics"``: dict of summary metrics.</span>
+<span class="sd">        """</span>
         <span class="n">inference_conditions</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span>
-            <span class="n">inference_conditions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span>
+            <span class="n">inference_conditions</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"inference_conditions"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span>
         <span class="p">)</span>
-        <span class="n">summary_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
+        <span class="n">summary_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"summary_variables"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">condition_builder</span><span class="o">.</span><span class="n">resolve</span><span class="p">(</span>
             <span class="n">summary_network</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="p">,</span>
             <span class="n">inference_conditions</span><span class="o">=</span><span class="n">inference_conditions</span><span class="p">,</span>
@@ -828,7 +828,7 @@
         <span class="n">inference_attention_mask</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">inference_mask</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Adapter</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.</span>
+<span class="w">        </span><span class="sd">"""Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.</span>
 
 <span class="sd">        Handles the common pipeline shared by all approximators:</span>
 <span class="sd">        ``to_array -&gt; convert_dtype -&gt; concatenate -&gt; keep``.</span>
@@ -857,7 +857,7 @@
 <span class="sd">        inference_mask : str, optional</span>
 <span class="sd">            Name of the padding/key mask for the inference network.</span>
 <span class="sd">            Forwarded as ``mask`` to the inference network.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">inference_variables</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
             <span class="n">inference_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">inference_variables</span><span class="p">]</span>
@@ -868,26 +868,26 @@
 
         <span class="n">adapter</span> <span class="o">=</span> <span class="n">Adapter</span><span class="p">()</span>
         <span class="n">adapter</span><span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-        <span class="n">adapter</span><span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-        <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inference_variables</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+        <span class="n">adapter</span><span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+        <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inference_variables</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">inference_conditions</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+            <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inference_conditions</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_conditions"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">summary_variables</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">adapter</span><span class="o">.</span><span class="n">as_set</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">)</span>
-            <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+            <span class="n">adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">summary_variables</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"summary_variables"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">sample_weight</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">adapter</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="s2">&quot;sample_weight&quot;</span><span class="p">)</span>
+            <span class="n">adapter</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">sample_weight</span><span class="p">,</span> <span class="s2">"sample_weight"</span><span class="p">)</span>
 
-        <span class="n">keep</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;sample_weight&quot;</span><span class="p">]</span>
+        <span class="n">keep</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">,</span> <span class="s2">"sample_weight"</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">canonical_name</span><span class="p">,</span> <span class="n">user_name</span> <span class="ow">in</span> <span class="p">{</span>
-            <span class="s2">&quot;summary_attention_mask&quot;</span><span class="p">:</span> <span class="n">summary_attention_mask</span><span class="p">,</span>
-            <span class="s2">&quot;summary_mask&quot;</span><span class="p">:</span> <span class="n">summary_mask</span><span class="p">,</span>
-            <span class="s2">&quot;inference_attention_mask&quot;</span><span class="p">:</span> <span class="n">inference_attention_mask</span><span class="p">,</span>
-            <span class="s2">&quot;inference_mask&quot;</span><span class="p">:</span> <span class="n">inference_mask</span><span class="p">,</span>
+            <span class="s2">"summary_attention_mask"</span><span class="p">:</span> <span class="n">summary_attention_mask</span><span class="p">,</span>
+            <span class="s2">"summary_mask"</span><span class="p">:</span> <span class="n">summary_mask</span><span class="p">,</span>
+            <span class="s2">"inference_attention_mask"</span><span class="p">:</span> <span class="n">inference_attention_mask</span><span class="p">,</span>
+            <span class="s2">"inference_mask"</span><span class="p">:</span> <span class="n">inference_mask</span><span class="p">,</span>
         <span class="p">}</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="k">if</span> <span class="n">user_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">adapter</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="n">user_name</span><span class="p">,</span> <span class="n">canonical_name</span><span class="p">)</span>
@@ -903,26 +903,26 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">build_dataset</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
         <span class="n">num_batches</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span>
-        <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
-        <span class="n">memory_budget</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
+        <span class="n">memory_budget</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
         <span class="n">simulator</span><span class="p">:</span> <span class="n">Simulator</span><span class="p">,</span>
-        <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">workers</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
         <span class="n">use_multiprocessing</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">max_queue_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">OnlineDataset</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">batch_size</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="n">batch_size</span> <span class="o">=</span> <span class="n">find_batch_size</span><span class="p">(</span><span class="n">memory_budget</span><span class="o">=</span><span class="n">memory_budget</span><span class="p">,</span> <span class="n">sample</span><span class="o">=</span><span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using a batch size of </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using a batch size of </span><span class="si">{</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">adapter</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">adapter</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="n">adapter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">(</span><span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">))</span>
 
-        <span class="k">if</span> <span class="n">workers</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">workers</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
             <span class="n">workers</span> <span class="o">=</span> <span class="n">mp</span><span class="o">.</span><span class="n">cpu_count</span><span class="p">()</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Using </span><span class="si">{</span><span class="n">workers</span><span class="si">}</span><span class="s2"> data loading workers.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Using </span><span class="si">{</span><span class="n">workers</span><span class="si">}</span><span class="s2"> data loading workers."</span><span class="p">)</span>
 
         <span class="n">workers</span> <span class="o">=</span> <span class="n">workers</span> <span class="ow">or</span> <span class="mi">1</span>
 
@@ -952,7 +952,7 @@
         <span class="n">summary_metrics</span><span class="p">:</span> <span class="n">Any</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compile the approximator, setting metrics on inference and summary networks if provided.</span>
 
 <span class="sd">        Parameters</span>
@@ -963,13 +963,13 @@
 <span class="sd">            Metric(s) to set on the summary_network (if present).</span>
 <span class="sd">        *args, **kwargs</span>
 <span class="sd">            Additional arguments passed to the parent compile method.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">inference_metrics</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">_metrics</span> <span class="o">=</span> <span class="n">inference_metrics</span>
 
         <span class="k">if</span> <span class="n">summary_metrics</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_network&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Ignoring summary metrics because there is no summary network.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"summary_network"</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Ignoring summary metrics because there is no summary network."</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">_metrics</span> <span class="o">=</span> <span class="n">summary_metrics</span>
 
@@ -979,7 +979,7 @@
 <div class="viewcode-block" id="Approximator.fit">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.fit">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">dataset</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">PyDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">simulator</span><span class="p">:</span> <span class="n">Simulator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Trains the approximator on the provided dataset or on-demand data generated from the given simulator.</span>
 <span class="sd">        If `dataset` is not provided, a dataset is built from the `simulator`.</span>
 <span class="sd">        If the model has not been built, it will be built using a batch from the dataset.</span>
@@ -993,12 +993,12 @@
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to `keras.Model.fit()`, including (see also `build_dataset`):</span>
 
-<span class="sd">            batch_size : int or None, default=&#39;auto&#39;</span>
+<span class="sd">            batch_size : int or None, default='auto'</span>
 <span class="sd">                Number of samples per gradient update. Do not specify if `dataset` is provided as a</span>
 <span class="sd">                `keras.utils.PyDataset`, `tf.data.Dataset`, `torch.utils.data.DataLoader`, or a generator function.</span>
 <span class="sd">            epochs : int, default=1</span>
 <span class="sd">                Number of epochs to train the model.</span>
-<span class="sd">            verbose : {&quot;auto&quot;, 0, 1, 2}, default=&quot;auto&quot;</span>
+<span class="sd">            verbose : {"auto", 0, 1, 2}, default="auto"</span>
 <span class="sd">                Verbosity mode. 0 = silent, 1 = progress bar, 2 = one line per epoch.</span>
 <span class="sd">            callbacks : list of keras.callbacks.Callback, optional</span>
 <span class="sd">                List of callbacks to apply during training.</span>
@@ -1029,24 +1029,24 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            If both `dataset` and `simulator` are provided or neither is provided.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Received no data to fit on. Please provide either a dataset or a simulator.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Received no data to fit on. Please provide either a dataset or a simulator."</span><span class="p">)</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building dataset from simulator instance of </span><span class="si">{</span><span class="n">simulator</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building dataset from simulator instance of </span><span class="si">{</span><span class="n">simulator</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
             <span class="n">dataset</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_dataset</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_dataset</span><span class="p">))</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Received conflicting arguments. Please provide either a dataset or a simulator, but not both.&quot;</span>
+                    <span class="s2">"Received conflicting arguments. Please provide either a dataset or a simulator, but not both."</span>
                 <span class="p">)</span>
 
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Fitting on dataset instance of </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Fitting on dataset instance of </span><span class="si">{</span><span class="n">dataset</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building on a test batch.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Building on a test batch."</span><span class="p">)</span>
             <span class="n">mock_data</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
             <span class="n">mock_data</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">mock_data</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">build_from_data</span><span class="p">(</span><span class="n">mock_data</span><span class="p">)</span>
@@ -1057,16 +1057,16 @@
 <div class="viewcode-block" id="Approximator.build_from_data">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.build_from_data">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">adapted_data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build the approximator from adapted data by extracting shapes.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Build the approximator from adapted data by extracting shapes."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">adapted_data</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Approximator.compile_from_config">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.compile_from_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compile_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compile the approximator from a saved configuration.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compile the approximator from a saved configuration."""</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="o">**</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;optimizer&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"optimizer"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">optimizer</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">trainable_variables</span><span class="p">)</span></div>
 
 
@@ -1074,14 +1074,14 @@
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.from_config">[docs]</a>
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Deserialize and instantiate an approximator from configuration.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Deserialize and instantiate an approximator from configuration."""</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="n">custom_objects</span><span class="p">))</span></div>
 
 
 <div class="viewcode-block" id="Approximator.get_compile_config">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.get_compile_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_compile_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Serialize compile configuration for all network metrics.</span>
 
 <span class="sd">        Collects metrics from inference_network and summary_network (if present),</span>
@@ -1091,16 +1091,16 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict</span>
 <span class="sd">            Configuration dictionary with serialized metrics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_compile_config</span><span class="p">()</span> <span class="ow">or</span> <span class="p">{}</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{}</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;inference_network&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;inference_metrics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">_metrics</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"inference_network"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">"inference_metrics"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">inference_network</span><span class="o">.</span><span class="n">_metrics</span>
 
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_network&quot;</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">config</span><span class="p">[</span><span class="s2">&quot;summary_metrics&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">_metrics</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"summary_network"</span><span class="p">)</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">config</span><span class="p">[</span><span class="s2">"summary_metrics"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span><span class="o">.</span><span class="n">_metrics</span>
 
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -1108,7 +1108,7 @@
 <div class="viewcode-block" id="Approximator.summarize">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.Approximator.html#bayesflow.approximators.Approximator.summarize">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">summarize</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Computes the learned summary statistics of given summary variables.</span>
 
 <span class="sd">        The `conditions` dictionary is preprocessed using the `adapter` and passed through the summary network.</span>
@@ -1124,15 +1124,15 @@
 <span class="sd">        -------</span>
 <span class="sd">        summaries : np.ndarray</span>
 <span class="sd">            The learned summary statistics. Returns None if no summary network is present.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">conditions</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No valid conditions provided for summarization.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"No valid conditions provided for summarization."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;summary_network&quot;</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Summary network is not available. This approximator does not support summarization.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"summary_network"</span><span class="p">)</span> <span class="ow">or</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_network</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Summary network is not available. This approximator does not support summarization."</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">&quot;adapter&quot;</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Adapter is not available.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s2">"adapter"</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Adapter is not available."</span><span class="p">)</span>
 
         <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_conditions</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -1140,12 +1140,12 @@
 
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_batch_size_from_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return the batch size from a training data dict.</span>
+<span class="w">        </span><span class="sd">"""Return the batch size from a training data dict.</span>
 
-<span class="sd">        Relies on the ``&quot;inference_variables&quot;`` key, which is present in</span>
-<span class="sd">        every approximator&#39;s training data.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span></div>
+<span class="sd">        Relies on the ``"inference_variables"`` key, which is present in</span>
+<span class="sd">        every approximator's training data.</span>
+<span class="sd">        """</span>
+        <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">])[</span><span class="mi">0</span><span class="p">]</span></div>
 
 </pre></div>
 
@@ -1176,8 +1176,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1211,7 +1211,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

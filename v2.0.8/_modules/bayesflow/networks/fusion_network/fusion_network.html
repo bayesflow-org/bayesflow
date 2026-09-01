@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/fusion_network/fusion_network';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -491,7 +491,7 @@
 
 <div class="viewcode-block" id="FusionNetwork">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.FusionNetwork.html#bayesflow.networks.FusionNetwork">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FusionNetwork</span><span class="p">(</span><span class="n">SummaryNetwork</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -499,10 +499,10 @@
         <span class="n">head</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;(SN) Wraps multiple summary networks (`backbones`) to learn summary statistics from multi-modal data.</span>
+<span class="w">        </span><span class="sd">"""(SN) Wraps multiple summary networks (`backbones`) to learn summary statistics from multi-modal data.</span>
 
 <span class="sd">        Networks and inputs are passed as dictionaries with corresponding keys, so that each input is processed</span>
-<span class="sd">        by the correct summary network. This means the &quot;summary_variables&quot; entry to the approximator has to be</span>
+<span class="sd">        by the correct summary network. This means the "summary_variables" entry to the approximator has to be</span>
 <span class="sd">        a dictionary, which can be achieved using the :py:meth:`bayesflow.adapters.Adapter.group` method.</span>
 
 <span class="sd">        This network implements _late_ fusion. The output of the individual summary networks is concatenated, and</span>
@@ -518,7 +518,7 @@
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments that are passed to the :py:class:`~bayesflow.networks.SummaryNetwork`</span>
 <span class="sd">            base class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">backbones</span> <span class="o">=</span> <span class="n">backbones</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="o">=</span> <span class="n">head</span>
@@ -555,7 +555,7 @@
 <div class="viewcode-block" id="FusionNetwork.call">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.FusionNetwork.html#bayesflow.networks.FusionNetwork.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        inputs : dict[str, Tensor]</span>
@@ -563,7 +563,7 @@
 <span class="sd">        training : bool, optional</span>
 <span class="sd">            Whether the model is in training mode, affecting layers like dropout and</span>
 <span class="sd">            batch normalization. Default is False.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">inputs</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ordered_keys</span><span class="p">]</span>
         <span class="n">outputs</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">outputs</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -573,8 +573,8 @@
 
 <div class="viewcode-block" id="FusionNetwork.compute_metrics">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.FusionNetwork.html#bayesflow.networks.FusionNetwork.compute_metrics">[docs]</a>
-    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inputs</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        inputs : dict[str, Tensor]</span>
@@ -584,26 +584,26 @@
 <span class="sd">            batch normalization. Default is False.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">inputs</span><span class="p">))</span>
-        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">&quot;outputs&quot;</span><span class="p">:</span> <span class="p">[]}</span>
+        <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"outputs"</span><span class="p">:</span> <span class="p">[]}</span>
 
         <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_ordered_keys</span><span class="p">:</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">SummaryNetwork</span><span class="p">):</span>
                 <span class="n">metrics_k</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">inputs</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics_k</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">])</span>
-                <span class="k">if</span> <span class="s2">&quot;loss&quot;</span> <span class="ow">in</span> <span class="n">metrics_k</span><span class="p">:</span>
-                    <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics_k</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>
+                <span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics_k</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">])</span>
+                <span class="k">if</span> <span class="s2">"loss"</span> <span class="ow">in</span> <span class="n">metrics_k</span><span class="p">:</span>
+                    <span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metrics_k</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">])</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">inputs</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">))</span>
-        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">del</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span>
+                <span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">[</span><span class="n">k</span><span class="p">](</span><span class="n">inputs</span><span class="p">[</span><span class="n">k</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">))</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">del</span> <span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">])</span>
-        <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">])</span>
+        <span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">]</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">],</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">&quot;outputs&quot;</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+            <span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">(</span><span class="n">metrics</span><span class="p">[</span><span class="s2">"outputs"</span><span class="p">],</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">metrics</span></div>
 
@@ -613,8 +613,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
         <span class="n">base_config</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">get_config</span><span class="p">()</span>
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;backbones&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">,</span>
-            <span class="s2">&quot;head&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">,</span>
+            <span class="s2">"backbones"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">backbones</span><span class="p">,</span>
+            <span class="s2">"head"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">head</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -656,8 +656,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -691,7 +691,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

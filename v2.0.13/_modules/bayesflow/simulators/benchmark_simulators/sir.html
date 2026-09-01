@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/simulators/benchmark_simulators/sir';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -496,12 +496,12 @@
         <span class="n">T</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">160</span><span class="p">,</span>
         <span class="n">I0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">R0</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">subsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;original&quot;</span><span class="p">,</span>
+        <span class="n">subsample</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"original"</span><span class="p">,</span>
         <span class="n">total_count</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
         <span class="n">scale_by_total</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">rng</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">Generator</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;SIR simulated benchmark</span>
+<span class="w">        </span><span class="sd">"""SIR simulated benchmark</span>
 <span class="sd">        See: https://arxiv.org/pdf/2101.04653.pdf, Task T.9</span>
 
 <span class="sd">        NOTE: the simulator scales outputs between 0 and 1.</span>
@@ -517,12 +517,12 @@
 <span class="sd">            The number of initially infected individuals.</span>
 <span class="sd">        R0: float, optional, default: 0.0</span>
 <span class="sd">            The number of initially recovered individuals.</span>
-<span class="sd">        subsample: int, str or None, optional, default: &#39;original&#39;</span>
+<span class="sd">        subsample: int, str or None, optional, default: 'original'</span>
 <span class="sd">            The number of evenly spaced time points to return. If `None`,</span>
 <span class="sd">            no subsampling will be performed, all `T` timepoints will be returned</span>
 <span class="sd">            and a trailing dimension will be added. If an integer is provided,</span>
 <span class="sd">            subsampling is performed and no trailing dimension will be added.</span>
-<span class="sd">            &#39;original&#39; reproduces the original benchmark task subsampling of 10 points.</span>
+<span class="sd">            'original' reproduces the original benchmark task subsampling of 10 points.</span>
 <span class="sd">        total_count: int, optional, default: 1000</span>
 <span class="sd">            The `N` parameter of the binomial noise distribution. Used just</span>
 <span class="sd">            for scaling the data and magnifying the effect of noise, such that</span>
@@ -531,7 +531,7 @@
 <span class="sd">            Scales the outputs by `total_count` if set to True.</span>
 <span class="sd">        rng: np.random.Generator or None, optional, default: None</span>
 <span class="sd">            An optional random number generator to use.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">=</span> <span class="n">N</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">=</span> <span class="n">T</span>
@@ -545,7 +545,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">()</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_deriv</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Helper function for scipy.integrate.odeint.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Helper function for scipy.integrate.odeint."""</span>
 
         <span class="n">s</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">r</span> <span class="o">=</span> <span class="n">x</span>
         <span class="n">dS</span> <span class="o">=</span> <span class="o">-</span><span class="n">beta</span> <span class="o">*</span> <span class="n">s</span> <span class="o">*</span> <span class="n">i</span> <span class="o">/</span> <span class="n">N</span>
@@ -556,14 +556,14 @@
 <div class="viewcode-block" id="SIR.prior">
 <a class="viewcode-back" href="../../../../api/bayesflow.simulators.SIR.html#bayesflow.simulators.SIR.prior">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generates a random draw from a 2-dimensional (independent) lognormal prior</span>
+<span class="w">        </span><span class="sd">"""Generates a random draw from a 2-dimensional (independent) lognormal prior</span>
 <span class="sd">        which represents the contact and recovery rate parameters of a basic SIR model.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        params : np.ndarray of shape (2, )</span>
 <span class="sd">            A single draw from the 2-dimensional prior.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mf">0.4</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="mi">8</span><span class="p">)],</span> <span class="n">sigma</span><span class="o">=</span><span class="p">[</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.2</span><span class="p">])</span></div>
 
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="SIR.observation_model">
 <a class="viewcode-back" href="../../../../api/bayesflow.simulators.SIR.html#bayesflow.simulators.SIR.observation_model">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">observation_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">params</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Runs a basic SIR model simulation for T time steps and returns `subsample` evenly spaced</span>
+<span class="w">        </span><span class="sd">"""Runs a basic SIR model simulation for T time steps and returns `subsample` evenly spaced</span>
 <span class="sd">        points from the simulated trajectory, given disease parameters (contact and recovery rate) `params`.</span>
 
 <span class="sd">        Parameters</span>
@@ -584,7 +584,7 @@
 <span class="sd">        x : np.ndarray of shape (subsample, ) or (T, 1) if subsample=None</span>
 <span class="sd">            The time series of simulated infected individuals. A trailing dimension of 1 should</span>
 <span class="sd">            be added by a BayesFlow configurator if the data is (properly) to be treated as time series.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="c1"># Create vector (list) of initial conditions</span>
         <span class="n">x0</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">N</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">R0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">I0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">R0</span>
@@ -599,7 +599,7 @@
         <span class="n">irt</span> <span class="o">=</span> <span class="n">odeint</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_deriv</span><span class="p">,</span> <span class="n">x0</span><span class="p">,</span> <span class="n">t_vec</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">N</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">gamma</span><span class="p">))[:,</span> <span class="mi">1</span><span class="p">]</span>
 
         <span class="c1"># Subsample evenly the specified number of points, if specified</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="o">==</span> <span class="s2">&quot;original&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="o">==</span> <span class="s2">"original"</span><span class="p">:</span>
             <span class="n">irt</span> <span class="o">=</span> <span class="n">irt</span><span class="p">[::</span><span class="mi">17</span><span class="p">]</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">irt</span> <span class="o">=</span> <span class="n">irt</span><span class="p">[::</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">T</span> <span class="o">//</span> <span class="bp">self</span><span class="o">.</span><span class="n">subsample</span><span class="p">)]</span>
@@ -646,8 +646,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -681,7 +681,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/diffusion/schedules/cosine_noise_schedule';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,9 +494,9 @@
 
 <div class="viewcode-block" id="CosineNoiseSchedule">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.diffusion.CosineNoiseSchedule.html#bayesflow.networks.inference.diffusion.CosineNoiseSchedule">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CosineNoiseSchedule</span><span class="p">(</span><span class="n">NoiseSchedule</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].</span>
+<span class="w">    </span><span class="sd">"""Cosine noise schedule for diffusion models. This schedule is based on the cosine schedule from [1].</span>
 
 <span class="sd">    A cosine schedule is a popular technique for controlling how the variance (noise level) or</span>
 <span class="sd">    learning rate evolves during the training of diffusion models. It was proposed as an improvement</span>
@@ -506,16 +506,16 @@
 <span class="sd">    Advances in Neural Information Processing Systems, 34, 8780-8794.</span>
 <span class="sd">    [2] Ho, J., Jain, A., &amp; Abbeel, P. (2020). Denoising diffusion probabilistic models.</span>
 <span class="sd">    Advances in Neural Information Processing Systems, 33, 6840-6851.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">min_log_snr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="mi">15</span><span class="p">,</span>
         <span class="n">max_log_snr</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mi">15</span><span class="p">,</span>
         <span class="n">shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.0</span><span class="p">,</span>
-        <span class="n">weighting</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">,</span> <span class="s2">&quot;likelihood_weighting&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;sigmoid&quot;</span><span class="p">,</span>
+        <span class="n">weighting</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"sigmoid"</span><span class="p">,</span> <span class="s2">"likelihood_weighting"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"sigmoid"</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initialize the cosine noise schedule.</span>
 
 <span class="sd">        Parameters</span>
@@ -527,10 +527,10 @@
 <span class="sd">        shift : float, optional</span>
 <span class="sd">            Shift the log signal-to-noise ratio (lambda) by this amount. Default is 0.0.</span>
 <span class="sd">            For images, use shift = log(base_resolution / d), where d is the used resolution of the image.</span>
-<span class="sd">        weighting : Literal[&quot;sigmoid&quot;, &quot;likelihood_weighting&quot;], optional</span>
-<span class="sd">            The type of weighting function to use for the noise schedule. Default is &quot;sigmoid&quot;.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;cosine_noise_schedule&quot;</span><span class="p">,</span> <span class="n">variance_type</span><span class="o">=</span><span class="s2">&quot;preserving&quot;</span><span class="p">,</span> <span class="n">weighting</span><span class="o">=</span><span class="n">weighting</span><span class="p">)</span>
+<span class="sd">        weighting : Literal["sigmoid", "likelihood_weighting"], optional</span>
+<span class="sd">            The type of weighting function to use for the noise schedule. Default is "sigmoid".</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"cosine_noise_schedule"</span><span class="p">,</span> <span class="n">variance_type</span><span class="o">=</span><span class="s2">"preserving"</span><span class="p">,</span> <span class="n">weighting</span><span class="o">=</span><span class="n">weighting</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span> <span class="o">=</span> <span class="n">shift</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_weighting</span> <span class="o">=</span> <span class="n">weighting</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">log_snr_min</span> <span class="o">=</span> <span class="n">min_log_snr</span>
@@ -545,7 +545,7 @@
 <div class="viewcode-block" id="CosineNoiseSchedule.get_log_snr">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.diffusion.CosineNoiseSchedule.html#bayesflow.networks.inference.diffusion.CosineNoiseSchedule.get_log_snr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_log_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">t</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the log signal-to-noise ratio (lambda) for a given diffusion time.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the log signal-to-noise ratio (lambda) for a given diffusion time."""</span>
         <span class="n">t_trunc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_truncated_t</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
         <span class="k">return</span> <span class="o">-</span><span class="mi">2</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">tan</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">t_trunc</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">))</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span></div>
 
@@ -553,7 +553,7 @@
 <div class="viewcode-block" id="CosineNoiseSchedule.get_t_from_log_snr">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.diffusion.CosineNoiseSchedule.html#bayesflow.networks.inference.diffusion.CosineNoiseSchedule.get_t_from_log_snr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_t_from_log_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="nb">float</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the diffusion time (t) from the log signal-to-noise ratio (lambda).&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""</span>
         <span class="c1"># SNR = -2 * log(tan(pi*t/2)) =&gt; t = 2/pi * arctan(exp(-snr/2))</span>
         <span class="k">return</span> <span class="mi">2</span> <span class="o">/</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">ops</span><span class="o">.</span><span class="n">arctan</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">((</span><span class="mi">2</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span> <span class="o">-</span> <span class="n">log_snr_t</span><span class="p">)</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">))</span></div>
 
@@ -561,7 +561,7 @@
 <div class="viewcode-block" id="CosineNoiseSchedule.derivative_log_snr">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.diffusion.CosineNoiseSchedule.html#bayesflow.networks.inference.diffusion.CosineNoiseSchedule.derivative_log_snr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">derivative_log_snr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">log_snr_t</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Compute d/dt log(1 + e^(-snr(t))), which is used for the reverse SDE."""</span>
         <span class="n">t</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_t_from_log_snr</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
         <span class="c1"># Compute the truncated time t_trunc</span>
@@ -569,7 +569,7 @@
         <span class="n">dsnr_dx</span> <span class="o">=</span> <span class="o">-</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">math</span><span class="o">.</span><span class="n">pi</span><span class="p">)</span> <span class="o">/</span> <span class="n">ops</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">pi</span> <span class="o">*</span> <span class="n">t_trunc</span><span class="p">)</span>
 
         <span class="c1"># Using the chain rule on f(t) = log(1 + e^(-snr(t))):</span>
-        <span class="c1"># f&#39;(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt</span>
+        <span class="c1"># f'(t) = - (e^{-snr(t)} / (1 + e^{-snr(t)})) * dsnr_dt</span>
         <span class="n">dsnr_dt</span> <span class="o">=</span> <span class="n">dsnr_dx</span> <span class="o">*</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_t_max</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">_t_min</span><span class="p">)</span>
         <span class="n">factor</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">)</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="o">-</span><span class="n">log_snr_t</span><span class="p">))</span>
         <span class="k">return</span> <span class="o">-</span><span class="n">factor</span> <span class="o">*</span> <span class="n">dsnr_dt</span></div>
@@ -579,10 +579,10 @@
 <a class="viewcode-back" href="../../../../../../api/bayesflow.networks.inference.diffusion.CosineNoiseSchedule.html#bayesflow.networks.inference.diffusion.CosineNoiseSchedule.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;min_log_snr&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_snr_min</span><span class="p">,</span>
-            <span class="s2">&quot;max_log_snr&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_snr_max</span><span class="p">,</span>
-            <span class="s2">&quot;shift&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">,</span>
-            <span class="s2">&quot;weighting&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weighting</span><span class="p">,</span>
+            <span class="s2">"min_log_snr"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_snr_min</span><span class="p">,</span>
+            <span class="s2">"max_log_snr"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">log_snr_max</span><span class="p">,</span>
+            <span class="s2">"shift"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_shift</span><span class="p">,</span>
+            <span class="s2">"weighting"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_weighting</span><span class="p">,</span>
         <span class="p">}</span>
         <span class="k">return</span> <span class="n">config</span></div>
 
@@ -623,8 +623,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -658,7 +658,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

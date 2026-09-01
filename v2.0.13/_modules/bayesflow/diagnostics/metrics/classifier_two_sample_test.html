@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/metrics/classifier_two_sample_test';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -496,7 +496,7 @@
 <span class="k">def</span><span class="w"> </span><span class="nf">classifier_two_sample_test</span><span class="p">(</span>
     <span class="n">estimates</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
     <span class="n">targets</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">,</span>
-    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;accuracy&quot;</span><span class="p">,</span>
+    <span class="n">metric</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"accuracy"</span><span class="p">,</span>
     <span class="n">patience</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
     <span class="n">max_epochs</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
@@ -504,10 +504,10 @@
     <span class="n">cross_validation_splits</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">5</span><span class="p">,</span>
     <span class="n">validation_split</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.5</span><span class="p">,</span>
     <span class="n">standardize</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">mlp_widths</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+    <span class="n">mlp_widths</span><span class="p">:</span> <span class="n">Sequence</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    C2ST metric [1] between samples from two distributions computed using a neural classifier.</span>
 <span class="sd">    Can be computationally expensive if called in a loop[, since it needs to train the model</span>
 <span class="sd">    for each set of samples.</span>
@@ -525,7 +525,7 @@
 <span class="sd">        Array of shape (num_samples_tar, num_variables) containing target samples</span>
 <span class="sd">        (e.g., samples from a reference posterior).</span>
 <span class="sd">    metric : str, optional</span>
-<span class="sd">        Metric to evaluate the classifier performance. Default is &quot;accuracy&quot;.</span>
+<span class="sd">        Metric to evaluate the classifier performance. Default is "accuracy".</span>
 <span class="sd">    patience : int, optional</span>
 <span class="sd">        Number of epochs with no improvement after which training will be stopped. Default is 5.</span>
 <span class="sd">    max_epochs : int, optional</span>
@@ -544,8 +544,8 @@
 <span class="sd">        Default is True.</span>
 <span class="sd">    mlp_widths : Sequence[int], optional</span>
 <span class="sd">        Sequence specifying the number of units in each hidden layer of the MLP classifier.</span>
-<span class="sd">        If set to &#39;auto&#39;, defaults to two hidden layers with widths such that width is larger than 10 times</span>
-<span class="sd">        the number of variables and a power of two. Default is &#39;auto&#39;.</span>
+<span class="sd">        If set to 'auto', defaults to two hidden layers with widths such that width is larger than 10 times</span>
+<span class="sd">        the number of variables and a power of two. Default is 'auto'.</span>
 <span class="sd">    **kwargs</span>
 <span class="sd">        Additional keyword arguments. Recognized keyword:</span>
 <span class="sd">            mlp_kwargs : dict</span>
@@ -555,20 +555,20 @@
 <span class="sd">    -------</span>
 <span class="sd">    results : float or dict</span>
 <span class="sd">        If return_metric_only is True, returns the final validation metric (e.g., accuracy) as a float.</span>
-<span class="sd">        Otherwise, returns a dictionary with keys &quot;score&quot;, &quot;classifier&quot;, and &quot;history&quot;, where &quot;score&quot;</span>
-<span class="sd">        is the final validation metric, &quot;classifier&quot; is the trained Keras model, and &quot;history&quot; contains the</span>
+<span class="sd">        Otherwise, returns a dictionary with keys "score", "classifier", and "history", where "score"</span>
+<span class="sd">        is the final validation metric, "classifier" is the trained Keras model, and "history" contains the</span>
 <span class="sd">        full training history.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Error, if targets dim does not match estimates dim</span>
     <span class="n">num_dims</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">num_dims</span> <span class="o">==</span> <span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;estimates and targets can have different number of samples (1st dim)&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;but must have the same dimensionality (2nd dim)&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;found: estimates shape </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, targets shape </span><span class="si">{</span><span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">"estimates and targets can have different number of samples (1st dim)"</span>
+            <span class="sa">f</span><span class="s2">"but must have the same dimensionality (2nd dim)"</span>
+            <span class="sa">f</span><span class="s2">"found: estimates shape </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">, targets shape </span><span class="si">{</span><span class="n">targets</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">mlp_widths</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">mlp_widths</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
         <span class="n">widths</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log2</span><span class="p">(</span><span class="mi">10</span> <span class="o">*</span> <span class="n">num_dims</span><span class="p">)))</span>
         <span class="n">mlp_widths</span> <span class="o">=</span> <span class="p">[</span><span class="n">widths</span><span class="p">,</span> <span class="n">widths</span><span class="p">]</span>
 
@@ -591,9 +591,9 @@
     <span class="c1"># Create and train classifier with optional stopping</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_classifier</span><span class="p">():</span>
         <span class="n">classifier</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span>
-            <span class="p">[</span><span class="n">MLP</span><span class="p">(</span><span class="n">widths</span><span class="o">=</span><span class="n">mlp_widths</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;mlp_kwargs&quot;</span><span class="p">,</span> <span class="p">{})),</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">)]</span>
+            <span class="p">[</span><span class="n">MLP</span><span class="p">(</span><span class="n">widths</span><span class="o">=</span><span class="n">mlp_widths</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"mlp_kwargs"</span><span class="p">,</span> <span class="p">{})),</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"sigmoid"</span><span class="p">)]</span>
         <span class="p">)</span>
-        <span class="n">classifier</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;binary_crossentropy&quot;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">metric</span><span class="p">])</span>
+        <span class="n">classifier</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">"binary_crossentropy"</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="n">metric</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">classifier</span>
 
     <span class="k">if</span> <span class="n">cross_validation_splits</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
@@ -628,11 +628,11 @@
 
         <span class="n">classifier</span> <span class="o">=</span> <span class="n">build_classifier</span><span class="p">()</span>
         <span class="n">early_stopping</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">EarlyStopping</span><span class="p">(</span>
-            <span class="n">monitor</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="n">patience</span><span class="p">,</span> <span class="n">restore_best_weights</span><span class="o">=</span><span class="kc">True</span>
+            <span class="n">monitor</span><span class="o">=</span><span class="sa">f</span><span class="s2">"val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">patience</span><span class="o">=</span><span class="n">patience</span><span class="p">,</span> <span class="n">restore_best_weights</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
 
         <span class="c1"># For now, we need to enable grads, since we turn them off by default</span>
-        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"torch"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
             <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">():</span>
@@ -656,7 +656,7 @@
                 <span class="n">validation_data</span><span class="o">=</span><span class="p">(</span><span class="n">data_val</span><span class="p">,</span> <span class="n">labels_val</span><span class="p">),</span>
             <span class="p">)</span>
 
-        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="n">scores</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="sa">f</span><span class="s2">"val_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s2">"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">return_metric_only</span><span class="p">:</span>
             <span class="n">histories</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">)</span>
             <span class="n">classifiers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">classifier</span><span class="p">)</span>
@@ -665,7 +665,7 @@
     <span class="n">mean_score</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">scores</span><span class="p">))</span>
     <span class="k">if</span> <span class="n">return_metric_only</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">mean_score</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;score&quot;</span><span class="p">:</span> <span class="n">mean_score</span><span class="p">,</span> <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">scores</span><span class="p">,</span> <span class="s2">&quot;classifiers&quot;</span><span class="p">:</span> <span class="n">classifiers</span><span class="p">,</span> <span class="s2">&quot;histories&quot;</span><span class="p">:</span> <span class="n">histories</span><span class="p">}</span></div>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"score"</span><span class="p">:</span> <span class="n">mean_score</span><span class="p">,</span> <span class="s2">"scores"</span><span class="p">:</span> <span class="n">scores</span><span class="p">,</span> <span class="s2">"classifiers"</span><span class="p">:</span> <span class="n">classifiers</span><span class="p">,</span> <span class="s2">"histories"</span><span class="p">:</span> <span class="n">histories</span><span class="p">}</span></div>
 
 </pre></div>
 
@@ -696,8 +696,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -731,7 +731,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=594047cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/datasets';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -628,8 +628,8 @@ custom validation/control/debugging     -&gt; create datasets explicitly
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">],</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">(),</span>
 <span class="p">)</span>
 
@@ -694,46 +694,46 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
     <span class="c1"># parameters: shape (2,)</span>
     <span class="c1"># observations: shape (28, 28, 1)</span>
     <span class="c1"># The observation is image-like, but this is only a didactic example.</span>
-    <span class="n">parameters</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
 
     <span class="n">grid_x</span><span class="p">,</span> <span class="n">grid_y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">),</span>
-        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">),</span>
-        <span class="n">indexing</span><span class="o">=</span><span class="s2">&quot;ij&quot;</span><span class="p">,</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mi">28</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+        <span class="n">indexing</span><span class="o">=</span><span class="s2">"ij"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="n">observations</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">parameters</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_x</span>
         <span class="o">+</span> <span class="n">parameters</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">grid_y</span>
-        <span class="o">+</span> <span class="mf">0.10</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+        <span class="o">+</span> <span class="mf">0.10</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">28</span><span class="p">,</span> <span class="mi">28</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
     <span class="p">)</span>
-    <span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="n">observations</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">parameters</span><span class="p">,</span> <span class="n">observations</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">split</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
-    <span class="n">parameter_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">&quot;parameters&quot;</span>
-    <span class="n">observation_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span>
+    <span class="n">parameter_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">"parameters"</span>
+    <span class="n">observation_dir</span> <span class="o">=</span> <span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">"observations"</span>
     <span class="n">parameter_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
     <span class="n">observation_dir</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">parents</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_samples</span><span class="p">):</span>
         <span class="n">parameters</span><span class="p">,</span> <span class="n">observations</span> <span class="o">=</span> <span class="n">make_toy_sample</span><span class="p">(</span><span class="n">rng</span><span class="p">)</span>
-        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;sample_</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.npy&quot;</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"sample_</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s2">06d</span><span class="si">}</span><span class="s2">.npy"</span>
         <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">parameter_dir</span> <span class="o">/</span> <span class="n">filename</span><span class="p">,</span> <span class="n">parameters</span><span class="p">)</span>
         <span class="n">np</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">observation_dir</span> <span class="o">/</span> <span class="n">filename</span><span class="p">,</span> <span class="n">observations</span><span class="p">)</span>
 
 
-<span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">&quot;data/toy_sbi_dataset&quot;</span><span class="p">)</span>
+<span class="n">root</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"data/toy_sbi_dataset"</span><span class="p">)</span>
 
 <span class="c1"># Keep the cell re-runnable.</span>
 <span class="k">if</span> <span class="n">root</span><span class="o">.</span><span class="n">exists</span><span class="p">():</span>
     <span class="n">shutil</span><span class="o">.</span><span class="n">rmtree</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
 
-<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"train"</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="n">write_split</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"test"</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
 
 <span class="nb">print</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
 </pre></div>
@@ -759,13 +759,13 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 
     <span class="n">parameter_path</span> <span class="o">=</span> <span class="p">(</span>
         <span class="n">observation_path</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">parent</span>
-        <span class="o">/</span> <span class="s2">&quot;parameters&quot;</span>
+        <span class="o">/</span> <span class="s2">"parameters"</span>
         <span class="o">/</span> <span class="n">observation_path</span><span class="o">.</span><span class="n">name</span>
     <span class="p">)</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parameter_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">),</span>
-        <span class="s2">&quot;observations&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">observation_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">),</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parameter_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">),</span>
+        <span class="s2">"observations"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">observation_path</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">),</span>
     <span class="p">}</span>
 </pre></div>
 </div>
@@ -774,11 +774,11 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <p>Before training, inspect the loader on a single file. This checks the raw sample, before batching and before the adapter is applied.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">example_path</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;train&quot;</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.npy&quot;</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">example_path</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"train"</span> <span class="o">/</span> <span class="s2">"observations"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
 <span class="n">example</span> <span class="o">=</span> <span class="n">load_parameter_observation_pair</span><span class="p">(</span><span class="n">example_path</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">example</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -797,8 +797,8 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
             <span class="n">widths</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">),</span>
             <span class="n">blocks_per_stage</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
         <span class="p">),</span>
-        <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-        <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">]</span>
+        <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+        <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"observations"</span><span class="p">]</span>
     <span class="p">)</span>
 </pre></div>
 </div>
@@ -819,19 +819,19 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">split</span><span class="p">):</span>
-    <span class="n">observation_paths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">&quot;*.npy&quot;</span><span class="p">))</span>
+    <span class="n">observation_paths</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">((</span><span class="n">root</span> <span class="o">/</span> <span class="n">split</span> <span class="o">/</span> <span class="s2">"observations"</span><span class="p">)</span><span class="o">.</span><span class="n">glob</span><span class="p">(</span><span class="s2">"*.npy"</span><span class="p">))</span>
     <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">load_parameter_observation_pair</span><span class="p">(</span><span class="n">path</span><span class="p">)</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">observation_paths</span><span class="p">]</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;parameters&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]),</span>
-        <span class="s2">&quot;observations&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sample</span><span class="p">[</span><span class="s2">&quot;observations&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]),</span>
+        <span class="s2">"parameters"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sample</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">]</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]),</span>
+        <span class="s2">"observations"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sample</span><span class="p">[</span><span class="s2">"observations"</span><span class="p">]</span> <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">samples</span><span class="p">]),</span>
     <span class="p">}</span>
 
 
-<span class="n">validation_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">)</span>
+<span class="n">validation_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">)</span>
 
 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">validation_data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">12s</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -839,8 +839,8 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_disk</span><span class="p">(</span>
-    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;train&quot;</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span><span class="p">,</span>
-    <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;*.npy&quot;</span><span class="p">,</span>
+    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"train"</span> <span class="o">/</span> <span class="s2">"observations"</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="s2">"*.npy"</span><span class="p">,</span>
     <span class="n">load_fn</span><span class="o">=</span><span class="n">load_parameter_observation_pair</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
     <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
@@ -852,7 +852,7 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 </div>
 <p>The data path in the previous cell is:</p>
 <div class="highlight-text notranslate"><div class="highlight"><pre><span></span>observation files on disk
-    -&gt; load_fn(path) returns {&quot;parameters&quot;: ..., &quot;observations&quot;: ...}
+    -&gt; load_fn(path) returns {"parameters": ..., "observations": ...}
     -&gt; DiskDataset stacks samples into batches
     -&gt; workflow adapter maps raw keys to BayesFlow keys
     -&gt; approximator is trained
@@ -870,11 +870,11 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
     <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">array</span><span class="o">.</span><span class="n">nbytes</span> <span class="k">for</span> <span class="n">array</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">values</span><span class="p">())</span> <span class="o">/</span> <span class="mi">1024</span><span class="o">**</span><span class="mi">2</span>
 
 
-<span class="n">train_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;train&quot;</span><span class="p">)</span>
-<span class="n">validation_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">&quot;val&quot;</span><span class="p">)</span>
+<span class="n">train_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"train"</span><span class="p">)</span>
+<span class="n">validation_data</span> <span class="o">=</span> <span class="n">load_split_into_memory</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="s2">"val"</span><span class="p">)</span>
 
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;train_data size: </span><span class="si">{</span><span class="n">total_size_mb</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;val_data size:   </span><span class="si">{</span><span class="n">total_size_mb</span><span class="p">(</span><span class="n">validation_data</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"train_data size: </span><span class="si">{</span><span class="n">total_size_mb</span><span class="p">(</span><span class="n">train_data</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"val_data size:   </span><span class="si">{</span><span class="n">total_size_mb</span><span class="p">(</span><span class="n">validation_data</span><span class="p">)</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2"> MB"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -910,16 +910,16 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">low_level_workflow</span> <span class="o">=</span> <span class="n">make_workflow</span><span class="p">()</span>
 
 <span class="n">train_dataset</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">DiskDataset</span><span class="p">(</span>
-    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;train&quot;</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span><span class="p">,</span>
-    <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;*.npy&quot;</span><span class="p">,</span>
+    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"train"</span> <span class="o">/</span> <span class="s2">"observations"</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="s2">"*.npy"</span><span class="p">,</span>
     <span class="n">load_fn</span><span class="o">=</span><span class="n">load_parameter_observation_pair</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">low_level_workflow</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">val_dataset</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">datasets</span><span class="o">.</span><span class="n">DiskDataset</span><span class="p">(</span>
-    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;val&quot;</span> <span class="o">/</span> <span class="s2">&quot;observations&quot;</span><span class="p">,</span>
-    <span class="n">pattern</span><span class="o">=</span><span class="s2">&quot;*.npy&quot;</span><span class="p">,</span>
+    <span class="n">root</span><span class="o">=</span><span class="n">root</span> <span class="o">/</span> <span class="s2">"val"</span> <span class="o">/</span> <span class="s2">"observations"</span><span class="p">,</span>
+    <span class="n">pattern</span><span class="o">=</span><span class="s2">"*.npy"</span><span class="p">,</span>
     <span class="n">load_fn</span><span class="o">=</span><span class="n">load_parameter_observation_pair</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">low_level_workflow</span><span class="o">.</span><span class="n">adapter</span><span class="p">,</span>
@@ -935,7 +935,7 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">batch</span> <span class="o">=</span> <span class="n">train_dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">20s</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">:</span><span class="s2">20s</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">value</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -964,8 +964,8 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">],</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">()</span>
 <span class="p">)</span>
 
@@ -1090,8 +1090,8 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1125,7 +1125,7 @@ fit_disk    -&gt; DiskDataset     -&gt; loads samples from files on disk
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

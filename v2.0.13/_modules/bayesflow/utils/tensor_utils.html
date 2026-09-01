@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/tensor_utils';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -489,7 +489,7 @@
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">Shape</span>
 
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"T"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="non_batch_axis">
@@ -502,7 +502,7 @@
 <div class="viewcode-block" id="concatenate_valid">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.concatenate_valid.html#bayesflow.utils.concatenate_valid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">concatenate_valid</span><span class="p">(</span><span class="n">tensors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Concatenate multiple tensors along axis, ignoring None values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Concatenate multiple tensors along axis, ignoring None values."""</span>
     <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">tensors</span><span class="p">:</span>
@@ -533,17 +533,17 @@
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand.html#bayesflow.utils.expand">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span><span class="p">):</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times."</span><span class="p">)</span>
 
     <span class="k">match</span> <span class="n">side</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"left"</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
-        <span class="k">case</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"right"</span><span class="p">:</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
         <span class="k">case</span> <span class="nb">str</span><span class="p">()</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid side </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Must be &#39;left&#39; or &#39;right&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid side </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Must be 'left' or 'right'."</span><span class="p">)</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid side type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">!r}</span><span class="s2">. Must be str.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid side type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">other</span><span class="p">)</span><span class="si">!r}</span><span class="s2">. Must be str."</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span></div>
 
@@ -566,9 +566,9 @@
 <div class="viewcode-block" id="expand_left">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_left.html#bayesflow.utils.expand_left">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_left</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the left n times&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the left n times"""</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times."</span><span class="p">)</span>
 
     <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span> <span class="o">+</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span></div>
@@ -578,7 +578,7 @@
 <div class="viewcode-block" id="expand_left_as">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_left_as.html#bayesflow.utils.expand_left_as">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_left_as</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the left, matching the dimension of y&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the left, matching the dimension of y"""</span>
     <span class="k">return</span> <span class="n">expand_left_to</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">y</span><span class="p">))</span></div>
 
 
@@ -586,7 +586,7 @@
 <div class="viewcode-block" id="expand_left_to">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_left_to.html#bayesflow.utils.expand_left_to">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_left_to</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the left, matching dim&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the left, matching dim"""</span>
     <span class="k">return</span> <span class="n">expand_left</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span> <span class="o">-</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
 
 
@@ -594,9 +594,9 @@
 <div class="viewcode-block" id="expand_right">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_right.html#bayesflow.utils.expand_right">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_right</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the right n times&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the right n times"""</span>
     <span class="k">if</span> <span class="n">n</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Cannot expand </span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s2"> times."</span><span class="p">)</span>
 
     <span class="n">idx</span> <span class="o">=</span> <span class="p">[</span><span class="o">...</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">n</span>
     <span class="k">return</span> <span class="n">x</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">idx</span><span class="p">)]</span></div>
@@ -606,7 +606,7 @@
 <div class="viewcode-block" id="expand_right_as">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_right_as.html#bayesflow.utils.expand_right_as">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_right_as</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">y</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the right, matching the dimension of y&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the right, matching the dimension of y"""</span>
     <span class="k">return</span> <span class="n">expand_right_to</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">y</span><span class="p">))</span></div>
 
 
@@ -614,7 +614,7 @@
 <div class="viewcode-block" id="expand_right_to">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_right_to.html#bayesflow.utils.expand_right_to">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_right_to</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand x to the right, matching dim&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand x to the right, matching dim"""</span>
     <span class="k">return</span> <span class="n">expand_right</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">dim</span> <span class="o">-</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">))</span></div>
 
 
@@ -622,7 +622,7 @@
 <div class="viewcode-block" id="expand_tile">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.expand_tile.html#bayesflow.utils.expand_tile">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">expand_tile</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand and tile x along the given axis n times&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Expand and tile x along the given axis n times"""</span>
     <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
@@ -635,12 +635,12 @@
 <div class="viewcode-block" id="repeat_and_flatten">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.repeat_and_flatten.html#bayesflow.utils.repeat_and_flatten">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">repeat_and_flatten</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Repeat each element along the leading (batch) axis and flatten back into it.</span>
+<span class="w">    </span><span class="sd">"""Repeat each element along the leading (batch) axis and flatten back into it.</span>
 
 <span class="sd">    Inserts a new axis after the batch axis, tiles it ``num_repeats`` times and merges it back,</span>
 <span class="sd">    so ``(B, ...) -&gt; (B * num_repeats, ...)`` with repeats of the same element kept adjacent</span>
 <span class="sd">    (ordering ``[x0, x0, ..., x1, x1, ...]``).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
     <span class="n">rest</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">1</span><span class="p">:])</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">expand_tile</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">num_repeats</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -653,27 +653,27 @@
         <span class="k">return</span> <span class="kc">True</span>
 
     <span class="k">match</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">():</span>
-        <span class="k">case</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"jax"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
 
             <span class="k">return</span> <span class="ow">not</span> <span class="n">jax</span><span class="o">.</span><span class="n">core</span><span class="o">.</span><span class="n">is_concrete</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tensorflow"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
             <span class="k">return</span> <span class="n">tf</span><span class="o">.</span><span class="n">is_symbolic_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"torch"</span><span class="p">:</span>
             <span class="k">return</span> <span class="kc">False</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Symbolic tensor check not implemented for backend </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Symbolic tensor check not implemented for backend </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="pad">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.pad.html#bayesflow.utils.pad">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;both&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">pad</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">value</span><span class="p">:</span> <span class="nb">float</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"both"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Pad x with n values along axis on the given side.</span>
 <span class="sd">    The pad value must broadcast against the shape of x, except for the pad axis, where it must broadcast against n.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">value</span><span class="p">):</span>
         <span class="n">value</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">full</span><span class="p">((),</span> <span class="n">value</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
@@ -682,23 +682,23 @@
 
     <span class="n">p</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">broadcast_to</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
     <span class="k">match</span> <span class="n">side</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;left&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"left"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;right&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"right"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;both&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"both"</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="n">p</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">p</span><span class="p">],</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span>
         <span class="k">case</span> <span class="nb">str</span><span class="p">()</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid side </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Must be &#39;left&#39;, &#39;right&#39;, or &#39;both&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid side </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">. Must be 'left', 'right', or 'both'."</span><span class="p">)</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid side type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">side</span><span class="p">)</span><span class="si">!r}</span><span class="s2">. Must be str.&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid side type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">side</span><span class="p">)</span><span class="si">!r}</span><span class="s2">. Must be str."</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="weighted_mean">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.weighted_mean.html#bayesflow.utils.weighted_mean">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">weighted_mean</span><span class="p">(</span><span class="n">elements</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Compute the (optionally) weighted mean of the input tensor.</span>
 
 <span class="sd">    Parameters</span>
@@ -713,20 +713,20 @@
 <span class="sd">    -------</span>
 <span class="sd">    Tensor</span>
 <span class="sd">        A scalar tensor representing the (weighted) mean.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">elements</span> <span class="o">*</span> <span class="n">weights</span> <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">elements</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="searchsorted">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.searchsorted.html#bayesflow.utils.searchsorted">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">sorted_sequence</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;left&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">searchsorted</span><span class="p">(</span><span class="n">sorted_sequence</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">values</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">side</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"left"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Find indices where elements should be inserted to maintain order.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">match</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">():</span>
-        <span class="k">case</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"jax"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">jax</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">jax.numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">jnp</span>
 
@@ -748,14 +748,14 @@
 
             <span class="c1"># noinspection PyTypeChecker</span>
             <span class="k">return</span> <span class="n">indices</span>
-        <span class="k">case</span> <span class="s2">&quot;tensorflow&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tensorflow"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">tensorflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">tf</span>
 
             <span class="c1"># always use int64 to avoid complicated graph code</span>
-            <span class="n">indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sorted_sequence</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="n">side</span><span class="p">,</span> <span class="n">out_type</span><span class="o">=</span><span class="s2">&quot;int64&quot;</span><span class="p">)</span>
+            <span class="n">indices</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">sorted_sequence</span><span class="p">,</span> <span class="n">values</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="n">side</span><span class="p">,</span> <span class="n">out_type</span><span class="o">=</span><span class="s2">"int64"</span><span class="p">)</span>
 
             <span class="k">return</span> <span class="n">indices</span>
-        <span class="k">case</span> <span class="s2">&quot;torch&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"torch"</span><span class="p">:</span>
             <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
 
             <span class="n">out_int32</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sorted_sequence</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">np</span><span class="o">.</span><span class="n">iinfo</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">int32</span><span class="p">)</span><span class="o">.</span><span class="n">max</span>
@@ -766,14 +766,14 @@
 
             <span class="k">return</span> <span class="n">indices</span>
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Searchsorted not implemented for backend </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span></div>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Searchsorted not implemented for backend </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span></div>
 
 
 
 <div class="viewcode-block" id="linsolve_batched">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.linsolve_batched.html#bayesflow.utils.linsolve_batched">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">linsolve_batched</span><span class="p">(</span><span class="n">lambda_matrix</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">rhs</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m).&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m)."""</span>
     <span class="n">rhs_col</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">rhs</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">solve</span><span class="p">(</span><span class="n">lambda_matrix</span><span class="p">,</span> <span class="n">rhs_col</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span></div>
@@ -783,10 +783,10 @@
 <div class="viewcode-block" id="size_of">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.size_of.html#bayesflow.utils.size_of">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">size_of</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    :param x: A nested structure of tensors.</span>
 <span class="sd">    :return: The total memory footprint of x, ignoring view semantics, in bytes.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="nb">int</span><span class="p">,</span> <span class="nb">float</span><span class="p">)):</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
@@ -806,7 +806,7 @@
 <div class="viewcode-block" id="stack_valid">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.stack_valid.html#bayesflow.utils.stack_valid">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">stack_valid</span><span class="p">(</span><span class="n">tensors</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Stack multiple tensors along axis, ignoring None values.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Stack multiple tensors along axis, ignoring None values."""</span>
     <span class="n">tensors</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">tensors</span> <span class="k">if</span> <span class="n">t</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">tensors</span><span class="p">:</span>
@@ -819,7 +819,7 @@
 <div class="viewcode-block" id="tile_axis">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.tile_axis.html#bayesflow.utils.tile_axis">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">tile_axis</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">n</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Tile x along the given axis n times&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Tile x along the given axis n times"""</span>
     <span class="n">repeats</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ndim</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
     <span class="n">repeats</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span> <span class="o">=</span> <span class="n">n</span>
 
@@ -830,11 +830,11 @@
 
 
 
-<span class="c1"># we want to annotate this as Sequence[PyTree[Tensor]], but static type checkers do not support PyTree&#39;s type expansion</span>
+<span class="c1"># we want to annotate this as Sequence[PyTree[Tensor]], but static type checkers do not support PyTree's type expansion</span>
 <div class="viewcode-block" id="tree_concatenate">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.tree_concatenate.html#bayesflow.utils.tree_concatenate">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">tree_concatenate</span><span class="p">(</span><span class="n">structures</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numpy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Concatenate all tensors in the given sequence of nested structures.</span>
+<span class="w">    </span><span class="sd">"""Concatenate all tensors in the given sequence of nested structures.</span>
 <span class="sd">    All objects in the given sequence must have the same structure.</span>
 <span class="sd">    The output will adhere to this structure.</span>
 
@@ -846,7 +846,7 @@
 <span class="sd">        Will convert all items in the structures to numpy arrays if True, tensors otherwise.</span>
 <span class="sd">        Defaults to True if all tensors are numpy arrays, False otherwise.</span>
 <span class="sd">    :return: A structure of concatenated tensors with the same layout as each input structure.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">numpy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">numpy</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">,</span> <span class="n">structures</span><span class="p">)))</span>
 
@@ -868,7 +868,7 @@
 <div class="viewcode-block" id="tree_stack">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.tree_stack.html#bayesflow.utils.tree_stack">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">tree_stack</span><span class="p">(</span><span class="n">structures</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">T</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">numpy</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">T</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Like :func:`tree_concatenate`, except tensors are stacked instead of concatenated.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Like :func:`tree_concatenate`, except tensors are stacked instead of concatenated."""</span>
     <span class="k">if</span> <span class="n">numpy</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">numpy</span> <span class="o">=</span> <span class="ow">not</span> <span class="nb">any</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">flatten</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">,</span> <span class="n">structures</span><span class="p">)))</span>
 
@@ -890,7 +890,7 @@
 <div class="viewcode-block" id="fill_triangular_matrix">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.fill_triangular_matrix.html#bayesflow.utils.fill_triangular_matrix">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">fill_triangular_matrix</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">upper</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Reshapes a batch of matrix elements into a triangular matrix (either upper or lower).</span>
 
 <span class="sd">    Note: If final axis has length 1, this simply reshapes to (batch_size, 1, 1) and optionally applies softplus.</span>
@@ -912,7 +912,7 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If provided nonzero elements do not correspond to possible triangular matrix shape</span>
 <span class="sd">        (n,n) with n = sqrt( 1/4 + 2 * m) - 1/2 due to m = n * (n + 1) / 2.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">batch_shape</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
     <span class="n">m</span> <span class="o">=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
@@ -920,7 +920,7 @@
         <span class="c1"># Calculate matrix shape</span>
         <span class="n">n</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.25</span> <span class="o">+</span> <span class="mi">2</span> <span class="o">*</span> <span class="n">m</span><span class="p">)</span> <span class="o">**</span> <span class="mf">0.5</span> <span class="o">-</span> <span class="mf">0.5</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n</span><span class="p">),</span> <span class="n">n</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Input right-most shape (</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">) does not correspond to a triangular matrix.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Input right-most shape (</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="s2">) does not correspond to a triangular matrix."</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">n</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
 
@@ -950,8 +950,8 @@
 
 <div class="viewcode-block" id="positive_diag">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.positive_diag.html#bayesflow.utils.positive_diag">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">positive_diag</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">&quot;default&quot;</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">positive_diag</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="s2">"default"</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Ensures that matrix elements on diagonal are positive.</span>
 
 <span class="sd">    Parameters</span>
@@ -960,20 +960,20 @@
 <span class="sd">        Batch of matrices.</span>
 <span class="sd">    method : str, optional</span>
 <span class="sd">        Method by which to ensure positivity of diagonal entries. Choose from</span>
-<span class="sd">        - &quot;shifted_softplus&quot;: softplus(x + 0.5413)</span>
-<span class="sd">        - &quot;exp&quot;: exp(x)</span>
+<span class="sd">        - "shifted_softplus": softplus(x + 0.5413)</span>
+<span class="sd">        - "exp": exp(x)</span>
 <span class="sd">        Both methods map a matrix filled with zeros to the unit matrix.</span>
-<span class="sd">        Default is &quot;shifted_softplus&quot;.</span>
+<span class="sd">        Default is "shifted_softplus".</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    Tensor of shape (batch_size, n, n)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># ensure positivity</span>
     <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;default&quot;</span> <span class="o">|</span> <span class="s2">&quot;shifted_softplus&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"default"</span> <span class="o">|</span> <span class="s2">"shifted_softplus"</span><span class="p">:</span>
             <span class="n">x_positive</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">activations</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">0.5413</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-5</span>
-        <span class="k">case</span> <span class="s2">&quot;exp&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"exp"</span><span class="p">:</span>
             <span class="n">x_positive</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-5</span>
 
     <span class="c1"># zero all offdiagonals</span>
@@ -1016,8 +1016,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1051,7 +1051,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

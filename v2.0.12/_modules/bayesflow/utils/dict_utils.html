@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/dict_utils';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -491,13 +491,13 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.types</span><span class="w"> </span><span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span><span class="w"> </span><span class="nn">.</span><span class="w"> </span><span class="kn">import</span> <span class="n">logging</span>
 
-<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">&quot;T&quot;</span><span class="p">)</span>
+<span class="n">T</span> <span class="o">=</span> <span class="n">TypeVar</span><span class="p">(</span><span class="s2">"T"</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="convert_args">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.convert_args.html#bayesflow.utils.convert_args">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_args</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">any</span><span class="p">,</span> <span class="o">...</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert positional and keyword arguments to just positional arguments for f&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Convert positional and keyword arguments to just positional arguments for f"""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">kwargs</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">args</span>
 
@@ -520,7 +520,7 @@
 <div class="viewcode-block" id="convert_kwargs">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.convert_kwargs.html#bayesflow.utils.convert_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">convert_kwargs</span><span class="p">(</span><span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">:</span> <span class="nb">any</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert positional and keyword arguments qto just keyword arguments for f&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Convert positional and keyword arguments qto just keyword arguments for f"""</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">args</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">kwargs</span>
 
@@ -530,7 +530,7 @@
 
     <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="k">if</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parameters</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() got multiple arguments for argument &#39;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&#39;&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">f</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">() got multiple arguments for argument '</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">'"</span><span class="p">)</span>
 
         <span class="n">parameters</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
 
@@ -541,7 +541,7 @@
 <div class="viewcode-block" id="filter_kwargs">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.filter_kwargs.html#bayesflow.utils.filter_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">],</span> <span class="n">f</span><span class="p">:</span> <span class="n">Callable</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter keyword arguments for f&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Filter keyword arguments for f"""</span>
     <span class="n">signature</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">f</span><span class="p">)</span>
 
     <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">signature</span><span class="o">.</span><span class="n">parameters</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
@@ -558,8 +558,8 @@
 <div class="viewcode-block" id="layer_kwargs">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.layer_kwargs.html#bayesflow.utils.layer_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter keyword arguments for keras.Layer&quot;&quot;&quot;</span>
-    <span class="n">valid_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;dtype&quot;</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;trainable&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Filter keyword arguments for keras.Layer"""</span>
+    <span class="n">valid_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"dtype"</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">,</span> <span class="s2">"trainable"</span><span class="p">]</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_keys</span><span class="p">}</span></div>
 
 
@@ -567,7 +567,7 @@
 <div class="viewcode-block" id="model_kwargs">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.model_kwargs.html#bayesflow.utils.model_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">model_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter keyword arguments for keras.Model&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Filter keyword arguments for keras.Model"""</span>
     <span class="k">return</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
@@ -575,8 +575,8 @@
 <div class="viewcode-block" id="sequential_kwargs">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.sequential_kwargs.html#bayesflow.utils.sequential_kwargs">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">sequential_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">T</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Filter keyword arguments for keras.Sequential&quot;&quot;&quot;</span>
-    <span class="n">valid_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">,</span> <span class="s2">&quot;trainable&quot;</span><span class="p">]</span>
+<span class="w">    </span><span class="sd">"""Filter keyword arguments for keras.Sequential"""</span>
+    <span class="n">valid_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"name"</span><span class="p">,</span> <span class="s2">"trainable"</span><span class="p">]</span>
     <span class="k">return</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">value</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">valid_keys</span><span class="p">}</span></div>
 
 
@@ -587,19 +587,19 @@
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">nan_mask</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found a total of </span><span class="si">{n:d}</span><span class="s2"> nan values for output </span><span class="si">{k}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Found a total of </span><span class="si">{n:d}</span><span class="s2"> nan values for output </span><span class="si">{k}</span><span class="s2">."</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">nan_mask</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
 
     <span class="c1"># Warn if any inf present in output</span>
     <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">outputs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
         <span class="n">inf_mask</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">isinf</span><span class="p">(</span><span class="n">v</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">inf_mask</span><span class="p">):</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Found a total of </span><span class="si">{n:d}</span><span class="s2"> inf values for output </span><span class="si">{k}</span><span class="s2">.&quot;</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inf_mask</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Found a total of </span><span class="si">{n:d}</span><span class="s2"> inf values for output </span><span class="si">{k}</span><span class="s2">."</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">inf_mask</span><span class="p">)),</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="split_tensors">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.split_tensors.html#bayesflow.utils.split_tensors">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_tensors</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">any</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">any</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split tensors in the dictionary along the given axis.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Split tensors in the dictionary along the given axis."""</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
@@ -611,7 +611,7 @@
         <span class="n">splits</span> <span class="o">=</span> <span class="p">[</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">splits</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">split</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">split</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">split</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
@@ -625,7 +625,7 @@
         <span class="n">first</span> <span class="o">=</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sizes</span><span class="p">[</span><span class="mi">1</span><span class="p">:]:</span>
             <span class="k">if</span> <span class="n">s</span> <span class="o">!=</span> <span class="n">first</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All array conditions must have same leading dimension, got </span><span class="si">{</span><span class="n">sizes</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All array conditions must have same leading dimension, got </span><span class="si">{</span><span class="n">sizes</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">first</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">obj</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">axis</span><span class="p">]</span></div>
@@ -635,7 +635,7 @@
 <div class="viewcode-block" id="slice_maybe_nested">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.slice_maybe_nested.html#bayesflow.utils.slice_maybe_nested">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">slice_maybe_nested</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Mapping</span> <span class="o">|</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">start</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">end</span><span class="p">:</span> <span class="nb">int</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Slices a possibly nested dictionary of arrays along the first axis.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Slices a possibly nested dictionary of arrays along the first axis."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">slice_maybe_nested</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">start</span><span class="p">,</span> <span class="n">end</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">obj</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
     <span class="k">else</span><span class="p">:</span>
@@ -647,11 +647,11 @@
 <div class="viewcode-block" id="split_arrays">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.split_arrays.html#bayesflow.utils.split_arrays">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">split_arrays</span><span class="p">(</span><span class="n">data</span><span class="p">:</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Mapping</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Split tensors in the dictionary along the given axis.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Split tensors in the dictionary along the given axis."""</span>
     <span class="n">result</span> <span class="o">=</span> <span class="p">{}</span>
 
     <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">data</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">&quot;shape&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="s2">"shape"</span><span class="p">):</span>
             <span class="n">result</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">value</span><span class="p">])</span>
             <span class="k">continue</span>
 
@@ -667,14 +667,14 @@
         <span class="n">splits</span> <span class="o">=</span> <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="n">axis</span><span class="p">)</span> <span class="k">for</span> <span class="n">split</span> <span class="ow">in</span> <span class="n">splits</span><span class="p">]</span>
 
         <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">split</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">splits</span><span class="p">):</span>
-            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">split</span>
+            <span class="n">result</span><span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">]</span> <span class="o">=</span> <span class="n">split</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
 
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">VariableArray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    An enriched numpy array with information on variable keys and names</span>
 <span class="sd">    to be used in post-processing, specifically the diagnostics module.</span>
 
@@ -683,7 +683,7 @@
 
 <span class="sd">    Design according to</span>
 <span class="sd">    https://numpy.org/doc/stable/user/basics.subclassing.html#simple-example-adding-an-extra-attribute-to-ndarray</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__new__</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">input_array</span><span class="p">,</span> <span class="n">variable_keys</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">variable_names</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">input_array</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="bp">cls</span><span class="p">)</span>
@@ -694,8 +694,8 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">__array_finalize__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">obj</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">variable_keys</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;variable_keys&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">variable_names</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">&quot;variable_names&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_keys</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"variable_keys"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">variable_names</span> <span class="o">=</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="s2">"variable_names"</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">make_variable_array</span><span class="p">(</span>
@@ -703,9 +703,9 @@
     <span class="n">dataset_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">default_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;v&quot;</span><span class="p">,</span>
+    <span class="n">default_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"v"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VariableArray</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Helper function to validate arrays for use in the diagnostics module.</span>
 
 <span class="sd">    Parameters</span>
@@ -717,9 +717,9 @@
 <span class="sd">    variable_names : Sequence[str], optional (default = None)</span>
 <span class="sd">        Optional variable names to act as a filter if dicts provided or actual variable names in case of array</span>
 <span class="sd">        inputs.</span>
-<span class="sd">    default_name   : str, optional (default = &quot;v&quot;)</span>
+<span class="sd">    default_name   : str, optional (default = "v")</span>
 <span class="sd">        The default variable name to use if array arguments and no variable names are provided.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">variable_keys</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">variable_keys</span> <span class="o">=</span> <span class="p">[</span><span class="n">variable_keys</span><span class="p">]</span>
@@ -758,17 +758,17 @@
 
         <span class="c1"># use default names if not otherwise specified</span>
         <span class="k">if</span> <span class="n">variable_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">variable_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">default_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
+            <span class="n">variable_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">default_name</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])]</span>
 
         <span class="k">if</span> <span class="n">dataset_ids</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="n">dataset_ids</span><span class="p">]</span>
 
     <span class="c1"># Throw if unknown type</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Only dicts and tensors are supported as arguments, but your estimates are of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Only dicts and tensors are supported as arguments, but your estimates are of type </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variable_names</span><span class="p">)</span> <span class="o">!=</span> <span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Length of &#39;variable_names&#39; should be the same as the number of variables.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Length of 'variable_names' should be the same as the number of variables."</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">variable_keys</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="c1"># every variable will count as its own key if not otherwise specified</span>
@@ -786,9 +786,9 @@
     <span class="n">dataset_ids</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">default_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;v&quot;</span><span class="p">,</span>
+    <span class="n">default_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"v"</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function that prepares estimates and optional ground truths for diagnostics</span>
+<span class="w">    </span><span class="sd">"""Helper function that prepares estimates and optional ground truths for diagnostics</span>
 <span class="sd">    (plotting or computation of metrics).</span>
 
 <span class="sd">    The function operates on both arrays and dictionaries and assumes either a dictionary</span>
@@ -831,9 +831,9 @@
 <span class="sd">        Optional variable names to act as a filter if dicts provided or actual variable names in case of array</span>
 <span class="sd">        inputs.</span>
 
-<span class="sd">    default_name   : str, optional (default = &quot;v&quot;)</span>
+<span class="sd">    default_name   : str, optional (default = "v")</span>
 <span class="sd">        The default variable name to use if array arguments and no variable names are provided.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># other to be validated arrays (see below) will take use</span>
     <span class="c1"># the variable_keys and variable_names implied by estimates</span>
@@ -871,13 +871,13 @@
 <div class="viewcode-block" id="squeeze_inner_estimates_dict">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.squeeze_inner_estimates_dict.html#bayesflow.utils.squeeze_inner_estimates_dict">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">squeeze_inner_estimates_dict</span><span class="p">(</span><span class="n">estimates</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;If a dictionary has only one key-value pair and the key is &quot;value&quot;, return only its value.</span>
+<span class="w">    </span><span class="sd">"""If a dictionary has only one key-value pair and the key is "value", return only its value.</span>
 <span class="sd">    Otherwise, return the unchanged dictionary.</span>
 
 <span class="sd">    This method helps to remove unnecessary nesting levels.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">&quot;value&quot;</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;value&quot;</span><span class="p">]</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">1</span> <span class="ow">and</span> <span class="s2">"value"</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">return</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"value"</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">estimates</span></div>
 
@@ -890,7 +890,7 @@
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute additional test quantities for given targets and estimates.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Compute additional test quantities for given targets and estimates."""</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
     <span class="n">test_quantities_estimates</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="kc">None</span>
@@ -928,10 +928,10 @@
     <span class="n">targets</span> <span class="o">=</span> <span class="n">test_quantities_targets</span> <span class="o">|</span> <span class="n">targets</span>
 
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;variable_keys&quot;</span><span class="p">:</span> <span class="n">variable_keys</span><span class="p">,</span>
-        <span class="s2">&quot;estimates&quot;</span><span class="p">:</span> <span class="n">estimates</span><span class="p">,</span>
-        <span class="s2">&quot;targets&quot;</span><span class="p">:</span> <span class="n">targets</span><span class="p">,</span>
-        <span class="s2">&quot;variable_names&quot;</span><span class="p">:</span> <span class="n">variable_names</span><span class="p">,</span>
+        <span class="s2">"variable_keys"</span><span class="p">:</span> <span class="n">variable_keys</span><span class="p">,</span>
+        <span class="s2">"estimates"</span><span class="p">:</span> <span class="n">estimates</span><span class="p">,</span>
+        <span class="s2">"targets"</span><span class="p">:</span> <span class="n">targets</span><span class="p">,</span>
+        <span class="s2">"variable_names"</span><span class="p">:</span> <span class="n">variable_names</span><span class="p">,</span>
     <span class="p">}</span>
 </pre></div>
 
@@ -962,8 +962,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -997,7 +997,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

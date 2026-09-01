@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/adapters/transforms/drop';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -490,9 +490,9 @@
 
 <div class="viewcode-block" id="Drop">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.Drop.html#bayesflow.adapters.transforms.Drop">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.adapters&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.adapters"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Drop</span><span class="p">(</span><span class="n">Transform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Transform to drop variables from further calculation.</span>
 
 <span class="sd">    Parameters</span>
@@ -509,11 +509,11 @@
 <span class="sd">    &gt;&gt;&gt; c = [[5, 6, 7, 8]]</span>
 <span class="sd">    &gt;&gt;&gt; dat = dict(a=a, b=b, c=c)</span>
 <span class="sd">    &gt;&gt;&gt; dat</span>
-<span class="sd">        {&#39;a&#39;: [1, 2, 3, 4], &#39;b&#39;: [[1, 2], [3, 4]], &#39;c&#39;: [[5, 6, 7, 8]]}</span>
-<span class="sd">    &gt;&gt;&gt; drop = bf.adapters.transforms.Drop((&quot;b&quot;, &quot;c&quot;))</span>
+<span class="sd">        {'a': [1, 2, 3, 4], 'b': [[1, 2], [3, 4]], 'c': [[5, 6, 7, 8]]}</span>
+<span class="sd">    &gt;&gt;&gt; drop = bf.adapters.transforms.Drop(("b", "c"))</span>
 <span class="sd">    &gt;&gt;&gt; drop.forward(dat)</span>
-<span class="sd">        {&#39;a&#39;: [1, 2, 3, 4]}</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        {'a': [1, 2, 3, 4]}</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]):</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">keys</span> <span class="o">=</span> <span class="n">keys</span>
@@ -521,7 +521,7 @@
 <div class="viewcode-block" id="Drop.get_config">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.Drop.html#bayesflow.adapters.transforms.Drop.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">serialize</span><span class="p">({</span><span class="s2">&quot;keys&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">})</span></div>
+        <span class="k">return</span> <span class="n">serialize</span><span class="p">({</span><span class="s2">"keys"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">})</span></div>
 
 
 <div class="viewcode-block" id="Drop.forward">
@@ -541,7 +541,7 @@
 <div class="viewcode-block" id="Drop.extra_repr">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.Drop.html#bayesflow.adapters.transforms.Drop.extra_repr">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="s2">&quot;[&quot;</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">))</span> <span class="o">+</span> <span class="s2">&quot;]&quot;</span></div>
+        <span class="k">return</span> <span class="s2">"["</span> <span class="o">+</span> <span class="s2">", "</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">repr</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">keys</span><span class="p">))</span> <span class="o">+</span> <span class="s2">"]"</span></div>
 
 
 <div class="viewcode-block" id="Drop.log_det_jac">
@@ -579,8 +579,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -614,7 +614,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

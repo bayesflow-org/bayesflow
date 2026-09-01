@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/integrate';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -500,8 +500,8 @@
 <span class="n">StateDict</span> <span class="o">=</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]</span>
 
 
-<span class="n">DETERMINISTIC_METHODS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;euler&quot;</span><span class="p">,</span> <span class="s2">&quot;rk45&quot;</span><span class="p">,</span> <span class="s2">&quot;tsit5&quot;</span><span class="p">]</span>
-<span class="n">STOCHASTIC_METHODS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;euler_maruyama&quot;</span><span class="p">,</span> <span class="s2">&quot;sea&quot;</span><span class="p">,</span> <span class="s2">&quot;shark&quot;</span><span class="p">,</span> <span class="s2">&quot;two_step_adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;langevin&quot;</span><span class="p">]</span>
+<span class="n">DETERMINISTIC_METHODS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"euler"</span><span class="p">,</span> <span class="s2">"rk45"</span><span class="p">,</span> <span class="s2">"tsit5"</span><span class="p">]</span>
+<span class="n">STOCHASTIC_METHODS</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"euler_maruyama"</span><span class="p">,</span> <span class="s2">"sea"</span><span class="p">,</span> <span class="s2">"shark"</span><span class="p">,</span> <span class="s2">"two_step_adaptive"</span><span class="p">,</span> <span class="s2">"langevin"</span><span class="p">]</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">_check_all_nans</span><span class="p">(</span><span class="n">state</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">):</span>
@@ -545,11 +545,11 @@
     <span class="n">k1</span><span class="p">:</span> <span class="n">StateDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">use_adaptive_step_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">StateDict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Dormand-Prince 5(4) method with embedded error estimation [1].</span>
 
 <span class="sd">    Dormand (1996), Numerical Methods for Differential Equations: A Computational Approach</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">step_size</span>
 
     <span class="k">if</span> <span class="n">k1</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># reuse k1 if available</span>
@@ -611,11 +611,11 @@
     <span class="n">k1</span><span class="p">:</span> <span class="n">StateDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">use_adaptive_step_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">StateDict</span> <span class="o">|</span> <span class="kc">None</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Implements a single step of the Tsitouras 5/4 Runge-Kutta method [1].</span>
 
 <span class="sd">    [1] Tsitouras (2011), Runge--Kutta pairs of order 5(4) satisfying only the first column simplifying assumption</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">step_size</span>
 
     <span class="c1"># Butcher tableau coefficients</span>
@@ -707,19 +707,19 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">steps</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of steps must be positive.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Number of steps must be positive."</span><span class="p">)</span>
 
     <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;euler&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"euler"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">euler_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">))</span>
-        <span class="k">case</span> <span class="s2">&quot;rk45&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"rk45"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">rk45_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;tsit5&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tsit5"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">tsit5_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">case</span> <span class="nb">str</span><span class="p">()</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="n">step_size</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="n">steps</span>
 
@@ -745,16 +745,16 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
     <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;euler&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"euler"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">euler_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">))</span>
-        <span class="k">case</span> <span class="s2">&quot;rk45&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"rk45"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">rk45_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;tsit5&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tsit5"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">tsit5_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
         <span class="k">case</span> <span class="nb">str</span><span class="p">()</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">body</span><span class="p">(</span><span class="n">_loop_var</span><span class="p">,</span> <span class="n">_loop_state</span><span class="p">):</span>
         <span class="n">_time</span> <span class="o">=</span> <span class="n">steps</span><span class="p">[</span><span class="n">_loop_var</span><span class="p">]</span>
@@ -782,27 +782,27 @@
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]:</span>
     <span class="k">if</span> <span class="n">max_steps</span> <span class="o">&lt;=</span> <span class="n">min_steps</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Maximum number of steps must be greater than minimum number of steps.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Maximum number of steps must be greater than minimum number of steps."</span><span class="p">)</span>
 
     <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;rk45&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"rk45"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">rk45_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;tsit5&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"tsit5"</span><span class="p">:</span>
             <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">tsit5_step</span><span class="p">,</span> <span class="n">fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">rk45_step</span><span class="p">),</span> <span class="n">use_adaptive_step_size</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;euler&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Adaptive step sizing is not supported for the &#39;euler&#39; method.&quot;</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s2">"euler"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Adaptive step sizing is not supported for the 'euler' method."</span><span class="p">)</span>
         <span class="k">case</span> <span class="nb">str</span><span class="p">()</span> <span class="k">as</span> <span class="n">name</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown integration method name: </span><span class="si">{</span><span class="n">name</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">atol</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;atol&quot;</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="n">rtol</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rtol&quot;</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="n">initial_step</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">((</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_steps</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="n">step0</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="n">atol</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"atol"</span><span class="p">,</span> <span class="mf">1e-6</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="n">rtol</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rtol"</span><span class="p">,</span> <span class="mf">1e-4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="n">initial_step</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">((</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_steps</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="n">step0</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
     <span class="n">count_not_accepted</span> <span class="o">=</span> <span class="mi">0</span>
 
-    <span class="c1"># &quot;First Same As Last&quot; (FSAL) property</span>
+    <span class="c1"># "First Same As Last" (FSAL) property</span>
     <span class="n">k1_0</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">start_time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">fn</span><span class="p">))</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">cond</span><span class="p">(</span><span class="n">_state</span><span class="p">,</span> <span class="n">_time</span><span class="p">,</span> <span class="n">_step_size</span><span class="p">,</span> <span class="n">_step</span><span class="p">,</span> <span class="n">_k1</span><span class="p">,</span> <span class="n">_count_not_accepted</span><span class="p">):</span>
@@ -871,7 +871,7 @@
     <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">_check_all_nans</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">time</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="c1"># Final step to hit stop_time exactly</span>
     <span class="n">time_diff</span> <span class="o">=</span> <span class="n">stop_time</span> <span class="o">-</span> <span class="n">time</span>
@@ -885,7 +885,7 @@
         <span class="p">)</span>
         <span class="n">step</span> <span class="o">=</span> <span class="n">step</span> <span class="o">+</span> <span class="mf">1.0</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished integration after </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> steps with </span><span class="si">{</span><span class="n">count_not_accepted</span><span class="si">}</span><span class="s2"> rejected steps.&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finished integration after </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> steps with </span><span class="si">{</span><span class="n">count_not_accepted</span><span class="si">}</span><span class="s2"> rejected steps."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">state</span>
 
 
@@ -902,25 +902,25 @@
     <span class="n">keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
     <span class="c1"># convert to tensor before determining the shape in case a number was passed</span>
     <span class="n">shapes</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span> <span class="n">state</span><span class="p">)</span>
-    <span class="n">adapter</span> <span class="o">=</span> <span class="n">Adapter</span><span class="p">()</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="n">adapter</span> <span class="o">=</span> <span class="n">Adapter</span><span class="p">()</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">keys</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">state_to_vector</span><span class="p">(</span><span class="n">state</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
         <span class="c1"># flatten state</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,)),</span> <span class="n">state</span><span class="p">)</span>
         <span class="c1"># apply concatenation</span>
-        <span class="n">x</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">)[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">forward</span><span class="p">(</span><span class="n">state</span><span class="p">)[</span><span class="s2">"x"</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">x</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">vector_to_state</span><span class="p">(</span><span class="n">x</span><span class="p">):</span>
-        <span class="n">state</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">inverse</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x</span><span class="p">})</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">adapter</span><span class="o">.</span><span class="n">inverse</span><span class="p">({</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x</span><span class="p">})</span>
         <span class="n">state</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="n">shapes</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">state</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">scipy_wrapper_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">x</span><span class="p">):</span>
         <span class="n">state</span> <span class="o">=</span> <span class="n">vector_to_state</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-        <span class="n">time</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+        <span class="n">time</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span>
         <span class="n">deltas</span> <span class="o">=</span> <span class="n">fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">fn</span><span class="p">))</span>
         <span class="k">return</span> <span class="n">state_to_vector</span><span class="p">(</span><span class="n">deltas</span><span class="p">)</span>
 
@@ -944,34 +944,34 @@
     <span class="n">stop_time</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10_000</span><span class="p">,</span>
-    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;adaptive&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;rk45&quot;</span><span class="p">,</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"adaptive"</span><span class="p">]</span> <span class="o">|</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"rk45"</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">]:</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"adaptive"</span><span class="p">,</span> <span class="s2">"dynamic"</span><span class="p">]:</span>
         <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">stop_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Please provide start_time and stop_time for the integration, was &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&#39;start_time=</span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2">&#39;, &#39;stop_time=</span><span class="si">{</span><span class="n">stop_time</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                <span class="s2">"Please provide start_time and stop_time for the integration, was "</span>
+                <span class="sa">f</span><span class="s2">"'start_time=</span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2">', 'stop_time=</span><span class="si">{</span><span class="n">stop_time</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">&quot;scipy&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">method</span> <span class="o">==</span> <span class="s2">"scipy"</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">min_steps</span> <span class="o">!=</span> <span class="mi">10</span><span class="p">:</span>
-                <span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Setting min_steps has no effect for method &#39;scipy&#39;&quot;</span><span class="p">)</span>
+                <span class="n">warning</span><span class="p">(</span><span class="s2">"Setting min_steps has no effect for method 'scipy'"</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">max_steps</span> <span class="o">!=</span> <span class="mi">10_000</span><span class="p">:</span>
-                <span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Setting max_steps has no effect for method &#39;scipy&#39;&quot;</span><span class="p">)</span>
+                <span class="n">warning</span><span class="p">(</span><span class="s2">"Setting max_steps has no effect for method 'scipy'"</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">integrate_scipy</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">integrate_adaptive</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">min_steps</span><span class="p">,</span> <span class="n">max_steps</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">stop_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;Please provide start_time and stop_time for the integration, was &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;&#39;start_time=</span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2">&#39;, &#39;stop_time=</span><span class="si">{</span><span class="n">stop_time</span><span class="si">}</span><span class="s2">&#39;.&quot;</span>
+                <span class="s2">"Please provide start_time and stop_time for the integration, was "</span>
+                <span class="sa">f</span><span class="s2">"'start_time=</span><span class="si">{</span><span class="n">start_time</span><span class="si">}</span><span class="s2">', 'stop_time=</span><span class="si">{</span><span class="n">stop_time</span><span class="si">}</span><span class="s2">'."</span>
             <span class="p">)</span>
         <span class="k">return</span> <span class="n">integrate_fixed</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">stop_time</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">is_tensor</span><span class="p">(</span><span class="n">steps</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">integrate_scheduled</span><span class="p">(</span><span class="n">fn</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">steps</span><span class="p">,</span> <span class="n">method</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Type or value of `steps` not understood (steps=</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s2">)&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Type or value of `steps` not understood (steps=</span><span class="si">{</span><span class="n">steps</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span></div>
 
 
 
@@ -989,10 +989,10 @@
     <span class="n">state</span><span class="p">,</span>
     <span class="n">drift</span><span class="p">,</span>
     <span class="n">adaptive_factor</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
-    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
-    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
+    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ArrayLike</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Adaptive step size controller based on [1]. Similar to a tamed explicit Euler method when used in Euler-Maruyama.</span>
 
 <span class="sd">    Adaptive step sizing uses:</span>
@@ -1004,7 +1004,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    New step size.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">state_norms</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="n">drift_norms</span> <span class="o">=</span> <span class="p">[]</span>
     <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
@@ -1031,10 +1031,10 @@
     <span class="n">step_size</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">noise</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>
     <span class="n">use_adaptive_step_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
-    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
+    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Union</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">StateDict</span><span class="p">]]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs a single Euler-Maruyama step for stochastic differential equations.</span>
 
 <span class="sd">    Args:</span>
@@ -1051,7 +1051,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        new_state: Updated state after one Euler-Maruyama step.</span>
 <span class="sd">        new_time: time + dt.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Compute drift and diffusion</span>
     <span class="n">drift</span> <span class="o">=</span> <span class="n">drift_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">drift_fn</span><span class="p">))</span>
     <span class="n">diffusion</span> <span class="o">=</span> <span class="n">diffusion_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">diffusion_fn</span><span class="p">))</span>
@@ -1091,8 +1091,8 @@
     <span class="n">noise</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>
     <span class="n">last_state</span><span class="p">:</span> <span class="n">StateDict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">use_adaptive_step_size</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
-    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">),</span>
+    <span class="n">min_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="o">-</span><span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
+    <span class="n">max_step_size</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">"inf"</span><span class="p">),</span>
     <span class="n">e_rel</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
     <span class="n">e_abs</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">r</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.9</span><span class="p">,</span>
@@ -1101,7 +1101,7 @@
     <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">],</span>
     <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">StateDict</span><span class="p">],</span>
 <span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs a single adaptive step for stochastic differential equations based on [1].</span>
 
 <span class="sd">    Based on</span>
@@ -1115,7 +1115,7 @@
 <span class="sd">    When step_size reaches min_step_size, steps are always accepted regardless of</span>
 <span class="sd">    error to ensure progress and termination within max_steps.</span>
 
-<span class="sd">    [1] Jolicoeur-Martineau et al. (2021) &quot;Gotta Go Fast When Generating Data with Score-Based Models&quot;</span>
+<span class="sd">    [1] Jolicoeur-Martineau et al. (2021) "Gotta Go Fast When Generating Data with Score-Based Models"</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        drift_fn: Function computing the drift term f(t, **state).</span>
@@ -1137,7 +1137,7 @@
 <span class="sd">        new_state: Updated state after one adaptive step.</span>
 <span class="sd">        new_time: time + dt (or time if step rejected).</span>
 <span class="sd">        new_step_size: Adapted step size for next iteration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">state_euler</span><span class="p">,</span> <span class="n">time_mid</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">euler_maruyama_step</span><span class="p">(</span>
         <span class="n">drift_fn</span><span class="o">=</span><span class="n">drift_fn</span><span class="p">,</span>
         <span class="n">diffusion_fn</span><span class="o">=</span><span class="n">diffusion_fn</span><span class="p">,</span>
@@ -1171,7 +1171,7 @@
     <span class="k">if</span> <span class="n">use_adaptive_step_size</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">e_abs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">e_abs</span> <span class="o">=</span> <span class="mf">0.02576</span>  <span class="c1"># 1% of 99% CI of standardized unit variance</span>
-        <span class="c1"># Check if we&#39;re at minimum step size - if so, force acceptance</span>
+        <span class="c1"># Check if we're at minimum step size - if so, force acceptance</span>
         <span class="n">at_min_step</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">less_equal</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">step_size</span><span class="p">),</span> <span class="n">min_step_size</span><span class="p">)</span>
 
         <span class="c1"># Compute error tolerance for each component</span>
@@ -1257,7 +1257,7 @@
     <span class="n">noise</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>  <span class="c1"># standard normals</span>
     <span class="n">noise_aux</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>  <span class="c1"># standard normals</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs a single shifted Euler step for SDEs with additive noise [1].</span>
 
 <span class="sd">    Compared to Euler-Maruyama, this evaluates the drift at a shifted state,</span>
@@ -1266,7 +1266,7 @@
 <span class="sd">    The scheme is</span>
 <span class="sd">        X_{n+1} = X_n + f(t_n, X_n + g(t_n) * (0.5 * ΔW_n + ΔH_n) * h + g(t_n) * ΔW_n</span>
 
-<span class="sd">    [1] Foster et al., &quot;High order splitting methods for SDEs satisfying a commutativity condition&quot; (2023)</span>
+<span class="sd">    [1] Foster et al., "High order splitting methods for SDEs satisfying a commutativity condition" (2023)</span>
 <span class="sd">    Args:</span>
 <span class="sd">        drift_fn: Function computing the drift term f(t, **state).</span>
 <span class="sd">        diffusion_fn: Function computing the diffusion term g(t, **state).</span>
@@ -1279,7 +1279,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        new_state: Updated state after one SEA step.</span>
 <span class="sd">        new_time: time + dt.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Compute diffusion</span>
     <span class="n">diffusion</span> <span class="o">=</span> <span class="n">diffusion_fn</span><span class="p">(</span><span class="n">time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">state</span><span class="p">,</span> <span class="n">diffusion_fn</span><span class="p">))</span>
     <span class="n">sqrt_step_size</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">step_size</span><span class="p">))</span>
@@ -1317,7 +1317,7 @@
     <span class="n">noise</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>
     <span class="n">noise_aux</span><span class="p">:</span> <span class="n">StateDict</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">StateDict</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">,</span> <span class="n">ArrayLike</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Shifted Additive noise Runge Kutta (SHARK) for additive SDEs [1]. Makes two evaluations of the drift and diffusion</span>
 <span class="sd">    per step and has a strong order 1.5.</span>
 
@@ -1334,7 +1334,7 @@
 <span class="sd">        with</span>
 <span class="sd">            H_k = 0.5 * |h| * W_k + (|h| ** 1.5) / (2 * sqrt(3)) * Z_k</span>
 
-<span class="sd">    [1] Foster et al., &quot;High order splitting methods for SDEs satisfying a commutativity condition&quot; (2023)</span>
+<span class="sd">    [1] Foster et al., "High order splitting methods for SDEs satisfying a commutativity condition" (2023)</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        drift_fn: Function computing the drift term f(t, **state).</span>
@@ -1348,7 +1348,7 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        new_state: Updated state after one SHARK step.</span>
 <span class="sd">        new_time: time + dt.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">h</span> <span class="o">=</span> <span class="n">step_size</span>
     <span class="n">t</span> <span class="o">=</span> <span class="n">time</span>
     <span class="n">h_mag</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">h</span><span class="p">)</span>
@@ -1418,10 +1418,10 @@
     <span class="n">step_size_factor</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
     <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Helper function to apply corrector steps [1].</span>
+<span class="w">    </span><span class="sd">"""Helper function to apply corrector steps [1].</span>
 
-<span class="sd">    [1] Song et al., &quot;Score-Based Generative Modeling through Stochastic Differential Equations&quot; (2020)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    [1] Song et al., "Score-Based Generative Modeling through Stochastic Differential Equations" (2020)</span>
+<span class="sd">    """</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">corrector_steps</span><span class="p">):</span>
         <span class="n">score</span> <span class="o">=</span> <span class="n">score_fn</span><span class="p">(</span><span class="n">new_time</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">new_state</span><span class="p">,</span> <span class="n">score_fn</span><span class="p">))</span>
         <span class="k">if</span> <span class="n">corrector_noise_history</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -1464,9 +1464,9 @@
     <span class="n">corrector_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs fixed-step SDE integration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">initial_step</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">cond</span><span class="p">(</span><span class="n">_loop_var</span><span class="p">,</span> <span class="n">_loop_state</span><span class="p">,</span> <span class="n">_loop_time</span><span class="p">,</span> <span class="n">_loop_step</span><span class="p">):</span>
@@ -1527,7 +1527,7 @@
         <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">initial_step</span><span class="p">],</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">_check_all_nans</span><span class="p">(</span><span class="n">final_state</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">final_state</span>
 
@@ -1550,11 +1550,11 @@
     <span class="n">corrector_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
     <span class="n">noise_schedule</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Performs adaptive-step SDE integration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">initial_loop_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">),</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">initial_step</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="n">initial_loop_state</span> <span class="o">=</span> <span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">zeros</span><span class="p">((),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">),</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">,</span> <span class="n">initial_step</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"jax"</span><span class="p">:</span>
         <span class="n">seed</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># not needed, noise is generated upfront</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">seed_body</span> <span class="o">=</span> <span class="n">seed</span>
@@ -1619,7 +1619,7 @@
     <span class="n">final_counter</span><span class="p">,</span> <span class="n">final_state</span><span class="p">,</span> <span class="n">final_time</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">final_k1</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">while_loop</span><span class="p">(</span><span class="n">cond</span><span class="p">,</span> <span class="n">body_adaptive</span><span class="p">,</span> <span class="n">initial_loop_state</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">_check_all_nans</span><span class="p">(</span><span class="n">final_state</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="c1"># Final step to hit stop_time exactly</span>
     <span class="n">time_diff</span> <span class="o">=</span> <span class="n">stop_time</span> <span class="o">-</span> <span class="n">final_time</span>
@@ -1646,7 +1646,7 @@
         <span class="p">)</span>
         <span class="n">final_counter</span> <span class="o">=</span> <span class="n">final_counter</span> <span class="o">+</span> <span class="mi">1</span>
 
-    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Finished integration after </span><span class="si">{</span><span class="n">final_counter</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">debug</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Finished integration after </span><span class="si">{</span><span class="n">final_counter</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">final_state</span>
 
 
@@ -1663,7 +1663,7 @@
     <span class="n">step_size_factor</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
     <span class="n">corrector_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Annealed Langevin dynamics using the given score_fn and noise_schedule [1].</span>
 
 <span class="sd">    At each step i with time t_i, performs for every state component k:</span>
@@ -1671,13 +1671,13 @@
 
 <span class="sd">    Times are stepped linearly from start_time to stop_time.</span>
 
-<span class="sd">    [1]  Song et al., &quot;Generative Modeling by Estimating Gradients of the Data Distribution&quot; (2020)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    [1]  Song et al., "Generative Modeling by Estimating Gradients of the Data Distribution" (2020)</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">steps</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of Langevin steps must be positive.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Number of Langevin steps must be positive."</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">score_fn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">noise_schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;score_fn and noise_schedule must be provided.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"score_fn and noise_schedule must be provided."</span><span class="p">)</span>
 
     <span class="c1"># Linear time grid</span>
     <span class="n">dt</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
@@ -1733,7 +1733,7 @@
         <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">state</span><span class="p">,</span> <span class="n">start_time</span><span class="p">),</span>
     <span class="p">)</span>
     <span class="k">if</span> <span class="n">_check_all_nans</span><span class="p">(</span><span class="n">final_state</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All values are NaNs in state during integration at </span><span class="si">{</span><span class="n">final_time</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">final_state</span>
 
 
@@ -1746,8 +1746,8 @@
     <span class="n">start_time</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">stop_time</span><span class="p">:</span> <span class="n">ArrayLike</span><span class="p">,</span>
     <span class="n">seed</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span><span class="p">,</span>
-    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;adaptive&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
-    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">,</span>
+    <span class="n">steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"adaptive"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">100</span><span class="p">,</span>
+    <span class="n">method</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"euler_maruyama"</span><span class="p">,</span>
     <span class="n">min_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">50</span><span class="p">,</span>
     <span class="n">max_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1_000</span><span class="p">,</span>
     <span class="n">score_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -1756,7 +1756,7 @@
     <span class="n">step_size_factor</span><span class="p">:</span> <span class="n">ArrayLike</span> <span class="o">=</span> <span class="mf">0.01</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">StateDict</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Integrate a stochastic differential equation from ``start_time`` to ``stop_time``.</span>
 
 <span class="sd">    This function dispatches to either fixed-step or adaptive-step integration logic,</span>
@@ -1778,13 +1778,13 @@
 <span class="sd">        Ending time for integration.</span>
 <span class="sd">    seed : keras.random.SeedGenerator</span>
 <span class="sd">        Random seed generator used for noise generation.</span>
-<span class="sd">    steps : int or {&#39;adaptive&#39;}, optional</span>
-<span class="sd">        Number of integration steps for fixed-step integration, or ``&#39;adaptive&#39;``</span>
+<span class="sd">    steps : int or {'adaptive'}, optional</span>
+<span class="sd">        Number of integration steps for fixed-step integration, or ``'adaptive'``</span>
 <span class="sd">        to enable adaptive step sizing. Adaptive integration is only supported by</span>
-<span class="sd">        the ``&#39;shark&#39;`` method. Default is ``100``.</span>
+<span class="sd">        the ``'shark'`` method. Default is ``100``.</span>
 <span class="sd">    method : str, optional</span>
-<span class="sd">        Integration method to use (e.g., ``&#39;euler_maruyama&#39;`` or ``&#39;shark&#39;``).</span>
-<span class="sd">        Default is ``&#39;euler_maruyama&#39;``.</span>
+<span class="sd">        Integration method to use (e.g., ``'euler_maruyama'`` or ``'shark'``).</span>
+<span class="sd">        Default is ``'euler_maruyama'``.</span>
 <span class="sd">    min_steps : int, optional</span>
 <span class="sd">        Minimum number of steps for adaptive integration. Default is ``50``.</span>
 <span class="sd">    max_steps : int, optional</span>
@@ -1808,15 +1808,15 @@
 <span class="sd">    -------</span>
 <span class="sd">    StateDict</span>
 <span class="sd">        Final state dictionary after integration.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">is_adaptive</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;adaptive&quot;</span><span class="p">,</span> <span class="s2">&quot;dynamic&quot;</span><span class="p">]</span>
+    <span class="n">is_adaptive</span> <span class="o">=</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">steps</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">steps</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"adaptive"</span><span class="p">,</span> <span class="s2">"dynamic"</span><span class="p">]</span>
 
     <span class="k">if</span> <span class="n">is_adaptive</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">start_time</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">stop_time</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please provide start_time and stop_time for adaptive integration.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Please provide start_time and stop_time for adaptive integration."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">min_steps</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">max_steps</span> <span class="o">&lt;=</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">max_steps</span> <span class="o">&lt;</span> <span class="n">min_steps</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;min_steps and max_steps must be positive, and max_steps &gt;= min_steps.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"min_steps and max_steps must be positive, and max_steps &gt;= min_steps."</span><span class="p">)</span>
 
         <span class="n">loop_steps</span> <span class="o">=</span> <span class="n">max_steps</span>
         <span class="n">initial_step</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">min_steps</span><span class="p">)</span>
@@ -1825,7 +1825,7 @@
         <span class="n">max_step_size</span> <span class="o">=</span> <span class="n">span_mag</span> <span class="o">/</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">min_steps</span><span class="p">,</span> <span class="n">span_mag</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">steps</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Number of steps must be positive.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Number of steps must be positive."</span><span class="p">)</span>
         <span class="n">loop_steps</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">steps</span><span class="p">)</span>
         <span class="n">initial_step</span> <span class="o">=</span> <span class="p">(</span><span class="n">stop_time</span> <span class="o">-</span> <span class="n">start_time</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">loop_steps</span><span class="p">)</span>
         <span class="c1"># For fixed step, min/max step size are just the fixed step size</span>
@@ -1835,8 +1835,8 @@
     <span class="n">corrector_noise_history</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="k">if</span> <span class="n">corrector_steps</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
         <span class="k">if</span> <span class="n">score_fn</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">noise_schedule</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Please provide both score_fn and noise_schedule when using corrector_steps &gt; 0.&quot;</span><span class="p">)</span>
-        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Please provide both score_fn and noise_schedule when using corrector_steps &gt; 0."</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"jax"</span><span class="p">:</span>
             <span class="n">corrector_noise_history</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">shape</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -1845,25 +1845,25 @@
                 <span class="p">)</span>
 
     <span class="k">match</span> <span class="n">method</span><span class="p">:</span>
-        <span class="k">case</span> <span class="s2">&quot;euler_maruyama&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"euler_maruyama"</span><span class="p">:</span>
             <span class="n">step_fn_raw</span> <span class="o">=</span> <span class="n">euler_maruyama_step</span>
-        <span class="k">case</span> <span class="s2">&quot;sea&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"sea"</span><span class="p">:</span>
             <span class="n">step_fn_raw</span> <span class="o">=</span> <span class="n">sea_step</span>
             <span class="k">if</span> <span class="n">is_adaptive</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SEA SDE solver does not support adaptive steps.&quot;</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;shark&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"SEA SDE solver does not support adaptive steps."</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s2">"shark"</span><span class="p">:</span>
             <span class="n">step_fn_raw</span> <span class="o">=</span> <span class="n">shark_step</span>
             <span class="k">if</span> <span class="n">is_adaptive</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;SHARK SDE solver does not support adaptive steps.&quot;</span><span class="p">)</span>
-        <span class="k">case</span> <span class="s2">&quot;two_step_adaptive&quot;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"SHARK SDE solver does not support adaptive steps."</span><span class="p">)</span>
+        <span class="k">case</span> <span class="s2">"two_step_adaptive"</span><span class="p">:</span>
             <span class="n">step_fn_raw</span> <span class="o">=</span> <span class="n">two_step_adaptive_step</span>
-        <span class="k">case</span> <span class="s2">&quot;langevin&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"langevin"</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">is_adaptive</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Langevin sampling does not support adaptive steps.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Langevin sampling does not support adaptive steps."</span><span class="p">)</span>
 
             <span class="n">z_history</span> <span class="o">=</span> <span class="kc">None</span>
-            <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
-                <span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JAX backend needs to preallocate random samples for &#39;max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"jax"</span><span class="p">:</span>
+                <span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"JAX backend needs to preallocate random samples for 'max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
                 <span class="n">z_history</span> <span class="o">=</span> <span class="p">{}</span>
                 <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                     <span class="n">shape</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
@@ -1883,21 +1883,21 @@
                 <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">,</span>
             <span class="p">)</span>
         <span class="k">case</span> <span class="n">other</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Invalid integration method: </span><span class="si">{</span><span class="n">other</span><span class="si">!r}</span><span class="s2">"</span><span class="p">)</span>
 
     <span class="c1"># Partial the step function with common arguments</span>
     <span class="n">step_fn</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">step_fn_raw</span><span class="p">,</span> <span class="n">drift_fn</span><span class="o">=</span><span class="n">drift_fn</span><span class="p">,</span> <span class="n">diffusion_fn</span><span class="o">=</span><span class="n">diffusion_fn</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">step_fn_raw</span><span class="p">))</span>
 
     <span class="c1"># Pre-generate standard normals for the predictor step (up to max_steps)</span>
     <span class="n">z_history</span> <span class="o">=</span> <span class="kc">None</span>
-    <span class="n">z_extra_history</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sea&quot;</span><span class="p">,</span> <span class="s2">&quot;shark&quot;</span><span class="p">]</span> <span class="k">else</span> <span class="p">{}</span>
-    <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">&quot;jax&quot;</span><span class="p">:</span>
-        <span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;JAX backend needs to preallocate random samples for &#39;max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+    <span class="n">z_extra_history</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">method</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"sea"</span><span class="p">,</span> <span class="s2">"shark"</span><span class="p">]</span> <span class="k">else</span> <span class="p">{}</span>
+    <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">backend</span><span class="o">.</span><span class="n">backend</span><span class="p">()</span> <span class="o">==</span> <span class="s2">"jax"</span><span class="p">:</span>
+        <span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"JAX backend needs to preallocate random samples for 'max_steps=</span><span class="si">{</span><span class="n">max_steps</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
         <span class="n">z_history</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">state</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
             <span class="n">shape</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
             <span class="n">z_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="n">loop_steps</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
-            <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;sea&quot;</span><span class="p">,</span> <span class="s2">&quot;shark&quot;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="n">method</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"sea"</span><span class="p">,</span> <span class="s2">"shark"</span><span class="p">]:</span>
                 <span class="n">z_extra_history</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="n">loop_steps</span><span class="p">,</span> <span class="o">*</span><span class="n">shape</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="n">seed</span><span class="o">=</span><span class="n">seed</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">is_adaptive</span><span class="p">:</span>
@@ -1967,8 +1967,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2002,7 +2002,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

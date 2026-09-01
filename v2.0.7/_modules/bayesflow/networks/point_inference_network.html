@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/point_inference_network';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,34 +492,34 @@
 
 <div class="viewcode-block" id="PointInferenceNetwork">
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">PointInferenceNetwork</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Implements point estimation for user specified scoring rules by a shared feed forward architecture</span>
+<span class="w">    </span><span class="sd">"""Implements point estimation for user specified scoring rules by a shared feed forward architecture</span>
 <span class="sd">    with separate heads for each scoring rule.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">scores</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">ScoringRule</span><span class="p">],</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">"mlp"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">model_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">scores</span> <span class="o">=</span> <span class="n">scores</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="n">subnet</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subnet_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="n">subnet</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"subnet_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;subnet&quot;</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">subnet</span><span class="p">),</span>
-            <span class="s2">&quot;scores&quot;</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">scores</span><span class="p">),</span>
+            <span class="s2">"subnet"</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">subnet</span><span class="p">),</span>
+            <span class="s2">"scores"</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">scores</span><span class="p">),</span>
             <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
         <span class="p">}</span>
 
 <div class="viewcode-block" id="PointInferenceNetwork.build">
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork.build">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">xz_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">conditions_shape</span><span class="p">:</span> <span class="n">Shape</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Builds all network components based on shapes of conditions and targets.</span>
+<span class="w">        </span><span class="sd">"""Builds all network components based on shapes of conditions and targets.</span>
 
 <span class="sd">        For each score, corresponding estimation heads are constructed.</span>
 <span class="sd">        There are two steps in this:</span>
@@ -528,7 +528,7 @@
 <span class="sd">        #. Then for each required head, request corresponding head networks from the score.</span>
 
 <span class="sd">        Since the score is in charge of constructing heads, this allows for convenient yet flexible building.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">conditions_shape</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># unconditional estimation uses a fixed input vector</span>
             <span class="n">input_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
@@ -566,7 +566,7 @@
                 <span class="c1"># https://github.com/keras-team/keras/blob/v3.3.3/keras/src/saving/saving_lib.py#L481.</span>
                 <span class="c1"># A nested heads dict is still preferred over this flat dict,</span>
                 <span class="c1"># because it avoids string operation based filtering in `self._forward()`.</span>
-                <span class="n">flat_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">score_key</span><span class="si">}</span><span class="s2">___</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">flat_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">score_key</span><span class="si">}</span><span class="s2">___</span><span class="si">{</span><span class="n">head_key</span><span class="si">}</span><span class="s2">"</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">heads_flat</span><span class="p">[</span><span class="n">flat_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">head</span></div>
 
 
@@ -574,8 +574,8 @@
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork.get_build_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_build_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">build_config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;conditions_shape&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_shape</span><span class="p">,</span>
-            <span class="s2">&quot;xz_shape&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xz_shape</span><span class="p">,</span>
+            <span class="s2">"conditions_shape"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_input_shape</span><span class="p">,</span>
+            <span class="s2">"xz_shape"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">_xz_shape</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="c1"># Save names of head networks</span>
@@ -585,7 +585,7 @@
             <span class="k">for</span> <span class="n">head_key</span><span class="p">,</span> <span class="n">head</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">heads</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
                 <span class="n">heads</span><span class="p">[</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">head</span><span class="o">.</span><span class="n">name</span>
 
-        <span class="n">build_config</span><span class="p">[</span><span class="s2">&quot;heads&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">heads</span>
+        <span class="n">build_config</span><span class="p">[</span><span class="s2">"heads"</span><span class="p">]</span> <span class="o">=</span> <span class="n">heads</span>
 
         <span class="k">return</span> <span class="n">build_config</span></div>
 
@@ -593,11 +593,11 @@
 <div class="viewcode-block" id="PointInferenceNetwork.build_from_config">
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork.build_from_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">build_from_config</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">xz_shape</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;xz_shape&quot;</span><span class="p">],</span> <span class="n">conditions_shape</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;conditions_shape&quot;</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">xz_shape</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"xz_shape"</span><span class="p">],</span> <span class="n">conditions_shape</span><span class="o">=</span><span class="n">config</span><span class="p">[</span><span class="s2">"conditions_shape"</span><span class="p">])</span>
 
         <span class="k">for</span> <span class="n">score_key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scores</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">for</span> <span class="n">head_key</span><span class="p">,</span> <span class="n">head</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">heads</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
-                <span class="n">head</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;heads&quot;</span><span class="p">][</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span></div>
+                <span class="n">head</span><span class="o">.</span><span class="n">name</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="s2">"heads"</span><span class="p">][</span><span class="n">score_key</span><span class="p">][</span><span class="n">head_key</span><span class="p">]</span></div>
 
 
 <div class="viewcode-block" id="PointInferenceNetwork.get_config">
@@ -613,8 +613,8 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;scores&quot;</span><span class="p">])</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;subnet&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;subnet&quot;</span><span class="p">])</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"scores"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"scores"</span><span class="p">])</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"subnet"</span><span class="p">]</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"subnet"</span><span class="p">])</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span></div>
 
 
@@ -628,10 +628,10 @@
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]]:</span>
         <span class="k">if</span> <span class="n">xz</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">built</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Cannot build inference network without inference variables.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Cannot build inference network without inference variables."</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># unconditional estimation uses a fixed input vector</span>
             <span class="n">conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_tensor</span><span class="p">(</span>
-                <span class="p">[[</span><span class="mf">1.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">xz</span><span class="p">)</span> <span class="k">if</span> <span class="n">xz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;float32&quot;</span>
+                <span class="p">[[</span><span class="mf">1.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">dtype</span><span class="p">(</span><span class="n">xz</span><span class="p">)</span> <span class="k">if</span> <span class="n">xz</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">"float32"</span>
             <span class="p">)</span>
 
         <span class="c1"># pass conditions to the shared subnet</span>
@@ -648,9 +648,9 @@
 <div class="viewcode-block" id="PointInferenceNetwork.compute_metrics">
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork.compute_metrics">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">)</span>
 
         <span class="n">metrics</span> <span class="o">=</span> <span class="p">{}</span>
         <span class="c1"># calculate negative score as mean over all scores</span>
@@ -659,21 +659,21 @@
             <span class="n">metrics</span><span class="p">[</span><span class="n">score_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">score_value</span>
         <span class="n">neg_score</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">metrics</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span>
 
-        <span class="k">if</span> <span class="n">stage</span> <span class="o">!=</span> <span class="s2">&quot;training&quot;</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">):</span>
+        <span class="k">if</span> <span class="n">stage</span> <span class="o">!=</span> <span class="s2">"training"</span> <span class="ow">and</span> <span class="nb">any</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">):</span>
             <span class="c1"># compute sample-based metrics</span>
             <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">],),</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
 
             <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">metrics</span><span class="p">:</span>
                 <span class="n">metrics</span><span class="p">[</span><span class="n">metric</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">metric</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">neg_score</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="n">metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">neg_score</span><span class="p">}</span></div>
 
 
 <div class="viewcode-block" id="PointInferenceNetwork.sample">
 <a class="viewcode-back" href="../../../api/bayesflow.networks.PointInferenceNetwork.html#bayesflow.networks.PointInferenceNetwork.sample">[docs]</a>
     <span class="nd">@allow_batch_size</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
 <span class="sd">        batch_shape : tuple,</span>
@@ -689,9 +689,9 @@
 <span class="sd">        samples : dict[str, Tensor]</span>
 <span class="sd">            Samples for every parametric scoring rule. Dict values have shape (batch_size, num_samples, num_variables)</span>
 <span class="sd">            or (num_samples, num_variables) for conditional or unconditional sampling respectively.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">conditions</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>  <span class="c1"># unconditional estimation uses a fixed input vector</span>
-            <span class="n">conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="n">conditions</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
 
         <span class="c1"># conditions are duplicated along axis 1 num_sample times</span>
         <span class="n">output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">(</span><span class="n">conditions</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:])</span>
@@ -748,8 +748,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -783,7 +783,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=594047cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'api/bayesflow.approximators.Approximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -1162,7 +1162,7 @@ computation logic.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">Model</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">Mean</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">&#39;loss&#39;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span> <span class="o">=</span> <span class="n">metrics</span><span class="o">.</span><span class="n">Mean</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s1">'loss'</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_loss</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">y_pred</span> <span class="o">-</span> <span class="n">y</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
@@ -1177,16 +1177,16 @@ computation logic.</p>
     <span class="k">def</span><span class="w"> </span><span class="nf">metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">loss_tracker</span><span class="p">]</span>
 
-<span class="n">inputs</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s1">&#39;my_input&#39;</span><span class="p">)</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s1">'my_input'</span><span class="p">)</span>
 <span class="n">outputs</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">10</span><span class="p">)(</span><span class="n">inputs</span><span class="p">)</span>
 <span class="n">model</span> <span class="o">=</span> <span class="n">MyModel</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">outputs</span><span class="p">)</span>
 <span class="n">model</span><span class="o">.</span><span class="n">add_loss</span><span class="p">(</span><span class="n">ops</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">outputs</span><span class="p">))</span>
 
 <span class="n">optimizer</span> <span class="o">=</span> <span class="n">SGD</span><span class="p">()</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">steps_per_execution</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s1">'mse'</span><span class="p">,</span> <span class="n">steps_per_execution</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 <span class="n">dataset</span> <span class="o">=</span> <span class="o">...</span>
 <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">steps_per_epoch</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Custom loss: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">loss_tracker</span><span class="o">.</span><span class="n">result</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Custom loss: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">loss_tracker</span><span class="o">.</span><span class="n">result</span><span class="p">()</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 <dl class="simple">
@@ -1225,7 +1225,7 @@ automatically tracked and returned by <cite>self.metrics</cite>.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MyModel</span><span class="p">(</span><span class="n">Sequential</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span> <span class="o">=</span> <span class="n">MyMetric</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">&quot;custom_metric&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span> <span class="o">=</span> <span class="n">MyMetric</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="s2">"custom_metric"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">):</span>
         <span class="c1"># This super call updates metrics from `compile` and returns</span>
@@ -1236,7 +1236,7 @@ automatically tracked and returned by <cite>self.metrics</cite>.</p>
         <span class="c1"># `metric_results` contains the previous result for</span>
         <span class="c1"># `custom_metric`, this is where we update it.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">update_state</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">y_pred</span><span class="p">,</span> <span class="n">sample_weight</span><span class="p">)</span>
-        <span class="n">metric_results</span><span class="p">[</span><span class="s1">&#39;custom_metric&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
+        <span class="n">metric_results</span><span class="p">[</span><span class="s1">'custom_metric'</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">custom_metric</span><span class="o">.</span><span class="n">result</span><span class="p">()</span>
         <span class="k">return</span> <span class="n">metric_results</span>
 </pre></div>
 </div>
@@ -1467,19 +1467,19 @@ and Torch backend.</p>
 <p>Examples:</p>
 <p>Here’s how to export a TensorFlow SavedModel for inference.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a TensorFlow SavedModel artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;tf_saved_model&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">"path/to/location"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"tf_saved_model"</span><span class="p">)</span>
 
 <span class="c1"># Load the artifact in a different process/environment</span>
-<span class="n">reloaded_artifact</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">saved_model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">)</span>
+<span class="n">reloaded_artifact</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">saved_model</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"path/to/location"</span><span class="p">)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">reloaded_artifact</span><span class="o">.</span><span class="n">serve</span><span class="p">(</span><span class="n">input_data</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Here’s how to export an ONNX for inference.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a ONNX artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;onnx&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">"path/to/location"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"onnx"</span><span class="p">)</span>
 
 <span class="c1"># Load the artifact in a different process/environment</span>
-<span class="n">ort_session</span> <span class="o">=</span> <span class="n">onnxruntime</span><span class="o">.</span><span class="n">InferenceSession</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">)</span>
+<span class="n">ort_session</span> <span class="o">=</span> <span class="n">onnxruntime</span><span class="o">.</span><span class="n">InferenceSession</span><span class="p">(</span><span class="s2">"path/to/location"</span><span class="p">)</span>
 <span class="n">ort_inputs</span> <span class="o">=</span> <span class="p">{</span>
     <span class="n">k</span><span class="o">.</span><span class="n">name</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">ort_session</span><span class="o">.</span><span class="n">get_inputs</span><span class="p">(),</span> <span class="n">input_data</span><span class="p">)</span>
 <span class="p">}</span>
@@ -1488,27 +1488,27 @@ and Torch backend.</p>
 </div>
 <p>Here’s how to export a LiteRT (TFLite) for inference.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a LiteRT artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;litert&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">"path/to/location"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"litert"</span><span class="p">)</span>
 
 <span class="c1"># Load the artifact in a different process/environment</span>
-<span class="n">interpreter</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">lite</span><span class="o">.</span><span class="n">Interpreter</span><span class="p">(</span><span class="n">model_path</span><span class="o">=</span><span class="s2">&quot;path/to/location&quot;</span><span class="p">)</span>
+<span class="n">interpreter</span> <span class="o">=</span> <span class="n">tf</span><span class="o">.</span><span class="n">lite</span><span class="o">.</span><span class="n">Interpreter</span><span class="p">(</span><span class="n">model_path</span><span class="o">=</span><span class="s2">"path/to/location"</span><span class="p">)</span>
 <span class="n">interpreter</span><span class="o">.</span><span class="n">allocate_tensors</span><span class="p">()</span>
 <span class="n">interpreter</span><span class="o">.</span><span class="n">set_tensor</span><span class="p">(</span>
-    <span class="n">interpreter</span><span class="o">.</span><span class="n">get_input_details</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;index&#39;</span><span class="p">],</span> <span class="n">input_data</span>
+    <span class="n">interpreter</span><span class="o">.</span><span class="n">get_input_details</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">'index'</span><span class="p">],</span> <span class="n">input_data</span>
 <span class="p">)</span>
 <span class="n">interpreter</span><span class="o">.</span><span class="n">invoke</span><span class="p">()</span>
 <span class="n">output_data</span> <span class="o">=</span> <span class="n">interpreter</span><span class="o">.</span><span class="n">get_tensor</span><span class="p">(</span>
-    <span class="n">interpreter</span><span class="o">.</span><span class="n">get_output_details</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;index&#39;</span><span class="p">]</span>
+    <span class="n">interpreter</span><span class="o">.</span><span class="n">get_output_details</span><span class="p">()[</span><span class="mi">0</span><span class="p">][</span><span class="s1">'index'</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
 <p>Here’s how to export a PyTorch ExportedProgram for inference.</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Export the model as a PyTorch ExportedProgram artifact</span>
-<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">&quot;path/to/model.pt2&quot;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">&quot;torch&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">export</span><span class="p">(</span><span class="s2">"path/to/model.pt2"</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s2">"torch"</span><span class="p">)</span>
 
 <span class="c1"># Load the artifact in a different process/environment</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
-<span class="n">loaded_program</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">export</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;path/to/model.pt2&quot;</span><span class="p">)</span>
+<span class="n">loaded_program</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">export</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">"path/to/model.pt2"</span><span class="p">)</span>
 <span class="n">predictions</span> <span class="o">=</span> <span class="n">loaded_program</span><span class="o">.</span><span class="n">module</span><span class="p">()(</span><span class="n">input_tensor</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -1613,43 +1613,43 @@ values are the corresponding nested dictionaries.</p>
 </dl>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">([</span>
-    <span class="n">keras</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_input&quot;</span><span class="p">),</span>
-    <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;sigmoid&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_dense&quot;</span><span class="p">),</span>
-<span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;my_sequential&quot;</span><span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">&quot;mse&quot;</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mae&quot;</span><span class="p">])</span>
+    <span class="n">keras</span><span class="o">.</span><span class="n">Input</span><span class="p">(</span><span class="n">shape</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_input"</span><span class="p">),</span>
+    <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"sigmoid"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_dense"</span><span class="p">),</span>
+<span class="p">],</span> <span class="n">name</span><span class="o">=</span><span class="s2">"my_sequential"</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">,</span> <span class="n">loss</span><span class="o">=</span><span class="s2">"mse"</span><span class="p">,</span> <span class="n">metrics</span><span class="o">=</span><span class="p">[</span><span class="s2">"mae"</span><span class="p">])</span>
 <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]]),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]]))</span>
 <span class="n">state_tree</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_state_tree</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>The <cite>state_tree</cite> dictionary returned looks like:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">{</span>
-    <span class="s1">&#39;metrics_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;loss&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+    <span class="s1">'metrics_variables'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'loss'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">'count'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+            <span class="s1">'total'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
         <span class="p">},</span>
-        <span class="s1">&#39;mean_absolute_error&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;count&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-            <span class="s1">&#39;total&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+        <span class="s1">'mean_absolute_error'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">'count'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+            <span class="s1">'total'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
         <span class="p">}</span>
     <span class="p">},</span>
-    <span class="s1">&#39;trainable_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;my_sequential&#39;</span><span class="p">:</span> <span class="p">{</span>
-            <span class="s1">&#39;my_dense&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;bias&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;kernel&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+    <span class="s1">'trainable_variables'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'my_sequential'</span><span class="p">:</span> <span class="p">{</span>
+            <span class="s1">'my_dense'</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">'bias'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'kernel'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">},</span>
-    <span class="s1">&#39;non_trainable_variables&#39;</span><span class="p">:</span> <span class="p">{},</span>
-    <span class="s1">&#39;optimizer_variables&#39;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s1">&#39;adam&#39;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s1">&#39;iteration&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;learning_rate&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_bias_momentum&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_bias_velocity&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_kernel_momentum&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
-                <span class="s1">&#39;my_sequential_my_dense_kernel_velocity&#39;</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+    <span class="s1">'non_trainable_variables'</span><span class="p">:</span> <span class="p">{},</span>
+    <span class="s1">'optimizer_variables'</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s1">'adam'</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s1">'iteration'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'learning_rate'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'my_sequential_my_dense_bias_momentum'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'my_sequential_my_dense_bias_velocity'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'my_sequential_my_dense_kernel_momentum'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
+                <span class="s1">'my_sequential_my_dense_kernel_velocity'</span><span class="p">:</span> <span class="o">...</span><span class="p">,</span>
             <span class="p">}</span>
         <span class="p">}</span>
     <span class="p">}</span>
@@ -1747,10 +1747,10 @@ the shape of the weights.</p>
 </dl>
 <p>Example:</p>
 <div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># Load the weights in a single file.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">"model.weights.h5"</span><span class="p">)</span>
 
 <span class="c1"># Load the weights in sharded files.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">"model.weights.json"</span><span class="p">)</span>
 </pre></div>
 </div>
 </dd></dl>
@@ -1947,7 +1947,7 @@ layers which match the filter conditions will be quantized.</p>
 <span class="n">model</span><span class="o">.</span><span class="n">build</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="mi">10</span><span class="p">))</span>
 
 <span class="c1"># Quantize with default int8 config</span>
-<span class="n">model</span><span class="o">.</span><span class="n">quantize</span><span class="p">(</span><span class="s2">&quot;int8&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">quantize</span><span class="p">(</span><span class="s2">"int8"</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Quantize a model to int8 with a custom configuration:</p>
@@ -2046,8 +2046,8 @@ Hugging Face Hub).</p>
         <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Softmax</span><span class="p">(),</span>
     <span class="p">],</span>
 <span class="p">)</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;model.keras&quot;</span><span class="p">)</span>
-<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;model.keras&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"model.keras"</span><span class="p">)</span>
+<span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">"model.keras"</span><span class="p">)</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">10</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 </pre></div>
@@ -2107,21 +2107,21 @@ overridden.</p>
 <span class="n">model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 
 <span class="c1"># Save the weights in a single file.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">"model.weights.h5"</span><span class="p">)</span>
 
 <span class="c1"># Save the weights in sharded files. Use `max_shard_size=0.25` means</span>
 <span class="c1"># each sharded file will be at most ~250MB.</span>
-<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">,</span> <span class="n">max_shard_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">save_weights</span><span class="p">(</span><span class="s2">"model.weights.json"</span><span class="p">,</span> <span class="n">max_shard_size</span><span class="o">=</span><span class="mf">0.25</span><span class="p">)</span>
 
 <span class="c1"># Load the weights in a new model with the same architecture.</span>
 <span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.h5&quot;</span><span class="p">)</span>
+<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">"model.weights.h5"</span><span class="p">)</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 
 <span class="c1"># Load the sharded weights in a new model with the same architecture.</span>
 <span class="n">loaded_model</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">applications</span><span class="o">.</span><span class="n">EfficientNetV2L</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
-<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">&quot;model.weights.json&quot;</span><span class="p">)</span>
+<span class="n">loaded_model</span><span class="o">.</span><span class="n">load_weights</span><span class="p">(</span><span class="s2">"model.weights.json"</span><span class="p">)</span>
 <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">480</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
 <span class="k">assert</span> <span class="n">np</span><span class="o">.</span><span class="n">allclose</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">),</span> <span class="n">loaded_model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">x</span><span class="p">))</span>
 </pre></div>
@@ -2658,8 +2658,8 @@ including <a href="#id13"><span class="problematic" id="id14">`</span></a>SeedGe
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -2693,7 +2693,7 @@ including <a href="#id13"><span class="problematic" id="id14">`</span></a>SeedGe
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="_static/doctools.js?v=fd6eb6e6"></script>
@@ -47,7 +47,7 @@
     <script src="_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'index';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,8 +494,8 @@ complex to be described analytically.</p>
 <span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
     <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">TimeSeriesTransformer</span><span class="p">(),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;parameters&quot;</span><span class="p">],</span>
-    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;observables&quot;</span><span class="p">],</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"parameters"</span><span class="p">],</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">],</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">SIR</span><span class="p">()</span>
 <span class="p">)</span>
 
@@ -513,7 +513,7 @@ complex to be described analytically.</p>
 <input checked="checked" id="sd-tab-item-0" name="sd-tab-set-0" type="radio">
 <label class="sd-tab-label" for="sd-tab-item-0">
 pip</label><div class="sd-tab-content docutils">
-<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">&quot;bayesflow&gt;=2.0&quot;</span>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"bayesflow&gt;=2.0"</span>
 </pre></div>
 </div>
 </div>
@@ -547,7 +547,7 @@ Note that BayesFlow <strong>will not run</strong> without a backend.</p>
 <label class="sd-tab-label" for="sd-tab-item-2">
 Python</label><div class="sd-tab-content docutils">
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;jax&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"jax"</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span>
 </pre></div>
 </div>
@@ -607,7 +607,7 @@ Shell</label><div class="sd-tab-content docutils">
 
 <span class="nd">@article</span><span class="p">{</span><span class="n">bayesflow_2020_original</span><span class="p">,</span>
   <span class="n">title</span> <span class="o">=</span> <span class="p">{{</span><span class="n">BayesFlow</span><span class="p">}:</span> <span class="n">Learning</span> <span class="nb">complex</span> <span class="n">stochastic</span> <span class="n">models</span> <span class="k">with</span> <span class="n">invertible</span> <span class="n">neural</span> <span class="n">networks</span><span class="p">},</span>
-  <span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Radev</span><span class="p">,</span> <span class="n">Stefan</span> <span class="n">T</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Mertens</span><span class="p">,</span> <span class="n">Ulf</span> <span class="n">K</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Voss</span><span class="p">,</span> <span class="n">Andreas</span> <span class="ow">and</span> <span class="n">Ardizzone</span><span class="p">,</span> <span class="n">Lynton</span> <span class="ow">and</span> <span class="n">K</span><span class="p">{</span>\<span class="s2">&quot;o}the, Ullrich},</span>
+  <span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Radev</span><span class="p">,</span> <span class="n">Stefan</span> <span class="n">T</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Mertens</span><span class="p">,</span> <span class="n">Ulf</span> <span class="n">K</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Voss</span><span class="p">,</span> <span class="n">Andreas</span> <span class="ow">and</span> <span class="n">Ardizzone</span><span class="p">,</span> <span class="n">Lynton</span> <span class="ow">and</span> <span class="n">K</span><span class="p">{</span>\<span class="s2">"o}the, Ullrich},</span>
   <span class="n">journal</span> <span class="o">=</span> <span class="p">{</span><span class="n">IEEE</span> <span class="n">transactions</span> <span class="n">on</span> <span class="n">neural</span> <span class="n">networks</span> <span class="ow">and</span> <span class="n">learning</span> <span class="n">systems</span><span class="p">},</span>
   <span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">33</span><span class="p">},</span>
   <span class="n">number</span> <span class="o">=</span> <span class="p">{</span><span class="mi">4</span><span class="p">},</span>
@@ -617,7 +617,7 @@ Shell</label><div class="sd-tab-content docutils">
 
 <span class="nd">@inproceedings</span><span class="p">{</span><span class="n">bayesflow_2023_jana</span><span class="p">,</span>
   <span class="n">title</span> <span class="o">=</span> <span class="p">{{</span><span class="n">JANA</span><span class="p">}:</span> <span class="n">Jointly</span> <span class="n">amortized</span> <span class="n">neural</span> <span class="n">approximation</span> <span class="n">of</span> <span class="nb">complex</span> <span class="p">{</span><span class="n">B</span><span class="p">}</span><span class="n">ayesian</span> <span class="n">models</span><span class="p">},</span>
-  <span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Radev</span><span class="p">,</span> <span class="n">Stefan</span> <span class="n">T</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Schmitt</span><span class="p">,</span> <span class="n">Marvin</span> <span class="ow">and</span> <span class="n">Pratz</span><span class="p">,</span> <span class="n">Valentin</span> <span class="ow">and</span> <span class="n">Picchini</span><span class="p">,</span> <span class="n">Umberto</span> <span class="ow">and</span> <span class="n">K</span>\<span class="s2">&quot;othe, Ullrich and B</span><span class="se">\&quot;</span><span class="s2">urkner, Paul-Christian},</span>
+  <span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Radev</span><span class="p">,</span> <span class="n">Stefan</span> <span class="n">T</span><span class="o">.</span> <span class="ow">and</span> <span class="n">Schmitt</span><span class="p">,</span> <span class="n">Marvin</span> <span class="ow">and</span> <span class="n">Pratz</span><span class="p">,</span> <span class="n">Valentin</span> <span class="ow">and</span> <span class="n">Picchini</span><span class="p">,</span> <span class="n">Umberto</span> <span class="ow">and</span> <span class="n">K</span>\<span class="s2">"othe, Ullrich and B</span><span class="se">\"</span><span class="s2">urkner, Paul-Christian},</span>
   <span class="n">booktitle</span> <span class="o">=</span> <span class="p">{</span><span class="n">Proceedings</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Thirty</span><span class="o">-</span><span class="n">Ninth</span> <span class="n">Conference</span> <span class="n">on</span> <span class="n">Uncertainty</span> <span class="ow">in</span> <span class="n">Artificial</span> <span class="n">Intelligence</span><span class="p">},</span>
   <span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">1695</span><span class="o">--</span><span class="mi">1706</span><span class="p">},</span>
   <span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2023</span><span class="p">},</span>
@@ -777,8 +777,8 @@ The source code is hosted on the public <a class="reference external" href="http
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -812,7 +812,7 @@ The source code is hosted on the public <a class="reference external" href="http
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/links/ordered_quantiles';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -493,17 +493,17 @@
 
 <div class="viewcode-block" id="OrderedQuantiles">
 <a class="viewcode-back" href="../../../api/bayesflow.links.OrderedQuantiles.html#bayesflow.links.OrderedQuantiles">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.links&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.links"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">OrderedQuantiles</span><span class="p">(</span><span class="n">Ordered</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Activation function to link to monotonously increasing quantile estimates.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Activation function to link to monotonously increasing quantile estimates."""</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">q</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">layer_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">q</span> <span class="o">=</span> <span class="n">q</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;q&quot;</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
-            <span class="s2">&quot;axis&quot;</span><span class="p">:</span> <span class="n">axis</span><span class="p">,</span>
+            <span class="s2">"q"</span><span class="p">:</span> <span class="n">q</span><span class="p">,</span>
+            <span class="s2">"axis"</span><span class="p">:</span> <span class="n">axis</span><span class="p">,</span>
         <span class="p">}</span>
 
 <div class="viewcode-block" id="OrderedQuantiles.get_config">
@@ -520,7 +520,7 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="o">=</span> <span class="o">-</span><span class="mi">2</span>
         <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">axis</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">AssertionError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Cannot resolve which axis should be ordered automatically from input shape </span><span class="si">{</span><span class="n">input_shape</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="sa">f</span><span class="s2">"Cannot resolve which axis should be ordered automatically from input shape </span><span class="si">{</span><span class="n">input_shape</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
         <span class="n">num_quantile_levels</span> <span class="o">=</span> <span class="n">input_shape</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="p">]</span>
@@ -529,7 +529,7 @@
             <span class="c1"># choose the middle of the specified axis as anchor index</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span> <span class="o">=</span> <span class="n">num_quantile_levels</span> <span class="o">//</span> <span class="mi">2</span>
             <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;`OrderedQuantiles` was not provided with argument `q`. Using index </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span><span class="si">}</span><span class="s2"> as anchor.&quot;</span>
+                <span class="sa">f</span><span class="s2">"`OrderedQuantiles` was not provided with argument `q`. Using index </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span><span class="si">}</span><span class="s2"> as anchor."</span>
             <span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="c1"># choose quantile level closest to median as anchor index</span>
@@ -537,14 +537,14 @@
 
             <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span> <span class="o">!=</span> <span class="n">num_quantile_levels</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Length of `q` does not coincide with input shape: len(q)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span><span class="si">}</span><span class="s2">, &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;position </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="si">}</span><span class="s2"> of shape=</span><span class="si">{</span><span class="n">input_shape</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Length of `q` does not coincide with input shape: len(q)=</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">q</span><span class="p">)</span><span class="si">}</span><span class="s2">, "</span>
+                    <span class="sa">f</span><span class="s2">"position </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">axis</span><span class="si">}</span><span class="s2"> of shape=</span><span class="si">{</span><span class="n">input_shape</span><span class="si">}</span><span class="s2">"</span>
                 <span class="p">)</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">anchor_index</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_quantile_levels</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The link function `OrderedQuantiles` expects at least 3 quantile levels, &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;but only </span><span class="si">{</span><span class="n">num_quantile_levels</span><span class="si">}</span><span class="s2"> were given.&quot;</span>
+                <span class="sa">f</span><span class="s2">"The link function `OrderedQuantiles` expects at least 3 quantile levels, "</span>
+                <span class="sa">f</span><span class="s2">"but only </span><span class="si">{</span><span class="n">num_quantile_levels</span><span class="si">}</span><span class="s2"> were given."</span>
             <span class="p">)</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">build</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span></div>
@@ -579,8 +579,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -614,7 +614,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

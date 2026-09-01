@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/inference/scoring/scoring_rules/scoring_rule';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,9 +492,9 @@
 
 <div class="viewcode-block" id="ScoringRule">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.scoring_rules&quot;</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.scoring_rules"</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ScoringRule</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Base class for scoring rules.</span>
+<span class="w">    </span><span class="sd">"""Base class for scoring rules.</span>
 
 <span class="sd">    Scoring rules evaluate the quality of statistical predictions based on the values that materialize</span>
 <span class="sd">    when sampling from the true distribution. By minimizing an expected score, estimates with</span>
@@ -509,10 +509,10 @@
 <span class="sd">    A :py:class:`ScoringRule` can score estimates consisting of multiple parts. See :py:class:`MvNormalScore`</span>
 <span class="sd">    for an example of a :py:class:`ParametricDistributionScore`. That score evaluates an estimated mean</span>
 <span class="sd">    and covariance simultaneously.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span><span class="p">:</span> <span class="nb">tuple</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">()</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Names of prediction heads for which to warn if the adapter is called on their estimates in inverse direction.</span>
 
 <span class="sd">    Prediction heads can output estimates in spaces other than the target distribution space.</span>
@@ -520,18 +520,18 @@
 <span class="sd">    because the adapter is built to map vectors from the inference variable space. When subclassing</span>
 <span class="sd">    :py:class:`ScoringRule`, add the names of such heads to the following list to warn users about difficulties</span>
 <span class="sd">    with a type of estimate whenever the adapter is applied to them in inverse direction.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">TRANSFORMATION_TYPE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Defines nonstandard transformation behaviour for de-standardization.</span>
 
 <span class="sd">    The standard transformation</span>
 
-<span class="sd">    x_i = x_i&#39; * sigma_i + mu_i</span>
+<span class="sd">    x_i = x_i' * sigma_i + mu_i</span>
 
-<span class="sd">    is referred to as &quot;location_scale&quot;. Keys not specified here will fallback to that default.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    is referred to as "location_scale". Keys not specified here will fallback to that default.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -543,13 +543,13 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">subnets_kwargs</span> <span class="o">=</span> <span class="n">subnets_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span> <span class="ow">or</span> <span class="p">{}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;subnets_kwargs&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnets_kwargs</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"subnets_kwargs"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnets_kwargs</span><span class="p">}</span>
 
 <div class="viewcode-block" id="ScoringRule.get_config">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.get_config">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_config</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;subnets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">subnet</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">subnet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;links&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">link</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">link</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">"subnets"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">subnet</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">subnet</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnets</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span><span class="p">[</span><span class="s2">"links"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="n">link</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">link</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">config</span></div>
 
@@ -559,8 +559,8 @@
     <span class="nd">@classmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">):</span>
         <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;subnets&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">subnet_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">subnet_dict</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;subnets&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-        <span class="n">config</span><span class="p">[</span><span class="s2">&quot;links&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">link_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">link_dict</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;links&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"subnets"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">subnet_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">subnet_dict</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">"subnets"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="n">config</span><span class="p">[</span><span class="s2">"links"</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">link_dict</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">link_dict</span> <span class="ow">in</span> <span class="n">config</span><span class="p">[</span><span class="s2">"links"</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
 
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span><span class="o">**</span><span class="n">config</span><span class="p">)</span></div>
 
@@ -568,14 +568,14 @@
 <div class="viewcode-block" id="ScoringRule.get_head_shapes_from_target_shape">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.get_head_shapes_from_target_shape">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_head_shapes_from_target_shape</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">target_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Shape</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Request a dictionary of names and output shapes of required heads from the score.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Request a dictionary of names and output shapes of required heads from the score."""</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 
 
 <div class="viewcode-block" id="ScoringRule.get_subnet">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.get_subnet">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_subnet</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;For a specified key, request a subnet to be used for projecting the shared condition embedding</span>
+<span class="w">        </span><span class="sd">"""For a specified key, request a subnet to be used for projecting the shared condition embedding</span>
 <span class="sd">        before further projection and reshaping to the heads output shape.</span>
 
 <span class="sd">        If no subnet was specified for the key (e.g. upon initialization),</span>
@@ -590,7 +590,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        link : keras.Layer</span>
 <span class="sd">            Subnet projecting the shared condition embedding.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnets</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
@@ -600,7 +600,7 @@
 <div class="viewcode-block" id="ScoringRule.get_link">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.get_link">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_link</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;For a specified key, request a link from network output to estimation target.</span>
+<span class="w">        </span><span class="sd">"""For a specified key, request a link from network output to estimation target.</span>
 
 <span class="sd">        If no link was specified for the key (e.g. upon initialization), return a linear activation.</span>
 
@@ -613,9 +613,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        link : keras.Layer</span>
 <span class="sd">            Activation function linking network output to estimation target.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
-            <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s2">&quot;linear&quot;</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="s2">"linear"</span><span class="p">)</span>
         <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="nb">str</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Activation</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">links</span><span class="p">[</span><span class="n">key</span><span class="p">])</span>
         <span class="k">else</span><span class="p">:</span>
@@ -625,7 +625,7 @@
 <div class="viewcode-block" id="ScoringRule.get_head">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.get_head">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">get_head</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">output_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;For a specified head key and output shape, request corresponding head network.</span>
+<span class="w">        </span><span class="sd">"""For a specified head key and output shape, request corresponding head network.</span>
 
 <span class="sd">        A head network has the following components that are called sequentially:</span>
 
@@ -650,12 +650,12 @@
 <span class="sd">        head : keras.Sequential</span>
 <span class="sd">            Head network consisting of a learnable projection, a reshape and a link operation</span>
 <span class="sd">            to parameterize estimates.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="c1"># initialize head components back to front</span>
         <span class="n">link</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_link</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
 
         <span class="c1"># link input shape can differ from output shape</span>
-        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s2">&quot;compute_input_shape&quot;</span><span class="p">):</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">link</span><span class="p">,</span> <span class="s2">"compute_input_shape"</span><span class="p">):</span>
             <span class="n">link_input_shape</span> <span class="o">=</span> <span class="n">link</span><span class="o">.</span><span class="n">compute_input_shape</span><span class="p">(</span><span class="n">output_shape</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="n">link_input_shape</span> <span class="o">=</span> <span class="n">output_shape</span>
@@ -670,7 +670,7 @@
 <div class="viewcode-block" id="ScoringRule.score">
 <a class="viewcode-back" href="../../../../../../api/bayesflow.scoring_rules.ScoringRule.html#bayesflow.networks.inference.scoring.scoring_rules.ScoringRule.score">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">score</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">],</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;Scores a batch of probabilistic estimates of distributions based on samples</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""Scores a batch of probabilistic estimates of distributions based on samples</span>
 <span class="sd">        of the corresponding distributions.</span>
 
 <span class="sd">        Parameters</span>
@@ -699,10 +699,10 @@
 <span class="sd">        &gt;&gt;&gt; samples = keras.random.normal(shape=(100,))</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # batch of uninformed (random) estimates</span>
-<span class="sd">        &gt;&gt;&gt; bad_estimates = {&quot;value&quot;: keras.random.uniform((100,))}</span>
+<span class="sd">        &gt;&gt;&gt; bad_estimates = {"value": keras.random.uniform((100,))}</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # batch of estimates that are closer to the true mean</span>
-<span class="sd">        &gt;&gt;&gt; better_estimates = {&quot;value&quot;: keras.random.normal(stddev=0.1, shape=(100,))}</span>
+<span class="sd">        &gt;&gt;&gt; better_estimates = {"value": keras.random.normal(stddev=0.1, shape=(100,))}</span>
 <span class="sd">        &gt;&gt;&gt;</span>
 <span class="sd">        &gt;&gt;&gt; # calculate the score</span>
 <span class="sd">        &gt;&gt;&gt; scoring_rule = MeanScore()</span>
@@ -710,7 +710,7 @@
 <span class="sd">        &lt;tf.Tensor: shape=(), dtype=float32, numpy=1.2243813276290894&gt;</span>
 <span class="sd">        &gt;&gt;&gt; scoring_rule.score(better_estimates, samples)</span>
 <span class="sd">        &lt;tf.Tensor: shape=(), dtype=float32, numpy=1.013983130455017&gt;</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span></div>
 </div>
 
@@ -743,8 +743,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -778,7 +778,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

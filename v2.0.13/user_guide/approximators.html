@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/approximators';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -581,7 +581,7 @@
 <p>All approximators share the same <code class="docutils literal notranslate"><span class="pre">fit</span></code> interface. You can pass either a simulator (BayesFlow builds the dataset for you) or a pre-built dataset:</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Here&#39;s a very basic simulator and adapter</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Here's a very basic simulator and adapter</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
@@ -594,9 +594,9 @@
 
 <span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"theta"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -608,7 +608,7 @@
 <span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span><span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">)</span>
 
 <span class="c1"># Compile first — sets the optimizer; compatible with any keras optimizer</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 
 <span class="c1"># Train via simulator (most common path)</span>
 <span class="n">history</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">workers</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
@@ -655,12 +655,12 @@
     <span class="c1"># summary_network=bf.networks.SetTransformer(),  # optional; requires .as_set() in adapter</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
 <span class="p">)</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
 <span class="n">test_batch</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">x_obs</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-<span class="n">theta</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+<span class="n">x_obs</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
+<span class="n">theta</span> <span class="o">=</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"theta"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -671,8 +671,8 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># conditions: dict of observed data, preprocessed by the adapter</span>
-<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
-<span class="c1"># returns: {&quot;theta&quot;: np.ndarray of shape (num_conditions, 1000, theta_dim)}</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
+<span class="c1"># returns: {"theta": np.ndarray of shape (num_conditions, 1000, theta_dim)}</span>
 </pre></div>
 </div>
 </div>
@@ -682,7 +682,7 @@
 <h3><span class="section-number">4.3.3. </span><code class="docutils literal notranslate"><span class="pre">.log_prob(data)</span></code> — evaluate the log-posterior density<a class="headerlink" href="#log-prob-data-evaluate-the-log-posterior-density" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_p</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_p</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_prob</span><span class="p">({</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">"theta"</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
 <span class="c1"># returns: np.ndarray of shape (num_conditions,)</span>
 </pre></div>
 </div>
@@ -725,14 +725,14 @@
 
 <span class="n">mc_adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">as_set</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;model_indices&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">as_set</span><span class="p">(</span><span class="s2">"x"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"model_indices"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">test_batch_mc</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">ModelComparisonSimulator</span><span class="p">([</span><span class="n">sim1</span><span class="p">,</span> <span class="n">sim2</span><span class="p">,</span> <span class="n">sim3</span><span class="p">])</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
-<span class="n">x_obs_mc</span> <span class="o">=</span> <span class="n">test_batch_mc</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+<span class="n">x_obs_mc</span> <span class="o">=</span> <span class="n">test_batch_mc</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -752,7 +752,7 @@
 <p>Training requires a <code class="docutils literal notranslate"><span class="pre">ModelComparisonSimulator</span></code> (or a list of simulators):</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulators</span><span class="o">=</span><span class="p">[</span><span class="n">sim1</span><span class="p">,</span> <span class="n">sim2</span><span class="p">,</span> <span class="n">sim3</span><span class="p">],</span> <span class="n">adapter</span><span class="o">=</span><span class="n">mc_adapter</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -763,9 +763,9 @@
 <h3><span class="section-number">4.3.6. </span><code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — posterior model probabilities<a class="headerlink" href="#estimate-conditions-posterior-model-probabilities" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs_mc</span><span class="p">})</span>
-<span class="c1"># returns: dict with keys &quot;model_probs&quot; (and &quot;logits&quot; for PMP rules, &quot;log_bayes_factors&quot; for BF rules)</span>
-<span class="c1"># estimates[&quot;model_probs&quot;][i, k] = estimated P(M_k | x_obs[i]), shape (num_conditions, num_models)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs_mc</span><span class="p">})</span>
+<span class="c1"># returns: dict with keys "model_probs" (and "logits" for PMP rules, "log_bayes_factors" for BF rules)</span>
+<span class="c1"># estimates["model_probs"][i, k] = estimated P(M_k | x_obs[i]), shape (num_conditions, num_models)</span>
 </pre></div>
 </div>
 </div>
@@ -783,7 +783,7 @@
     <span class="n">K</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span>        <span class="c1"># number of negative samples per positive pair</span>
     <span class="n">gamma</span><span class="o">=</span><span class="mf">1.0</span>   <span class="c1"># odds of a dependent pair; increase to up-weight joint pairs</span>
 <span class="p">)</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -794,7 +794,7 @@
 <h3><span class="section-number">4.3.8. </span><code class="docutils literal notranslate"><span class="pre">.log_ratio(data)</span></code> — estimated log likelihood-to-evidence ratio<a class="headerlink" href="#log-ratio-data-estimated-log-likelihood-to-evidence-ratio" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_r</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_ratio</span><span class="p">({</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">log_r</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">log_ratio</span><span class="p">({</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">"theta"</span><span class="p">:</span> <span class="n">theta</span><span class="p">})</span>
 <span class="c1"># returns: Tensor of shape (num_conditions,)</span>
 </pre></div>
 </div>
@@ -809,14 +809,14 @@
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">ScoringRuleApproximator</span><span class="p">(</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span>
         <span class="n">scoring_rules</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;mean&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MeanScore</span><span class="p">(),</span>
-            <span class="s2">&quot;quantile&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">QuantileScore</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])</span>
+            <span class="s2">"mean"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">MeanScore</span><span class="p">(),</span>
+            <span class="s2">"quantile"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">scoring_rules</span><span class="o">.</span><span class="n">QuantileScore</span><span class="p">(</span><span class="n">q</span><span class="o">=</span><span class="p">[</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])</span>
         <span class="p">},</span>
         <span class="n">subnet</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">MLP</span><span class="p">()</span>
     <span class="p">),</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
 <span class="p">)</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -827,9 +827,9 @@
 <h3><span class="section-number">4.3.10. </span><code class="docutils literal notranslate"><span class="pre">.estimate(conditions)</span></code> — point estimates and distributional parameters<a class="headerlink" href="#estimate-conditions-point-estimates-and-distributional-parameters" title="Link to this heading">#</a></h3>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">})</span>
 <span class="c1"># returns nested dict: {variable_name: {score_name: {head_name: np.ndarray}}}</span>
-<span class="c1"># e.g., {&quot;theta&quot;: {&quot;mean&quot;: {&quot;mean&quot;: ...}, &quot;quantile&quot;: {&quot;0.1&quot;: ..., &quot;0.5&quot;: ..., &quot;0.9&quot;: ...}}}</span>
+<span class="c1"># e.g., {"theta": {"mean": {"mean": ...}, "quantile": {"0.1": ..., "0.5": ..., "0.9": ...}}}</span>
 </pre></div>
 </div>
 </div>
@@ -843,19 +843,19 @@
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approximator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">EnsembleApproximator</span><span class="p">(</span>
     <span class="n">approximators</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;flow&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+        <span class="s2">"flow"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
             <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
         <span class="p">),</span>
-        <span class="s2">&quot;diffusion&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
+        <span class="s2">"diffusion"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">ContinuousApproximator</span><span class="p">(</span>
             <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(),</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
         <span class="p">)</span>
     <span class="p">}</span>
 <span class="p">)</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
-<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">&quot;theta&quot;</span><span class="p">:</span> <span class="n">theta</span><span class="p">}</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
+<span class="n">data</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">,</span> <span class="s2">"theta"</span><span class="p">:</span> <span class="n">theta</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -871,12 +871,12 @@
 
 <span class="c1"># Per-member results</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">merge_members</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
-<span class="c1"># returns: {&quot;flow&quot;: ..., &quot;diffusion&quot;: ...}</span>
+<span class="c1"># returns: {"flow": ..., "diffusion": ...}</span>
 
 <span class="c1"># Weighted mixture</span>
 <span class="n">samples</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
     <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span>
-    <span class="n">member_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;flow&quot;</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">&quot;diffusion&quot;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}</span>
+    <span class="n">member_weights</span><span class="o">=</span><span class="p">{</span><span class="s2">"flow"</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">"diffusion"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -898,8 +898,8 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">estimates</span> <span class="o">=</span> <span class="n">approximator</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
-<span class="c1"># returns: {&quot;member_name&quot;: {variable: array}} by default</span>
-<span class="c1"># or groupby=&quot;variable&quot;: {variable: {&quot;member_name&quot;: array}}</span>
+<span class="c1"># returns: {"member_name": {variable: array}} by default</span>
+<span class="c1"># or groupby="variable": {variable: {"member_name": array}}</span>
 </pre></div>
 </div>
 </div>
@@ -914,10 +914,10 @@
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(),</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span>
 <span class="p">)</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 <span class="n">approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">32</span><span class="p">,</span> <span class="n">num_batches</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
 
-<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">x_obs</span><span class="p">}</span>
 </pre></div>
 </div>
 </div>
@@ -947,10 +947,10 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
 
 <span class="c1"># Serialize approximator</span>
-<span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">&quot;my_model.keras&quot;</span><span class="p">)</span>
+<span class="n">approximator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="s2">"my_model.keras"</span><span class="p">)</span>
 
 <span class="c1"># Deserialize approximator </span>
-<span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">&quot;my_model.keras&quot;</span><span class="p">)</span>
+<span class="n">approximator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="s2">"my_model.keras"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -1063,8 +1063,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1098,7 +1098,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

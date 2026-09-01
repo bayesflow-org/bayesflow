@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=f5c845b6"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/summary/transformers/set_transformer';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.10';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -493,9 +493,9 @@
 
 <div class="viewcode-block" id="SetTransformer">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.SetTransformer.html#bayesflow.networks.summary.SetTransformer">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SetTransformer</span><span class="p">(</span><span class="n">Transformer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;(SN) Implements the set transformer architecture from [1] which ultimately represents</span>
+<span class="w">    </span><span class="sd">"""(SN) Implements the set transformer architecture from [1] which ultimately represents</span>
 <span class="sd">    a learnable permutation-invariant function. Designed to naturally model interactions in</span>
 <span class="sd">    the input set, which may be hard to capture with the simpler ``DeepSet`` architecture.</span>
 
@@ -504,7 +504,7 @@
 <span class="sd">        In International conference on machine learning (pp. 3744-3753). PMLR.</span>
 
 <span class="sd">    Note: Currently works only on 3D inputs but can easily be expanded by using ``keras.layers.TimeDistributed``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -515,15 +515,15 @@
         <span class="n">mlp_widths</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
         <span class="n">num_seeds</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gelu&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lecun_normal&quot;</span><span class="p">,</span>
+        <span class="n">mlp_activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"gelu"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"lecun_normal"</span><span class="p">,</span>
         <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">num_inducing_points</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">seed_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Creates a many-to-one permutation-invariant encoder, typically used as a summary net for embedding set-based,</span>
 <span class="sd">        (i.e., exchangeable or IID) data. Use a TimeSeriesTransformer or a FusionTransformer for non-IID data.</span>
 
@@ -545,10 +545,10 @@
 <span class="sd">            Number of seeds to use for embedding.</span>
 <span class="sd">        dropout     : float, optional (default - 0.05)</span>
 <span class="sd">            Dropout rate applied to the attention and MLP layers. If set to None, no dropout is applied.</span>
-<span class="sd">        mlp_activation : str, optional (default - &#39;gelu&#39;)</span>
-<span class="sd">            Activation function used in the dense layers. Common choices include &quot;relu&quot;, &quot;elu&quot;, and &quot;gelu&quot;.</span>
-<span class="sd">        kernel_initializer : str, optional (default - &#39;lecun_normal&#39;)</span>
-<span class="sd">            Initializer for the kernel weights matrix. Common choices include &quot;glorot_uniform&quot;, &quot;he_normal&quot;, etc.</span>
+<span class="sd">        mlp_activation : str, optional (default - 'gelu')</span>
+<span class="sd">            Activation function used in the dense layers. Common choices include "relu", "elu", and "gelu".</span>
+<span class="sd">        kernel_initializer : str, optional (default - 'lecun_normal')</span>
+<span class="sd">            Initializer for the kernel weights matrix. Common choices include "glorot_uniform", "he_normal", etc.</span>
 <span class="sd">        use_bias : bool, optional (default - True)</span>
 <span class="sd">            Whether to include a bias term in the dense layers.</span>
 <span class="sd">        layer_norm : bool, optional (default - True)</span>
@@ -559,7 +559,7 @@
 <span class="sd">            Dimensionality of the seed embeddings. If None, it defaults to `summary_dim`.</span>
 <span class="sd">        **kwargs : dict</span>
 <span class="sd">            Additional keyword arguments passed to the base layer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -611,7 +611,7 @@
 <div class="viewcode-block" id="SetTransformer.call">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.SetTransformer.html#bayesflow.networks.summary.SetTransformer.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses the input sequence into a summary vector of size `summary_dim`. Note, that</span>
+<span class="w">        </span><span class="sd">"""Compresses the input sequence into a summary vector of size `summary_dim`. Note, that</span>
 <span class="sd">        this network should not use causal mask as it assumes no order in the `x` sequence.</span>
 
 <span class="sd">        Parameters</span>
@@ -631,7 +631,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        out : Tensor</span>
 <span class="sd">            Output of shape (batch_size, summary_dim)</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_blocks</span><span class="p">:</span>
             <span class="n">x</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">pooling_by_attention</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
@@ -668,8 +668,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -703,7 +703,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

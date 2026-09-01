@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=594047cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Compositional_Diffusion';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -572,7 +572,7 @@
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
-<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">&quot;KERAS_BACKEND&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;tensorflow&quot;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"tensorflow"</span>
 
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 <span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
@@ -584,7 +584,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;tensorflow&#39;
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend 'tensorflow'
 </pre></div>
 </div>
 </div>
@@ -648,7 +648,7 @@ $<span class="math notranslate nohighlight">\(\nu_p \sim \mathcal{N}(\mu_\nu, \s
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@njit</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">simulate_ddm_trial</span><span class="p">(</span><span class="n">nu</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">t0</span><span class="p">,</span> <span class="n">beta</span><span class="p">,</span> <span class="n">dt</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_time</span><span class="o">=</span><span class="mf">10.0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Simulates one realization of the diffusion process given</span>
 <span class="sd">    a set of parameters and a step size `dt`.</span>
 
@@ -656,7 +656,7 @@ $<span class="math notranslate nohighlight">\(\nu_p \sim \mathcal{N}(\mu_\nu, \s
 <span class="sd">    --------</span>
 <span class="sd">    (x, c) - a tuple of response time (y - float) and a</span>
 <span class="sd">        binary decision (c - int)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Inits (process starts at relative starting point)</span>
     <span class="n">y</span> <span class="o">=</span> <span class="n">beta</span> <span class="o">*</span> <span class="n">alpha</span>
@@ -712,29 +712,29 @@ $<span class="math notranslate nohighlight">\(\nu_p \sim \mathcal{N}(\mu_\nu, \s
 
 
 <span class="n">global_prior</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s1">&#39;mu_nu&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
-    <span class="s1">&#39;mu_alpha&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span>
-    <span class="s1">&#39;mu_t0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
-    <span class="s1">&#39;log_sigma_nu&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
-    <span class="s1">&#39;log_sigma_alpha&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
-    <span class="s1">&#39;log_sigma_t0&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
-    <span class="s1">&#39;beta_raw&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s1">'mu_nu'</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">'mu_alpha'</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.05</span><span class="p">),</span>
+    <span class="s1">'mu_t0'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">'log_sigma_nu'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s1">'log_sigma_alpha'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+    <span class="s1">'log_sigma_t0'</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">),</span>
+    <span class="s1">'beta_raw'</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
 <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_hierarchical_priors</span><span class="p">(</span><span class="n">n_subjects</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Returns a dict with group params and per subject params.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="c1"># Group level</span>
-    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_alpha"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_alpha"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_t0"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_t0"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
-    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_alpha"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_alpha"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_t0"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_t0"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
 
-    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">global_prior</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">][</span><span class="mi">1</span><span class="p">])</span>
     <span class="n">beta</span> <span class="o">=</span> <span class="n">beta_from_normal</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mi">50</span><span class="p">)</span>
 
     <span class="c1"># Subject level</span>
@@ -744,18 +744,18 @@ $<span class="math notranslate nohighlight">\(\nu_p \sim \mathcal{N}(\mu_\nu, \s
 
     <span class="k">return</span> <span class="p">{</span>
         <span class="c1"># group</span>
-        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">mu_nu</span><span class="p">,</span>
-        <span class="s2">&quot;mu_alpha&quot;</span><span class="p">:</span> <span class="n">mu_alpha</span><span class="p">,</span>
-        <span class="s2">&quot;mu_t0&quot;</span><span class="p">:</span> <span class="n">mu_t0</span><span class="p">,</span>
-        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">log_sigma_nu</span><span class="p">,</span>
-        <span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">:</span> <span class="n">log_sigma_alpha</span><span class="p">,</span>
-        <span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">:</span> <span class="n">log_sigma_t0</span><span class="p">,</span>
-        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">beta_raw</span><span class="p">,</span>
-        <span class="s2">&quot;beta&quot;</span><span class="p">:</span> <span class="n">beta</span><span class="p">,</span>
+        <span class="s2">"mu_nu"</span><span class="p">:</span> <span class="n">mu_nu</span><span class="p">,</span>
+        <span class="s2">"mu_alpha"</span><span class="p">:</span> <span class="n">mu_alpha</span><span class="p">,</span>
+        <span class="s2">"mu_t0"</span><span class="p">:</span> <span class="n">mu_t0</span><span class="p">,</span>
+        <span class="s2">"log_sigma_nu"</span><span class="p">:</span> <span class="n">log_sigma_nu</span><span class="p">,</span>
+        <span class="s2">"log_sigma_alpha"</span><span class="p">:</span> <span class="n">log_sigma_alpha</span><span class="p">,</span>
+        <span class="s2">"log_sigma_t0"</span><span class="p">:</span> <span class="n">log_sigma_t0</span><span class="p">,</span>
+        <span class="s2">"beta_raw"</span><span class="p">:</span> <span class="n">beta_raw</span><span class="p">,</span>
+        <span class="s2">"beta"</span><span class="p">:</span> <span class="n">beta</span><span class="p">,</span>
         <span class="c1"># subjects</span>
-        <span class="s2">&quot;nu&quot;</span><span class="p">:</span> <span class="n">nu</span><span class="p">,</span>
-        <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
-        <span class="s2">&quot;t0&quot;</span><span class="p">:</span> <span class="n">t0</span><span class="p">,</span>
+        <span class="s2">"nu"</span><span class="p">:</span> <span class="n">nu</span><span class="p">,</span>
+        <span class="s2">"alpha"</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
+        <span class="s2">"t0"</span><span class="p">:</span> <span class="n">t0</span><span class="p">,</span>
     <span class="p">}</span>
 </pre></div>
 </div>
@@ -770,22 +770,22 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior_global_score</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">]</span>
-    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">]</span>
-    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">]</span>
-    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">]</span>
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">]</span>
+    <span class="n">mu_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_alpha"</span><span class="p">]</span>
+    <span class="n">mu_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_t0"</span><span class="p">]</span>
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">]</span>
+    <span class="n">log_sigma_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_alpha"</span><span class="p">]</span>
+    <span class="n">log_sigma_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_t0"</span><span class="p">]</span>
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">]</span>
 
     <span class="n">parts</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;mu_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;mu_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;mu_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_alpha&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;log_sigma_t0&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
-        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"mu_nu"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"mu_alpha"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_alpha"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_alpha"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"mu_t0"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">mu_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_t0"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"mu_t0"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"log_sigma_nu"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"log_sigma_alpha"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_alpha"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_alpha"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"log_sigma_t0"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">log_sigma_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_t0"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"log_sigma_t0"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
+        <span class="s2">"beta_raw"</span><span class="p">:</span> <span class="n">score_log_norm</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="n">global_prior</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">parts</span>
 </pre></div>
@@ -795,7 +795,7 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator_hierarchical</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">sample_hierarchical_priors</span><span class="p">,</span> <span class="n">simulate_ddm</span><span class="p">])</span>
-<span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span>
+<span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">)[</span><span class="s1">'sim_data'</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -854,18 +854,18 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_names_global</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">global_prior</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
 <span class="n">pretty_param_names_global</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="sa">r</span><span class="s1">&#39;$\mu_\nu$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\mu_\alpha$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\mu_</span><span class="si">{t_0}</span><span class="s1">$&#39;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s1">&#39;$\log \sigma_\nu$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\log \sigma_\alpha$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\log \sigma_</span><span class="si">{t_0}</span><span class="s1">$&#39;</span><span class="p">,</span>
-    <span class="sa">r</span><span class="s1">&#39;$\beta_\text</span><span class="si">{raw}</span><span class="s1">$&#39;</span>
+    <span class="sa">r</span><span class="s1">'$\mu_\nu$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\mu_\alpha$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\mu_</span><span class="si">{t_0}</span><span class="s1">$'</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s1">'$\log \sigma_\nu$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\log \sigma_\alpha$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\log \sigma_</span><span class="si">{t_0}</span><span class="s1">$'</span><span class="p">,</span>
+    <span class="sa">r</span><span class="s1">'$\beta_\text</span><span class="si">{raw}</span><span class="s1">$'</span>
 <span class="p">]</span>
 
 <span class="c1"># Global (group-level) workflow</span>
 <span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;sim_data&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"sim_data"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">workflow_global</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">CompositionalWorkflow</span><span class="p">(</span>
@@ -882,18 +882,18 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;nu&#39;</span><span class="p">,</span> <span class="s1">&#39;alpha&#39;</span><span class="p">,</span> <span class="s1">&#39;t0&#39;</span><span class="p">]</span>
-<span class="n">pretty_param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">&#39;$\nu_p$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$\alpha_p$&#39;</span><span class="p">,</span> <span class="sa">r</span><span class="s1">&#39;$t_{0,p}$&#39;</span><span class="p">]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="s1">'nu'</span><span class="p">,</span> <span class="s1">'alpha'</span><span class="p">,</span> <span class="s1">'t0'</span><span class="p">]</span>
+<span class="n">pretty_param_names_local</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s1">'$\nu_p$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$\alpha_p$'</span><span class="p">,</span> <span class="sa">r</span><span class="s1">'$t_{0,p}$'</span><span class="p">]</span>
 
 <span class="c1"># Local (subject-level) workflow</span>
 <span class="n">adapter_local</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="s2">&quot;alpha&quot;</span><span class="p">,</span> <span class="s2">&quot;t0&quot;</span><span class="p">])</span>
-    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_local</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;sim_data&quot;</span><span class="p">,</span> <span class="s2">&quot;summary_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">log</span><span class="p">([</span><span class="s2">"alpha"</span><span class="p">,</span> <span class="s2">"t0"</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_local</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">param_names_global</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_conditions"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"sim_data"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">workflow_local</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
@@ -912,7 +912,7 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
     <span class="p">(</span><span class="n">N_TRAINING_BATCHES</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span><span class="p">),</span>
     <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
 <span class="p">)</span>
-<span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+<span class="n">training_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
     <span class="p">(</span><span class="n">N_TRAINING_BATCHES</span> <span class="o">*</span> <span class="n">BATCH_SIZE</span><span class="p">,</span> <span class="n">N_LOCAL_SUBJECTS</span> <span class="o">*</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="p">)</span>
 
@@ -921,8 +921,8 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
     <span class="n">epochs</span><span class="o">=</span><span class="n">EPOCHS</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span>
 <span class="p">)</span>
-<span class="c1"># keras.saving.save_model(workflow_global.approximator, &quot;misc/diffusion/partial_pooling_global.keras&quot;)</span>
-<span class="c1"># workflow_global.approximator = keras.saving.load_model(&quot;misc/diffusion/partial_pooling_global.keras&quot;)</span>
+<span class="c1"># keras.saving.save_model(workflow_global.approximator, "misc/diffusion/partial_pooling_global.keras")</span>
+<span class="c1"># workflow_global.approximator = keras.saving.load_model("misc/diffusion/partial_pooling_global.keras")</span>
 </pre></div>
 </div>
 </div>
@@ -940,8 +940,8 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
     <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="c1"># keras.saving.save_model(workflow_local.approximator, &quot;misc/diffusion/partial_pooling_local.keras&quot;)</span>
-<span class="c1"># workflow_local.approximator = keras.saving.load_model(&quot;misc/diffusion/partial_pooling_local.keras&quot;)</span>
+<span class="c1"># keras.saving.save_model(workflow_local.approximator, "misc/diffusion/partial_pooling_local.keras")</span>
+<span class="c1"># workflow_local.approximator = keras.saving.load_model("misc/diffusion/partial_pooling_local.keras")</span>
 </pre></div>
 </div>
 </div>
@@ -952,13 +952,13 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_data_single</span> <span class="o">=</span> <span class="n">simulator_hierarchical</span><span class="o">.</span><span class="n">sample_parallel</span><span class="p">(</span>
     <span class="n">N_TEST</span><span class="p">,</span> <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
 <span class="p">)</span>
-<span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
+<span class="n">test_data_single</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
     <span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_LOCAL_SUBJECTS</span> <span class="o">*</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">test_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
     <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
-    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sim_data'</span><span class="p">:</span> <span class="n">test_data_single</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]},</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -1009,7 +1009,7 @@ $<span class="math notranslate nohighlight">\(\nabla_x \log p(x) = -\frac{x - \m
     <span class="n">N_TEST</span><span class="p">,</span> <span class="n">n_subjects</span><span class="o">=</span><span class="n">N_SUBJECTS</span><span class="p">,</span> <span class="n">n_trials</span><span class="o">=</span><span class="n">N_TRIALS</span>
 <span class="p">)</span>
 <span class="c1"># bring the data in the right format</span>
-<span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
+<span class="n">test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span>
     <span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_SUBJECTS</span> <span class="o">//</span> <span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="n">N_TRIALS</span> <span class="o">*</span> <span class="n">N_LOCAL_SUBJECTS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="n">summaries</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># will be computed later by the workflow</span>
@@ -1034,18 +1034,18 @@ from Arruda et al. (2026) that smoothly transitions from <code class="docutils l
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">global_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">compositional_sample</span><span class="p">(</span>
     <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
-    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sim_data'</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
     <span class="n">compute_prior_score</span><span class="o">=</span><span class="n">prior_global_score</span><span class="p">,</span>
     <span class="c1">#compositional_bridge_d1=0.1,     # hyperparameter, control error accumulation</span>
     <span class="c1">#compositional_bridge_d0=0.1,     # hyperparameter, control error accumulation</span>
-    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;two_step_adaptive&#39;</span><span class="p">,</span>       <span class="c1"># hyperparameter, try &quot;euler_maruyama&quot; for non-adaptive method</span>
-    <span class="n">steps</span><span class="o">=</span><span class="s1">&#39;adaptive&#39;</span><span class="p">,</span>                 <span class="c1"># hyperparameter, speed vs accuracy/stability</span>
+    <span class="n">method</span><span class="o">=</span><span class="s1">'two_step_adaptive'</span><span class="p">,</span>       <span class="c1"># hyperparameter, try "euler_maruyama" for non-adaptive method</span>
+    <span class="n">steps</span><span class="o">=</span><span class="s1">'adaptive'</span><span class="p">,</span>                 <span class="c1"># hyperparameter, speed vs accuracy/stability</span>
     <span class="n">mini_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>               <span class="c1"># hyperparameter, memory/speed vs accuracy</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="o">*</span><span class="mi">10</span><span class="p">,</span>
     <span class="n">return_summaries</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="n">summaries</span><span class="o">=</span><span class="n">summaries</span><span class="p">,</span>
 <span class="p">)</span>
-<span class="n">summaries</span> <span class="o">=</span> <span class="n">global_posterior</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;_summaries&quot;</span><span class="p">)</span>  <span class="c1"># when rerunning with different sampler hyperparameters, pass these summaries back in to avoid recomputing them</span>
+<span class="n">summaries</span> <span class="o">=</span> <span class="n">global_posterior</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"_summaries"</span><span class="p">)</span>  <span class="c1"># when rerunning with different sampler hyperparameters, pass these summaries back in to avoid recomputing them</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
     <span class="n">estimates</span><span class="o">=</span><span class="n">global_posterior</span><span class="p">,</span>
@@ -1076,30 +1076,30 @@ from Arruda et al. (2026) that smoothly transitions from <code class="docutils l
     <span class="n">log_snr_t</span> <span class="o">=</span> <span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_log_snr</span><span class="p">(</span><span class="n">t</span><span class="o">=</span><span class="n">time</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
     <span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span> <span class="o">=</span> <span class="n">noise_schedule</span><span class="o">.</span><span class="n">get_alpha_sigma</span><span class="p">(</span><span class="n">log_snr_t</span><span class="o">=</span><span class="n">log_snr_t</span><span class="p">)</span>
 
-    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_nu&quot;</span><span class="p">]</span>
-    <span class="n">mu_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_log_alpha&quot;</span><span class="p">]</span>
-    <span class="n">mu_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;mu_log_t0&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_log_alpha&quot;</span><span class="p">]</span>
-    <span class="n">log_sigma_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;log_sigma_log_t0&quot;</span><span class="p">]</span>
-    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">&quot;beta_raw&quot;</span><span class="p">]</span>
+    <span class="n">mu_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_nu"</span><span class="p">]</span>
+    <span class="n">mu_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_log_alpha"</span><span class="p">]</span>
+    <span class="n">mu_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"mu_log_t0"</span><span class="p">]</span>
+    <span class="n">log_sigma_nu</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_nu"</span><span class="p">]</span>
+    <span class="n">log_sigma_log_alpha</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_log_alpha"</span><span class="p">]</span>
+    <span class="n">log_sigma_log_t0</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"log_sigma_log_t0"</span><span class="p">]</span>
+    <span class="n">beta_raw</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="s2">"beta_raw"</span><span class="p">]</span>
 
     <span class="n">parts</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;mu_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;mu_log_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;mu_log_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;log_sigma_nu&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;log_sigma_log_alpha&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;log_sigma_log_t0&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
-        <span class="s2">&quot;beta_raw&quot;</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"mu_nu"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"mu_log_alpha"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.05</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"mu_log_t0"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">mu_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"log_sigma_nu"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_nu</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"log_sigma_log_alpha"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_alpha</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"log_sigma_log_t0"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">log_sigma_log_t0</span><span class="p">,</span> <span class="n">m</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
+        <span class="s2">"beta_raw"</span><span class="p">:</span> <span class="n">score_log_norm_noisy</span><span class="p">(</span><span class="n">beta_raw</span><span class="p">,</span> <span class="n">m</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">alpha_t</span><span class="o">=</span><span class="n">alpha_t</span><span class="p">,</span> <span class="n">sigma_t</span><span class="o">=</span><span class="n">sigma_t</span><span class="p">),</span>
     <span class="p">}</span>
     <span class="k">return</span> <span class="n">parts</span>
 
 <span class="n">global_posterior</span> <span class="o">=</span> <span class="n">workflow_global</span><span class="o">.</span><span class="n">compositional_sample</span><span class="p">(</span>
     <span class="n">num_samples</span><span class="o">=</span><span class="n">N_SAMPLES</span><span class="p">,</span>
-    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sim_data'</span><span class="p">:</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]},</span> <span class="c1"># get rid of all unnecessary keys</span>
     <span class="n">compute_prior_score</span><span class="o">=</span><span class="n">prior_global_score_jac</span><span class="p">,</span>
-    <span class="n">method</span><span class="o">=</span><span class="s1">&#39;euler&#39;</span><span class="p">,</span>
+    <span class="n">method</span><span class="o">=</span><span class="s1">'euler'</span><span class="p">,</span>
     <span class="n">steps</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span>
     <span class="n">mini_batch_size</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="p">,</span>
@@ -1125,7 +1125,7 @@ The result is a full approximate joint posterior over all parameters at both lev
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># only check for N_LOCAL_CONDITIONS local conditions per dataset here</span>
 <span class="n">N_LOCAL_CONDITIONS</span> <span class="o">=</span> <span class="mi">10</span>
 <span class="n">smaller_test_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="p">[:,</span> <span class="p">:</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">test_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">param_names_local</span><span class="p">}</span>
-<span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_SUBJECTS</span><span class="p">,</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">]</span>
+<span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="p">,</span> <span class="n">N_SUBJECTS</span><span class="p">,</span> <span class="n">N_TRIALS</span><span class="p">,</span> <span class="mi">2</span><span class="p">)[:,</span> <span class="p">:</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">]</span>
 </pre></div>
 </div>
 </div>
@@ -1133,7 +1133,7 @@ The result is a full approximate joint posterior over all parameters at both lev
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">local_posterior</span> <span class="o">=</span> <span class="n">workflow_local</span><span class="o">.</span><span class="n">ancestral_sample</span><span class="p">(</span>
-    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;sim_data&#39;</span><span class="p">:</span> <span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">&#39;sim_data&#39;</span><span class="p">]},</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s1">'sim_data'</span><span class="p">:</span> <span class="n">smaller_test_data</span><span class="p">[</span><span class="s1">'sim_data'</span><span class="p">]},</span>
     <span class="n">ancestral_conditions</span><span class="o">=</span><span class="n">global_posterior</span><span class="p">,</span>
     <span class="n">batch_size</span><span class="o">=</span><span class="n">BATCH_SIZE</span><span class="o">*</span><span class="n">N_SAMPLES</span><span class="p">,</span>
 <span class="p">)</span>
@@ -1149,7 +1149,7 @@ The result is a full approximate joint posterior over all parameters at both lev
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flat_local_posterior</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="o">*</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">,</span> <span class="n">N_SAMPLES</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">local_posterior</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
-<span class="n">flat_test_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="o">*</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">smaller_test_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">&#39;sim_data&#39;</span><span class="p">}</span>
+<span class="n">flat_test_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">N_TEST</span><span class="o">*</span><span class="n">N_LOCAL_CONDITIONS</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">smaller_test_data</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="ow">not</span> <span class="n">k</span> <span class="o">==</span> <span class="s1">'sim_data'</span><span class="p">}</span>
 
 <span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
     <span class="n">estimates</span><span class="o">=</span><span class="n">flat_local_posterior</span><span class="p">,</span>
@@ -1272,8 +1272,8 @@ The result is a full approximate joint posterior over all parameters at both lev
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1307,7 +1307,7 @@ The result is a full approximate joint posterior over all parameters at both lev
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/consistency_models/stable_consistency_model';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,9 +495,9 @@
 
 <div class="viewcode-block" id="StableConsistencyModel">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.StableConsistencyModel.html#bayesflow.networks.StableConsistencyModel">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">StableConsistencyModel</span><span class="p">(</span><span class="n">InferenceNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;(IN) Implements an sCM (simple, stable, and scalable Consistency Model) with continuous-time Consistency Training</span>
+<span class="w">    </span><span class="sd">"""(IN) Implements an sCM (simple, stable, and scalable Consistency Model) with continuous-time Consistency Training</span>
 <span class="sd">    (CT) as described in [1]. The sampling procedure is taken from [2].</span>
 
 <span class="sd">    [1] Lu, C., &amp; Song, Y. (2024).</span>
@@ -506,46 +506,46 @@
 
 <span class="sd">    [2] Song, Y., Dhariwal, P., Chen, M. &amp; Sutskever, I. (2023).</span>
 <span class="sd">    Consistency Models. arXiv preprint arXiv:2303.01469</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-        <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;time_embedding_dim&quot;</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
-        <span class="s2">&quot;merge&quot;</span><span class="p">:</span> <span class="s2">&quot;concat&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;norm&quot;</span><span class="p">:</span> <span class="s2">&quot;layer&quot;</span><span class="p">,</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="s2">"kernel_initializer"</span><span class="p">:</span> <span class="s2">"he_normal"</span><span class="p">,</span>
+        <span class="s2">"residual"</span><span class="p">:</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">"spectral_normalization"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"time_embedding_dim"</span><span class="p">:</span> <span class="mi">32</span><span class="p">,</span>
+        <span class="s2">"merge"</span><span class="p">:</span> <span class="s2">"concat"</span><span class="p">,</span>
+        <span class="s2">"norm"</span><span class="p">:</span> <span class="s2">"layer"</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">WEIGHT_MLP_DEFAULT_CONFIG</span> <span class="o">=</span> <span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,),</span>
-        <span class="s2">&quot;activation&quot;</span><span class="p">:</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;kernel_initializer&quot;</span><span class="p">:</span> <span class="s2">&quot;he_normal&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;residual&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
-        <span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="s2">&quot;spectral_normalization&quot;</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,),</span>
+        <span class="s2">"activation"</span><span class="p">:</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="s2">"kernel_initializer"</span><span class="p">:</span> <span class="s2">"he_normal"</span><span class="p">,</span>
+        <span class="s2">"residual"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+        <span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+        <span class="s2">"spectral_normalization"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">}</span>
 
     <span class="n">EPS_WARN</span> <span class="o">=</span> <span class="mf">0.1</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">=</span> <span class="s2">"time_mlp"</span><span class="p">,</span>
         <span class="n">sigma</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span>
         <span class="n">subnet_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">weight_mlp_kwargs</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates an instance of an sCM to be used for consistency training (CT).</span>
+<span class="w">        </span><span class="sd">"""Creates an instance of an sCM to be used for consistency training (CT).</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        subnet : str, type, or keras.Layer, optional, default=&quot;time_mlp&quot;</span>
+<span class="sd">        subnet : str, type, or keras.Layer, optional, default="time_mlp"</span>
 <span class="sd">            The neural network architecture used for the consistency model.</span>
-<span class="sd">            If a string is provided, it should be a registered name (e.g., &quot;time_mlp&quot;).</span>
+<span class="sd">            If a string is provided, it should be a registered name (e.g., "time_mlp").</span>
 <span class="sd">            If a type or keras.Layer is provided, it will be directly instantiated</span>
 <span class="sd">            with the given ``subnet_kwargs``. Any subnet must accept a tuple of tensors (target, time, conditions).</span>
 <span class="sd">        sigma : float, optional, default=1.0</span>
@@ -560,11 +560,11 @@
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to the parent ``InferenceNetwork`` initializer</span>
 <span class="sd">            (e.g., ``name``, ``dtype``, or ``trainable``).</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_distribution</span><span class="o">=</span><span class="s2">&quot;normal&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">base_distribution</span><span class="o">=</span><span class="s2">"normal"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">subnet_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
-        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">&quot;time_mlp&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">subnet</span> <span class="o">==</span> <span class="s2">"time_mlp"</span><span class="p">:</span>
             <span class="n">subnet_kwargs</span> <span class="o">=</span> <span class="n">StableConsistencyModel</span><span class="o">.</span><span class="n">TIME_MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">subnet_kwargs</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="n">subnet</span><span class="p">,</span> <span class="o">**</span><span class="n">subnet_kwargs</span><span class="p">)</span>
 
@@ -572,10 +572,10 @@
 
         <span class="n">weight_mlp_kwargs</span> <span class="o">=</span> <span class="n">weight_mlp_kwargs</span> <span class="ow">or</span> <span class="p">{}</span>
         <span class="n">weight_mlp_kwargs</span> <span class="o">=</span> <span class="n">StableConsistencyModel</span><span class="o">.</span><span class="n">WEIGHT_MLP_DEFAULT_CONFIG</span> <span class="o">|</span> <span class="n">weight_mlp_kwargs</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">weight_fn</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="s2">&quot;mlp&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">weight_mlp_kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">weight_fn</span> <span class="o">=</span> <span class="n">find_network</span><span class="p">(</span><span class="s2">"mlp"</span><span class="p">,</span> <span class="o">**</span><span class="n">weight_mlp_kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">weight_fn_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
-            <span class="n">units</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;weight_fn_projector&quot;</span>
+            <span class="n">units</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">"zeros"</span><span class="p">,</span> <span class="n">kernel_initializer</span><span class="o">=</span><span class="s2">"zeros"</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"weight_fn_projector"</span>
         <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
@@ -595,8 +595,8 @@
         <span class="n">base_config</span> <span class="o">=</span> <span class="n">layer_kwargs</span><span class="p">(</span><span class="n">base_config</span><span class="p">)</span>
 
         <span class="n">config</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;subnet&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">,</span>
-            <span class="s2">&quot;sigma&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
+            <span class="s2">"subnet"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">,</span>
+            <span class="s2">"sigma"</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span>
         <span class="p">}</span>
 
         <span class="k">return</span> <span class="n">base_config</span> <span class="o">|</span> <span class="n">serialize</span><span class="p">(</span><span class="n">config</span><span class="p">)</span></div>
@@ -610,8 +610,8 @@
 
         <span class="c1"># if rho is set too low, bad schedules can occur</span>
         <span class="k">if</span> <span class="n">times</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">StableConsistencyModel</span><span class="o">.</span><span class="n">EPS_WARN</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">&quot;Warning: The last time step is large.&quot;</span><span class="p">)</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Increasing rho (was </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">) or n_steps (was </span><span class="si">{</span><span class="n">num_steps</span><span class="si">}</span><span class="s2">) might improve results.&quot;</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="s2">"Warning: The last time step is large."</span><span class="p">)</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Increasing rho (was </span><span class="si">{</span><span class="n">rho</span><span class="si">}</span><span class="s2">) or n_steps (was </span><span class="si">{</span><span class="n">num_steps</span><span class="si">}</span><span class="s2">) might improve results."</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">times</span>
 
 <div class="viewcode-block" id="StableConsistencyModel.build">
@@ -626,8 +626,8 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">subnet_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
             <span class="n">units</span><span class="o">=</span><span class="n">xz_shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-            <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">&quot;zeros&quot;</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span><span class="p">,</span>
+            <span class="n">bias_initializer</span><span class="o">=</span><span class="s2">"zeros"</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"output_projector"</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="c1"># construct input shape for subnet and subnet projector</span>
@@ -646,10 +646,10 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">_forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># Consistency Models only learn the direction from noise distribution</span>
         <span class="c1"># to target distribution, so we cannot implement this function.</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Consistency Models are not invertible&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Consistency Models are not invertible"</span><span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_inverse</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">z</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate random draws from the approximate target distribution</span>
+<span class="w">        </span><span class="sd">"""Generate random draws from the approximate target distribution</span>
 <span class="sd">        using the multistep sampling algorithm from [2], Algorithm 1.</span>
 
 <span class="sd">        Parameters</span>
@@ -666,9 +666,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        x            : Tensor</span>
 <span class="sd">            The approximate samples</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">steps</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;steps&quot;</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
-        <span class="n">rho</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">steps</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"steps"</span><span class="p">,</span> <span class="mi">15</span><span class="p">)</span>
+        <span class="n">rho</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"rho"</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">)</span>
 
         <span class="c1"># noise distribution has variance sigma</span>
         <span class="n">x</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">z</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span>
@@ -691,7 +691,7 @@
         <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute consistency function at time t.</span>
+<span class="w">        </span><span class="sd">"""Compute consistency function at time t.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -703,7 +703,7 @@
 <span class="sd">            The conditioning vector</span>
 <span class="sd">        training    : bool</span>
 <span class="sd">            Flag to control whether the inner network operates in training or test mode</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">x</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
         <span class="n">f</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet_projector</span><span class="p">(</span><span class="n">subnet_out</span><span class="p">)</span>
         <span class="n">out</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="n">x</span> <span class="o">-</span> <span class="n">ops</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">t</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">*</span> <span class="n">f</span>
@@ -713,7 +713,7 @@
 <div class="viewcode-block" id="StableConsistencyModel.compute_metrics">
 <a class="viewcode-back" href="../../../../api/bayesflow.networks.StableConsistencyModel.html#bayesflow.networks.StableConsistencyModel.compute_metrics">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">compute_metrics</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;training&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
+        <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">conditions</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">stage</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"training"</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
         <span class="n">base_metrics</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">compute_metrics</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="n">stage</span><span class="p">)</span>
 
@@ -745,7 +745,7 @@
         <span class="n">r</span> <span class="o">=</span> <span class="mf">1.0</span>  <span class="c1"># TODO: if consistency distillation training (not supported yet) is unstable, add schedule here</span>
 
         <span class="k">def</span><span class="w"> </span><span class="nf">f_teacher</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">):</span>
-            <span class="n">o</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">)</span>
             <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet_projector</span><span class="p">(</span><span class="n">o</span><span class="p">)</span>
 
         <span class="n">primals</span> <span class="o">=</span> <span class="p">(</span><span class="n">xt</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">t</span><span class="p">)</span>
@@ -759,7 +759,7 @@
         <span class="n">cos_sin_dFdt</span> <span class="o">=</span> <span class="n">ops</span><span class="o">.</span><span class="n">stop_gradient</span><span class="p">(</span><span class="n">cos_sin_dFdt</span><span class="p">)</span>
 
         <span class="c1"># calculate output of the network</span>
-        <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">xt</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">&quot;training&quot;</span><span class="p">)</span>
+        <span class="n">subnet_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet</span><span class="p">((</span><span class="n">xt</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">,</span> <span class="n">t</span><span class="p">,</span> <span class="n">conditions</span><span class="p">),</span> <span class="n">training</span><span class="o">=</span><span class="n">stage</span> <span class="o">==</span> <span class="s2">"training"</span><span class="p">)</span>
         <span class="n">student_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">subnet_projector</span><span class="p">(</span><span class="n">subnet_out</span><span class="p">)</span>
 
         <span class="c1"># calculate the tangent</span>
@@ -783,7 +783,7 @@
             <span class="o">-</span> <span class="n">w</span>
         <span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">base_metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">&quot;loss&quot;</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
+        <span class="k">return</span> <span class="n">base_metrics</span> <span class="o">|</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="n">loss</span><span class="p">}</span></div>
 </div>
 
 </pre></div>
@@ -815,8 +815,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -850,7 +850,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

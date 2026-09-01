@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/workflows/model_comparison_workflow';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -509,7 +509,7 @@
 <div class="viewcode-block" id="ModelComparisonWorkflow">
 <a class="viewcode-back" href="../../../api/bayesflow.workflows.ModelComparisonWorkflow.html#bayesflow.workflows.ModelComparisonWorkflow">[docs]</a>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModelComparisonWorkflow</span><span class="p">(</span><span class="n">BasicWorkflow</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    This class extends :class:`~bayesflow.workflows.BasicWorkflow` to support</span>
 <span class="sd">    amortized Bayesian model comparison with scoring rules.</span>
 
@@ -526,21 +526,21 @@
 <span class="sd">        ``inference_conditions`` / ``summary_variables``.</span>
 <span class="sd">    subnet : keras.Layer or str, optional</span>
 <span class="sd">        The shared body of the internal :class:`~bayesflow.networks.ScoringRuleNetwork`,</span>
-<span class="sd">        on top of which one head per scoring rule is built (default: ``&quot;mlp&quot;``).</span>
+<span class="sd">        on top of which one head per scoring rule is built (default: ``"mlp"``).</span>
 <span class="sd">        Accepts a Keras layer instance or any name recognised by</span>
-<span class="sd">        :func:`~bayesflow.utils.find_network` (e.g. ``&quot;mlp&quot;``).</span>
+<span class="sd">        :func:`~bayesflow.utils.find_network` (e.g. ``"mlp"``).</span>
 <span class="sd">    scoring_rules : CategoricalScoringRule or Sequence or dict[str, CategoricalScoringRule] or str, optional</span>
 <span class="sd">        Scoring rule(s) used to train the classifier. Accepts, in increasing generality:</span>
 
 <span class="sd">        - a single :class:`~bayesflow.scoring_rules.CategoricalScoringRule` instance;</span>
 <span class="sd">        - a string name recognised by :func:`~bayesflow.utils.find_scoring_rule`;</span>
 <span class="sd">        - a list/tuple of scores (or names) to co-learn several scores simultaneously,</span>
-<span class="sd">          which are auto-named after their class (e.g. ``&quot;cross_entropy_score&quot;``);</span>
+<span class="sd">          which are auto-named after their class (e.g. ``"cross_entropy_score"``);</span>
 <span class="sd">        - a mapping of explicit names to scores.</span>
 
 <span class="sd">        Multiple scores share one classifier body but get separate heads and are trained</span>
 <span class="sd">        jointly. Their outputs can then be kept per-rule or aggregated at estimation time</span>
-<span class="sd">        via the ``merge_scores`` argument of :meth:`estimate`. Defaults to ``&quot;cross_entropy&quot;``.</span>
+<span class="sd">        via the ``merge_scores`` argument of :meth:`estimate`. Defaults to ``"cross_entropy"``.</span>
 <span class="sd">        The chosen rule(s) determine the training dynamics. All scores produce estimates</span>
 <span class="sd">        for posterior model probabilities, log odds, and potentially log Bayes factors (BFs).</span>
 <span class="sd">    summary_network : SummaryNetwork or str, optional</span>
@@ -553,7 +553,7 @@
 <span class="sd">    checkpoint_filepath : str, optional</span>
 <span class="sd">        Directory for saving model checkpoints (default: None).</span>
 <span class="sd">    checkpoint_name : str, optional</span>
-<span class="sd">        Base name for checkpoint files (default: ``&quot;model&quot;``).</span>
+<span class="sd">        Base name for checkpoint files (default: ``"model"``).</span>
 <span class="sd">    save_weights_only : bool, optional</span>
 <span class="sd">        Save only weights rather than the full model (default: False).</span>
 <span class="sd">    save_best_only : bool, optional</span>
@@ -587,22 +587,22 @@
 <span class="sd">        - ``optimizer_kwargs``  : dict — passed to ``_init_optimizer``.</span>
 <span class="sd">        - ``simulator_kwargs``  : dict — passed to :class:`~bayesflow.simulators.ModelComparisonSimulator`.</span>
 <span class="sd">        - Other keys forwarded to :class:`~bayesflow.approximators.ModelComparisonApproximator`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">simulator</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Simulator</span><span class="p">]</span> <span class="o">|</span> <span class="n">ModelComparisonSimulator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">subnet</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mlp&quot;</span><span class="p">,</span>
+        <span class="n">subnet</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">Layer</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mlp"</span><span class="p">,</span>
         <span class="n">summary_network</span><span class="p">:</span> <span class="n">SummaryNetwork</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">scoring_rules</span><span class="p">:</span> <span class="n">CategoricalScoringRule</span>
         <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">CategoricalScoringRule</span> <span class="o">|</span> <span class="nb">str</span><span class="p">]</span>
         <span class="o">|</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CategoricalScoringRule</span><span class="p">]</span>
-        <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cross_entropy&quot;</span><span class="p">,</span>
+        <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"cross_entropy"</span><span class="p">,</span>
         <span class="n">initial_learning_rate</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">5e-4</span><span class="p">,</span>
         <span class="n">optimizer</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">optimizers</span><span class="o">.</span><span class="n">Optimizer</span> <span class="o">|</span> <span class="nb">type</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">checkpoint_filepath</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">checkpoint_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;model&quot;</span><span class="p">,</span>
+        <span class="n">checkpoint_name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"model"</span><span class="p">,</span>
         <span class="n">save_weights_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">save_best_only</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -610,7 +610,7 @@
         <span class="n">shared_simulator</span><span class="p">:</span> <span class="n">Simulator</span> <span class="o">|</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">use_mixed_batches</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">model_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"all"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">simulator</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">):</span>
@@ -618,7 +618,7 @@
                 <span class="n">simulators</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
                 <span class="n">shared_simulator</span><span class="o">=</span><span class="n">shared_simulator</span><span class="p">,</span>
                 <span class="n">use_mixed_batches</span><span class="o">=</span><span class="n">use_mixed_batches</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;simulator_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"simulator_kwargs"</span><span class="p">,</span> <span class="p">{}),</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="o">=</span> <span class="n">simulator</span>
@@ -634,15 +634,15 @@
             <span class="n">inference_network</span><span class="o">=</span><span class="n">ScoringRuleNetwork</span><span class="p">(</span>
                 <span class="n">scoring_rules</span><span class="o">=</span><span class="n">resolved_scoring_rules</span><span class="p">,</span>
                 <span class="n">subnet</span><span class="o">=</span><span class="n">subnet</span><span class="p">,</span>
-                <span class="n">subnet_kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;subnet_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                <span class="n">subnet_kwargs</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"subnet_kwargs"</span><span class="p">,</span> <span class="p">{}),</span>
             <span class="p">),</span>
-            <span class="n">summary_network</span><span class="o">=</span><span class="n">find_summary_network</span><span class="p">(</span><span class="n">summary_network</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;summary_kwargs&quot;</span><span class="p">,</span> <span class="p">{})),</span>
+            <span class="n">summary_network</span><span class="o">=</span><span class="n">find_summary_network</span><span class="p">(</span><span class="n">summary_network</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"summary_kwargs"</span><span class="p">,</span> <span class="p">{})),</span>
             <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
             <span class="n">standardize</span><span class="o">=</span><span class="n">standardize</span><span class="p">,</span>
             <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="n">ModelComparisonApproximator</span><span class="o">.</span><span class="fm">__init__</span><span class="p">),</span>
         <span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_init_optimizer</span><span class="p">(</span><span class="n">initial_learning_rate</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;optimizer_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_init_optimizer</span><span class="p">(</span><span class="n">initial_learning_rate</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"optimizer_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_checkpointing</span><span class="p">(</span><span class="n">checkpoint_filepath</span><span class="p">,</span> <span class="n">checkpoint_name</span><span class="p">,</span> <span class="n">save_weights_only</span><span class="p">,</span> <span class="n">save_best_only</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_needs_compile</span> <span class="o">=</span> <span class="kc">True</span>
@@ -655,7 +655,7 @@
         <span class="o">|</span> <span class="nb">str</span>
         <span class="o">|</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">CategoricalScoringRule</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.</span>
+<span class="w">        </span><span class="sd">"""Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.</span>
 
 <span class="sd">        Accepts a single rule (or its string name), a list/tuple of scores (or names), or a</span>
 <span class="sd">        mapping of names to scores. ``None`` defaults to a single ``CrossEntropyScore``.</span>
@@ -666,10 +666,10 @@
 <span class="sd">        ------</span>
 <span class="sd">        TypeError</span>
 <span class="sd">            If ``scoring_rules`` is of an unsupported type.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">,</span> <span class="p">(</span><span class="nb">str</span><span class="p">,</span> <span class="n">CategoricalScoringRule</span><span class="p">)):</span>
-            <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;scoring_rule&quot;</span><span class="p">:</span> <span class="n">find_scoring_rule</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">)}</span>
+            <span class="k">return</span> <span class="p">{</span><span class="s2">"scoring_rule"</span><span class="p">:</span> <span class="n">find_scoring_rule</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">)}</span>
 
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">,</span> <span class="n">Mapping</span><span class="p">):</span>
             <span class="n">resolved</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="n">find_scoring_rule</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">rule</span> <span class="ow">in</span> <span class="n">scoring_rules</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
@@ -679,14 +679,14 @@
             <span class="n">counts</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
             <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">scoring_rules</span><span class="p">:</span>
                 <span class="n">rule</span> <span class="o">=</span> <span class="n">find_scoring_rule</span><span class="p">(</span><span class="n">item</span><span class="p">)</span>
-                <span class="n">base</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;(?&lt;!^)(?=[A-Z])&quot;</span><span class="p">,</span> <span class="s2">&quot;_&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
+                <span class="n">base</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">sub</span><span class="p">(</span><span class="sa">r</span><span class="s2">"(?&lt;!^)(?=[A-Z])"</span><span class="p">,</span> <span class="s2">"_"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">rule</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span><span class="o">.</span><span class="n">lower</span><span class="p">()</span>
                 <span class="n">counts</span><span class="p">[</span><span class="n">base</span><span class="p">]</span> <span class="o">=</span> <span class="n">counts</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">base</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span> <span class="o">+</span> <span class="mi">1</span>
-                <span class="n">key</span> <span class="o">=</span> <span class="n">base</span> <span class="k">if</span> <span class="n">counts</span><span class="p">[</span><span class="n">base</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="n">base</span><span class="p">]</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">base</span> <span class="k">if</span> <span class="n">counts</span><span class="p">[</span><span class="n">base</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span> <span class="k">else</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">base</span><span class="si">}</span><span class="s2">_</span><span class="si">{</span><span class="n">counts</span><span class="p">[</span><span class="n">base</span><span class="p">]</span><span class="si">}</span><span class="s2">"</span>
                 <span class="n">resolved</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">rule</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;`scoring_rules` must be a CategoricalScoringRule, a string name, a list of &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;scores/names, or a dict of name -&gt; rule, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">.&quot;</span>
+                <span class="s2">"`scoring_rules` must be a CategoricalScoringRule, a string name, a list of "</span>
+                <span class="sa">f</span><span class="s2">"scores/names, or a dict of name -&gt; rule, got </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">scoring_rules</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">."</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">resolved</span>
@@ -698,7 +698,7 @@
         <span class="n">inference_conditions</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
         <span class="n">summary_variables</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="nb">str</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Adapter</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Build a default adapter for model comparison data.</span>
 
 <span class="sd">        Maps the ``model_indices`` key produced by</span>
@@ -716,9 +716,9 @@
 <span class="sd">        -------</span>
 <span class="sd">        Adapter</span>
 <span class="sd">            A configured Adapter instance that applies dtype conversion and concatenation.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">return</span> <span class="n">BasicWorkflow</span><span class="o">.</span><span class="n">default_adapter</span><span class="p">(</span>
-            <span class="n">inference_variables</span><span class="o">=</span><span class="s2">&quot;model_indices&quot;</span><span class="p">,</span>
+            <span class="n">inference_variables</span><span class="o">=</span><span class="s2">"model_indices"</span><span class="p">,</span>
             <span class="n">summary_variables</span><span class="o">=</span><span class="n">summary_variables</span><span class="p">,</span>
             <span class="n">inference_conditions</span><span class="o">=</span><span class="n">inference_conditions</span><span class="p">,</span>
         <span class="p">)</span></div>
@@ -733,7 +733,7 @@
         <span class="n">true_log_bfs_fn</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">]:</span>
-<span class="w">        </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sa">r</span><span class="sd">"""</span>
 <span class="sd">        Generate default diagnostic plots for model comparison.</span>
 
 <span class="sd">        Produces a loss curve (when training history is available) followed by</span>
@@ -744,11 +744,11 @@
 
 <span class="sd">        Always produced:</span>
 
-<span class="sd">        - ``&quot;confusion_and_bayes_factors&quot;`` — the posterior model probability</span>
+<span class="sd">        - ``"confusion_and_bayes_factors"`` — the posterior model probability</span>
 <span class="sd">          confusion matrix (PMP) and the pairwise Bayes factor (BF) heatmap,</span>
 <span class="sd">          drawn side by side in a single figure.</span>
-<span class="sd">        - ``&quot;calibration&quot;`` — per-model calibration curves with ECE annotations.</span>
-<span class="sd">        - ``&quot;bayes_factor_recovery&quot;`` — scatter of predicted vs. true log Bayes</span>
+<span class="sd">        - ``"calibration"`` — per-model calibration curves with ECE annotations.</span>
+<span class="sd">        - ``"bayes_factor_recovery"`` — scatter of predicted vs. true log Bayes</span>
 <span class="sd">          factors, one panel per competing model.  Only produced when</span>
 <span class="sd">          ``true_log_bfs_fn`` is supplied.</span>
 
@@ -761,12 +761,12 @@
 <span class="sd">        estimates: Mapping[str, np.ndarray] or None</span>
 <span class="sd">            Optional pre-computed dictionary of estimates corresponding to the quantities</span>
 <span class="sd">            in ``test_data``. Default is ``None`` (i.e., esimtates are obtained from the</span>
-<span class="sd">            test data by calling the workflow&#39;s ``.estimate()`` method).</span>
+<span class="sd">            test data by calling the workflow's ``.estimate()`` method).</span>
 <span class="sd">        true_log_bfs_fn : callable or None, optional</span>
 <span class="sd">            A function ``(test_data: dict) -&gt; np.ndarray`` that receives the</span>
 <span class="sd">            simulated data dictionary and returns ground-truth log Bayes factors</span>
 <span class="sd">            of shape ``(num_datasets, num_models - 1)``.  When provided, a</span>
-<span class="sd">            ``&quot;bayes_factor_recovery&quot;`` plot is added for Bayes factor scoring</span>
+<span class="sd">            ``"bayes_factor_recovery"`` plot is added for Bayes factor scoring</span>
 <span class="sd">            rules.  Ignored for PMP scoring rules.</span>
 <span class="sd">        **kwargs : dict, optional</span>
 <span class="sd">            Fine-grained control over individual plots via nested dicts:</span>
@@ -800,40 +800,40 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            If ``test_data`` is an integer but no simulator is attached.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No simulator attached. Cannot generate </span><span class="si">{</span><span class="n">test_data</span><span class="si">}</span><span class="s2"> test datasets.&quot;</span><span class="p">)</span>
-            <span class="n">test_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;test_data_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No simulator attached. Cannot generate </span><span class="si">{</span><span class="n">test_data</span><span class="si">}</span><span class="s2"> test datasets."</span><span class="p">)</span>
+            <span class="n">test_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"test_data_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
 
         <span class="n">figures</span> <span class="o">=</span> <span class="p">{}</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">figures</span><span class="p">[</span><span class="s2">&quot;loss&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;loss_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+            <span class="n">figures</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">history</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"loss_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
 
-        <span class="k">if</span> <span class="s2">&quot;model_indices&quot;</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
-            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
-            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"model_indices"</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">"model_indices"</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"inference_variables"</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                <span class="s2">&quot;test_data must contain &#39;model_indices&#39; (raw simulator output) or &quot;</span>
-                <span class="s2">&quot;&#39;inference_variables&#39; (adapted output). Neither key was found.&quot;</span>
+                <span class="s2">"test_data must contain 'model_indices' (raw simulator output) or "</span>
+                <span class="s2">"'inference_variables' (adapted output). Neither key was found."</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Diagnostics operate on merged &#39;model_probs&#39;; force it regardless of any user estimate_kwargs.</span>
-            <span class="n">estimate_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;estimate_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span>
-            <span class="n">estimate_kwargs</span><span class="p">[</span><span class="s2">&quot;merge_scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.</span>
+            <span class="n">estimate_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"estimate_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">estimate_kwargs</span><span class="p">[</span><span class="s2">"merge_scores"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">estimate_kwargs</span><span class="p">)</span>
 
         <span class="c1"># Always draw the confusion matrix (PMP view) and pairwise Bayes factor heatmap</span>
-        <span class="n">model_probs</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;model_probs&quot;</span><span class="p">]</span>
-        <span class="n">pred_log_bfs</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_bayes_factors&quot;</span><span class="p">,</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;log_odds&quot;</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
+        <span class="n">model_probs</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"model_probs"</span><span class="p">]</span>
+        <span class="n">pred_log_bfs</span> <span class="o">=</span> <span class="n">estimates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"log_bayes_factors"</span><span class="p">,</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"log_odds"</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:]</span>
 
         <span class="n">num_models</span> <span class="o">=</span> <span class="n">model_probs</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="n">size</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="mf">4.0</span><span class="p">,</span> <span class="n">num_models</span> <span class="o">*</span> <span class="mf">1.2</span><span class="p">)</span>
-        <span class="n">matrix_fig</span><span class="p">,</span> <span class="n">matrix_axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;matrix_row_figsize&quot;</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">size</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="p">)))</span>
+        <span class="n">matrix_fig</span><span class="p">,</span> <span class="n">matrix_axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"matrix_row_figsize"</span><span class="p">,</span> <span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">size</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">size</span><span class="p">)))</span>
         <span class="c1"># Smaller fonts so two titled panels read as one row without a grand title;</span>
         <span class="c1"># user-supplied kwargs still win.</span>
         <span class="n">panel_defaults</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">title_fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">label_fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">,</span> <span class="n">value_fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
@@ -843,33 +843,33 @@
             <span class="n">true_models</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">matrix_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
-            <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">panel_defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;confusion_matrix_kwargs&quot;</span><span class="p">,</span> <span class="p">{})},</span>
+            <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">panel_defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"confusion_matrix_kwargs"</span><span class="p">,</span> <span class="p">{})},</span>
         <span class="p">)</span>
         <span class="n">bf_plots</span><span class="o">.</span><span class="n">pairwise_bayes_factors</span><span class="p">(</span>
             <span class="n">pred_log_bayes_factors</span><span class="o">=</span><span class="n">pred_log_bfs</span><span class="p">,</span>
             <span class="n">true_models</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
             <span class="n">ax</span><span class="o">=</span><span class="n">matrix_axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
-            <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">panel_defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;pairwise_bayes_factors_kwargs&quot;</span><span class="p">,</span> <span class="p">{})},</span>
+            <span class="o">**</span><span class="p">{</span><span class="o">**</span><span class="n">panel_defaults</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"pairwise_bayes_factors_kwargs"</span><span class="p">,</span> <span class="p">{})},</span>
         <span class="p">)</span>
         <span class="n">matrix_fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-        <span class="n">figures</span><span class="p">[</span><span class="s2">&quot;confusion_and_bayes_factors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_fig</span>
+        <span class="n">figures</span><span class="p">[</span><span class="s2">"confusion_and_bayes_factors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">matrix_fig</span>
 
-        <span class="n">figures</span><span class="p">[</span><span class="s2">&quot;calibration&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">mc_calibration</span><span class="p">(</span>
-            <span class="n">pred_models</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;model_probs&quot;</span><span class="p">],</span>
+        <span class="n">figures</span><span class="p">[</span><span class="s2">"calibration"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">mc_calibration</span><span class="p">(</span>
+            <span class="n">pred_models</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">"model_probs"</span><span class="p">],</span>
             <span class="n">true_models</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;calibration_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"calibration_kwargs"</span><span class="p">,</span> <span class="p">{}),</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">true_log_bfs_fn</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">true_log_bfs</span> <span class="o">=</span> <span class="n">true_log_bfs_fn</span><span class="p">(</span><span class="n">test_data</span><span class="p">)</span>
-            <span class="n">figures</span><span class="p">[</span><span class="s2">&quot;bayes_factor_recovery&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">bayes_factor_recovery</span><span class="p">(</span>
-                <span class="n">pred_log_bayes_factors</span><span class="o">=</span><span class="n">estimates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;log_bayes_factors&quot;</span><span class="p">,</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;log_odds&quot;</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:],</span>
+            <span class="n">figures</span><span class="p">[</span><span class="s2">"bayes_factor_recovery"</span><span class="p">]</span> <span class="o">=</span> <span class="n">bf_plots</span><span class="o">.</span><span class="n">bayes_factor_recovery</span><span class="p">(</span>
+                <span class="n">pred_log_bayes_factors</span><span class="o">=</span><span class="n">estimates</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"log_bayes_factors"</span><span class="p">,</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"log_odds"</span><span class="p">])[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:],</span>
                 <span class="n">true_log_bayes_factors</span><span class="o">=</span><span class="n">true_log_bfs</span><span class="p">,</span>
                 <span class="n">true_models</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
                 <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
-                <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;bayes_factor_recovery_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+                <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"bayes_factor_recovery_kwargs"</span><span class="p">,</span> <span class="p">{}),</span>
             <span class="p">)</span>
 
         <span class="k">return</span> <span class="n">figures</span></div>
@@ -884,21 +884,21 @@
         <span class="n">as_data_frame</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">dict</span><span class="p">]</span> <span class="o">|</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute default scalar diagnostic metrics for model comparison.</span>
 
 <span class="sd">        All metrics are computed from the pooled log odds, see :meth:`estimate`):</span>
 
-<span class="sd">        - ``&quot;accuracy&quot;`` — per-model classification accuracy, i.e., the diagonal</span>
+<span class="sd">        - ``"accuracy"`` — per-model classification accuracy, i.e., the diagonal</span>
 <span class="sd">          entries of the row-normalized confusion matrix (fraction of datasets</span>
 <span class="sd">          simulated from model ``m`` for which ``argmax(PMPs)`` also predicts</span>
 <span class="sd">          model ``m``), as returned by</span>
 <span class="sd">          :func:`~bayesflow.diagnostics.metrics.accuracy`. Controlled</span>
 <span class="sd">          via the ``per_model`` keyword (default ``True``); set to ``False`` to</span>
 <span class="sd">          instead obtain the overall (aggregate) accuracy as a single float.</span>
-<span class="sd">        - ``&quot;ece&quot;`` — per-model expected calibration errors, as returned by</span>
+<span class="sd">        - ``"ece"`` — per-model expected calibration errors, as returned by</span>
 <span class="sd">          :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.</span>
-<span class="sd">        - ``&quot;brier_score&quot;`` — per-model (one-vs-rest) and aggregate multi-class</span>
+<span class="sd">        - ``"brier_score"`` — per-model (one-vs-rest) and aggregate multi-class</span>
 <span class="sd">          Brier scores, as returned by</span>
 <span class="sd">          :func:`~bayesflow.diagnostics.metrics.brier_score`.</span>
 
@@ -910,7 +910,7 @@
 <span class="sd">        estimates: Mapping[str, np.ndarray] or None</span>
 <span class="sd">            Optional pre-computed dictionary of estimates corresponding to the quantities</span>
 <span class="sd">            in ``test_data``. Default is ``None`` (i.e., esimtates are obtained from the</span>
-<span class="sd">            test data by calling the workflow&#39;s ``.estimate()`` method).</span>
+<span class="sd">            test data by calling the workflow's ``.estimate()`` method).</span>
 <span class="sd">        as_data_frame : bool, optional</span>
 <span class="sd">            Whether to return the results as a pandas DataFrame (default: True),</span>
 <span class="sd">            with one column per model and one row per metric. If False, a</span>
@@ -923,7 +923,7 @@
 <span class="sd">            - ``estimate_kwargs`` — forwarded to :meth:`estimate`.</span>
 <span class="sd">            - ``accuracy_kwargs`` — forwarded to</span>
 <span class="sd">              :func:`~bayesflow.diagnostics.metrics.accuracy`</span>
-<span class="sd">              (e.g. ``{&quot;per_model&quot;: False}`` for the aggregate accuracy).</span>
+<span class="sd">              (e.g. ``{"per_model": False}`` for the aggregate accuracy).</span>
 <span class="sd">            - ``ece_kwargs`` — forwarded to</span>
 <span class="sd">              :func:`~bayesflow.diagnostics.metrics.expected_calibration_error`.</span>
 
@@ -938,69 +938,69 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            If ``test_data`` is an integer but no simulator is attached.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulator</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No simulator attached. Cannot generate </span><span class="si">{</span><span class="n">test_data</span><span class="si">}</span><span class="s2"> test datasets.&quot;</span><span class="p">)</span>
-            <span class="n">test_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;test_data_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"No simulator attached. Cannot generate </span><span class="si">{</span><span class="n">test_data</span><span class="si">}</span><span class="s2"> test datasets."</span><span class="p">)</span>
+            <span class="n">test_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"test_data_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
 
         <span class="k">if</span> <span class="n">estimates</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="c1"># Diagnostics operate on merged &#39;model_probs&#39;; force it regardless of any user estimate_kwargs.</span>
-            <span class="n">estimate_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;estimate_kwargs&quot;</span><span class="p">,</span> <span class="p">{})</span>
-            <span class="n">estimate_kwargs</span><span class="p">[</span><span class="s2">&quot;merge_scores&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Diagnostics operate on merged 'model_probs'; force it regardless of any user estimate_kwargs.</span>
+            <span class="n">estimate_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"estimate_kwargs"</span><span class="p">,</span> <span class="p">{})</span>
+            <span class="n">estimate_kwargs</span><span class="p">[</span><span class="s2">"merge_scores"</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="n">estimates</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">estimate</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span> <span class="o">**</span><span class="n">estimate_kwargs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="s2">&quot;model_indices&quot;</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
-            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;model_indices&quot;</span><span class="p">]</span>
-        <span class="k">elif</span> <span class="s2">&quot;inference_variables&quot;</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
-            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="s2">"model_indices"</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">"model_indices"</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s2">"inference_variables"</span> <span class="ow">in</span> <span class="n">test_data</span><span class="p">:</span>
+            <span class="n">true_models</span> <span class="o">=</span> <span class="n">test_data</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">]</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">KeyError</span><span class="p">(</span>
-                <span class="s2">&quot;test_data must contain &#39;model_indices&#39; (raw simulator output) or &quot;</span>
-                <span class="s2">&quot;&#39;inference_variables&#39; (adapted output). Neither key was found.&quot;</span>
+                <span class="s2">"test_data must contain 'model_indices' (raw simulator output) or "</span>
+                <span class="s2">"'inference_variables' (adapted output). Neither key was found."</span>
             <span class="p">)</span>
 
-        <span class="n">accuracy_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;accuracy_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
-        <span class="n">accuracy_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">&quot;per_model&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">accuracy_kwargs</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"accuracy_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">accuracy_kwargs</span><span class="o">.</span><span class="n">setdefault</span><span class="p">(</span><span class="s2">"per_model"</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
 
-        <span class="c1"># Merged estimates always carry &#39;model_probs&#39; (derived from the pooled log Bayes</span>
+        <span class="c1"># Merged estimates always carry 'model_probs' (derived from the pooled log Bayes</span>
         <span class="c1"># factors for BF rules), so all metrics apply to both rule families.</span>
         <span class="n">accuracy_result</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">accuracy</span><span class="p">(</span>
-            <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;model_probs&quot;</span><span class="p">],</span>
+            <span class="n">estimates</span><span class="p">[</span><span class="s2">"model_probs"</span><span class="p">],</span>
             <span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
             <span class="o">**</span><span class="n">accuracy_kwargs</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">ece</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">expected_calibration_error</span><span class="p">(</span>
-            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;model_probs&quot;</span><span class="p">],</span>
+            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">"model_probs"</span><span class="p">],</span>
             <span class="n">targets</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
-            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;ece_kwargs&quot;</span><span class="p">,</span> <span class="p">{}),</span>
+            <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"ece_kwargs"</span><span class="p">,</span> <span class="p">{}),</span>
         <span class="p">)</span>
         <span class="n">brier_score_result</span> <span class="o">=</span> <span class="n">bf_metrics</span><span class="o">.</span><span class="n">brier_score</span><span class="p">(</span>
-            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;model_probs&quot;</span><span class="p">],</span>
+            <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">[</span><span class="s2">"model_probs"</span><span class="p">],</span>
             <span class="n">targets</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
             <span class="n">model_names</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">model_names</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">as_data_frame</span><span class="p">:</span>
-            <span class="n">model_names</span> <span class="o">=</span> <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;model_names&quot;</span><span class="p">]</span>
+            <span class="n">model_names</span> <span class="o">=</span> <span class="n">ece</span><span class="p">[</span><span class="s2">"model_names"</span><span class="p">]</span>
             <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">accuracy_result</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
-                <span class="n">accuracy_values</span> <span class="o">=</span> <span class="n">accuracy_result</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">]</span>
+                <span class="n">accuracy_values</span> <span class="o">=</span> <span class="n">accuracy_result</span><span class="p">[</span><span class="s2">"values"</span><span class="p">]</span>
             <span class="k">else</span><span class="p">:</span>
                 <span class="c1"># Aggregate accuracy (per_model=False): broadcast the single value to all models.</span>
                 <span class="n">accuracy_values</span> <span class="o">=</span> <span class="p">[</span><span class="n">accuracy_result</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_names</span><span class="p">)</span>
 
             <span class="n">metrics</span> <span class="o">=</span> <span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span>
                 <span class="p">{</span>
-                    <span class="s2">&quot;Accuracy&quot;</span><span class="p">:</span> <span class="n">accuracy_values</span><span class="p">,</span>
-                    <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
-                    <span class="n">brier_score_result</span><span class="p">[</span><span class="s2">&quot;metric_name&quot;</span><span class="p">]:</span> <span class="n">brier_score_result</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">],</span>
+                    <span class="s2">"Accuracy"</span><span class="p">:</span> <span class="n">accuracy_values</span><span class="p">,</span>
+                    <span class="n">ece</span><span class="p">[</span><span class="s2">"metric_name"</span><span class="p">]:</span> <span class="n">ece</span><span class="p">[</span><span class="s2">"values"</span><span class="p">],</span>
+                    <span class="n">brier_score_result</span><span class="p">[</span><span class="s2">"metric_name"</span><span class="p">]:</span> <span class="n">brier_score_result</span><span class="p">[</span><span class="s2">"values"</span><span class="p">],</span>
                 <span class="p">},</span>
                 <span class="n">index</span><span class="o">=</span><span class="n">model_names</span><span class="p">,</span>
             <span class="p">)</span><span class="o">.</span><span class="n">T</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;accuracy&quot;</span><span class="p">:</span> <span class="n">accuracy_result</span><span class="p">,</span> <span class="s2">&quot;ece&quot;</span><span class="p">:</span> <span class="n">ece</span><span class="p">,</span> <span class="s2">&quot;brier_score&quot;</span><span class="p">:</span> <span class="n">brier_score_result</span><span class="p">}</span>
+            <span class="n">metrics</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"accuracy"</span><span class="p">:</span> <span class="n">accuracy_result</span><span class="p">,</span> <span class="s2">"ece"</span><span class="p">:</span> <span class="n">ece</span><span class="p">,</span> <span class="s2">"brier_score"</span><span class="p">:</span> <span class="n">brier_score_result</span><span class="p">}</span>
 
         <span class="k">return</span> <span class="n">metrics</span></div>
 
@@ -1008,20 +1008,20 @@
 <div class="viewcode-block" id="ModelComparisonWorkflow.sample">
 <a class="viewcode-back" href="../../../api/bayesflow.workflows.ModelComparisonWorkflow.html#bayesflow.workflows.ModelComparisonWorkflow.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ModelComparisonWorkflow does not support sampling. Use estimate() instead.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ModelComparisonWorkflow does not support sampling. Use estimate() instead."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelComparisonWorkflow.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.workflows.ModelComparisonWorkflow.html#bayesflow.workflows.ModelComparisonWorkflow.log_prob">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ModelComparisonWorkflow does not support log_prob().&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ModelComparisonWorkflow does not support log_prob()."</span><span class="p">)</span></div>
 
 
 <div class="viewcode-block" id="ModelComparisonWorkflow.ancestral_sample">
 <a class="viewcode-back" href="../../../api/bayesflow.workflows.ModelComparisonWorkflow.html#bayesflow.workflows.ModelComparisonWorkflow.ancestral_sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">ancestral_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span>
-            <span class="s2">&quot;ModelComparisonWorkflow does not support ancestral_sample(). Use estimate() instead.&quot;</span>
+            <span class="s2">"ModelComparisonWorkflow does not support ancestral_sample(). Use estimate() instead."</span>
         <span class="p">)</span></div>
 </div>
 
@@ -1054,8 +1054,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1089,7 +1089,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

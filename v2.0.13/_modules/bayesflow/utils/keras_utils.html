@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/keras_utils';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,8 +492,8 @@
 <div class="viewcode-block" id="logits_relative_to_target">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.keras_utils.logits_relative_to_target.html#bayesflow.utils.logits_relative_to_target">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">logits_relative_to_target</span><span class="p">(</span><span class="n">logits</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">targets</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Express logits relative to the target model m = argmax(targets).&quot;&quot;&quot;</span>
-    <span class="n">m</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int32&quot;</span><span class="p">)</span>
+<span class="w">    </span><span class="sd">"""Express logits relative to the target model m = argmax(targets)."""</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int32"</span><span class="p">)</span>
     <span class="n">m_idx</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">m</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">logit_m</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">take_along_axis</span><span class="p">(</span><span class="n">logits</span><span class="p">,</span> <span class="n">m_idx</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">logits</span> <span class="o">-</span> <span class="n">logit_m</span></div>
@@ -503,7 +503,7 @@
 <div class="viewcode-block" id="resolve_seed">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.resolve_seed.html#bayesflow.utils.resolve_seed">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">resolve_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged."""</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">SeedGenerator</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">seed</span></div>
@@ -513,7 +513,7 @@
 <div class="viewcode-block" id="call_accepts_kwarg">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.keras_utils.call_accepts_kwarg.html#bayesflow.utils.call_accepts_kwarg">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">call_accepts_kwarg</span><span class="p">(</span><span class="n">call</span><span class="p">,</span> <span class="n">key</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Return whether a callable accepts a keyword argument.</span>
+<span class="w">    </span><span class="sd">"""Return whether a callable accepts a keyword argument.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -526,7 +526,7 @@
 <span class="sd">    -------</span>
 <span class="sd">    bool</span>
 <span class="sd">        ``True`` if *call* explicitly accepts *key* or has ``**kwargs``.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">try</span><span class="p">:</span>
         <span class="n">parameters</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">signature</span><span class="p">(</span><span class="n">call</span><span class="p">)</span><span class="o">.</span><span class="n">parameters</span>
     <span class="k">except</span> <span class="p">(</span><span class="ne">TypeError</span><span class="p">,</span> <span class="ne">ValueError</span><span class="p">):</span>
@@ -541,7 +541,7 @@
 <div class="viewcode-block" id="inverse_shifted_softplus">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.keras_utils.inverse_shifted_softplus.html#bayesflow.utils.inverse_shifted_softplus">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">inverse_shifted_softplus</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">),</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Inverse of the shifted softplus function.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Inverse of the shifted softplus function."""</span>
     <span class="k">return</span> <span class="n">inverse_softplus</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">threshold</span><span class="o">=</span><span class="n">threshold</span><span class="p">)</span> <span class="o">-</span> <span class="n">shift</span></div>
 
 
@@ -549,7 +549,7 @@
 <div class="viewcode-block" id="inverse_softplus">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.keras_utils.inverse_softplus.html#bayesflow.utils.inverse_softplus">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">inverse_softplus</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">beta</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">threshold</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">20.0</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Numerically stabilized inverse softplus function.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Numerically stabilized inverse softplus function."""</span>
     <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">x</span> <span class="o">&gt;</span> <span class="n">threshold</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expm1</span><span class="p">(</span><span class="n">beta</span> <span class="o">*</span> <span class="n">x</span><span class="p">))</span> <span class="o">/</span> <span class="n">beta</span><span class="p">)</span></div>
 
 
@@ -557,7 +557,7 @@
 <div class="viewcode-block" id="shifted_softplus">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.keras_utils.shifted_softplus.html#bayesflow.utils.shifted_softplus">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">shifted_softplus</span><span class="p">(</span><span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">shift</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">e</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Shifted version of the softplus function such that shifted_softplus(0) = 1&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Shifted version of the softplus function such that shifted_softplus(0) = 1"""</span>
     <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softplus</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">shift</span><span class="p">)</span></div>
 
 </pre></div>
@@ -589,8 +589,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -624,7 +624,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

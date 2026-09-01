@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/experimental/Spatial_Data';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,7 +492,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># reduce image resolution to reduce file size</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.dpi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.dpi"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
 </pre></div>
 </div>
 </div>
@@ -504,7 +504,7 @@ E0000 00:00:1753174597.542334   68310 cuda_blas.cc:1418] Unable to register cuBL
 2025-07-22 08:56:37.703546: I tensorflow/core/platform/cpu_feature_guard.cc:210] This TensorFlow binary is optimized to use available CPU instructions in performance-critical operations.
 To enable the following instructions: AVX2 FMA, in other operations, rebuild TensorFlow with the appropriate compiler flags.
 2025-07-22 08:56:41.618056: E external/local_xla/xla/stream_executor/cuda/cuda_driver.cc:152] failed call to cuInit: INTERNAL: CUDA error: Failed call to cuInit: UNKNOWN ERROR (303)
-INFO:bayesflow:Using backend &#39;tensorflow&#39;
+INFO:bayesflow:Using backend 'tensorflow'
 </pre></div>
 </div>
 </div>
@@ -578,9 +578,9 @@ Requirement already satisfied: numpy in /data/Programming/.mamba/envs/bf2/lib/py
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mf">2.5</span><span class="p">))</span>
 <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">power_spectrum</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Power Spectrum&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Amplitude [a.u.]&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Power Spectrum"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"k"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Amplitude [a.u.]"</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -614,8 +614,8 @@ Wall time: 2.14 ms
     <span class="n">power_spectrum</span> <span class="o">=</span> <span class="n">generate_power_spectrum</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
     <span class="n">field</span> <span class="o">=</span> <span class="n">generate_field</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="n">power_spectrum</span><span class="p">,</span> <span class="n">shape</span><span class="p">)</span>
     <span class="n">max_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">&quot;seismic&quot;</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="n">max_magnitude</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">max_magnitude</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="s2">"seismic"</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="n">max_magnitude</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">max_magnitude</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -638,7 +638,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow.experimental.resnet</span>
 
 
-<span class="n">bf</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">serialization</span><span class="o">.</span><span class="n">serializable</span><span class="p">(</span><span class="s2">&quot;custom&quot;</span><span class="p">)</span>
+<span class="n">bf</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">serialization</span><span class="o">.</span><span class="n">serializable</span><span class="p">(</span><span class="s2">"custom"</span><span class="p">)</span>
 
 
 <span class="k">class</span><span class="w"> </span><span class="nc">ResNetSummaryNetwork</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
@@ -651,7 +651,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
         <span class="n">use_batchnorm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Create a ResNet summary network with a final dense layer.</span>
 
 <span class="sd">        Parameters</span>
@@ -668,7 +668,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
 <span class="sd">            Use batch normalization in the residual layers (default is False).</span>
 <span class="sd">        kwargs : dict, optional</span>
 <span class="sd">            Additional keyword arguments for the tf.keras.Model superclass.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
 
@@ -679,7 +679,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
             <span class="p">)</span>
         <span class="p">)</span>
         <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Flatten</span><span class="p">())</span>
-        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">num_fully_connected</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">))</span>
+        <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">num_fully_connected</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"relu"</span><span class="p">))</span>
         <span class="n">layers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">summary_dim</span><span class="p">))</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">net</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
@@ -700,7 +700,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;log_std&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(),</span> <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"log_std"</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(),</span> <span class="s2">"alpha"</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">log_std</span><span class="p">,</span> <span class="n">alpha</span><span class="p">):</span>
@@ -708,7 +708,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
         <span class="n">distribution</span><span class="p">,</span> <span class="n">generate_power_spectrum</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_std</span><span class="p">)),</span> <span class="n">shape</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"field"</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
 
 
 <span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
@@ -724,7 +724,7 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;log_std&#39;: (3, 1), &#39;alpha&#39;: (3, 1), &#39;field&#39;: (3, 64, 64, 1)}
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{'log_std': (3, 1), 'alpha': (3, 1), 'field': (3, 64, 64, 1)}
 </pre></div>
 </div>
 </div>
@@ -771,9 +771,9 @@ Wall time: 492 ms
 <span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
     <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;log_std&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">],</span>
-    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">],</span>
-    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"log_std"</span><span class="p">,</span> <span class="s2">"alpha"</span><span class="p">],</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"field"</span><span class="p">],</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -832,8 +832,8 @@ Epoch 10/10
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span><span class="o">.</span><span class="n">plot_custom_diagnostics</span><span class="p">(</span>
     <span class="n">test_data</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
     <span class="n">plot_fns</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;recovery&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">,</span>
-        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">,</span>
+        <span class="s2">"recovery"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">,</span>
+        <span class="s2">"calibration"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">,</span>
     <span class="p">},</span>          
 <span class="p">);</span>
 </pre></div>
@@ -912,8 +912,8 @@ Epoch 10/10
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -947,7 +947,7 @@ Epoch 10/10
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

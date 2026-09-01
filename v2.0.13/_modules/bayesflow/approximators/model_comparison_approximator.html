@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/approximators/model_comparison_approximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -502,9 +502,9 @@
 
 <div class="viewcode-block" id="ModelComparisonApproximator">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.approximators&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.approximators"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">ModelComparisonApproximator</span><span class="p">(</span><span class="n">ScoringRuleApproximator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Defines an approximator for model (simulator) comparison, where the (discrete)</span>
 <span class="sd">    posterior model probabilities are learned with a classifier implementing multi-</span>
 <span class="sd">    class, stabilized versions of all losses described in [1].</span>
@@ -534,11 +534,11 @@
 <span class="sd">        The input of the summary network is ``summary_variables``.</span>
 <span class="sd">    standardize : str | Sequence[str] | None</span>
 <span class="sd">        The variables to standardize before passing to the networks. Can be any subset</span>
-<span class="sd">        of [&quot;inference_conditions&quot;, &quot;summary_variables&quot;].</span>
+<span class="sd">        of ["inference_conditions", "summary_variables"].</span>
 <span class="sd">        Note: ``inference_variables`` (one-hot model indices) are never standardized,</span>
-<span class="sd">        even when ``standardize=&quot;all&quot;`` is passed.</span>
+<span class="sd">        even when ``standardize="all"`` is passed.</span>
 <span class="sd">        (default is None).</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -546,7 +546,7 @@
         <span class="n">inference_network</span><span class="p">:</span> <span class="n">ScoringRuleNetwork</span><span class="p">,</span>
         <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">summary_network</span><span class="p">:</span> <span class="n">SummaryNetwork</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;all&quot;</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"all"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="c1"># Model indices (one-hot encoded) must never be standardized.</span>
@@ -562,53 +562,53 @@
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_filter_standardize</span><span class="p">(</span><span class="n">standardize</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Exclude model indices from standardization.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Exclude model indices from standardization."""</span>
         <span class="k">match</span> <span class="n">standardize</span><span class="p">:</span>
-            <span class="k">case</span> <span class="kc">None</span> <span class="o">|</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span>
+            <span class="k">case</span> <span class="kc">None</span> <span class="o">|</span> <span class="s2">"inference_variables"</span><span class="p">:</span>
                 <span class="k">return</span> <span class="kc">None</span>
-            <span class="k">case</span> <span class="s2">&quot;all&quot;</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[</span><span class="s2">&quot;summary_variables&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">]</span>
+            <span class="k">case</span> <span class="s2">"all"</span><span class="p">:</span>
+                <span class="k">return</span> <span class="p">[</span><span class="s2">"summary_variables"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">]</span>
             <span class="k">case</span> <span class="nb">str</span><span class="p">():</span>
                 <span class="k">return</span> <span class="n">standardize</span>
             <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-                <span class="k">return</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">standardize</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">]</span> <span class="ow">or</span> <span class="kc">None</span>
+                <span class="k">return</span> <span class="p">[</span><span class="n">item</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">standardize</span> <span class="k">if</span> <span class="n">item</span> <span class="o">!=</span> <span class="s2">"inference_variables"</span><span class="p">]</span> <span class="ow">or</span> <span class="kc">None</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_rule_output_to_model_probs</span><span class="p">(</span>
         <span class="n">rule</span><span class="p">:</span> <span class="n">CategoricalScoringRule</span><span class="p">,</span> <span class="n">rule_output</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert a single scoring rule&#39;s raw network output to model probabilities and log odds.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Convert a single scoring rule's raw network output to model probabilities and log odds."""</span>
         <span class="n">log_odds</span> <span class="o">=</span> <span class="n">rule</span><span class="o">.</span><span class="n">to_log_odds</span><span class="p">(</span><span class="n">rule_output</span><span class="p">)</span>
         <span class="n">model_probs</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">log_odds</span><span class="p">)</span>
         <span class="n">log_odds</span> <span class="o">=</span> <span class="n">log_odds</span> <span class="o">-</span> <span class="n">log_odds</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;model_probs&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">model_probs</span><span class="p">),</span>
-            <span class="s2">&quot;log_odds&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">log_odds</span><span class="p">),</span>
+            <span class="s2">"model_probs"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">model_probs</span><span class="p">),</span>
+            <span class="s2">"log_odds"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">log_odds</span><span class="p">),</span>
         <span class="p">}</span>
 
     <span class="nd">@staticmethod</span>
     <span class="k">def</span><span class="w"> </span><span class="nf">_merge_rule_estimates</span><span class="p">(</span><span class="n">per_rule</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Pool the per-rule estimates of several scoring rules into the single-rule structure.</span>
+<span class="w">        </span><span class="sd">"""Pool the per-rule estimates of several scoring rules into the single-rule structure.</span>
 
 <span class="sd">        Each rule is a consistent estimator of the same posterior over models, so their</span>
 <span class="sd">        ``log_odds`` are combined by a *logarithmic opinion pool* (the mean in log-odds</span>
 <span class="sd">        space), and ``model_probs`` is derived from the pooled ``log_odds`` so the two stay</span>
 <span class="sd">        mutually consistent.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">merged_log_odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">&quot;log_odds&quot;</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">per_rule</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="sd">        """</span>
+        <span class="n">merged_log_odds</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">r</span><span class="p">[</span><span class="s2">"log_odds"</span><span class="p">]</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="n">per_rule</span><span class="o">.</span><span class="n">values</span><span class="p">()],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
         <span class="n">exp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">merged_log_odds</span> <span class="o">-</span> <span class="n">merged_log_odds</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">))</span>
         <span class="n">model_probs</span> <span class="o">=</span> <span class="n">exp</span> <span class="o">/</span> <span class="n">exp</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">keepdims</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-        <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;model_probs&quot;</span><span class="p">:</span> <span class="n">model_probs</span><span class="p">,</span> <span class="s2">&quot;log_odds&quot;</span><span class="p">:</span> <span class="n">merged_log_odds</span><span class="p">}</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"model_probs"</span><span class="p">:</span> <span class="n">model_probs</span><span class="p">,</span> <span class="s2">"log_odds"</span><span class="p">:</span> <span class="n">merged_log_odds</span><span class="p">}</span>
 
     <span class="k">def</span><span class="w"> </span><span class="nf">_add_log_bayes_factors</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">estimates</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">model_prior</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add prior-adjusted log Bayes factors to each leaf estimate dict, in place.&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""Add prior-adjusted log Bayes factors to each leaf estimate dict, in place."""</span>
         <span class="k">if</span> <span class="n">model_prior</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">estimates</span>
 
-        <span class="k">if</span> <span class="s2">&quot;log_odds&quot;</span> <span class="ow">in</span> <span class="n">estimates</span><span class="p">:</span>
+        <span class="k">if</span> <span class="s2">"log_odds"</span> <span class="ow">in</span> <span class="n">estimates</span><span class="p">:</span>
             <span class="n">log_prior</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">model_prior</span><span class="p">)</span>
             <span class="n">log_prior_odds</span> <span class="o">=</span> <span class="n">log_prior</span> <span class="o">-</span> <span class="n">log_prior</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-            <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;log_bayes_factors&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">&quot;log_odds&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">log_prior_odds</span>
+            <span class="n">estimates</span><span class="p">[</span><span class="s2">"log_bayes_factors"</span><span class="p">]</span> <span class="o">=</span> <span class="n">estimates</span><span class="p">[</span><span class="s2">"log_odds"</span><span class="p">]</span> <span class="o">-</span> <span class="n">log_prior_odds</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">for</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">estimates</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
                 <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">value</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
@@ -627,7 +627,7 @@
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">PyDataset</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">sum</span><span class="p">(</span><span class="n">arg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">simulators</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Exactly one of dataset, simulator, or simulators must be provided.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"Exactly one of dataset, simulator, or simulators must be provided."</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">simulators</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">simulator</span> <span class="o">=</span> <span class="n">ModelComparisonSimulator</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span>
@@ -640,13 +640,13 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="o">*</span><span class="p">,</span>
-        <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;auto&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span>
+        <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">|</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"auto"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span>
         <span class="n">dataset</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">PyDataset</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">simulator</span><span class="p">:</span> <span class="n">ModelComparisonSimulator</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">simulators</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Simulator</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Trains the approximator on the provided dataset or on-demand generated from the given (multi-model) simulator.</span>
 <span class="sd">        If `dataset` is not provided, a dataset is built from the `simulator`.</span>
 <span class="sd">        If `simulator` is not provided, it will be built from a list of `simulators`.</span>
@@ -654,7 +654,7 @@
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
-<span class="sd">        adapter : Adapter or &#39;auto&#39;, optional</span>
+<span class="sd">        adapter : Adapter or 'auto', optional</span>
 <span class="sd">            The data adapter that will make the simulated / real outputs neural-network friendly.</span>
 <span class="sd">        dataset : keras.utils.PyDataset, optional</span>
 <span class="sd">            A dataset containing simulations for training. If provided, `simulator` must be None.</span>
@@ -674,26 +674,26 @@
 <span class="sd">        ------</span>
 <span class="sd">        ValueError</span>
 <span class="sd">            If both `dataset` and `simulator` or `simulators` are provided or neither is provided.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="k">if</span> <span class="n">dataset</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">simulators</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="s2">&quot;Received conflicting arguments. Please provide either a dataset or a simulator, but not both.&quot;</span>
+                    <span class="s2">"Received conflicting arguments. Please provide either a dataset or a simulator, but not both."</span>
                 <span class="p">)</span>
             <span class="c1"># Let ContinuousApproximator.fit inject self.adapter</span>
             <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">adapter</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
-            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">&quot;Building automatic data adapter.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">adapter</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
+            <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="s2">"Building automatic data adapter."</span><span class="p">)</span>
             <span class="n">adapter</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">(</span>
-                <span class="n">inference_variables</span><span class="o">=</span><span class="s2">&quot;model_indices&quot;</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">)</span>
+                <span class="n">inference_variables</span><span class="o">=</span><span class="s2">"model_indices"</span><span class="p">,</span> <span class="o">**</span><span class="n">filter_kwargs</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">)</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">simulator</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># Bypass ContinuousApproximator.fit to avoid duplicate adapter kwarg</span>
             <span class="k">return</span> <span class="n">Approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Building model comparison simulator from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2"> simulators.&quot;</span><span class="p">)</span>
+        <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Building model comparison simulator from </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">simulators</span><span class="p">)</span><span class="si">}</span><span class="s2"> simulators."</span><span class="p">)</span>
         <span class="n">simulator</span> <span class="o">=</span> <span class="n">ModelComparisonSimulator</span><span class="p">(</span><span class="n">simulators</span><span class="o">=</span><span class="n">simulators</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">Approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span> <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
@@ -709,12 +709,12 @@
         <span class="n">model_prior</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Returns estimates given input conditions, adapting output to the active scoring rule(s).</span>
 
-<span class="sd">        Every scoring rule yields ``&quot;model_probs&quot;`` (the posterior over ``num_models`` models)</span>
-<span class="sd">        and length-``M`` ``&quot;log_odds&quot;`` relative to the reference model :math:`\\mathcal{M}_0`</span>
-<span class="sd">        (so ``log_odds[..., 0] = 0``). When ``model_prior`` is given, ``&quot;log_bayes_factors&quot;``</span>
+<span class="sd">        Every scoring rule yields ``"model_probs"`` (the posterior over ``num_models`` models)</span>
+<span class="sd">        and length-``M`` ``"log_odds"`` relative to the reference model :math:`\\mathcal{M}_0`</span>
+<span class="sd">        (so ``log_odds[..., 0] = 0``). When ``model_prior`` is given, ``"log_bayes_factors"``</span>
 <span class="sd">        (same shape) is also returned, removing the training model prior:</span>
 <span class="sd">        :math:`\\log K_{k,0} = \\text{log\\_odds}_k - (\\log \\pi_k - \\log \\pi_0)`. Without a</span>
 <span class="sd">        prior the Bayes factors are undefined and omitted.</span>
@@ -730,31 +730,31 @@
 <span class="sd">            Only relevant when more than one scoring rule is configured (default: True).</span>
 <span class="sd">            If True, the per-rule estimates are pooled into the flat single-rule structure:</span>
 <span class="sd">            all rules are pooled in log-odds space (logarithmic opinion pool) and a consistent</span>
-<span class="sd">            ``&quot;model_probs&quot;`` is derived from the pooled ``&quot;log_odds&quot;``. If False, results are</span>
+<span class="sd">            ``"model_probs"`` is derived from the pooled ``"log_odds"``. If False, results are</span>
 <span class="sd">            returned as a nested dict keyed by rule name. Has no effect for a single rule.</span>
 <span class="sd">        model_prior : np.ndarray, optional</span>
 <span class="sd">            Prior model probabilities (length ``num_models``) used during training. If given,</span>
-<span class="sd">            the output includes ``&quot;log_bayes_factors&quot;``.</span>
+<span class="sd">            the output includes ``"log_bayes_factors"``.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments forwarded to the adapter and classifier.</span>
 
 <span class="sd">        Returns</span>
 <span class="sd">        -------</span>
 <span class="sd">        dict[str, np.ndarray]</span>
-<span class="sd">            Single scoring rule: ``&quot;model_probs&quot;`` and ``&quot;log_odds&quot;`` of shape</span>
-<span class="sd">            ``(num_datasets, num_models)`` (``&quot;log_odds&quot;`` relative to model 0, so</span>
-<span class="sd">            ``[..., 0] = 0``), and ``&quot;log_bayes_factors&quot;`` of the same shape when</span>
+<span class="sd">            Single scoring rule: ``"model_probs"`` and ``"log_odds"`` of shape</span>
+<span class="sd">            ``(num_datasets, num_models)`` (``"log_odds"`` relative to model 0, so</span>
+<span class="sd">            ``[..., 0] = 0``), and ``"log_bayes_factors"`` of the same shape when</span>
 <span class="sd">            ``model_prior`` is given. If a summary network is present, also contains</span>
-<span class="sd">            ``&quot;_summaries&quot;``.</span>
+<span class="sd">            ``"_summaries"``.</span>
 
 <span class="sd">            Multiple scoring rules with ``merge_scores=True`` (default): the same flat</span>
-<span class="sd">            structure, with ``&quot;log_odds&quot;`` pooled across rules (logarithmic opinion pool) and</span>
-<span class="sd">            ``&quot;model_probs&quot;`` (and ``&quot;log_bayes_factors&quot;``, if a prior was given) derived from it.</span>
+<span class="sd">            structure, with ``"log_odds"`` pooled across rules (logarithmic opinion pool) and</span>
+<span class="sd">            ``"model_probs"`` (and ``"log_bayes_factors"``, if a prior was given) derived from it.</span>
 
 <span class="sd">            Multiple scoring rules with ``merge_scores=False``: nested dict keyed by rule</span>
 <span class="sd">            name, each value having the same structure as the single-rule case.</span>
-<span class="sd">            ``&quot;_summaries&quot;`` (if present) is at the top level in both cases.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">            ``"_summaries"`` (if present) is at the top level in both cases.</span>
+<span class="sd">        """</span>
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">adapted</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_conditions</span><span class="p">(</span><span class="n">conditions</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
         <span class="n">inference_kwargs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_mask_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_INFERENCE_MASK_KEYS</span><span class="p">,</span> <span class="n">adapted</span><span class="p">)</span>
 
@@ -775,7 +775,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_add_log_bayes_factors</span><span class="p">(</span><span class="n">result</span><span class="p">,</span> <span class="n">model_prior</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">return_summaries</span> <span class="ow">and</span> <span class="n">summary_outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">result</span><span class="p">[</span><span class="s2">&quot;_summaries&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">summary_outputs</span><span class="p">)</span>
+            <span class="n">result</span><span class="p">[</span><span class="s2">"_summaries"</span><span class="p">]</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">summary_outputs</span><span class="p">)</span>
 
         <span class="k">return</span> <span class="n">result</span></div>
 
@@ -783,7 +783,7 @@
 <div class="viewcode-block" id="ModelComparisonApproximator.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.ModelComparisonApproximator.html#bayesflow.approximators.ModelComparisonApproximator.log_prob">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;ModelComparisonApproximator does not support log_prob(). Use estimate() instead.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"ModelComparisonApproximator does not support log_prob(). Use estimate() instead."</span><span class="p">)</span></div>
 </div>
 
 </pre></div>
@@ -815,8 +815,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -850,7 +850,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

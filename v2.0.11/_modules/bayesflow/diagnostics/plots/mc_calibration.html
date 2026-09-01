@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/mc_calibration';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -509,12 +509,12 @@
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
     <span class="n">epsilon</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.02</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
+    <span class="n">color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#132a70"</span><span class="p">,</span>
     <span class="n">num_col</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">num_row</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">markersize</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities</span>
+<span class="w">    </span><span class="sd">"""Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities</span>
 <span class="sd">    for a model comparison problem. The marginal histograms inform about the fraction of predictions in each bin.</span>
 <span class="sd">    Depends on the ``expected_calibration_error`` function for computing the ECE.</span>
 
@@ -540,7 +540,7 @@
 <span class="sd">        A small amount to pad the [0, 1]-bounded axes from both side.</span>
 <span class="sd">    figsize          : tuple or None, optional, default: None</span>
 <span class="sd">        The figure size passed to the ``matplotlib`` constructor. Inferred if ``None``</span>
-<span class="sd">    color             : str, optional, default: &#39;#8f2727&#39;</span>
+<span class="sd">    color             : str, optional, default: '#8f2727'</span>
 <span class="sd">        The color of the calibration curves</span>
 <span class="sd">    num_row             : int, optional, default: None</span>
 <span class="sd">        The number of rows for the subplots. Dynamically determined if None.</span>
@@ -552,7 +552,7 @@
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    fig : plt.Figure - the figure instance for optional saving</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Gather plot data and metadata into a dictionary</span>
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">prepare_plot_data</span><span class="p">(</span>
@@ -562,29 +562,29 @@
         <span class="n">num_col</span><span class="o">=</span><span class="n">num_col</span><span class="p">,</span>
         <span class="n">num_row</span><span class="o">=</span><span class="n">num_row</span><span class="p">,</span>
         <span class="n">figsize</span><span class="o">=</span><span class="n">figsize</span><span class="p">,</span>
-        <span class="n">default_name</span><span class="o">=</span><span class="s2">&quot;M&quot;</span><span class="p">,</span>
+        <span class="n">default_name</span><span class="o">=</span><span class="s2">"M"</span><span class="p">,</span>
     <span class="p">)</span>
 
     <span class="c1"># compute ece and probs</span>
     <span class="n">ece</span> <span class="o">=</span> <span class="n">expected_calibration_error</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">pred_models</span><span class="p">,</span>
         <span class="n">targets</span><span class="o">=</span><span class="n">true_models</span><span class="p">,</span>
-        <span class="n">model_names</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">],</span>
+        <span class="n">model_names</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">],</span>
         <span class="n">num_bins</span><span class="o">=</span><span class="n">num_bins</span><span class="p">,</span>
         <span class="n">return_probs</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">):</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">):</span>
         <span class="c1"># Plot calibration curve</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_pred&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">ece</span><span class="p">[</span><span class="s2">&quot;probs_true&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="s2">&quot;o-&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">ece</span><span class="p">[</span><span class="s2">"probs_pred"</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="n">ece</span><span class="p">[</span><span class="s2">"probs_true"</span><span class="p">][</span><span class="n">j</span><span class="p">],</span> <span class="s2">"o-"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="n">markersize</span><span class="p">)</span>
 
         <span class="c1"># Plot PMP distribution over bins</span>
         <span class="n">uniform_bins</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">num_bins</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="n">norm_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">])</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">][:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">uniform_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">norm_weights</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;grey&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
+        <span class="n">norm_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">])</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">])</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">][:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">bins</span><span class="o">=</span><span class="n">uniform_bins</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">norm_weights</span><span class="p">[:,</span> <span class="n">j</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s2">"grey"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
 
         <span class="c1"># Plot AB line</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">&quot;--&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;black&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="s2">"--"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
 
         <span class="c1"># Tweak plot</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mi">0</span> <span class="o">-</span> <span class="n">epsilon</span><span class="p">,</span> <span class="mi">1</span> <span class="o">+</span> <span class="n">epsilon</span><span class="p">])</span>
@@ -595,27 +595,27 @@
         <span class="c1"># Add ECE label</span>
         <span class="n">add_metric</span><span class="p">(</span>
             <span class="n">ax</span><span class="p">,</span>
-            <span class="n">metric_text</span><span class="o">=</span><span class="sa">r</span><span class="s2">&quot;$\widehat{{\mathrm{{ECE}}}}$&quot;</span><span class="p">,</span>
-            <span class="n">metric_value</span><span class="o">=</span><span class="n">ece</span><span class="p">[</span><span class="s2">&quot;values&quot;</span><span class="p">][</span><span class="n">j</span><span class="p">],</span>
+            <span class="n">metric_text</span><span class="o">=</span><span class="sa">r</span><span class="s2">"$\widehat{{\mathrm{{ECE}}}}$"</span><span class="p">,</span>
+            <span class="n">metric_value</span><span class="o">=</span><span class="n">ece</span><span class="p">[</span><span class="s2">"values"</span><span class="p">][</span><span class="n">j</span><span class="p">],</span>
             <span class="n">metric_fontsize</span><span class="o">=</span><span class="n">metric_fontsize</span><span class="p">,</span>
         <span class="p">)</span>
 
-    <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_variables&quot;</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
+    <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">axes</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_variables"</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
 
     <span class="c1"># Add labels, titles, and set font sizes</span>
     <span class="n">add_titles_and_labels</span><span class="p">(</span>
-        <span class="n">axes</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span>
-        <span class="n">num_row</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_row&quot;</span><span class="p">],</span>
-        <span class="n">num_col</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_col&quot;</span><span class="p">],</span>
-        <span class="n">title</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">],</span>
-        <span class="n">xlabel</span><span class="o">=</span><span class="s2">&quot;Predicted Probability&quot;</span><span class="p">,</span>
-        <span class="n">ylabel</span><span class="o">=</span><span class="s2">&quot;True Probability&quot;</span><span class="p">,</span>
+        <span class="n">axes</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">],</span>
+        <span class="n">num_row</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_row"</span><span class="p">],</span>
+        <span class="n">num_col</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_col"</span><span class="p">],</span>
+        <span class="n">title</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">],</span>
+        <span class="n">xlabel</span><span class="o">=</span><span class="s2">"Predicted Probability"</span><span class="p">,</span>
+        <span class="n">ylabel</span><span class="o">=</span><span class="s2">"True Probability"</span><span class="p">,</span>
         <span class="n">title_fontsize</span><span class="o">=</span><span class="n">title_fontsize</span><span class="p">,</span>
         <span class="n">label_fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;fig&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;fig&quot;</span><span class="p">]</span></div>
+    <span class="n">plot_data</span><span class="p">[</span><span class="s2">"fig"</span><span class="p">]</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"fig"</span><span class="p">]</span></div>
 
 </pre></div>
 
@@ -646,8 +646,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -681,7 +681,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

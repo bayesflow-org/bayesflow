@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/approximators/compositional_approximator';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,9 +499,9 @@
 
 <div class="viewcode-block" id="CompositionalApproximator">
 <a class="viewcode-back" href="../../../api/bayesflow.approximators.CompositionalApproximator.html#bayesflow.approximators.CompositionalApproximator">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.approximators&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.approximators"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">CompositionalApproximator</span><span class="p">(</span><span class="n">ContinuousApproximator</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Defines a wrapper for estimating arbitrary compositional distributions of the form:</span>
 <span class="sd">    `p(inference_variables | [summary(summary_variables), ...], inference_conditions)`</span>
 
@@ -517,11 +517,11 @@
 <span class="sd">        The summary network used for data summarization (default is None).</span>
 <span class="sd">    standardize : str | Sequence[str] | None</span>
 <span class="sd">        The variables to standardize before passing to the networks. Can be either</span>
-<span class="sd">        &quot;all&quot; or any subset of [&quot;inference_variables&quot;, &quot;summary_variables&quot;, &quot;inference_conditions&quot;].</span>
-<span class="sd">        (default is &quot;inference_variables&quot;).</span>
+<span class="sd">        "all" or any subset of ["inference_variables", "summary_variables", "inference_conditions"].</span>
+<span class="sd">        (default is "inference_variables").</span>
 <span class="sd">    **kwargs : dict, optional</span>
 <span class="sd">        Additional arguments passed to the :py:class:`bayesflow.approximators.Approximator` class.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -529,7 +529,7 @@
         <span class="n">inference_network</span><span class="p">:</span> <span class="n">InferenceNetwork</span><span class="p">,</span>
         <span class="n">adapter</span><span class="p">:</span> <span class="n">Adapter</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">summary_network</span><span class="p">:</span> <span class="n">SummaryNetwork</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">standardize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span>
+        <span class="n">standardize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"inference_variables"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span>
@@ -550,12 +550,12 @@
         <span class="n">compute_prior_score</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[[</span><span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span><span class="p">],</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">split</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">batch_size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">sample_shape</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">&quot;infer&quot;</span><span class="p">]</span> <span class="o">|</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">&quot;infer&quot;</span><span class="p">,</span>
+        <span class="n">sample_shape</span><span class="p">:</span> <span class="n">Literal</span><span class="p">[</span><span class="s2">"infer"</span><span class="p">]</span> <span class="o">|</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">|</span> <span class="nb">int</span> <span class="o">=</span> <span class="s2">"infer"</span><span class="p">,</span>
         <span class="n">return_summaries</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">summary_outputs</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">]:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generates compositional samples from the approximator given input conditions. The `conditions` dictionary is</span>
 <span class="sd">         preprocessed using the `adapter`. Samples are converted to NumPy arrays after inference.</span>
 <span class="sd">         Expected shape of each condition variable is (n_datasets, n_compositional, ...), where n_compositional &gt;= 2.</span>
@@ -579,7 +579,7 @@
 <span class="sd">            Trailing structural dimensions of each generated sample, excluding the batch and target (intrinsic)</span>
 <span class="sd">            dimension. For example, use `(time,)` for time series or `(height, width)` for images.</span>
 
-<span class="sd">            If set to `&quot;infer&quot;` (default), the structural dimensions are inferred from the `inference_conditions`.</span>
+<span class="sd">            If set to `"infer"` (default), the structural dimensions are inferred from the `inference_conditions`.</span>
 <span class="sd">            In that case, all non-vector dimensions except the last (channel) dimension are treated as structural</span>
 <span class="sd">            dimensions. For example, if the final `inference_conditions` have shape `(batch_size, time, channels)`,</span>
 <span class="sd">            then `sample_shape` is inferred as `(time,)`, and the generated samples will have shape</span>
@@ -597,7 +597,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        dict[str, np.ndarray]</span>
 <span class="sd">            Dictionary containing generated samples with the same keys as `conditions`.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">adapted</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_compositional_conditions</span><span class="p">(</span>
             <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">summary_outputs</span><span class="o">=</span><span class="n">summary_outputs</span>
         <span class="p">)</span>
@@ -610,10 +610,10 @@
             <span class="p">)</span>
 
         <span class="n">inference_kwargs</span> <span class="o">=</span> <span class="n">kwargs</span> <span class="o">|</span> <span class="bp">self</span><span class="o">.</span><span class="n">_collect_mask_kwargs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_INFERENCE_MASK_KEYS</span><span class="p">,</span> <span class="n">adapted</span><span class="p">)</span>
-        <span class="n">inference_kwargs</span><span class="p">[</span><span class="s2">&quot;compute_prior_score&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_prior_score_pre</span>
+        <span class="n">inference_kwargs</span><span class="p">[</span><span class="s2">"compute_prior_score"</span><span class="p">]</span> <span class="o">=</span> <span class="n">compute_prior_score_pre</span>
 
         <span class="c1"># NOTE: infer option of sample cannot handle the compositional dimensions</span>
-        <span class="k">if</span> <span class="n">sample_shape</span> <span class="o">==</span> <span class="s2">&quot;infer&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">sample_shape</span> <span class="o">==</span> <span class="s2">"infer"</span><span class="p">:</span>
             <span class="n">sample_shape</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">resolved_conditions</span><span class="p">)[</span><span class="mi">2</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
 
         <span class="n">samples</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sampler</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
@@ -628,17 +628,17 @@
         <span class="c1"># Unstandardize and inverse-adapt samples (tree-aware for nested dict outputs)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span>
             <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">standardizer</span><span class="o">.</span><span class="n">maybe_standardize</span><span class="p">(</span>
-                <span class="n">s</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">&quot;inference&quot;</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span>
+                <span class="n">s</span><span class="p">,</span> <span class="n">key</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">,</span> <span class="n">stage</span><span class="o">=</span><span class="s2">"inference"</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span>
             <span class="p">),</span>
             <span class="n">samples</span><span class="p">,</span>
         <span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span>
-            <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">({</span><span class="s2">&quot;inference_variables&quot;</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">s</span><span class="p">)},</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
+            <span class="k">lambda</span> <span class="n">s</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">adapter</span><span class="p">({</span><span class="s2">"inference_variables"</span><span class="p">:</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">convert_to_numpy</span><span class="p">(</span><span class="n">s</span><span class="p">)},</span> <span class="n">inverse</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">False</span><span class="p">),</span>
             <span class="n">samples</span><span class="p">,</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">return_summaries</span> <span class="ow">and</span> <span class="n">summary_outputs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;_summaries&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_outputs</span>
+            <span class="n">samples</span><span class="p">[</span><span class="s2">"_summaries"</span><span class="p">]</span> <span class="o">=</span> <span class="n">summary_outputs</span>
 
         <span class="k">if</span> <span class="n">split</span><span class="p">:</span>
             <span class="n">samples</span> <span class="o">=</span> <span class="n">split_arrays</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
@@ -673,13 +673,13 @@
 
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;At least one of &#39;conditions&#39; or &#39;summary_outputs&#39; must be provided for compositional sampling.&quot;</span>
+                <span class="s2">"At least one of 'conditions' or 'summary_outputs' must be provided for compositional sampling."</span>
             <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">num_items</span> <span class="o">&lt;=</span> <span class="mi">1</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;At least two conditioning variables are required for compositional sampling, got &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">num_items</span><span class="si">}</span><span class="s2">. Use &#39;sample&#39; instead.&quot;</span>
+                <span class="s2">"At least two conditioning variables are required for compositional sampling, got "</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">num_items</span><span class="si">}</span><span class="s2">. Use 'sample' instead."</span>
             <span class="p">)</span>
 
         <span class="n">resolved_conditions</span><span class="p">,</span> <span class="n">adapted</span><span class="p">,</span> <span class="n">summary_outputs</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_prepare_conditions</span><span class="p">(</span>
@@ -728,8 +728,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -763,7 +763,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

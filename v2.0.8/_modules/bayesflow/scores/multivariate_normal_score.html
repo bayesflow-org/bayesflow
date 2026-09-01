@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/scores/multivariate_normal_score';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,41 +494,41 @@
 
 <div class="viewcode-block" id="MultivariateNormalScore">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.scores&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.scores"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">MultivariateNormalScore</span><span class="p">(</span><span class="n">ParametricDistributionScore</span><span class="p">):</span>
-<span class="w">    </span><span class="sa">r</span><span class="sd">&quot;&quot;&quot;:math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`</span>
+<span class="w">    </span><span class="sa">r</span><span class="sd">""":math:`S(\hat p_{\mu, \Sigma}, \theta; k) = -\log( \mathcal N (\theta; \mu, \Sigma))`</span>
 
 <span class="sd">    Scores a predicted mean and lower-triangular Cholesky factor :math:`L` of the precision matrix :math:`P`</span>
 <span class="sd">    with the log-score of the probability of the materialized value. The precision matrix is</span>
 <span class="sd">    the inverse of the covariance matrix, :math:`L^T L = P = \Sigma^{-1}`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;precision_cholesky_factor&quot;</span><span class="p">,)</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="n">NOT_TRANSFORMING_LIKE_VECTOR_WARNING</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"precision_cholesky_factor"</span><span class="p">,)</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Marks head for precision matrix Cholesky factor as an exception for adapter transformations.</span>
 
 <span class="sd">    This variable contains names of prediction heads that should lead to a warning when the adapter is applied</span>
 <span class="sd">    in inverse direction to them.</span>
 
 <span class="sd">    For more information see :py:class:`ScoringRule`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
-    <span class="n">TRANSFORMATION_TYPE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;precision_cholesky_factor&quot;</span><span class="p">:</span> <span class="s2">&quot;right_side_scale_inverse&quot;</span><span class="p">}</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+    <span class="n">TRANSFORMATION_TYPE</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"precision_cholesky_factor"</span><span class="p">:</span> <span class="s2">"right_side_scale_inverse"</span><span class="p">}</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Marks precision Cholesky factor head to handle de-standardization appropriately.</span>
 
 <span class="sd">    See :py:class:`bayesflow.networks.Standardization` for more information on supported de-standardization options.</span>
 
-<span class="sd">    For the mean head the default (&quot;location_scale&quot;) is not overridden.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    For the mean head the default ("location_scale") is not overridden.</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">links</span><span class="p">:</span> <span class="nb">dict</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">links</span><span class="o">=</span><span class="n">links</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dim</span> <span class="o">=</span> <span class="n">dim</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">&quot;precision_cholesky_factor&quot;</span><span class="p">:</span> <span class="n">CholeskyFactor</span><span class="p">()}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">links</span> <span class="o">=</span> <span class="n">links</span> <span class="ow">or</span> <span class="p">{</span><span class="s2">"precision_cholesky_factor"</span><span class="p">:</span> <span class="n">CholeskyFactor</span><span class="p">()}</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;dim&quot;</span><span class="p">:</span> <span class="n">dim</span><span class="p">}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">config</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"dim"</span><span class="p">:</span> <span class="n">dim</span><span class="p">}</span>
 
 <div class="viewcode-block" id="MultivariateNormalScore.get_config">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.get_config">[docs]</a>
@@ -547,7 +547,7 @@
 <div class="viewcode-block" id="MultivariateNormalScore.log_prob">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.log_prob">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">log_prob</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Compute the log probability density of a multivariate Gaussian distribution.</span>
 
 <span class="sd">        This function calculates the log probability density for each sample in `x` under a</span>
@@ -572,7 +572,7 @@
 <span class="sd">        Tensor</span>
 <span class="sd">            A tensor containing the log probability densities for each sample in `x` under the</span>
 <span class="sd">            given Gaussian distribution.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">diff</span> <span class="o">=</span> <span class="n">x</span> <span class="o">-</span> <span class="n">mean</span>
 
         <span class="c1"># Compute log determinant, exploiting Cholesky factors</span>
@@ -583,7 +583,7 @@
         <span class="c1"># Compute the quadratic term in the exponential of the multivariate Gaussian from Cholesky factors</span>
         <span class="c1"># diff^T * precision_cholesky_factor^T * precision_cholesky_factor * diff</span>
         <span class="n">quadratic_term</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span>
-            <span class="s2">&quot;...i,...ji,...jk,...k-&gt;...&quot;</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">,</span> <span class="n">diff</span>
+            <span class="s2">"...i,...ji,...jk,...k-&gt;..."</span><span class="p">,</span> <span class="n">diff</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">,</span> <span class="n">diff</span>
         <span class="p">)</span>
 
         <span class="c1"># Compute the log probability density</span>
@@ -595,7 +595,7 @@
 <div class="viewcode-block" id="MultivariateNormalScore.sample">
 <a class="viewcode-back" href="../../../api/bayesflow.scores.MultivariateNormalScore.html#bayesflow.scores.MultivariateNormalScore.sample">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_shape</span><span class="p">:</span> <span class="n">Shape</span><span class="p">,</span> <span class="n">mean</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">precision_cholesky_factor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Generate samples from a multivariate Gaussian distribution.</span>
 
 <span class="sd">        Independent standard normal samples are transformed using the Cholesky factor of the precision matrix</span>
@@ -617,25 +617,25 @@
 <span class="sd">        -------</span>
 <span class="sd">        Tensor</span>
 <span class="sd">            A tensor of shape (batch_size, num_samples, D) containing the generated samples.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">covariance_cholesky_factor</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">inv</span><span class="p">(</span><span class="n">precision_cholesky_factor</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="n">batch_shape</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,)</span> <span class="o">+</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">)</span>
         <span class="n">batch_size</span><span class="p">,</span> <span class="n">num_samples</span> <span class="o">=</span> <span class="n">batch_shape</span>
         <span class="n">dim</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
         <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;mean must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">), but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"mean must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">), but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">precision_cholesky_factor</span><span class="p">)</span> <span class="o">!=</span> <span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">dim</span><span class="p">,</span> <span class="n">dim</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;covariance Cholesky factor must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">),&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">precision_cholesky_factor</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"covariance Cholesky factor must have shape (batch_size, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">dim</span><span class="si">}</span><span class="s2">),"</span>
+                <span class="sa">f</span><span class="s2">"but got </span><span class="si">{</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">shape</span><span class="p">(</span><span class="n">precision_cholesky_factor</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
 
         <span class="c1"># Use Cholesky decomposition to generate samples</span>
         <span class="n">normal_samples</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">((</span><span class="o">*</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">dim</span><span class="p">))</span>
 
-        <span class="n">scaled_normal</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">&quot;ijk,ilk-&gt;ilj&quot;</span><span class="p">,</span> <span class="n">covariance_cholesky_factor</span><span class="p">,</span> <span class="n">normal_samples</span><span class="p">)</span>
+        <span class="n">scaled_normal</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"ijk,ilk-&gt;ilj"</span><span class="p">,</span> <span class="n">covariance_cholesky_factor</span><span class="p">,</span> <span class="n">normal_samples</span><span class="p">)</span>
         <span class="n">samples</span> <span class="o">=</span> <span class="n">mean</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">scaled_normal</span>
 
         <span class="k">return</span> <span class="n">samples</span></div>
@@ -670,8 +670,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -705,7 +705,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

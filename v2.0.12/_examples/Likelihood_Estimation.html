@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=594047cd"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Likelihood_Estimation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -572,9 +572,9 @@
 Defaulting to JAX.
 To override, set the KERAS_BACKEND environment variable before importing bayesflow.
 See: https://keras.io/getting_started/#configuring-your-backend
-INFO:2026-05-08 11:16:27,965:jax._src.xla_bridge:834: Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
-INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
-INFO:bayesflow:Using backend &#39;jax&#39;
+INFO:2026-05-08 11:16:27,965:jax._src.xla_bridge:834: Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:jax._src.xla_bridge:Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:bayesflow:Using backend 'jax'
 </pre></div>
 </div>
 </div>
@@ -585,7 +585,7 @@ INFO:bayesflow:Using backend &#39;jax&#39;
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gnk_quantile</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">c</span><span class="o">=</span><span class="mf">0.8</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quantile (percent-point) function of the g-and-k distribution.</span>
+<span class="w">    </span><span class="sd">"""Quantile (percent-point) function of the g-and-k distribution.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -595,17 +595,17 @@ INFO:bayesflow:Using backend &#39;jax&#39;
 <span class="sd">    g : asymmetry  (g &gt; 0 -&gt; right-skewed, g &lt; 0 -&gt; left-skewed)</span>
 <span class="sd">    k : tail weight  (k &gt; 0 -&gt; heavier tails than Gaussian)</span>
 <span class="sd">    c : standard constant, default 0.8 per Rayner &amp; MacGillivray (2002)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">special</span><span class="o">.</span><span class="n">ndtri</span><span class="p">(</span><span class="n">u</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">a</span> <span class="o">+</span> <span class="n">b</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">c</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">g</span> <span class="o">*</span> <span class="n">z</span> <span class="o">/</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="n">z</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">**</span><span class="n">k</span> <span class="o">*</span> <span class="n">z</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">n</span><span class="p">,</span> <span class="n">rng_inst</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw n bivariate samples from the g-and-k Gaussian-copula model.</span>
+<span class="w">    </span><span class="sd">"""Draw n bivariate samples from the g-and-k Gaussian-copula model.</span>
 
 <span class="sd">    Both marginals share the same (g, k) shape parameters.</span>
 <span class="sd">    Dependence is introduced via a Gaussian copula with correlation rho.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">],</span> <span class="p">[</span><span class="n">rho</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">rng_inst</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">cov</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="n">n</span><span class="p">)</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-4</span><span class="p">)</span>
@@ -638,23 +638,23 @@ INFO:bayesflow:Using backend &#39;jax&#39;
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">vis_rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">42</span><span class="p">)</span>
 
 <span class="n">configs</span> <span class="o">=</span> <span class="p">[</span>
-    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Gaussian  ($g=0,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Right-skewed  ($g=1.5,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Left-skewed  ($g=-1.5,\,k=0,\,\rho=0$)&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">1.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Heavy-tailed  ($g=0,\,k=1,\,\rho=0$)&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Skewed + heavy  ($g=1.5,\,k=0.8,\,\rho=0$)&quot;</span><span class="p">),</span>
-    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.7</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">&quot;Correlated  ($g=1.5,\,k=0.8,\,\rho=0.7$)&quot;</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Gaussian  ($g=0,\,k=0,\,\rho=0$)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Right-skewed  ($g=1.5,\,k=0,\,\rho=0$)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Left-skewed  ($g=-1.5,\,k=0,\,\rho=0$)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">1.0</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Heavy-tailed  ($g=0,\,k=1,\,\rho=0$)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.0</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Skewed + heavy  ($g=1.5,\,k=0.8,\,\rho=0$)"</span><span class="p">),</span>
+    <span class="p">(</span><span class="mf">1.5</span><span class="p">,</span>  <span class="mf">0.8</span><span class="p">,</span>  <span class="mf">0.7</span><span class="p">,</span>  <span class="sa">r</span><span class="s2">"Correlated  ($g=1.5,\,k=0.8,\,\rho=0.7$)"</span><span class="p">),</span>
 <span class="p">]</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">13</span><span class="p">,</span> <span class="mi">8</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">configs</span><span class="p">):</span>
     <span class="n">samp</span> <span class="o">=</span> <span class="n">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">,</span> <span class="mi">800</span><span class="p">,</span> <span class="n">vis_rng</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;#132a70&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#132a70"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"$x_1$"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"$x_2$"</span><span class="p">)</span>
 
-<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">&quot;The g-and-k Bivariate Distribution Family&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.01</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">"The g-and-k Bivariate Distribution Family"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">13</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.01</span><span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -677,15 +677,15 @@ INFO:bayesflow:Using backend &#39;jax&#39;
     <span class="n">g</span>   <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)</span>
     <span class="n">k</span>   <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span>  <span class="mf">0.5</span><span class="p">)</span>
     <span class="n">rho</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.9</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;g&quot;</span><span class="p">:</span> <span class="n">g</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">rho</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"g"</span><span class="p">:</span> <span class="n">g</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">:</span> <span class="n">k</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">:</span> <span class="n">rho</span><span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">gnk_simulator</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Draw one bivariate observation from the g-and-k copula model.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Draw one bivariate observation from the g-and-k copula model."""</span>
     <span class="n">cov</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">rho</span><span class="p">],</span> <span class="p">[</span><span class="n">rho</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]])</span>
     <span class="n">z</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">multivariate_normal</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">cov</span><span class="p">)</span>
     <span class="n">u</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">special</span><span class="o">.</span><span class="n">ndtr</span><span class="p">(</span><span class="n">z</span><span class="p">),</span> <span class="mf">1e-4</span><span class="p">,</span> <span class="mi">1</span> <span class="o">-</span> <span class="mf">1e-4</span><span class="p">)</span>
     <span class="n">x</span> <span class="o">=</span> <span class="n">gnk_quantile</span><span class="p">(</span><span class="n">u</span><span class="p">,</span> <span class="n">a</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">clip</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="o">-</span><span class="mf">10.0</span><span class="p">,</span> <span class="mf">10.0</span><span class="p">)}</span>
 
 
 <span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">gnk_simulator</span><span class="p">])</span>
@@ -696,10 +696,10 @@ INFO:bayesflow:Using backend &#39;jax&#39;
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">test_batch</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;x   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;g   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;k   shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;k&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;rho shape:&quot;</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">&quot;rho&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"x   shape:"</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"g   shape:"</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"g"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"k   shape:"</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"k"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"rho shape:"</span><span class="p">,</span> <span class="n">test_batch</span><span class="p">[</span><span class="s2">"rho"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -742,14 +742,14 @@ rho shape: (3, 1)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
-        <span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">,</span> 
+        <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span> 
         <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
         <span class="c1"># For heavier-tail likelihoods, you can play around with</span>
         <span class="c1"># base_distribution=bf.distributions.DiagonalStudentT(df=20),</span>
     <span class="p">),</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="s2">&quot;x&quot;</span><span class="p">,</span>
-    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
-    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="s2">"x"</span><span class="p">,</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">],</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -804,13 +804,13 @@ rho shape: (3, 1)
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">approx</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
     <span class="n">num_samples</span><span class="o">=</span><span class="mi">5000</span><span class="p">,</span>
     <span class="n">conditions</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;g&quot;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">g_star</span><span class="p">]]),</span>
-        <span class="s2">&quot;k&quot;</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">k_star</span><span class="p">]]),</span>
-        <span class="s2">&quot;rho&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">rho_star</span><span class="p">]]),</span>
+        <span class="s2">"g"</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">g_star</span><span class="p">]]),</span>
+        <span class="s2">"k"</span><span class="p">:</span>   <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">k_star</span><span class="p">]]),</span>
+        <span class="s2">"rho"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">rho_star</span><span class="p">]]),</span>
     <span class="p">},</span>
 <span class="p">)</span>
-<span class="n">approx_x</span> <span class="o">=</span> <span class="n">approx</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;approx_x shape:&quot;</span><span class="p">,</span> <span class="n">approx_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="n">approx_x</span> <span class="o">=</span> <span class="n">approx</span><span class="p">[</span><span class="s2">"x"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"approx_x shape:"</span><span class="p">,</span> <span class="n">approx_x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -830,18 +830,18 @@ rho shape: (3, 1)
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">samp</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span>
     <span class="n">axes</span><span class="p">,</span>
     <span class="p">[</span><span class="n">true_samples</span><span class="p">,</span> <span class="n">approx_x</span><span class="p">],</span>
-    <span class="p">[</span><span class="s2">&quot;Simulator  (ground truth)&quot;</span><span class="p">,</span> <span class="s2">&quot;Trained flow  (approximate)&quot;</span><span class="p">],</span>
-    <span class="p">[</span><span class="s2">&quot;#132a70&quot;</span><span class="p">,</span> <span class="s2">&quot;#b22222&quot;</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"Simulator  (ground truth)"</span><span class="p">,</span> <span class="s2">"Trained flow  (approximate)"</span><span class="p">],</span>
+    <span class="p">[</span><span class="s2">"#132a70"</span><span class="p">,</span> <span class="s2">"#b22222"</span><span class="p">],</span>
 <span class="p">):</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samp</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samp</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">s</span><span class="o">=</span><span class="mi">5</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.35</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;$x_1$&quot;</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;$x_2$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"$x_1$"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"$x_2$"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mi">5</span><span class="p">,</span> <span class="mi">20</span><span class="p">])</span>
 
 <span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
-    <span class="sa">rf</span><span class="s2">&quot;$g^\star=</span><span class="si">{</span><span class="n">g_star</span><span class="si">}</span><span class="s2">,\; k^\star=</span><span class="si">{</span><span class="n">k_star</span><span class="si">}</span><span class="s2">,\; \rho^\star=</span><span class="si">{</span><span class="n">rho_star</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+    <span class="sa">rf</span><span class="s2">"$g^\star=</span><span class="si">{</span><span class="n">g_star</span><span class="si">}</span><span class="s2">,\; k^\star=</span><span class="si">{</span><span class="n">k_star</span><span class="si">}</span><span class="s2">,\; \rho^\star=</span><span class="si">{</span><span class="n">rho_star</span><span class="si">}</span><span class="s2">$"</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
@@ -874,15 +874,15 @@ rho shape: (3, 1)
 
 <span class="kn">from</span><span class="w"> </span><span class="nn">bayesflow.wrappers.pymc</span><span class="w"> </span><span class="kn">import</span> <span class="n">NeuralDistribution</span>
 
-<span class="c1"># Simulate a &quot;real&quot; dataset at known true parameters</span>
+<span class="c1"># Simulate a "real" dataset at known true parameters</span>
 <span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span> <span class="o">=</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.3</span><span class="p">,</span> <span class="mf">0.5</span>
 <span class="n">observed_data</span> <span class="o">=</span> <span class="n">sample_bivariate_gnk</span><span class="p">(</span><span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span><span class="p">,</span> <span class="n">n</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">rng_inst</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
-<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Observed data shape: </span><span class="si">{</span><span class="n">observed_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Observed data shape: </span><span class="si">{</span><span class="n">observed_data</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:arviz:Found &#39;auto&#39; as default backend, checking available backends
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:arviz:Found 'auto' as default backend, checking available backends
 INFO:arviz:Matplotlib is available, defining as default backend
 INFO:arviz.preview:arviz_base available, exposing its functions as part of arviz.preview
 INFO:arviz.preview:arviz_stats available, exposing its functions as part of arviz.preview
@@ -898,7 +898,7 @@ INFO:arviz.preview:arviz_plots available, exposing its functions as part of arvi
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">neural_dist</span> <span class="o">=</span> <span class="n">NeuralDistribution</span><span class="p">(</span>
     <span class="n">approximator</span><span class="o">=</span><span class="n">workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
-    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
+    <span class="n">param_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">],</span>
     <span class="n">exchangeable</span><span class="o">=</span><span class="kc">True</span>
 <span class="p">)</span>
 </pre></div>
@@ -908,17 +908,17 @@ INFO:arviz.preview:arviz_plots available, exposing its functions as part of arvi
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">gnk_model</span><span class="p">:</span>
-    <span class="n">g</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;g&quot;</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
-    <span class="n">k</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">rho</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">&quot;rho&quot;</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+    <span class="n">g</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">"g"</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">k</span>   <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">"k"</span><span class="p">,</span>   <span class="n">lower</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span>  <span class="n">upper</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">rho</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Uniform</span><span class="p">(</span><span class="s2">"rho"</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">0.9</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
 
-    <span class="n">obs</span> <span class="o">=</span> <span class="n">neural_dist</span><span class="p">(</span><span class="s2">&quot;obs&quot;</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed_data</span><span class="p">)</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">neural_dist</span><span class="p">(</span><span class="s2">"obs"</span><span class="p">,</span> <span class="n">g</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">k</span><span class="o">=</span><span class="n">k</span><span class="p">,</span> <span class="n">rho</span><span class="o">=</span><span class="n">rho</span><span class="p">,</span> <span class="n">observed</span><span class="o">=</span><span class="n">observed_data</span><span class="p">)</span>
 
     <span class="c1"># Setting cores=4 naively on Linux will fork() and give you troubles</span>
     <span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
         <span class="n">draws</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
         <span class="n">tune</span><span class="o">=</span><span class="mi">1000</span><span class="p">,</span>
-        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">&quot;pymc&quot;</span><span class="p">,</span>
+        <span class="n">nuts_sampler</span><span class="o">=</span><span class="s2">"pymc"</span><span class="p">,</span>
         <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
         <span class="n">cores</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
         <span class="n">random_seed</span><span class="o">=</span><span class="mi">42</span><span class="p">,</span>
@@ -930,7 +930,7 @@ INFO:arviz.preview:arviz_plots available, exposing its functions as part of arvi
 <div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:pymc.sampling.mcmc:Initializing NUTS using jitter+adapt_diag...
 c:\Users\radevs\AppData\Local\anaconda3\envs\bf\Lib\site-packages\pytensor\link\c\cmodule.py:2986: UserWarning: PyTensor could not link to a BLAS installation. Operations that might benefit from BLAS will be severely degraded.
 This usually happens when PyTensor is installed via pip. We recommend it be installed via conda/mamba/pixi instead.
-Alternatively, you can use an experimental backend such as Numba or JAX that perform their own BLAS optimizations, by setting `pytensor.config.mode == &#39;NUMBA&#39;` or passing `mode=&#39;NUMBA&#39;` when compiling a PyTensor function.
+Alternatively, you can use an experimental backend such as Numba or JAX that perform their own BLAS optimizations, by setting `pytensor.config.mode == 'NUMBA'` or passing `mode='NUMBA'` when compiling a PyTensor function.
 For more options and details see https://pytensor.readthedocs.io/en/latest/troubleshooting.html#how-do-i-configure-test-my-blas-library
   warnings.warn(
 INFO:pymc.sampling.mcmc:Multiprocess sampling (4 chains in 4 jobs)
@@ -952,12 +952,12 @@ INFO:pymc.sampling.mcmc:NUTS: [g, k, rho]
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">az</span><span class="o">.</span><span class="n">plot_posterior</span><span class="p">(</span>
     <span class="n">trace</span><span class="p">,</span>
-    <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;g&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;rho&quot;</span><span class="p">],</span>
-    <span class="n">kind</span><span class="o">=</span><span class="s2">&quot;hist&quot;</span><span class="p">,</span>
+    <span class="n">var_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"g"</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"rho"</span><span class="p">],</span>
+    <span class="n">kind</span><span class="o">=</span><span class="s2">"hist"</span><span class="p">,</span>
     <span class="n">ref_val</span><span class="o">=</span><span class="p">[</span><span class="n">g_true</span><span class="p">,</span> <span class="n">k_true</span><span class="p">,</span> <span class="n">rho_true</span><span class="p">],</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span>
-    <span class="sa">rf</span><span class="s2">&quot;Posterior  |  True: $g=</span><span class="si">{</span><span class="n">g_true</span><span class="si">}</span><span class="s2">$, $k=</span><span class="si">{</span><span class="n">k_true</span><span class="si">}</span><span class="s2">$, $\rho=</span><span class="si">{</span><span class="n">rho_true</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">,</span>
+    <span class="sa">rf</span><span class="s2">"Posterior  |  True: $g=</span><span class="si">{</span><span class="n">g_true</span><span class="si">}</span><span class="s2">$, $k=</span><span class="si">{</span><span class="n">k_true</span><span class="si">}</span><span class="s2">$, $\rho=</span><span class="si">{</span><span class="n">rho_true</span><span class="si">}</span><span class="s2">$"</span><span class="p">,</span>
     <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">,</span>
 <span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
@@ -1076,8 +1076,8 @@ INFO:pymc.sampling.mcmc:NUTS: [g, k, rho]
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1111,7 +1111,7 @@ INFO:pymc.sampling.mcmc:NUTS: [g, k, rho]
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

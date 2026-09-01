@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/metrics/root_mean_squared_error';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -498,10 +498,10 @@
     <span class="n">variable_keys</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">variable_names</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">normalize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">&quot;prior&quot;</span><span class="p">,</span>
+    <span class="n">normalize</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="s2">"prior"</span><span class="p">,</span>
     <span class="n">aggregation</span><span class="p">:</span> <span class="n">Callable</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">any</span><span class="p">]:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Computes the (Normalized) Root Mean Squared Error (RMSE/NRMSE) for the given posterior and prior samples.</span>
 <span class="sd">    The values of the default normalization (`prior`) should be interpreted as 0 indicating the most informative</span>
 <span class="sd">    (posterior is a point mass at ground truth) and 1 indicating non-informative (posterior equals prior) results.</span>
@@ -534,9 +534,9 @@
 <span class="sd">        ``(batch_size,)``.</span>
 <span class="sd">        The functions do not have to deal with an additional</span>
 <span class="sd">        sample dimension, as appropriate reshaping is done internally.</span>
-<span class="sd">    normalize      : str or None, optional (default = &quot;prior&quot;)</span>
+<span class="sd">    normalize      : str or None, optional (default = "prior")</span>
 <span class="sd">        Whether to normalize the RMSE using statistics of the prior samples.</span>
-<span class="sd">        Possible options are (&quot;mean&quot;, &quot;range&quot;, &quot;median&quot;, &quot;iqr&quot;, &quot;std&quot;, &quot;prior&quot;, None)</span>
+<span class="sd">        Possible options are ("mean", "range", "median", "iqr", "std", "prior", None)</span>
 <span class="sd">    aggregation    : Callable, optional (default = np.median)</span>
 <span class="sd">        Function to aggregate the RMSE across draws. Typically `np.mean` or `np.median`.</span>
 
@@ -550,18 +550,18 @@
 <span class="sd">    result : dict</span>
 <span class="sd">        Dictionary containing:</span>
 
-<span class="sd">        - &quot;values&quot; : np.ndarray</span>
+<span class="sd">        - "values" : np.ndarray</span>
 <span class="sd">            The aggregated (N)RMSE for each variable.</span>
-<span class="sd">        - &quot;metric_name&quot; : str</span>
-<span class="sd">            The name of the metric (&quot;RMSE&quot; or &quot;NRMSE&quot;).</span>
-<span class="sd">        - &quot;variable_names&quot; : str</span>
+<span class="sd">        - "metric_name" : str</span>
+<span class="sd">            The name of the metric ("RMSE" or "NRMSE").</span>
+<span class="sd">        - "variable_names" : str</span>
 <span class="sd">            The (inferred) variable names.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">normalize</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Using new default normalize=&#39;prior&#39; for a more dynamic range. &quot;</span>
-            <span class="s2">&quot;To reproduce previous behavior, set normalize=&#39;range&#39;.&quot;</span>
+            <span class="s2">"Using new default normalize='prior' for a more dynamic range. "</span>
+            <span class="s2">"To reproduce previous behavior, set normalize='range'."</span>
         <span class="p">)</span>
 
     <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
@@ -573,10 +573,10 @@
             <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
             <span class="n">test_quantities</span><span class="o">=</span><span class="n">test_quantities</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
-        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_keys&quot;</span><span class="p">]</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">]</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_keys"</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">]</span>
 
     <span class="n">samples</span> <span class="o">=</span> <span class="n">dicts_to_arrays</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
@@ -585,34 +585,34 @@
         <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">err</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span> <span class="o">-</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="n">err</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span> <span class="o">-</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
     <span class="n">rmse</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">err</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
 
-    <span class="n">targets</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">]</span>
 
     <span class="k">match</span> <span class="n">normalize</span><span class="p">:</span>
         <span class="k">case</span> <span class="kc">None</span> <span class="o">|</span> <span class="kc">False</span><span class="p">:</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="mf">1.0</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"mean"</span><span class="p">:</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s2">&quot;median&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"median"</span><span class="p">:</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s2">&quot;range&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"range"</span><span class="p">:</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">targets</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">-</span> <span class="n">targets</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s2">&quot;std&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"std"</span><span class="p">:</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ddof</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-        <span class="k">case</span> <span class="s2">&quot;iqr&quot;</span><span class="p">:</span>
+        <span class="k">case</span> <span class="s2">"iqr"</span><span class="p">:</span>
             <span class="n">q75</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="mi">75</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">q25</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">percentile</span><span class="p">(</span><span class="n">targets</span><span class="p">,</span> <span class="mi">25</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">q75</span> <span class="o">-</span> <span class="n">q25</span>
 
-        <span class="k">case</span> <span class="s2">&quot;prior&quot;</span><span class="p">:</span>
-            <span class="n">N</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="k">case</span> <span class="s2">"prior"</span><span class="p">:</span>
+            <span class="n">N</span><span class="p">,</span> <span class="n">S</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
 
             <span class="c1"># bootstrap prior-only predictions from empirical prior samples in targets</span>
             <span class="n">idx</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">N</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">N</span><span class="p">,</span> <span class="n">S</span><span class="p">))</span>
@@ -623,15 +623,15 @@
             <span class="n">normalizer</span> <span class="o">=</span> <span class="n">aggregation</span><span class="p">(</span><span class="n">prior_rmse</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
         <span class="k">case</span><span class="w"> </span><span class="k">_</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown normalization mode: </span><span class="si">{</span><span class="n">normalize</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown normalization mode: </span><span class="si">{</span><span class="n">normalize</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
 
-    <span class="n">metric_name</span> <span class="o">=</span> <span class="s2">&quot;NRMSE&quot;</span> <span class="k">if</span> <span class="n">normalize</span> <span class="k">else</span> <span class="s2">&quot;RMSE&quot;</span>
+    <span class="n">metric_name</span> <span class="o">=</span> <span class="s2">"NRMSE"</span> <span class="k">if</span> <span class="n">normalize</span> <span class="k">else</span> <span class="s2">"RMSE"</span>
 
     <span class="n">rmse</span> <span class="o">=</span> <span class="n">rmse</span> <span class="o">/</span> <span class="n">normalizer</span>
     <span class="n">rmse</span> <span class="o">=</span> <span class="n">aggregation</span><span class="p">(</span><span class="n">rmse</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-    <span class="n">variable_names</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">variable_names</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;values&quot;</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span> <span class="s2">&quot;metric_name&quot;</span><span class="p">:</span> <span class="n">metric_name</span><span class="p">,</span> <span class="s2">&quot;variable_names&quot;</span><span class="p">:</span> <span class="n">variable_names</span><span class="p">}</span></div>
+    <span class="n">variable_names</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span><span class="o">.</span><span class="n">variable_names</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"values"</span><span class="p">:</span> <span class="n">rmse</span><span class="p">,</span> <span class="s2">"metric_name"</span><span class="p">:</span> <span class="n">metric_name</span><span class="p">,</span> <span class="s2">"variable_names"</span><span class="p">:</span> <span class="n">variable_names</span><span class="p">}</span></div>
 
 </pre></div>
 
@@ -662,8 +662,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -697,7 +697,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

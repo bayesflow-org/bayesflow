@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/summary/transformers/time_series_transformer';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -495,7 +495,7 @@
 
 <div class="viewcode-block" id="TimeSeriesTransformer">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.TimeSeriesTransformer.html#bayesflow.networks.summary.TimeSeriesTransformer">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TimeSeriesTransformer</span><span class="p">(</span><span class="n">Transformer</span><span class="p">):</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -504,19 +504,19 @@
         <span class="n">num_heads</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="n">expansion_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
-        <span class="n">glu_variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;glorot_uniform&quot;</span><span class="p">,</span>
+        <span class="n">glu_variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"swiglu"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"glorot_uniform"</span><span class="p">,</span>
         <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">time_embedding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;time2vec&quot;</span><span class="p">,</span>
+        <span class="n">time_embedding</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"time2vec"</span><span class="p">,</span>
         <span class="n">time_embed_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">8</span><span class="p">,</span>
         <span class="n">time_axis</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">return_sequences</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time</span>
+<span class="w">        </span><span class="sd">"""(SN) Creates a regular transformer coupled with Time2Vec embeddings of time used to flexibly compress time</span>
 <span class="sd">        series. If the time intervals vary across batches, it is highly recommended that your simulator also returns a</span>
-<span class="sd">        &quot;time&quot; vector appended to the simulator outputs and specified via the &quot;time_axis&quot; argument.</span>
+<span class="sd">        "time" vector appended to the simulator outputs and specified via the "time_axis" argument.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -531,17 +531,17 @@
 <span class="sd">        expansion_factor : float, optional</span>
 <span class="sd">            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.</span>
 <span class="sd">        glu_variant : str, optional</span>
-<span class="sd">            GLU activation variant for the FFN. One of ``&quot;swiglu&quot;``, ``&quot;geglu&quot;``,</span>
-<span class="sd">            ``&quot;reglu&quot;``, or ``&quot;liglu&quot;``, by default ``&quot;swiglu&quot;``.</span>
+<span class="sd">            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,</span>
+<span class="sd">            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.</span>
 <span class="sd">        kernel_initializer : str, optional</span>
-<span class="sd">            Initializer for kernel weights, by default ``&quot;glorot_uniform&quot;``.</span>
+<span class="sd">            Initializer for kernel weights, by default ``"glorot_uniform"``.</span>
 <span class="sd">        use_bias : bool, optional</span>
 <span class="sd">            Whether to include bias terms in dense layers, by default False.</span>
 <span class="sd">        layer_norm : bool, optional</span>
 <span class="sd">            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.</span>
 <span class="sd">        time_embedding : str, optional</span>
-<span class="sd">            The type of embedding to use. Must be in ``[&quot;time2vec&quot;, &quot;lstm&quot;, &quot;gru&quot;]``,</span>
-<span class="sd">            by default ``&quot;time2vec&quot;``.</span>
+<span class="sd">            The type of embedding to use. Must be in ``["time2vec", "lstm", "gru"]``,</span>
+<span class="sd">            by default ``"time2vec"``.</span>
 <span class="sd">        time_embed_dim : int, optional</span>
 <span class="sd">            Dimensionality of the Time2Vec or recurrent embedding, by default 8.</span>
 <span class="sd">        time_axis : int or None, optional</span>
@@ -552,7 +552,7 @@
 <span class="sd">            many-to-one embedding network and ``summary_dim`` is the output dimension.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to the base layer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -560,13 +560,13 @@
 
         <span class="k">if</span> <span class="n">time_embedding</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_embedding</span> <span class="o">=</span> <span class="kc">None</span>
-        <span class="k">elif</span> <span class="n">time_embedding</span> <span class="o">==</span> <span class="s2">&quot;time2vec&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">time_embedding</span> <span class="o">==</span> <span class="s2">"time2vec"</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_embedding</span> <span class="o">=</span> <span class="n">Time2Vec</span><span class="p">(</span><span class="n">num_periodic_features</span><span class="o">=</span><span class="n">time_embed_dim</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">time_embedding</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;lstm&quot;</span><span class="p">,</span> <span class="s2">&quot;gru&quot;</span><span class="p">]:</span>
+        <span class="k">elif</span> <span class="n">time_embedding</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"lstm"</span><span class="p">,</span> <span class="s2">"gru"</span><span class="p">]:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">time_embedding</span> <span class="o">=</span> <span class="n">RecurrentEmbedding</span><span class="p">(</span><span class="n">time_embed_dim</span><span class="p">,</span> <span class="n">time_embedding</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;Invalid time embedding type: </span><span class="si">{</span><span class="n">time_embedding</span><span class="si">}</span><span class="s2">. Expected one of [&#39;time2vec&#39;, &#39;lstm&#39;, &#39;gru&#39;].&quot;</span>
+                <span class="sa">f</span><span class="s2">"Invalid time embedding type: </span><span class="si">{</span><span class="n">time_embedding</span><span class="si">}</span><span class="s2">. Expected one of ['time2vec', 'lstm', 'gru']."</span>
             <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">attention_blocks</span> <span class="o">=</span> <span class="p">[]</span>
@@ -599,7 +599,7 @@
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses the input sequence into a summary vector of size ``summary_dim``.</span>
+<span class="w">        </span><span class="sd">"""Compresses the input sequence into a summary vector of size ``summary_dim``.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -621,7 +621,7 @@
 <span class="sd">        Tensor</span>
 <span class="sd">            Shape ``(batch_size, summary_dim)`` if ``return_sequences=False``, otherwise</span>
 <span class="sd">            ``(batch_size, sequence_length, summary_dim)``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_axis</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">t</span> <span class="o">=</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_axis</span><span class="p">]</span>
@@ -637,7 +637,7 @@
 
         <span class="k">if</span> <span class="n">attention_mask</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="c1"># key-padding mask; keras broadcasts (B, 1, T) over heads and query steps</span>
-            <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="s2">&quot;bool&quot;</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">attention_mask</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">expand_dims</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">ops</span><span class="o">.</span><span class="n">cast</span><span class="p">(</span><span class="n">mask</span><span class="p">,</span> <span class="s2">"bool"</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 
         <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">attention_blocks</span><span class="p">:</span>
             <span class="n">inp</span> <span class="o">=</span> <span class="n">layer</span><span class="p">(</span><span class="n">inp</span><span class="p">,</span> <span class="n">inp</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">,</span> <span class="n">attention_mask</span><span class="o">=</span><span class="n">attention_mask</span><span class="p">)</span>
@@ -680,8 +680,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -715,7 +715,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

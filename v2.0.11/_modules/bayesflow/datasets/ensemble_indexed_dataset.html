@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/datasets/ensemble_indexed_dataset';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -506,13 +506,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">member_names</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;EnsembleIndexedDataset: len(member_names) must be &gt;= 2.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"EnsembleIndexedDataset: len(member_names) must be &gt;= 2."</span><span class="p">)</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="p">(</span><span class="mf">0.0</span> <span class="o">&lt;=</span> <span class="n">data_reuse</span> <span class="o">&lt;=</span> <span class="mf">1.0</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;EnsembleIndexedDataset: data_reuse must be in [0, 1].&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">"EnsembleIndexedDataset: data_reuse must be in [0, 1]."</span><span class="p">)</span>
 
-        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">&quot;batch_size&quot;</span><span class="p">,</span> <span class="s2">&quot;num_samples&quot;</span><span class="p">,</span> <span class="s2">&quot;get_batch_by_sample_indices&quot;</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">attr</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"batch_size"</span><span class="p">,</span> <span class="s2">"num_samples"</span><span class="p">,</span> <span class="s2">"get_batch_by_sample_indices"</span><span class="p">):</span>
             <span class="k">if</span> <span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">attr</span><span class="p">):</span>
-                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;EnsembleIndexedDataset: wrapped dataset must expose `</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">`.&quot;</span><span class="p">)</span>
+                <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"EnsembleIndexedDataset: wrapped dataset must expose `</span><span class="si">{</span><span class="n">attr</span><span class="si">}</span><span class="s2">`."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">dataset</span> <span class="o">=</span> <span class="n">dataset</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">member_names</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">member_names</span><span class="p">)</span>
@@ -525,7 +525,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">reduction_factor</span><span class="p">))</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">))</span>
 
-        <span class="n">pool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">&quot;int64&quot;</span><span class="p">)</span>
+        <span class="n">pool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"int64"</span><span class="p">)</span>
 
         <span class="n">starts</span> <span class="o">=</span> <span class="n">ring_starts</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="p">)</span>
         <span class="n">idx2d</span> <span class="o">=</span> <span class="n">ring_window_indices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">,</span> <span class="n">starts</span><span class="p">)</span>  <span class="c1"># (E, W)</span>
@@ -534,12 +534,12 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">on_epoch_end</span><span class="p">()</span>
 
         <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span>
-            <span class="sa">f</span><span class="s2">&quot;EnsembleIndexedDataset: ensemble_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;batch_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">, num_samples=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;data_reuse=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_reuse</span><span class="si">}</span><span class="s2"> -&gt; &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;reduction_factor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reduction_factor</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, window_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;steps_per_epoch=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span><span class="si">}</span><span class="s2">. &quot;</span>
-            <span class="s2">&quot;Overlap is enforced at the subdataset level (member-specific windows into the global index pool).&quot;</span>
+            <span class="sa">f</span><span class="s2">"EnsembleIndexedDataset: ensemble_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ensemble_size</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"batch_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="si">}</span><span class="s2">, num_samples=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_samples</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"data_reuse=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">data_reuse</span><span class="si">}</span><span class="s2"> -&gt; "</span>
+            <span class="sa">f</span><span class="s2">"reduction_factor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">reduction_factor</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">, window_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="si">}</span><span class="s2">, "</span>
+            <span class="sa">f</span><span class="s2">"steps_per_epoch=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span><span class="si">}</span><span class="s2">. "</span>
+            <span class="s2">"Overlap is enforced at the subdataset level (member-specific windows into the global index pool)."</span>
         <span class="p">)</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
@@ -561,7 +561,7 @@
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">step</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]:</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="mi">0</span> <span class="o">&lt;=</span> <span class="n">step</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Index </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> is out of bounds for dataset with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span><span class="si">}</span><span class="s2"> steps.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Index </span><span class="si">{</span><span class="n">step</span><span class="si">}</span><span class="s2"> is out of bounds for dataset with </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">steps_per_epoch</span><span class="si">}</span><span class="s2"> steps."</span><span class="p">)</span>
 
         <span class="n">start</span> <span class="o">=</span> <span class="n">step</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span>
         <span class="n">stop</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="n">step</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">batch_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">window_size</span><span class="p">)</span>  <span class="c1"># allow shorter last batch</span>
@@ -610,8 +610,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -645,7 +645,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

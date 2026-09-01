@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/serialization';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -497,17 +497,17 @@
 <span class="kn">from</span><span class="w"> </span><span class="nn">.decorators</span><span class="w"> </span><span class="kn">import</span> <span class="n">allow_args</span>
 
 
-<span class="n">PREFIX</span> <span class="o">=</span> <span class="s2">&quot;_bayesflow_&quot;</span>
+<span class="n">PREFIX</span> <span class="o">=</span> <span class="s2">"_bayesflow_"</span>
 
-<span class="n">_type_prefix</span> <span class="o">=</span> <span class="s2">&quot;__bayesflow_type__&quot;</span>
+<span class="n">_type_prefix</span> <span class="o">=</span> <span class="s2">"__bayesflow_type__"</span>
 
 
 <div class="viewcode-block" id="serialize_value_or_type">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.serialize_value_or_type.html#bayesflow.utils.serialize_value_or_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">serialize_value_or_type</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function is deprecated.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""This function is deprecated."""</span>
     <span class="n">warn</span><span class="p">(</span>
-        <span class="s2">&quot;This method is deprecated. It was replaced by bayesflow.utils.serialization.serialize.&quot;</span><span class="p">,</span>
+        <span class="s2">"This method is deprecated. It was replaced by bayesflow.utils.serialization.serialize."</span><span class="p">,</span>
         <span class="ne">DeprecationWarning</span><span class="p">,</span>
         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -517,9 +517,9 @@
 <div class="viewcode-block" id="deserialize_value_or_type">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.serialization.deserialize_value_or_type.html#bayesflow.utils.deserialize_value_or_type">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_value_or_type</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="n">name</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;This function is deprecated.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""This function is deprecated."""</span>
     <span class="n">warn</span><span class="p">(</span>
-        <span class="s2">&quot;This method is deprecated. It was replaced by bayesflow.utils.serialization.deserialize.&quot;</span><span class="p">,</span>
+        <span class="s2">"This method is deprecated. It was replaced by bayesflow.utils.serialization.deserialize."</span><span class="p">,</span>
         <span class="ne">DeprecationWarning</span><span class="p">,</span>
         <span class="n">stacklevel</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
     <span class="p">)</span></div>
@@ -529,7 +529,7 @@
 <div class="viewcode-block" id="deserialize">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.serialization.deserialize.html#bayesflow.utils.deserialize">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">safe_mode</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Deserialize an object serialized with :py:func:`serialize`.</span>
+<span class="w">    </span><span class="sd">"""Deserialize an object serialized with :py:func:`serialize`.</span>
 
 <span class="sd">    Wrapper function around `keras.saving.deserialize_keras_object` to enable deserialization of</span>
 <span class="sd">    classes.</span>
@@ -560,21 +560,21 @@
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    serialize</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">with</span> <span class="n">monkey_patch</span><span class="p">(</span><span class="n">deserialize_keras_object</span><span class="p">,</span> <span class="n">deserialize</span><span class="p">)</span> <span class="k">as</span> <span class="n">original_deserialize</span><span class="p">:</span>
         <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">config</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span> <span class="ow">and</span> <span class="n">config</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">_type_prefix</span><span class="p">):</span>
             <span class="c1"># we marked this as a type during serialization</span>
             <span class="n">config</span> <span class="o">=</span> <span class="n">config</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">_type_prefix</span><span class="p">)</span> <span class="p">:]</span>
             <span class="n">tp</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">get_registered_object</span><span class="p">(</span>
-                <span class="c1"># TODO: can we pass module objects without overwriting numpy&#39;s dict with builtins?</span>
+                <span class="c1"># TODO: can we pass module objects without overwriting numpy's dict with builtins?</span>
                 <span class="n">config</span><span class="p">,</span>
                 <span class="n">custom_objects</span><span class="o">=</span><span class="n">custom_objects</span><span class="p">,</span>
                 <span class="n">module_objects</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="vm">__dict__</span> <span class="o">|</span> <span class="n">builtins</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">,</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">tp</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;Could not deserialize type </span><span class="si">{</span><span class="n">config</span><span class="si">!r}</span><span class="s2">. Make sure it is registered with &quot;</span>
-                    <span class="sa">f</span><span class="s2">&quot;`keras.saving.register_keras_serializable` or pass it in `custom_objects`.&quot;</span>
+                    <span class="sa">f</span><span class="s2">"Could not deserialize type </span><span class="si">{</span><span class="n">config</span><span class="si">!r}</span><span class="s2">. Make sure it is registered with "</span>
+                    <span class="sa">f</span><span class="s2">"`keras.saving.register_keras_serializable` or pass it in `custom_objects`."</span>
                 <span class="p">)</span>
             <span class="k">return</span> <span class="n">tp</span>
         <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">config</span><span class="p">):</span>
@@ -591,12 +591,12 @@
 <a class="viewcode-back" href="../../../api/bayesflow.utils.serialization.serializable.html#bayesflow.utils.serializable">[docs]</a>
 <span class="nd">@allow_args</span>
 <span class="k">def</span><span class="w"> </span><span class="nf">serializable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">package</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">name</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="kc">None</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">disable_module_check</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Register class as Keras serializable.</span>
+<span class="w">    </span><span class="sd">"""Register class as Keras serializable.</span>
 
 <span class="sd">    Wrapper function around `keras.saving.register_keras_serializable` to automatically check consistency</span>
 <span class="sd">    of the supplied `package` argument with the module a class resides in. The `package` name should generally</span>
-<span class="sd">    be the module the class resides in, truncated at depth two. Valid examples would be &quot;bayesflow.networks&quot;</span>
-<span class="sd">    or &quot;bayesflow.adapters&quot;. The check can be disabled if necessary by setting `disable_module_check` to True.</span>
+<span class="sd">    be the module the class resides in, truncated at depth two. Valid examples would be "bayesflow.networks"</span>
+<span class="sd">    or "bayesflow.adapters". The check can be disabled if necessary by setting `disable_module_check` to True.</span>
 <span class="sd">    This should only be done in exceptional cases, and accompanied by a comment why it is necessary for a given</span>
 <span class="sd">    class.</span>
 
@@ -606,10 +606,10 @@
 <span class="sd">        The class to register.</span>
 <span class="sd">    package : str</span>
 <span class="sd">        `package` argument forwarded to `keras.saving.register_keras_serializable`.</span>
-<span class="sd">        Should generally correspond to the module of the class, truncated at depth two (e.g., &quot;bayesflow.networks&quot;).</span>
+<span class="sd">        Should generally correspond to the module of the class, truncated at depth two (e.g., "bayesflow.networks").</span>
 <span class="sd">    name : str, optional</span>
 <span class="sd">        `name` argument forwarded to `keras.saving.register_keras_serializable`.</span>
-<span class="sd">        If None is provided, the classe&#39;s __name__ attribute is used.</span>
+<span class="sd">        If None is provided, the classe's __name__ attribute is used.</span>
 <span class="sd">    disable_module_check : bool, optional</span>
 <span class="sd">        Disable check that the provided `package` is consistent with the location of the class within the library.</span>
 
@@ -618,20 +618,20 @@
 <span class="sd">    ValueError</span>
 <span class="sd">        If the supplied `package` does not correspond to the module of the class, truncated at depth two, and</span>
 <span class="sd">        `disable_module_check` is False. No error is thrown when a class is not part of the bayesflow module.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">disable_module_check</span><span class="p">:</span>
         <span class="n">frame</span> <span class="o">=</span> <span class="n">sys</span><span class="o">.</span><span class="n">_getframe</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
         <span class="n">g</span> <span class="o">=</span> <span class="n">frame</span><span class="o">.</span><span class="n">f_globals</span>
-        <span class="n">module_name</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;__name__&quot;</span><span class="p">,</span> <span class="s2">&quot;&quot;</span><span class="p">)</span>
+        <span class="n">module_name</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">"__name__"</span><span class="p">,</span> <span class="s2">""</span><span class="p">)</span>
         <span class="c1"># only apply this check if the class is inside the bayesflow module</span>
-        <span class="n">is_bayesflow</span> <span class="o">=</span> <span class="n">module_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">&quot;bayesflow&quot;</span>
-        <span class="n">auto_package</span> <span class="o">=</span> <span class="s2">&quot;.&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;.&quot;</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
+        <span class="n">is_bayesflow</span> <span class="o">=</span> <span class="n">module_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="s2">"bayesflow"</span>
+        <span class="n">auto_package</span> <span class="o">=</span> <span class="s2">"."</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">module_name</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"."</span><span class="p">)[:</span><span class="mi">2</span><span class="p">])</span>
         <span class="k">if</span> <span class="n">is_bayesflow</span> <span class="ow">and</span> <span class="n">package</span> <span class="o">!=</span> <span class="n">auto_package</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="s2">&quot;&#39;package&#39; should be the first two levels of the module the class resides in (e.g., bayesflow.networks)&quot;</span>
-                <span class="sa">f</span><span class="s1">&#39;. In this case it should be </span><span class="se">\&#39;</span><span class="s1">package=&quot;</span><span class="si">{</span><span class="n">auto_package</span><span class="si">}</span><span class="s1">&quot;</span><span class="se">\&#39;</span><span class="s1"> (was &quot;</span><span class="si">{</span><span class="n">package</span><span class="si">}</span><span class="s1">&quot;). If this is not possible&#39;</span>
-                <span class="s2">&quot; (e.g., because a class was moved to a different module, and serializability should be preserved),&quot;</span>
-                <span class="s2">&quot; please set &#39;disable_module_check=True&#39; and add a comment why it is necessary for this class.&quot;</span>
+                <span class="s2">"'package' should be the first two levels of the module the class resides in (e.g., bayesflow.networks)"</span>
+                <span class="sa">f</span><span class="s1">'. In this case it should be </span><span class="se">\'</span><span class="s1">package="</span><span class="si">{</span><span class="n">auto_package</span><span class="si">}</span><span class="s1">"</span><span class="se">\'</span><span class="s1"> (was "</span><span class="si">{</span><span class="n">package</span><span class="si">}</span><span class="s1">"). If this is not possible'</span>
+                <span class="s2">" (e.g., because a class was moved to a different module, and serializability should be preserved),"</span>
+                <span class="s2">" please set 'disable_module_check=True' and add a comment why it is necessary for this class."</span>
             <span class="p">)</span>
 
     <span class="k">if</span> <span class="n">name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -645,7 +645,7 @@
 <div class="viewcode-block" id="serialize">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.serialization.serialize.html#bayesflow.utils.serialize">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">serialize</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Serialize an object using Keras.</span>
+<span class="w">    </span><span class="sd">"""Serialize an object using Keras.</span>
 
 <span class="sd">    Wrapper function around `keras.saving.serialize_keras_object`, which adds the</span>
 <span class="sd">    ability to serialize classes.</span>
@@ -664,7 +664,7 @@
 <span class="sd">    See Also</span>
 <span class="sd">    --------</span>
 <span class="sd">    deserialize</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="p">(</span><span class="nb">tuple</span><span class="p">,</span> <span class="nb">list</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)):</span>
         <span class="k">return</span> <span class="n">keras</span><span class="o">.</span><span class="n">tree</span><span class="o">.</span><span class="n">map_structure</span><span class="p">(</span><span class="n">serialize</span><span class="p">,</span> <span class="n">obj</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">):</span>
@@ -701,8 +701,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -736,7 +736,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

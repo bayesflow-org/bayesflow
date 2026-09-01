@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/summary/transformers/fusion_transformer';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,15 +494,15 @@
 
 <div class="viewcode-block" id="FusionTransformer">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.FusionTransformer.html#bayesflow.networks.summary.FusionTransformer">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">FusionTransformer</span><span class="p">(</span><span class="n">Transformer</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    (SN) Implements a more flexible version of the TimeSeriesTransformer that applies a series of self-attention</span>
 <span class="sd">    layers followed by cross-attention between the representation and a learnable template summarized via a</span>
 <span class="sd">    recurrent net.</span>
 
 <span class="sd">    Note: This network does not need time embeddings, as the sequence itself is used as a learnable embedding.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -511,16 +511,16 @@
         <span class="n">num_heads</span><span class="p">:</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="n">expansion_factor</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">4.0</span><span class="p">,</span>
-        <span class="n">glu_variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;swiglu&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;glorot_uniform&quot;</span><span class="p">,</span>
+        <span class="n">glu_variant</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"swiglu"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"glorot_uniform"</span><span class="p">,</span>
         <span class="n">use_bias</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
         <span class="n">layer_norm</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
-        <span class="n">template_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lstm&quot;</span><span class="p">,</span>
+        <span class="n">template_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"lstm"</span><span class="p">,</span>
         <span class="n">bidirectional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">template_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Creates a fusion transformer used to flexibly compress time series.</span>
+<span class="w">        </span><span class="sd">"""Creates a fusion transformer used to flexibly compress time series.</span>
 
 <span class="sd">        Important: This network needs at least 2 transformer blocks and always acts as a many-to-one transform.</span>
 
@@ -537,24 +537,24 @@
 <span class="sd">        expansion_factor : float, optional</span>
 <span class="sd">            FFN intermediate width multiplier (before the 2/3 GLU correction), by default 4.0.</span>
 <span class="sd">        glu_variant : str, optional</span>
-<span class="sd">            GLU activation variant for the FFN. One of ``&quot;swiglu&quot;``, ``&quot;geglu&quot;``,</span>
-<span class="sd">            ``&quot;reglu&quot;``, or ``&quot;liglu&quot;``, by default ``&quot;swiglu&quot;``.</span>
+<span class="sd">            GLU activation variant for the FFN. One of ``"swiglu"``, ``"geglu"``,</span>
+<span class="sd">            ``"reglu"``, or ``"liglu"``, by default ``"swiglu"``.</span>
 <span class="sd">        kernel_initializer : str, optional</span>
-<span class="sd">            Initializer for kernel weights, by default ``&quot;glorot_uniform&quot;``.</span>
+<span class="sd">            Initializer for kernel weights, by default ``"glorot_uniform"``.</span>
 <span class="sd">        use_bias : bool, optional</span>
 <span class="sd">            Whether to include bias terms in dense layers, by default False.</span>
 <span class="sd">        layer_norm : bool, optional</span>
 <span class="sd">            Whether to apply Pre-LN RMSNorm before each sublayer, by default True.</span>
 <span class="sd">        template_type : str, optional</span>
-<span class="sd">            Recurrent architecture for the template network: ``&quot;lstm&quot;`` or ``&quot;gru&quot;``,</span>
-<span class="sd">            by default ``&quot;lstm&quot;``.</span>
+<span class="sd">            Recurrent architecture for the template network: ``"lstm"`` or ``"gru"``,</span>
+<span class="sd">            by default ``"lstm"``.</span>
 <span class="sd">        bidirectional : bool, optional</span>
 <span class="sd">            Whether the template recurrent network is bidirectional, by default True.</span>
 <span class="sd">        template_dim : int, optional</span>
 <span class="sd">            Hidden units of the recurrent template network, by default 128.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to the base layer.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -575,12 +575,12 @@
             <span class="bp">self</span><span class="o">.</span><span class="n">attention_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">block</span><span class="p">)</span>
 
         <span class="n">template_type_upper</span> <span class="o">=</span> <span class="n">template_type</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
-        <span class="k">if</span> <span class="n">template_type_upper</span> <span class="o">==</span> <span class="s2">&quot;LSTM&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">template_type_upper</span> <span class="o">==</span> <span class="s2">"LSTM"</span><span class="p">:</span>
             <span class="n">rnn</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">LSTM</span><span class="p">(</span><span class="n">template_dim</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">template_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
-        <span class="k">elif</span> <span class="n">template_type_upper</span> <span class="o">==</span> <span class="s2">&quot;GRU&quot;</span><span class="p">:</span>
+        <span class="k">elif</span> <span class="n">template_type_upper</span> <span class="o">==</span> <span class="s2">"GRU"</span><span class="p">:</span>
             <span class="n">rnn</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="n">template_dim</span> <span class="o">//</span> <span class="mi">2</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">template_dim</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Argument `template_type` must be &#39;lstm&#39; or &#39;gru&#39;, got &#39;</span><span class="si">{</span><span class="n">template_type</span><span class="si">}</span><span class="s2">&#39;.&quot;</span><span class="p">)</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Argument `template_type` must be 'lstm' or 'gru', got '</span><span class="si">{</span><span class="n">template_type</span><span class="si">}</span><span class="s2">'."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">template_net</span> <span class="o">=</span> <span class="n">layers</span><span class="o">.</span><span class="n">Bidirectional</span><span class="p">(</span><span class="n">rnn</span><span class="p">)</span> <span class="k">if</span> <span class="n">bidirectional</span> <span class="k">else</span> <span class="n">rnn</span>
 
@@ -590,7 +590,7 @@
 <div class="viewcode-block" id="FusionTransformer.call">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.FusionTransformer.html#bayesflow.networks.summary.FusionTransformer.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">attention_mask</span><span class="p">:</span> <span class="n">Tensor</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compresses the input sequence into a summary vector of size ``summary_dim``.</span>
+<span class="w">        </span><span class="sd">"""Compresses the input sequence into a summary vector of size ``summary_dim``.</span>
 
 <span class="sd">        Parameters</span>
 <span class="sd">        ----------</span>
@@ -605,7 +605,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        Tensor</span>
 <span class="sd">            Output of shape ``(batch_size, summary_dim)``.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">template</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">template_net</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
 
         <span class="n">rep</span> <span class="o">=</span> <span class="n">x</span>
@@ -646,8 +646,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -681,7 +681,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

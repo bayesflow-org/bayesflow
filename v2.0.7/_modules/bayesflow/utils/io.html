@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=2e3a8be8"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/io';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.7';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -486,15 +486,15 @@
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">deserialize_type</span><span class="p">(</span><span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">type</span><span class="p">:</span>
-    <span class="n">module</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;module&quot;</span><span class="p">],</span> <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">]])</span>
-    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;name&quot;</span><span class="p">])</span>
+    <span class="n">module</span> <span class="o">=</span> <span class="nb">__import__</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"module"</span><span class="p">],</span> <span class="n">fromlist</span><span class="o">=</span><span class="p">[</span><span class="n">config</span><span class="p">[</span><span class="s2">"name"</span><span class="p">]])</span>
+    <span class="k">return</span> <span class="nb">getattr</span><span class="p">(</span><span class="n">module</span><span class="p">,</span> <span class="n">config</span><span class="p">[</span><span class="s2">"name"</span><span class="p">])</span>
 
 
 <div class="viewcode-block" id="format_bytes">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.format_bytes.html#bayesflow.utils.format_bytes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">format_bytes</span><span class="p">(</span><span class="n">b</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">precision</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">2</span><span class="p">,</span> <span class="n">si</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Format a number of bytes as a human-readable string in the format &#39;{value} {prefix}{unit}&#39;.</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Format a number of bytes as a human-readable string in the format '{value} {prefix}{unit}'.</span>
 
 <span class="sd">    :param b: The number of bytes to format.</span>
 <span class="sd">    :param precision: The display precision.</span>
@@ -502,16 +502,16 @@
 
 <span class="sd">    Examples:</span>
 <span class="sd">        &gt;&gt;&gt; format_bytes(1024)</span>
-<span class="sd">        &#39;1.00 KiB&#39;</span>
+<span class="sd">        '1.00 KiB'</span>
 <span class="sd">        &gt;&gt;&gt; format_bytes(1024, si=True)</span>
-<span class="sd">        &#39;1.02 kB&#39;</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">        '1.02 kB'</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">si</span><span class="p">:</span>
         <span class="n">div</span> <span class="o">=</span> <span class="mi">1000</span>
-        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&quot;</span><span class="p">]</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"Z"</span><span class="p">,</span> <span class="s2">"Y"</span><span class="p">,</span> <span class="s2">"R"</span><span class="p">,</span> <span class="s2">"Q"</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
         <span class="n">div</span> <span class="o">=</span> <span class="mi">1024</span>
-        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Ki&quot;</span><span class="p">,</span> <span class="s2">&quot;Mi&quot;</span><span class="p">,</span> <span class="s2">&quot;Gi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ti&quot;</span><span class="p">,</span> <span class="s2">&quot;Pi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ei&quot;</span><span class="p">,</span> <span class="s2">&quot;Zi&quot;</span><span class="p">,</span> <span class="s2">&quot;Yi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ri&quot;</span><span class="p">,</span> <span class="s2">&quot;Qi&quot;</span><span class="p">]</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"Ki"</span><span class="p">,</span> <span class="s2">"Mi"</span><span class="p">,</span> <span class="s2">"Gi"</span><span class="p">,</span> <span class="s2">"Ti"</span><span class="p">,</span> <span class="s2">"Pi"</span><span class="p">,</span> <span class="s2">"Ei"</span><span class="p">,</span> <span class="s2">"Zi"</span><span class="p">,</span> <span class="s2">"Yi"</span><span class="p">,</span> <span class="s2">"Ri"</span><span class="p">,</span> <span class="s2">"Qi"</span><span class="p">]</span>
 
     <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">b</span><span class="p">)</span>
     <span class="n">idx</span> <span class="o">=</span> <span class="mi">0</span>
@@ -521,56 +521,56 @@
 
     <span class="n">prefix</span> <span class="o">=</span> <span class="n">prefixes</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
 
-    <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.</span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2">f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">B&quot;</span></div>
+    <span class="k">return</span> <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">value</span><span class="si">:</span><span class="s2">.</span><span class="si">{</span><span class="n">precision</span><span class="si">}</span><span class="s2">f</span><span class="si">}</span><span class="s2"> </span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">B"</span></div>
 
 
 
 <div class="viewcode-block" id="parse_bytes">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.parse_bytes.html#bayesflow.utils.parse_bytes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">parse_bytes</span><span class="p">(</span><span class="n">s</span><span class="p">:</span> <span class="nb">str</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Parse a string in the format &#39;{value} {prefix}{unit}&#39; and return the number of bytes,</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Parse a string in the format '{value} {prefix}{unit}' and return the number of bytes,</span>
 <span class="sd">    flooring to the nearest integer.</span>
 
-<span class="sd">    The parsing is case-sensitive. E.g., uppercase &#39;K&#39; will *not* be recognized as &#39;kilo&#39;,</span>
-<span class="sd">    and lowercase &#39;b&#39; will be recognized as &#39;bit&#39; rather than &#39;byte&#39;.</span>
+<span class="sd">    The parsing is case-sensitive. E.g., uppercase 'K' will *not* be recognized as 'kilo',</span>
+<span class="sd">    and lowercase 'b' will be recognized as 'bit' rather than 'byte'.</span>
 
 <span class="sd">    Examples:</span>
-<span class="sd">        &gt;&gt;&gt; parse_bytes(&quot;8 GB&quot;)  # 8 Gigabyte</span>
+<span class="sd">        &gt;&gt;&gt; parse_bytes("8 GB")  # 8 Gigabyte</span>
 <span class="sd">        8000000000</span>
-<span class="sd">        &gt;&gt;&gt; parse_bytes(&quot;32 kiB&quot;)  # 32 Kibibyte</span>
+<span class="sd">        &gt;&gt;&gt; parse_bytes("32 kiB")  # 32 Kibibyte</span>
 <span class="sd">        32768</span>
-<span class="sd">        &gt;&gt;&gt; parse_bytes(&quot;1 Tb&quot;)  # 1 Terrabit</span>
+<span class="sd">        &gt;&gt;&gt; parse_bytes("1 Tb")  # 1 Terrabit</span>
 <span class="sd">        125000000000</span>
-<span class="sd">        &gt;&gt;&gt; parse_bytes(&quot;2.5 kB&quot;)  # 2.5 Kilobyte</span>
+<span class="sd">        &gt;&gt;&gt; parse_bytes("2.5 kB")  # 2.5 Kilobyte</span>
 <span class="sd">        2500</span>
-<span class="sd">        &gt;&gt;&gt; parse_bytes(&quot;1e9 B&quot;)  # 10^9 Bytes</span>
+<span class="sd">        &gt;&gt;&gt; parse_bytes("1e9 B")  # 10^9 Bytes</span>
 <span class="sd">        1000000000</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="n">s</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
-    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">s</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Cannot parse bytes from string without exactly one space separator. &quot;</span>
-            <span class="s2">&quot;Expected format: &#39;</span><span class="si">{value}</span><span class="s2"> </span><span class="si">{prefix}{unit}</span><span class="s2">&#39;.&quot;</span>
-            <span class="s2">&quot;Example: &#39;8 GiB&#39;.&quot;</span>
+            <span class="s2">"Cannot parse bytes from string without exactly one space separator. "</span>
+            <span class="s2">"Expected format: '</span><span class="si">{value}</span><span class="s2"> </span><span class="si">{prefix}{unit}</span><span class="s2">'."</span>
+            <span class="s2">"Example: '8 GiB'."</span>
         <span class="p">)</span>
 
-    <span class="n">value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot; &quot;</span><span class="p">)</span>
+    <span class="n">value</span><span class="p">,</span> <span class="n">unit</span> <span class="o">=</span> <span class="n">s</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">" "</span><span class="p">)</span>
 
     <span class="n">value</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">value</span><span class="p">)</span>
     <span class="n">prefix</span><span class="p">,</span> <span class="n">suffix</span> <span class="o">=</span> <span class="n">unit</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">unit</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
 
-    <span class="k">if</span> <span class="s2">&quot;i&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prefix</span><span class="p">:</span>
+    <span class="k">if</span> <span class="s2">"i"</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prefix</span><span class="p">:</span>
         <span class="c1"># SI</span>
-        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;k&quot;</span><span class="p">,</span> <span class="s2">&quot;M&quot;</span><span class="p">,</span> <span class="s2">&quot;G&quot;</span><span class="p">,</span> <span class="s2">&quot;T&quot;</span><span class="p">,</span> <span class="s2">&quot;P&quot;</span><span class="p">,</span> <span class="s2">&quot;E&quot;</span><span class="p">,</span> <span class="s2">&quot;Z&quot;</span><span class="p">,</span> <span class="s2">&quot;Y&quot;</span><span class="p">,</span> <span class="s2">&quot;R&quot;</span><span class="p">,</span> <span class="s2">&quot;Q&quot;</span><span class="p">]</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"k"</span><span class="p">,</span> <span class="s2">"M"</span><span class="p">,</span> <span class="s2">"G"</span><span class="p">,</span> <span class="s2">"T"</span><span class="p">,</span> <span class="s2">"P"</span><span class="p">,</span> <span class="s2">"E"</span><span class="p">,</span> <span class="s2">"Z"</span><span class="p">,</span> <span class="s2">"Y"</span><span class="p">,</span> <span class="s2">"R"</span><span class="p">,</span> <span class="s2">"Q"</span><span class="p">]</span>
         <span class="n">factor</span> <span class="o">=</span> <span class="mi">1000</span> <span class="o">**</span> <span class="n">prefixes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="s2">&quot;Ki&quot;</span><span class="p">,</span> <span class="s2">&quot;Mi&quot;</span><span class="p">,</span> <span class="s2">&quot;Gi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ti&quot;</span><span class="p">,</span> <span class="s2">&quot;Pi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ei&quot;</span><span class="p">,</span> <span class="s2">&quot;Zi&quot;</span><span class="p">,</span> <span class="s2">&quot;Yi&quot;</span><span class="p">,</span> <span class="s2">&quot;Ri&quot;</span><span class="p">,</span> <span class="s2">&quot;Qi&quot;</span><span class="p">]</span>
+        <span class="n">prefixes</span> <span class="o">=</span> <span class="p">[</span><span class="s2">""</span><span class="p">,</span> <span class="s2">"Ki"</span><span class="p">,</span> <span class="s2">"Mi"</span><span class="p">,</span> <span class="s2">"Gi"</span><span class="p">,</span> <span class="s2">"Ti"</span><span class="p">,</span> <span class="s2">"Pi"</span><span class="p">,</span> <span class="s2">"Ei"</span><span class="p">,</span> <span class="s2">"Zi"</span><span class="p">,</span> <span class="s2">"Yi"</span><span class="p">,</span> <span class="s2">"Ri"</span><span class="p">,</span> <span class="s2">"Qi"</span><span class="p">]</span>
         <span class="n">factor</span> <span class="o">=</span> <span class="mi">1024</span> <span class="o">**</span> <span class="n">prefixes</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">prefix</span><span class="p">)</span>
 
     <span class="n">result</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">value</span> <span class="o">*</span> <span class="n">factor</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">suffix</span> <span class="o">==</span> <span class="s2">&quot;b&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">suffix</span> <span class="o">==</span> <span class="s2">"b"</span><span class="p">:</span>
         <span class="n">result</span> <span class="o">//=</span> <span class="mi">8</span>
 
     <span class="k">return</span> <span class="n">result</span></div>
@@ -580,9 +580,9 @@
 <div class="viewcode-block" id="pickle_load">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.pickle_load.html#bayesflow.utils.pickle_load">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">pickle_load</span><span class="p">(</span><span class="n">filepath</span><span class="p">:</span> <span class="n">os</span><span class="o">.</span><span class="n">PathLike</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">any</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Small utility to safely load a pickle object.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Small utility to safely load a pickle object."""</span>
 
-    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">&quot;rb+&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">filepath</span><span class="p">,</span> <span class="s2">"rb+"</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
         <span class="k">return</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">f</span><span class="p">)</span></div>
 
 
@@ -591,7 +591,7 @@
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="nb">type</span><span class="p">):</span>
         <span class="n">obj</span> <span class="o">=</span> <span class="nb">type</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;module&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="s2">&quot;name&quot;</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"module"</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__module__</span><span class="p">,</span> <span class="s2">"name"</span><span class="p">:</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">}</span>
 </pre></div>
 
                 </article>
@@ -621,8 +621,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -656,7 +656,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

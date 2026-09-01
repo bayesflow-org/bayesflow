@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/mc_confusion_matrix';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -509,7 +509,7 @@
     <span class="n">cmap</span><span class="p">:</span> <span class="n">matplotlib</span><span class="o">.</span><span class="n">colors</span><span class="o">.</span><span class="n">Colormap</span> <span class="o">|</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">title</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plots a confusion matrix for validating a neural network trained for Bayesian model comparison.</span>
+<span class="w">    </span><span class="sd">"""Plots a confusion matrix for validating a neural network trained for Bayesian model comparison.</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
@@ -533,27 +533,27 @@
 <span class="sd">        Rotation of x-axis tick labels (helps with long model names).</span>
 <span class="sd">    ytick_rotation: int, optional, default: None</span>
 <span class="sd">        Rotation of y-axis tick labels (helps with long model names).</span>
-<span class="sd">    normalize : {&#39;true&#39;, &#39;pred&#39;, &#39;all&#39;}, default=None</span>
+<span class="sd">    normalize : {'true', 'pred', 'all'}, default=None</span>
 <span class="sd">        Passed to confusion matrix. Normalizes confusion matrix over the true (rows),</span>
 <span class="sd">        predicted (columns) conditions or all the population. If None, confusion matrix</span>
 <span class="sd">        will not be normalized.</span>
 <span class="sd">    cmap           : matplotlib.colors.Colormap or str, optional, default: None</span>
 <span class="sd">        Colormap to be used for the cells. If a str, it should be the name of a registered colormap,</span>
-<span class="sd">        e.g., &#39;viridis&#39;. Default colormap matches the BayesFlow defaults by ranging from white to red.</span>
+<span class="sd">        e.g., 'viridis'. Default colormap matches the BayesFlow defaults by ranging from white to red.</span>
 <span class="sd">    title          : bool, optional, default True</span>
-<span class="sd">        A flag for adding &#39;Confusion Matrix&#39; above the matrix.</span>
+<span class="sd">        A flag for adding 'Confusion Matrix' above the matrix.</span>
 
 <span class="sd">    Returns</span>
 <span class="sd">    -------</span>
 <span class="sd">    fig : plt.Figure - the figure instance for optional saving</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="n">model_names</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">num_models</span> <span class="o">=</span> <span class="n">true_models</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">model_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">rf</span><span class="s2">&quot;$M_</span><span class="se">{{</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="se">}}</span><span class="s2">$&quot;</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_models</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">model_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">rf</span><span class="s2">"$M_</span><span class="se">{{</span><span class="si">{</span><span class="n">m</span><span class="si">}</span><span class="se">}}</span><span class="s2">$"</span> <span class="k">for</span> <span class="n">m</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">num_models</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
 
     <span class="k">if</span> <span class="n">cmap</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">cmap</span> <span class="o">=</span> <span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="s2">&quot;&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;white&quot;</span><span class="p">,</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">])</span>
+        <span class="n">cmap</span> <span class="o">=</span> <span class="n">LinearSegmentedColormap</span><span class="o">.</span><span class="n">from_list</span><span class="p">(</span><span class="s2">""</span><span class="p">,</span> <span class="p">[</span><span class="s2">"white"</span><span class="p">,</span> <span class="s2">"#132a70"</span><span class="p">])</span>
 
     <span class="c1"># Flatten input</span>
     <span class="n">true_models</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmax</span><span class="p">(</span><span class="n">true_models</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
@@ -565,7 +565,7 @@
     <span class="c1"># Initialize figure</span>
     <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">make_figure</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="n">fig_size</span><span class="p">)</span>
     <span class="n">ax</span> <span class="o">=</span> <span class="n">ax</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
-    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">cm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">&quot;nearest&quot;</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
+    <span class="n">im</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">cm</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="s2">"nearest"</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">)</span>
     <span class="n">cbar</span> <span class="o">=</span> <span class="n">ax</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">colorbar</span><span class="p">(</span><span class="n">im</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">shrink</span><span class="o">=</span><span class="mf">0.75</span><span class="p">)</span>
 
     <span class="n">cbar</span><span class="o">.</span><span class="n">ax</span><span class="o">.</span><span class="n">tick_params</span><span class="p">(</span><span class="n">labelsize</span><span class="o">=</span><span class="n">value_fontsize</span><span class="p">)</span>
@@ -573,18 +573,18 @@
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xticklabels</span><span class="p">(</span><span class="n">model_names</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">xtick_rotation</span><span class="p">:</span>
-        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="n">xtick_rotation</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;right&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="n">xtick_rotation</span><span class="p">,</span> <span class="n">ha</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span>
 
     <span class="n">ax</span><span class="o">.</span><span class="n">set_yticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_yticklabels</span><span class="p">(</span><span class="n">model_names</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">ytick_rotation</span><span class="p">:</span>
         <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="n">rotation</span><span class="o">=</span><span class="n">ytick_rotation</span><span class="p">)</span>
 
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">&quot;Predicted model&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">&quot;True model&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Predicted model"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"True model"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">)</span>
 
     <span class="c1"># Loop over data dimensions and create text annotations</span>
-    <span class="n">fmt</span> <span class="o">=</span> <span class="s2">&quot;.2f&quot;</span> <span class="k">if</span> <span class="n">normalize</span> <span class="k">else</span> <span class="s2">&quot;d&quot;</span>
+    <span class="n">fmt</span> <span class="o">=</span> <span class="s2">".2f"</span> <span class="k">if</span> <span class="n">normalize</span> <span class="k">else</span> <span class="s2">"d"</span>
     <span class="n">thresh</span> <span class="o">=</span> <span class="n">cm</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">/</span> <span class="mf">2.0</span>
     <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
         <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">cm</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
@@ -593,12 +593,12 @@
                 <span class="n">i</span><span class="p">,</span>
                 <span class="nb">format</span><span class="p">(</span><span class="n">cm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">],</span> <span class="n">fmt</span><span class="p">),</span>
                 <span class="n">fontsize</span><span class="o">=</span><span class="n">value_fontsize</span><span class="p">,</span>
-                <span class="n">ha</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
-                <span class="n">va</span><span class="o">=</span><span class="s2">&quot;center&quot;</span><span class="p">,</span>
-                <span class="n">color</span><span class="o">=</span><span class="s2">&quot;white&quot;</span> <span class="k">if</span> <span class="n">cm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresh</span> <span class="k">else</span> <span class="s2">&quot;black&quot;</span><span class="p">,</span>
+                <span class="n">ha</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+                <span class="n">va</span><span class="o">=</span><span class="s2">"center"</span><span class="p">,</span>
+                <span class="n">color</span><span class="o">=</span><span class="s2">"white"</span> <span class="k">if</span> <span class="n">cm</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">thresh</span> <span class="k">else</span> <span class="s2">"black"</span><span class="p">,</span>
             <span class="p">)</span>
     <span class="k">if</span> <span class="n">title</span><span class="p">:</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">&quot;Confusion Matrix&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">title_fontsize</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Confusion Matrix"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">title_fontsize</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">fig</span></div>
 
 </pre></div>
@@ -630,8 +630,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -665,7 +665,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/validators';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -490,31 +490,31 @@
 <a class="viewcode-back" href="../../../api/bayesflow.utils.check_lengths_same.html#bayesflow.utils.check_lengths_same">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_lengths_same</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">):</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span> <span class="n">args</span><span class="p">)))</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;All tuple arguments must have the same length, but lengths are </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">))</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span></div>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"All tuple arguments must have the same length, but lengths are </span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="nb">len</span><span class="p">,</span><span class="w"> </span><span class="n">args</span><span class="p">))</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span></div>
 
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">check_prior_shapes</span><span class="p">(</span><span class="n">variables</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the shape of posterior draws as required by most diagnostic functions</span>
 
 <span class="sd">    Parameters</span>
 <span class="sd">    ----------</span>
 <span class="sd">    variables     : Tensor of shape (num_data_sets, num_params)</span>
 <span class="sd">        The prior_samples from generating num_data_sets</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
-            <span class="s2">&quot;prior_samples samples should be a 2-dimensional array, with the &quot;</span>
-            <span class="s2">&quot;first dimension being the number of (simulated) data sets / prior_samples draws &quot;</span>
-            <span class="s2">&quot;and the second dimension being the number of variables, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;but your input has dimensions </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"prior_samples samples should be a 2-dimensional array, with the "</span>
+            <span class="s2">"first dimension being the number of (simulated) data sets / prior_samples draws "</span>
+            <span class="s2">"and the second dimension being the number of variables, "</span>
+            <span class="sa">f</span><span class="s2">"but your input has dimensions </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">check_estimates_shapes</span><span class="p">(</span><span class="n">variables</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks the shape of model-generated predictions (posterior draws, point estimates)</span>
 <span class="sd">    as required by most diagnostic functions</span>
 
@@ -522,40 +522,40 @@
 <span class="sd">    ----------</span>
 <span class="sd">    variables     : Tensor of shape (num_data_sets, num_post_draws, num_params)</span>
 <span class="sd">        The prior_samples from generating num_data_sets</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
         <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
-            <span class="s2">&quot;estimates should be a 2- or 3-dimensional array, with the &quot;</span>
-            <span class="s2">&quot;first dimension being the number of data sets, &quot;</span>
-            <span class="s2">&quot;(optional) second dimension the number of posterior draws per data set, &quot;</span>
-            <span class="s2">&quot;and the last dimension the number of estimated variables, &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;but your input has dimensions </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="s2">"estimates should be a 2- or 3-dimensional array, with the "</span>
+            <span class="s2">"first dimension being the number of data sets, "</span>
+            <span class="s2">"(optional) second dimension the number of posterior draws per data set, "</span>
+            <span class="s2">"and the last dimension the number of estimated variables, "</span>
+            <span class="sa">f</span><span class="s2">"but your input has dimensions </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">variables</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s2">"</span>
         <span class="p">)</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">check_consistent_shapes</span><span class="p">(</span><span class="n">estimates</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">prior_samples</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks whether the model-generated predictions (posterior draws, point estimates) and</span>
 <span class="sd">    prior_samples have consistent leading (num_data_sets) and trailing (num_params) dimensions</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">if</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
-            <span class="s2">&quot;The number of elements over the first dimension of estimates and prior_samples&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;should match, but estimates have </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and prior_samples has &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> elements, respectively.&quot;</span>
+            <span class="s2">"The number of elements over the first dimension of estimates and prior_samples"</span>
+            <span class="sa">f</span><span class="s2">"should match, but estimates have </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and prior_samples has "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> elements, respectively."</span>
         <span class="p">)</span>
     <span class="k">if</span> <span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
         <span class="k">raise</span> <span class="n">ShapeError</span><span class="p">(</span>
-            <span class="s2">&quot;The number of elements over the last dimension of estimates and prior_samples&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;should match, but estimates has </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and prior_samples has &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> elements, respectively.&quot;</span>
+            <span class="s2">"The number of elements over the last dimension of estimates and prior_samples"</span>
+            <span class="sa">f</span><span class="s2">"should match, but estimates has </span><span class="si">{</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> and prior_samples has "</span>
+            <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">prior_samples</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2"> elements, respectively."</span>
         <span class="p">)</span>
 
 
 <div class="viewcode-block" id="check_estimates_prior_shapes">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.check_estimates_prior_shapes.html#bayesflow.utils.check_estimates_prior_shapes">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">check_estimates_prior_shapes</span><span class="p">(</span><span class="n">estimates</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">prior_samples</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Checks requirements for the shapes of estimates and prior_samples draws as</span>
 <span class="sd">    necessitated by most diagnostic functions.</span>
 
@@ -570,7 +570,7 @@
 <span class="sd">    ------</span>
 <span class="sd">    ShapeError</span>
 <span class="sd">        If there is a deviation form the expected shapes of `estimates` and `estimates`.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="n">check_estimates_shapes</span><span class="p">(</span><span class="n">estimates</span><span class="p">)</span>
     <span class="n">check_prior_shapes</span><span class="p">(</span><span class="n">prior_samples</span><span class="p">)</span>
@@ -605,8 +605,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -640,7 +640,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/adapters/transforms/serializable_custom_transform';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -496,9 +496,9 @@
 
 <div class="viewcode-block" id="SerializableCustomTransform">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.SerializableCustomTransform.html#bayesflow.adapters.transforms.SerializableCustomTransform">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.adapters&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.adapters"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">SerializableCustomTransform</span><span class="p">(</span><span class="n">ElementwiseTransform</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Transforms a parameter using a pair of registered serializable forward and inverse functions.</span>
 
 <span class="sd">    Parameters</span>
@@ -526,7 +526,7 @@
 <span class="sd">    They must also be registered (and identical) when loading the adapter</span>
 <span class="sd">    at a later point in time.</span>
 
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -536,110 +536,110 @@
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_serializable</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;forward&quot;</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_check_serializable</span><span class="p">(</span><span class="n">inverse</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;inverse&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_serializable</span><span class="p">(</span><span class="n">forward</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"forward"</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_serializable</span><span class="p">(</span><span class="n">inverse</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"inverse"</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_forward</span> <span class="o">=</span> <span class="n">forward</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span> <span class="o">=</span> <span class="n">inverse</span>
 
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">_check_serializable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;&quot;</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_check_serializable</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">function</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">""</span><span class="p">):</span>
         <span class="n">GENERAL_EXAMPLE_CODE</span> <span class="o">=</span> <span class="p">(</span>
-            <span class="s2">&quot;The example code below shows the structure of a correctly decorated function:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;```</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;import keras</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;@keras.saving.register_keras_serializable(&#39;custom&#39;)</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;def my_</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">(...):</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;    [your code goes here...]</span><span class="se">\n</span><span class="s2">&quot;</span>
-            <span class="s2">&quot;```</span><span class="se">\n</span><span class="s2">&quot;</span>
+            <span class="s2">"The example code below shows the structure of a correctly decorated function:</span><span class="se">\n\n</span><span class="s2">"</span>
+            <span class="s2">"```</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"import keras</span><span class="se">\n\n</span><span class="s2">"</span>
+            <span class="s2">"@keras.saving.register_keras_serializable('custom')</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="sa">f</span><span class="s2">"def my_</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">(...):</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"    [your code goes here...]</span><span class="se">\n</span><span class="s2">"</span>
+            <span class="s2">"```</span><span class="se">\n</span><span class="s2">"</span>
         <span class="p">)</span>
         <span class="k">if</span> <span class="n">function</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;&#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; must be a registered serializable function, was &#39;NoneType&#39;.</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"'</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' must be a registered serializable function, was 'NoneType'.</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="n">registered_name</span> <span class="o">=</span> <span class="n">get_registered_name</span><span class="p">(</span><span class="n">function</span><span class="p">)</span>
         <span class="c1"># check if function is a lambda function</span>
-        <span class="k">if</span> <span class="n">registered_name</span> <span class="o">==</span> <span class="s2">&quot;&lt;lambda&gt;&quot;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">registered_name</span> <span class="o">==</span> <span class="s2">"&lt;lambda&gt;"</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The provided function for &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; is a lambda function, &quot;</span>
-                <span class="s2">&quot;which cannot be serialized. &quot;</span>
-                <span class="s2">&quot;Please provide a registered serializable function by using the &quot;</span>
-                <span class="s2">&quot;@keras.saving.register_keras_serializable decorator.&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"The provided function for '</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' is a lambda function, "</span>
+                <span class="s2">"which cannot be serialized. "</span>
+                <span class="s2">"Please provide a registered serializable function by using the "</span>
+                <span class="s2">"@keras.saving.register_keras_serializable decorator."</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">ismethod</span><span class="p">(</span><span class="n">function</span><span class="p">):</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The provided value for &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; is a method, not a function. &quot;</span>
-                <span class="s2">&quot;Methods cannot be serialized separately from their classes. &quot;</span>
-                <span class="s2">&quot;Please provide a registered serializable function instead by &quot;</span>
-                <span class="s2">&quot;moving the functionality to a function (i.e., outside of the class) and &quot;</span>
-                <span class="s2">&quot;using the @keras.saving.register_keras_serializable decorator.&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"The provided value for '</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' is a method, not a function. "</span>
+                <span class="s2">"Methods cannot be serialized separately from their classes. "</span>
+                <span class="s2">"Please provide a registered serializable function instead by "</span>
+                <span class="s2">"moving the functionality to a function (i.e., outside of the class) and "</span>
+                <span class="s2">"using the @keras.saving.register_keras_serializable decorator."</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="si">{</span><span class="n">GENERAL_EXAMPLE_CODE</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="n">registered_object_for_name</span> <span class="o">=</span> <span class="n">get_registered_object</span><span class="p">(</span><span class="n">registered_name</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">registered_object_for_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">try</span><span class="p">:</span>
                 <span class="n">source_max_lines</span> <span class="o">=</span> <span class="mi">5</span>
-                <span class="n">function_source_code</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">function</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">)</span>
+                <span class="n">function_source_code</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getsource</span><span class="p">(</span><span class="n">function</span><span class="p">)</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="p">)</span>
                 <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">function_source_code</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">source_max_lines</span><span class="p">:</span>
-                    <span class="n">function_source_code</span> <span class="o">=</span> <span class="n">function_source_code</span><span class="p">[:</span><span class="n">source_max_lines</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;    [...]&quot;</span><span class="p">]</span>
+                    <span class="n">function_source_code</span> <span class="o">=</span> <span class="n">function_source_code</span><span class="p">[:</span><span class="n">source_max_lines</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="s2">"    [...]"</span><span class="p">]</span>
 
-                <span class="n">example_code</span> <span class="o">=</span> <span class="s2">&quot;For your provided function, this would look like this:</span><span class="se">\n\n</span><span class="s2">&quot;</span>
-                <span class="n">example_code</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
-                    <span class="p">[</span><span class="s2">&quot;```&quot;</span><span class="p">,</span> <span class="s2">&quot;import keras</span><span class="se">\n</span><span class="s2">&quot;</span><span class="p">,</span> <span class="s2">&quot;@keras.saving.register_keras_serializable(&#39;custom&#39;)&quot;</span><span class="p">]</span>
+                <span class="n">example_code</span> <span class="o">=</span> <span class="s2">"For your provided function, this would look like this:</span><span class="se">\n\n</span><span class="s2">"</span>
+                <span class="n">example_code</span> <span class="o">+=</span> <span class="s2">"</span><span class="se">\n</span><span class="s2">"</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="p">[</span><span class="s2">"```"</span><span class="p">,</span> <span class="s2">"import keras</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="s2">"@keras.saving.register_keras_serializable('custom')"</span><span class="p">]</span>
                     <span class="o">+</span> <span class="n">function_source_code</span>
-                    <span class="o">+</span> <span class="p">[</span><span class="s2">&quot;```&quot;</span><span class="p">]</span>
+                    <span class="o">+</span> <span class="p">[</span><span class="s2">"```"</span><span class="p">]</span>
                 <span class="p">)</span>
             <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
                 <span class="n">example_code</span> <span class="o">=</span> <span class="n">GENERAL_EXAMPLE_CODE</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The provided function for &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; is not registered with Keras.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;Please register the function using the &quot;</span>
-                <span class="s2">&quot;@keras.saving.register_keras_serializable decorator.</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">example_code</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="sa">f</span><span class="s2">"The provided function for '</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' is not registered with Keras.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"Please register the function using the "</span>
+                <span class="s2">"@keras.saving.register_keras_serializable decorator.</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">example_code</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
         <span class="k">if</span> <span class="n">registered_object_for_name</span> <span class="ow">is</span> <span class="ow">not</span> <span class="n">function</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s2">&quot;The provided function for &#39;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">&#39; does not match the function &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;registered under its name &#39;</span><span class="si">{</span><span class="n">registered_name</span><span class="si">}</span><span class="s2">&#39;. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;(registered function: </span><span class="si">{</span><span class="n">registered_object_for_name</span><span class="si">}</span><span class="s2">, provided function: </span><span class="si">{</span><span class="n">function</span><span class="si">}</span><span class="s2">). &quot;</span>
+                <span class="sa">f</span><span class="s2">"The provided function for '</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s2">' does not match the function "</span>
+                <span class="sa">f</span><span class="s2">"registered under its name '</span><span class="si">{</span><span class="n">registered_name</span><span class="si">}</span><span class="s2">'. "</span>
+                <span class="sa">f</span><span class="s2">"(registered function: </span><span class="si">{</span><span class="n">registered_object_for_name</span><span class="si">}</span><span class="s2">, provided function: </span><span class="si">{</span><span class="n">function</span><span class="si">}</span><span class="s2">). "</span>
             <span class="p">)</span>
 
 <div class="viewcode-block" id="SerializableCustomTransform.from_config">
 <a class="viewcode-back" href="../../../../api/bayesflow.adapters.transforms.SerializableCustomTransform.html#bayesflow.adapters.transforms.SerializableCustomTransform.from_config">[docs]</a>
     <span class="nd">@classmethod</span>
-    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">&quot;SerializableCustomTransform&quot;</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">get_registered_object</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward&quot;</span><span class="p">][</span><span class="s2">&quot;config&quot;</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;_forward_source_code&quot;</span><span class="p">]:</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_config</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">config</span><span class="p">:</span> <span class="nb">dict</span><span class="p">,</span> <span class="n">custom_objects</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="s2">"SerializableCustomTransform"</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">get_registered_object</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"forward"</span><span class="p">][</span><span class="s2">"config"</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="s2">""</span>
+            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">"_forward_source_code"</span><span class="p">]:</span>
                 <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The originally provided function was:</span><span class="se">\n\n</span><span class="s2">```</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;_forward_source_code&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">The originally provided function was:</span><span class="se">\n\n</span><span class="s2">```</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">'_forward_source_code'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">```"</span>
                 <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">PLEASE READ HERE:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;-----------------</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;The forward function that was provided as `forward` &quot;</span>
-                <span class="s2">&quot;is not registered with Keras, making deserialization impossible. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Please ensure that it is registered as &#39;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;forward&#39;</span><span class="p">][</span><span class="s1">&#39;config&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; and identical to the original &quot;</span>
-                <span class="s2">&quot;function before loading your model.&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">provided_function_msg</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"</span><span class="se">\n\n</span><span class="s2">PLEASE READ HERE:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"-----------------</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"The forward function that was provided as `forward` "</span>
+                <span class="s2">"is not registered with Keras, making deserialization impossible. "</span>
+                <span class="sa">f</span><span class="s2">"Please ensure that it is registered as '</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">'forward'</span><span class="p">][</span><span class="s1">'config'</span><span class="p">]</span><span class="si">}</span><span class="s2">' and identical to the original "</span>
+                <span class="s2">"function before loading your model."</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">provided_function_msg</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
-        <span class="k">if</span> <span class="n">get_registered_object</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;inverse&quot;</span><span class="p">][</span><span class="s2">&quot;config&quot;</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="s2">&quot;&quot;</span>
-            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">&quot;_inverse_source_code&quot;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="n">get_registered_object</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"inverse"</span><span class="p">][</span><span class="s2">"config"</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="s2">""</span>
+            <span class="k">if</span> <span class="n">config</span><span class="p">[</span><span class="s2">"_inverse_source_code"</span><span class="p">]:</span>
                 <span class="n">provided_function_msg</span> <span class="o">=</span> <span class="p">(</span>
-                    <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">The originally provided function was:</span><span class="se">\n\n</span><span class="s2">```</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;_inverse_source_code&#39;</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">```&quot;</span>
+                    <span class="sa">f</span><span class="s2">"</span><span class="se">\n</span><span class="s2">The originally provided function was:</span><span class="se">\n\n</span><span class="s2">```</span><span class="se">\n</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">'_inverse_source_code'</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s2">```"</span>
                 <span class="p">)</span>
             <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
-                <span class="s2">&quot;</span><span class="se">\n\n</span><span class="s2">PLEASE READ HERE:</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;-----------------</span><span class="se">\n</span><span class="s2">&quot;</span>
-                <span class="s2">&quot;The inverse function that was provided as `inverse` &quot;</span>
-                <span class="s2">&quot;is not registered with Keras, making deserialization impossible. &quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;Please ensure that it is registered as &#39;</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">&#39;inverse&#39;</span><span class="p">][</span><span class="s1">&#39;config&#39;</span><span class="p">]</span><span class="si">}</span><span class="s2">&#39; and identical to the original &quot;</span>
-                <span class="s2">&quot;function before loading your model.&quot;</span>
-                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">provided_function_msg</span><span class="si">}</span><span class="s2">&quot;</span>
+                <span class="s2">"</span><span class="se">\n\n</span><span class="s2">PLEASE READ HERE:</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"-----------------</span><span class="se">\n</span><span class="s2">"</span>
+                <span class="s2">"The inverse function that was provided as `inverse` "</span>
+                <span class="s2">"is not registered with Keras, making deserialization impossible. "</span>
+                <span class="sa">f</span><span class="s2">"Please ensure that it is registered as '</span><span class="si">{</span><span class="n">config</span><span class="p">[</span><span class="s1">'inverse'</span><span class="p">][</span><span class="s1">'config'</span><span class="p">]</span><span class="si">}</span><span class="s2">' and identical to the original "</span>
+                <span class="s2">"function before loading your model."</span>
+                <span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">provided_function_msg</span><span class="si">}</span><span class="s2">"</span>
             <span class="p">)</span>
-        <span class="n">forward</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;forward&quot;</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span>
-        <span class="n">inverse</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">&quot;inverse&quot;</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span>
+        <span class="n">forward</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"forward"</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span>
+        <span class="n">inverse</span> <span class="o">=</span> <span class="n">deserialize</span><span class="p">(</span><span class="n">config</span><span class="p">[</span><span class="s2">"inverse"</span><span class="p">],</span> <span class="n">custom_objects</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">cls</span><span class="p">(</span>
             <span class="n">forward</span><span class="o">=</span><span class="n">forward</span><span class="p">,</span>
             <span class="n">inverse</span><span class="o">=</span><span class="n">inverse</span><span class="p">,</span>
@@ -656,10 +656,10 @@
         <span class="k">except</span> <span class="ne">OSError</span><span class="p">:</span>
             <span class="k">pass</span>
         <span class="k">return</span> <span class="p">{</span>
-            <span class="s2">&quot;forward&quot;</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">),</span>
-            <span class="s2">&quot;inverse&quot;</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span><span class="p">),</span>
-            <span class="s2">&quot;_forward_source_code&quot;</span><span class="p">:</span> <span class="n">forward_source_code</span><span class="p">,</span>
-            <span class="s2">&quot;_inverse_source_code&quot;</span><span class="p">:</span> <span class="n">inverse_source_code</span><span class="p">,</span>
+            <span class="s2">"forward"</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_forward</span><span class="p">),</span>
+            <span class="s2">"inverse"</span><span class="p">:</span> <span class="n">serialize</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_inverse</span><span class="p">),</span>
+            <span class="s2">"_forward_source_code"</span><span class="p">:</span> <span class="n">forward_source_code</span><span class="p">,</span>
+            <span class="s2">"_inverse_source_code"</span><span class="p">:</span> <span class="n">inverse_source_code</span><span class="p">,</span>
         <span class="p">}</span></div>
 
 
@@ -707,8 +707,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -742,7 +742,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

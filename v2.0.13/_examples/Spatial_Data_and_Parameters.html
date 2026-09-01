@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Spatial_Data_and_Parameters';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -537,7 +537,7 @@
 <span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
 
 <span class="c1"># reduce image resolution to reduce file size</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">&quot;figure.dpi&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"figure.dpi"</span><span class="p">]</span> <span class="o">=</span> <span class="mi">80</span>
 </pre></div>
 </div>
 </div>
@@ -546,9 +546,9 @@
 Defaulting to JAX.
 To override, set the KERAS_BACKEND environment variable before importing bayesflow.
 See: https://keras.io/getting_started/#configuring-your-backend
-INFO:2026-03-06 14:59:47,898:jax._src.xla_bridge:834: Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
-INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
-INFO:bayesflow:Using backend &#39;jax&#39;
+INFO:2026-03-06 14:59:47,898:jax._src.xla_bridge:834: Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:jax._src.xla_bridge:Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend 'jax'
 </pre></div>
 </div>
 </div>
@@ -572,7 +572,7 @@ The exact behavior is defined by the exponent <span class="math notranslate nohi
     <span class="kn">from</span><span class="w"> </span><span class="nn">FyeldGenerator</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_field</span>
 <span class="k">except</span> <span class="ne">ImportError</span><span class="p">:</span>
     <span class="kn">import</span><span class="w"> </span><span class="nn">pip</span>
-    <span class="n">pip</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="s1">&#39;install&#39;</span><span class="p">,</span> <span class="s1">&#39;FyeldGenerator&#39;</span><span class="p">])</span>
+    <span class="n">pip</span><span class="o">.</span><span class="n">main</span><span class="p">([</span><span class="s1">'install'</span><span class="p">,</span> <span class="s1">'FyeldGenerator'</span><span class="p">])</span>
     <span class="kn">from</span><span class="w"> </span><span class="nn">FyeldGenerator</span><span class="w"> </span><span class="kn">import</span> <span class="n">generate_field</span>
 </pre></div>
 </div>
@@ -608,9 +608,9 @@ The exact behavior is defined by the exponent <span class="math notranslate nohi
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">4</span><span class="p">,</span><span class="mf">2.5</span><span class="p">))</span>
 <span class="n">k</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">logspace</span><span class="p">(</span><span class="mf">0.001</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">300</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">k</span><span class="p">,</span> <span class="n">power_spectrum</span><span class="p">(</span><span class="n">k</span><span class="p">))</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Power Spectrum&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;k&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Amplitude [a.u.]&quot;</span><span class="p">);</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Power Spectrum"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"k"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Amplitude [a.u.]"</span><span class="p">);</span>
 </pre></div>
 </div>
 </div>
@@ -641,7 +641,7 @@ Wall time: 733 μs
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">n_examples</span> <span class="o">=</span> <span class="mi">5</span>
 <span class="n">alphas</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="n">n_examples</span><span class="p">)</span>
 <span class="n">log_std</span> <span class="o">=</span> <span class="mi">0</span>
-<span class="n">cmap</span> <span class="o">=</span> <span class="s2">&quot;Spectral&quot;</span>
+<span class="n">cmap</span> <span class="o">=</span> <span class="s2">"Spectral"</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_examples</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="n">n_examples</span> <span class="o">*</span> <span class="mf">1.6</span><span class="p">,</span> <span class="mf">1.7</span><span class="p">))</span>
 <span class="k">for</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">ax</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">alphas</span><span class="p">,</span> <span class="n">axs</span><span class="p">):</span>
@@ -649,7 +649,7 @@ Wall time: 733 μs
     <span class="n">field</span> <span class="o">=</span> <span class="n">generate_field</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="n">power_spectrum</span><span class="p">,</span> <span class="n">field_shape</span><span class="p">)</span>
     <span class="n">max_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="n">max_magnitude</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">max_magnitude</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -669,7 +669,7 @@ The task is now for the summary network to learn relevant summary statistics fro
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;log_std&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(),</span> <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"log_std"</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(),</span> <span class="s2">"alpha"</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)}</span>
 
 
 <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">log_std</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">field_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)):</span>
@@ -677,7 +677,7 @@ The task is now for the summary network to learn relevant summary statistics fro
         <span class="n">distribution</span><span class="p">,</span> <span class="n">generate_power_spectrum</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_std</span><span class="p">)),</span> <span class="n">field_shape</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"field"</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
 
 <span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
 </pre></div>
@@ -692,7 +692,7 @@ The task is now for the summary network to learn relevant summary statistics fro
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{&#39;log_std&#39;: (3, 1), &#39;alpha&#39;: (3, 1), &#39;field&#39;: (3, 64, 64, 1)}
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>{'log_std': (3, 1), 'alpha': (3, 1), 'field': (3, 64, 64, 1)}
 </pre></div>
 </div>
 </div>
@@ -711,9 +711,9 @@ The <code class="docutils literal notranslate"><span class="pre">ResNet</span></
     <span class="n">summary_dim</span><span class="o">=</span><span class="mi">6</span><span class="p">,</span>
     <span class="n">widths</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">16</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span>
     <span class="n">blocks_per_stage</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
-    <span class="n">down_mode</span><span class="o">=</span><span class="s2">&quot;max_pool&quot;</span><span class="p">,</span>
-    <span class="n">pool_head</span><span class="o">=</span><span class="s2">&quot;flatten&quot;</span><span class="p">,</span>
-    <span class="n">norm</span><span class="o">=</span><span class="s2">&quot;group&quot;</span><span class="p">,</span>
+    <span class="n">down_mode</span><span class="o">=</span><span class="s2">"max_pool"</span><span class="p">,</span>
+    <span class="n">pool_head</span><span class="o">=</span><span class="s2">"flatten"</span><span class="p">,</span>
+    <span class="n">norm</span><span class="o">=</span><span class="s2">"group"</span><span class="p">,</span>
     <span class="n">groups</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -758,10 +758,10 @@ Wall time: 224 ms
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
     <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
-    <span class="n">inference_network</span><span class="o">=</span><span class="s2">&quot;coupling_flow&quot;</span><span class="p">,</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;log_std&quot;</span><span class="p">,</span> <span class="s2">&quot;alpha&quot;</span><span class="p">],</span>
-    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">],</span>
-    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;all&quot;</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="s2">"coupling_flow"</span><span class="p">,</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"log_std"</span><span class="p">,</span> <span class="s2">"alpha"</span><span class="p">],</span>
+    <span class="n">summary_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"field"</span><span class="p">],</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -842,8 +842,8 @@ Epoch 20/20
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">figs</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">plot_custom_diagnostics</span><span class="p">(</span>
     <span class="n">test_data</span><span class="o">=</span><span class="n">test_data</span><span class="p">,</span>
     <span class="n">plot_fns</span><span class="o">=</span><span class="p">{</span>
-        <span class="s2">&quot;recovery&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">,</span>
-        <span class="s2">&quot;calibration&quot;</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">,</span>
+        <span class="s2">"recovery"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">,</span>
+        <span class="s2">"calibration"</span><span class="p">:</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">,</span>
     <span class="p">},</span>
 <span class="p">)</span>
 </pre></div>
@@ -869,11 +869,11 @@ Epoch 20/20
     <span class="n">field</span> <span class="o">=</span> <span class="n">generate_field</span><span class="p">(</span><span class="n">distribution</span><span class="p">,</span> <span class="n">power_spectrum</span><span class="p">,</span> <span class="n">field_shape</span><span class="p">)</span>
     <span class="n">max_magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">field</span><span class="p">))</span>
     <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=-</span><span class="n">max_magnitude</span><span class="p">,</span> <span class="n">vmax</span><span class="o">=</span><span class="n">max_magnitude</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"$</span><span class="se">\\</span><span class="s2">alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$"</span><span class="p">)</span>
     <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
 
-    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[[</span><span class="s2">&quot;left&quot;</span><span class="p">,</span> <span class="s2">&quot;right&quot;</span><span class="p">,</span> <span class="s2">&quot;top&quot;</span><span class="p">]]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">field</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">a</span><span class="p">]</span><span class="o">.</span><span class="n">spines</span><span class="p">[[</span><span class="s2">"left"</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">,</span> <span class="s2">"top"</span><span class="p">]]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
@@ -887,12 +887,12 @@ Epoch 20/20
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Distribution of Min and Max Values in the Field&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Value&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Frequency&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">"field"</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">"field"</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"red"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">"min"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Distribution of Min and Max Values in the Field"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Value"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Frequency"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -917,9 +917,9 @@ Epoch 20/20
     <span class="n">params_expanded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">log_std</span><span class="p">,</span> <span class="n">alpha</span><span class="p">])</span>
     <span class="n">params_expanded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">field_shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="p">,))</span> <span class="o">*</span> <span class="n">params_expanded</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span>
     <span class="k">return</span> <span class="p">{</span>
-        <span class="s2">&quot;log_std&quot;</span><span class="p">:</span> <span class="n">log_std</span><span class="p">,</span>
-        <span class="s2">&quot;alpha&quot;</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
-        <span class="s2">&quot;params_expanded&quot;</span><span class="p">:</span> <span class="n">params_expanded</span>
+        <span class="s2">"log_std"</span><span class="p">:</span> <span class="n">log_std</span><span class="p">,</span>
+        <span class="s2">"alpha"</span><span class="p">:</span> <span class="n">alpha</span><span class="p">,</span>
+        <span class="s2">"params_expanded"</span><span class="p">:</span> <span class="n">params_expanded</span>
     <span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">log_std</span><span class="p">,</span> <span class="n">alpha</span><span class="p">,</span> <span class="n">field_shape</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">)):</span>
@@ -927,7 +927,7 @@ Epoch 20/20
         <span class="n">distribution</span><span class="p">,</span> <span class="n">generate_power_spectrum</span><span class="p">(</span><span class="n">alpha</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_std</span><span class="p">)),</span> <span class="n">field_shape</span><span class="p">,</span> <span class="n">unit_length</span><span class="o">=</span><span class="mi">1</span><span class="o">/</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">alpha</span><span class="p">)</span> <span class="o">+</span> <span class="mf">1e-7</span><span class="p">)</span>
     <span class="p">)</span>
 
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;field&quot;</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"field"</span><span class="p">:</span> <span class="n">field</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]}</span>
 
 <span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">])</span>
 </pre></div>
@@ -938,12 +938,12 @@ Epoch 20/20
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">samples</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10000</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;blue&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">&quot;field&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">&quot;min&quot;</span><span class="p">,</span> <span class="s2">&quot;max&quot;</span><span class="p">])</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">&quot;Distribution of Min and Max Values in the Field&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">&quot;Value&quot;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">&quot;Frequency&quot;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">"field"</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"blue"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">hist</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="s2">"field"</span><span class="p">]</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span> <span class="n">bins</span><span class="o">=</span><span class="mi">40</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"red"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.7</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">"min"</span><span class="p">,</span> <span class="s2">"max"</span><span class="p">])</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s2">"Distribution of Min and Max Values in the Field"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s2">"Value"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s2">"Frequency"</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -960,31 +960,31 @@ Epoch 20/20
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;params_expanded&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;field&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"params_expanded"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"field"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
 <span class="p">)</span>
 
 <span class="n">configs</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;UNet&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
-        <span class="s2">&quot;res_blocks&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s2">&quot;attn_stage&quot;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="s2">"UNet"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
+        <span class="s2">"res_blocks"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">"attn_stage"</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">},</span>
-    <span class="s2">&quot;UViT&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-        <span class="s2">&quot;res_blocks&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_blocks&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_dropout&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_width&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+    <span class="s2">"UViT"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="s2">"res_blocks"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">"transformer_blocks"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">"transformer_dropout"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="s2">"transformer_width"</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
     <span class="p">},</span>
-    <span class="s2">&quot;ResidualUViT&quot;</span><span class="p">:</span> <span class="p">{</span>
-        <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
-        <span class="s2">&quot;res_blocks_up&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s2">&quot;res_blocks_down&quot;</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_blocks&quot;</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_dropout&quot;</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
-        <span class="s2">&quot;transformer_width&quot;</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
+    <span class="s2">"ResidualUViT"</span><span class="p">:</span> <span class="p">{</span>
+        <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
+        <span class="s2">"res_blocks_up"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">"res_blocks_down"</span><span class="p">:</span> <span class="mi">3</span><span class="p">,</span>
+        <span class="s2">"transformer_blocks"</span><span class="p">:</span> <span class="mi">2</span><span class="p">,</span>
+        <span class="s2">"transformer_dropout"</span><span class="p">:</span> <span class="mf">0.2</span><span class="p">,</span>
+        <span class="s2">"transformer_width"</span><span class="p">:</span> <span class="mi">512</span><span class="p">,</span>
     <span class="p">}</span>
 <span class="p">}</span>
 </pre></div>
@@ -999,16 +999,16 @@ Epoch 20/20
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">diffusion</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(</span>
     <span class="n">subnet</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ResidualUViT</span><span class="p">,</span>
-    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="n">configs</span><span class="p">[</span><span class="s2">&quot;ResidualUViT&quot;</span><span class="p">],</span>
-    <span class="n">prediction_type</span><span class="o">=</span><span class="s2">&quot;velocity&quot;</span><span class="p">,</span>
-    <span class="n">noise_schedule</span><span class="o">=</span><span class="s2">&quot;cosine&quot;</span><span class="p">,</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="n">configs</span><span class="p">[</span><span class="s2">"ResidualUViT"</span><span class="p">],</span>
+    <span class="n">prediction_type</span><span class="o">=</span><span class="s2">"velocity"</span><span class="p">,</span>
+    <span class="n">noise_schedule</span><span class="o">=</span><span class="s2">"cosine"</span><span class="p">,</span>
 <span class="p">)</span>
 
 <span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">workflows</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
     <span class="n">inference_network</span><span class="o">=</span><span class="n">diffusion</span><span class="p">,</span>
     <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
-    <span class="n">standardize</span><span class="o">=</span><span class="s2">&quot;inference_conditions&quot;</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"inference_conditions"</span><span class="p">,</span>
     <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-4</span><span class="p">,</span>
 <span class="p">)</span>
 </pre></div>
@@ -1108,18 +1108,18 @@ Epoch 20/20
     <span class="n">params_expanded</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">field_shape</span> <span class="o">+</span> <span class="p">(</span><span class="mi">2</span><span class="p">,))</span> <span class="o">*</span> <span class="n">param_expanded</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
 <span class="n">params_expanded</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">params_expanded</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
 
-<span class="n">fields_generated</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;params_expanded&quot;</span><span class="p">:</span> <span class="n">params_expanded</span><span class="p">})[</span><span class="s2">&quot;field&quot;</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">fields_generated</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"params_expanded"</span><span class="p">:</span> <span class="n">params_expanded</span><span class="p">})[</span><span class="s2">"field"</span><span class="p">][:,</span> <span class="mi">0</span><span class="p">]</span>
 
 <span class="n">fig</span><span class="p">,</span> <span class="n">axs</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_examples</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="n">n_examples</span> <span class="o">*</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
 
 <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">field_gen</span><span class="p">,</span> <span class="n">field_sim</span><span class="p">,</span> <span class="n">alpha</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">fields_generated</span><span class="p">,</span> <span class="n">fields_simulated</span><span class="p">,</span> <span class="n">alphas</span><span class="p">)):</span>
     <span class="n">a</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field_sim</span><span class="p">,</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">field_sim</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">field_gen</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="n">vmax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">field_sim</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">field_gen</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
-    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">rf</span><span class="s2">&quot;$\alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$&quot;</span><span class="p">)</span>
+    <span class="n">axs</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">rf</span><span class="s2">"$\alpha=</span><span class="si">{</span><span class="n">alpha</span><span class="si">:</span><span class="s2">.2f</span><span class="si">}</span><span class="s2">$"</span><span class="p">)</span>
     <span class="n">b</span> <span class="o">=</span> <span class="n">axs</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">field_gen</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">cmap</span><span class="o">=</span><span class="n">cmap</span><span class="p">,</span> <span class="n">vmin</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">minimum</span><span class="p">(</span><span class="n">field_sim</span><span class="o">.</span><span class="n">min</span><span class="p">(),</span> <span class="n">field_gen</span><span class="o">.</span><span class="n">min</span><span class="p">()),</span> <span class="n">vmax</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">field_sim</span><span class="o">.</span><span class="n">max</span><span class="p">(),</span> <span class="n">field_gen</span><span class="o">.</span><span class="n">max</span><span class="p">()))</span>
 
 <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">axs</span><span class="o">.</span><span class="n">flat</span><span class="p">:</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">"equal"</span><span class="p">)</span>
 
 <span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
@@ -1127,7 +1127,7 @@ Epoch 20/20
 </div>
 </div>
 <div class="cell_output docutils container">
-<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4705726483ad431a88154070ecea2133", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:JAX backend needs to preallocate random samples for &#39;max_steps=1000&#39;.
+<script type="application/vnd.jupyter.widget-view+json">{"model_id": "4705726483ad431a88154070ecea2133", "version_major": 2, "version_minor": 0}</script><div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:JAX backend needs to preallocate random samples for 'max_steps=1000'.
 INFO:bayesflow:Sampling completed in 14.12 seconds.
 </pre></div>
 </div>
@@ -1231,8 +1231,8 @@ INFO:bayesflow:Sampling completed in 14.12 seconds.
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1266,7 +1266,7 @@ INFO:bayesflow:Sampling completed in 14.12 seconds.
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

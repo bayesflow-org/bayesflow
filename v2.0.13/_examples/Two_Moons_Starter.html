@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=e2bcc5d0"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Two_Moons_Starter';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.13';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -499,7 +499,7 @@
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend &#39;jax&#39;
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend 'jax'
 </pre></div>
 </div>
 </div>
@@ -558,22 +558,22 @@ x_2 &amp;= (-\theta_1 + \theta_2)/\sqrt{2} + r\sin{\alpha}
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Type of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample_data</span><span class="p">))</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Keys of sample_data:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Types of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
-<span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Shapes of sample_data values:</span><span class="se">\n\t</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="s2">"Type of sample_data:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="n">sample_data</span><span class="p">))</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Keys of sample_data:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Types of sample_data values:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="nb">type</span><span class="p">(</span><span class="n">v</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"Shapes of sample_data values:</span><span class="se">\n\t</span><span class="s2">"</span><span class="p">,</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">sample_data</span><span class="o">.</span><span class="n">items</span><span class="p">()})</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
 <div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Type of sample_data:
-	 &lt;class &#39;dict&#39;&gt;
+	 &lt;class 'dict'&gt;
 Keys of sample_data:
-	 dict_keys([&#39;theta&#39;, &#39;x&#39;])
+	 dict_keys(['theta', 'x'])
 Types of sample_data values:
-	 {&#39;theta&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;, &#39;x&#39;: &lt;class &#39;numpy.ndarray&#39;&gt;}
+	 {'theta': &lt;class 'numpy.ndarray'&gt;, 'x': &lt;class 'numpy.ndarray'&gt;}
 Shapes of sample_data values:
-	 {&#39;theta&#39;: (3, 2), &#39;x&#39;: (3, 2)}
+	 {'theta': (3, 2), 'x': (3, 2)}
 </pre></div>
 </div>
 </div>
@@ -590,18 +590,18 @@ Shapes of sample_data values:
     <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
     <span class="c1"># convert any non-arrays to numpy arrays</span>
     <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
-    <span class="c1"># convert from numpy&#39;s default float64 to deep learning friendly float32</span>
-    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">&quot;float64&quot;</span><span class="p">,</span> <span class="s2">&quot;float32&quot;</span><span class="p">)</span>
+    <span class="c1"># convert from numpy's default float64 to deep learning friendly float32</span>
+    <span class="o">.</span><span class="n">convert_dtype</span><span class="p">(</span><span class="s2">"float64"</span><span class="p">,</span> <span class="s2">"float32"</span><span class="p">)</span>
     <span class="c1"># rename the variables to match the required approximator inputs</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;theta&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_variables&quot;</span><span class="p">)</span>
-    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">&quot;x&quot;</span><span class="p">,</span> <span class="s2">&quot;inference_conditions&quot;</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"theta"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
 <span class="p">)</span>
 <span class="n">adapter</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: ConvertDType -&gt; 2: Rename(&#39;theta&#39; -&gt; &#39;inference_variables&#39;) -&gt; 3: Rename(&#39;x&#39; -&gt; &#39;inference_conditions&#39;)])
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: ConvertDType -&gt; 2: Rename('theta' -&gt; 'inference_variables') -&gt; 3: Rename('x' -&gt; 'inference_conditions')])
 </pre></div>
 </div>
 </div>
@@ -640,7 +640,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">flow_matching</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">FlowMatching</span><span class="p">(</span>
-    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">}</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">}</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -710,7 +710,7 @@ Shapes of sample_data values:
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">consistency_model</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">ConsistencyModel</span><span class="p">(</span>
     <span class="n">total_steps</span><span class="o">=</span><span class="n">num_training_batches</span><span class="o">*</span><span class="n">epochs</span><span class="p">,</span>
-    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">&quot;dropout&quot;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">&quot;widths&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">},</span>
+    <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">256</span><span class="p">,)</span><span class="o">*</span><span class="mi">6</span><span class="p">},</span>
     <span class="n">max_time</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="c1"># this probably needs to be tuned for a novel application</span>
     <span class="n">sigma2</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>  <span class="c1"># the approximator standardizes our parameters, so set to 1.0</span>
 <span class="p">)</span>
@@ -761,7 +761,7 @@ Shapes of sample_data values:
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Use a shallower spline coupling flow (default depth is 6)</span>
-<span class="n">spline_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">&quot;spline&quot;</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+<span class="n">spline_flow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span> <span class="n">depth</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
 
 <span class="n">spline_flow_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
@@ -814,36 +814,36 @@ Shapes of sample_data values:
 <span class="n">num_samples</span> <span class="o">=</span> <span class="mi">3000</span>
 
 <span class="c1"># Obtain samples from amortized posterior</span>
-<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">&quot;float32&quot;</span><span class="p">)}</span>
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]])</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)}</span>
 
 <span class="c1"># Prepare figure</span>
 <span class="n">f</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">6</span><span class="p">))</span>
 
-<span class="c1"># Obtain samples from the approximators (can also use the workflows&#39; methods)</span>
+<span class="c1"># Obtain samples from the approximators (can also use the workflows' methods)</span>
 <span class="n">nets</span> <span class="o">=</span> <span class="p">[</span>
     <span class="n">flow_matching_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span> 
     <span class="n">consistency_model_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
     <span class="n">affine_flow_workflow</span><span class="o">.</span><span class="n">approximator</span><span class="p">,</span>
     <span class="n">spline_flow_workflow</span><span class="o">.</span><span class="n">approximator</span>
 <span class="p">]</span>
-<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Flow Matching&quot;</span><span class="p">,</span> <span class="s2">&quot;Consistency Model&quot;</span><span class="p">,</span> <span class="s2">&quot;Affine Coupling Flow&quot;</span><span class="p">,</span> <span class="s2">&quot;Spline Coupling Flow&quot;</span><span class="p">]</span>
-<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;#153c7a&quot;</span><span class="p">,</span> <span class="s2">&quot;#7a1515&quot;</span><span class="p">,</span> <span class="s2">&quot;#157a2d&quot;</span><span class="p">,</span> <span class="s2">&quot;#7a6f15&quot;</span><span class="p">]</span>
+<span class="n">names</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Flow Matching"</span><span class="p">,</span> <span class="s2">"Consistency Model"</span><span class="p">,</span> <span class="s2">"Affine Coupling Flow"</span><span class="p">,</span> <span class="s2">"Spline Coupling Flow"</span><span class="p">]</span>
+<span class="n">colors</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"#153c7a"</span><span class="p">,</span> <span class="s2">"#7a1515"</span><span class="p">,</span> <span class="s2">"#157a2d"</span><span class="p">,</span> <span class="s2">"#7a6f15"</span><span class="p">]</span>
 
 <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">net</span><span class="p">,</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">nets</span><span class="p">,</span> <span class="n">names</span><span class="p">,</span> <span class="n">colors</span><span class="p">):</span>
 
     <span class="c1"># Obtain samples</span>
-    <span class="n">samples</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)[</span><span class="s2">&quot;theta&quot;</span><span class="p">]</span>
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">net</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)[</span><span class="s2">"theta"</span><span class="p">]</span>
 
     <span class="c1"># Plot samples</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">samples</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.75</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
     <span class="n">sns</span><span class="o">.</span><span class="n">despine</span><span class="p">(</span><span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">16</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">&quot;box&quot;</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">"equal"</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s2">"box"</span><span class="p">)</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
     <span class="n">ax</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">])</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_1$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
-    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">&quot;$\theta_2$&quot;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\theta_1$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="sa">r</span><span class="s2">"$\theta_2$"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
 
 <span class="n">f</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
 </pre></div>
@@ -947,8 +947,8 @@ Shapes of sample_data values:
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -982,7 +982,7 @@ Shapes of sample_data values:
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

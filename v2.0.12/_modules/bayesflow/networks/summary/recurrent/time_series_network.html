@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/networks/summary/recurrent/time_series_network';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -492,16 +492,16 @@
 
 <div class="viewcode-block" id="TimeSeriesNetwork">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.TimeSeriesNetwork.html#bayesflow.networks.summary.TimeSeriesNetwork">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.networks&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.networks"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">TimeSeriesNetwork</span><span class="p">(</span><span class="n">SummaryNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    (SN) Implements a LSTNet Architecture as described in [1], with addition tweaks for</span>
 <span class="sd">    performance and stability.</span>
 
 <span class="sd">    [1] Y. Zhang and L. Mikelsons, Solving Stochastic Inverse Problems with Stochastic BayesFlow,</span>
 <span class="sd">    2023 IEEE/ASME International Conference on Advanced Intelligent Mechatronics (AIM),</span>
 <span class="sd">    Seattle, WA, USA, 2023, pp. 966-972, doi: 10.1109/AIM46323.2023.10196190.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -509,17 +509,17 @@
         <span class="n">filters</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="mi">32</span><span class="p">,</span>
         <span class="n">kernel_sizes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="mi">3</span><span class="p">,</span>
         <span class="n">strides</span><span class="p">:</span> <span class="nb">int</span> <span class="o">|</span> <span class="nb">list</span> <span class="o">|</span> <span class="nb">tuple</span> <span class="o">=</span> <span class="mi">1</span><span class="p">,</span>
-        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;mish&quot;</span><span class="p">,</span>
-        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;glorot_uniform&quot;</span><span class="p">,</span>
+        <span class="n">activation</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"mish"</span><span class="p">,</span>
+        <span class="n">kernel_initializer</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"glorot_uniform"</span><span class="p">,</span>
         <span class="n">groups</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">recurrent_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;gru&quot;</span><span class="p">,</span>
+        <span class="n">recurrent_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"gru"</span><span class="p">,</span>
         <span class="n">recurrent_dim</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">128</span><span class="p">,</span>
         <span class="n">bidirectional</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
         <span class="n">skip_steps</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Initializes a hybrid convolutional-recurrent network for summarizing multivariate time series.</span>
 
 <span class="sd">        This model combines a convolutional backbone with a recurrent module to efficiently process sequential data.</span>
@@ -542,16 +542,16 @@
 <span class="sd">            Stride length for convolutional layers. If an integer is provided, all layers</span>
 <span class="sd">            will have the same stride. Default is 1.</span>
 <span class="sd">        activation : str, optional</span>
-<span class="sd">            Activation function applied in the convolutional layers. Default is &quot;mish&quot;.</span>
+<span class="sd">            Activation function applied in the convolutional layers. Default is "mish".</span>
 <span class="sd">        kernel_initializer : str, optional</span>
-<span class="sd">            Initialization strategy for convolutional kernels, such as &quot;glorot_uniform&quot;.</span>
-<span class="sd">            Default is &quot;glorot_uniform&quot;.</span>
+<span class="sd">            Initialization strategy for convolutional kernels, such as "glorot_uniform".</span>
+<span class="sd">            Default is "glorot_uniform".</span>
 <span class="sd">        groups : int, optional</span>
 <span class="sd">            Number of groups for group normalization applied after each convolutional layer.</span>
 <span class="sd">            Default is None.</span>
 <span class="sd">        recurrent_type : str, optional</span>
-<span class="sd">            Type of recurrent layer used for sequence modeling, such as &quot;gru&quot; or &quot;lstm&quot;.</span>
-<span class="sd">            Default is &quot;gru&quot;.</span>
+<span class="sd">            Type of recurrent layer used for sequence modeling, such as "gru" or "lstm".</span>
+<span class="sd">            Default is "gru".</span>
 <span class="sd">        recurrent_dim : int, optional</span>
 <span class="sd">            Number of hidden units in the recurrent layer. Default is 128.</span>
 <span class="sd">        bidirectional : bool, optional</span>
@@ -562,7 +562,7 @@
 <span class="sd">            Number of steps to skip in the recurrent network for efficiency. Default is 4.</span>
 <span class="sd">        **kwargs</span>
 <span class="sd">            Additional keyword arguments passed to the parent class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
@@ -583,14 +583,14 @@
                     <span class="n">strides</span><span class="o">=</span><span class="n">s</span><span class="p">,</span>
                     <span class="n">activation</span><span class="o">=</span><span class="n">activation</span><span class="p">,</span>
                     <span class="n">kernel_initializer</span><span class="o">=</span><span class="n">kernel_initializer</span><span class="p">,</span>
-                    <span class="n">padding</span><span class="o">=</span><span class="s2">&quot;same&quot;</span><span class="p">,</span>
-                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;conv_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">padding</span><span class="o">=</span><span class="s2">"same"</span><span class="p">,</span>
+                    <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"conv_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
                 <span class="p">)</span>
             <span class="p">)</span>
             <span class="k">if</span> <span class="n">groups</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">conv_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GroupNormalization</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;group_norm_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">))</span>
+                <span class="n">conv_blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">GroupNormalization</span><span class="p">(</span><span class="n">groups</span><span class="o">=</span><span class="n">groups</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="sa">f</span><span class="s2">"group_norm_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">"</span><span class="p">))</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">conv_blocks</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;conv&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="n">conv_blocks</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"conv"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">recurrent</span> <span class="o">=</span> <span class="n">SkipRecurrentNet</span><span class="p">(</span>
             <span class="n">hidden_dim</span><span class="o">=</span><span class="n">recurrent_dim</span><span class="p">,</span>
@@ -599,16 +599,16 @@
             <span class="n">input_channels</span><span class="o">=</span><span class="n">filters</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
             <span class="n">skip_steps</span><span class="o">=</span><span class="n">skip_steps</span><span class="p">,</span>
             <span class="n">dropout</span><span class="o">=</span><span class="n">dropout</span><span class="p">,</span>
-            <span class="n">name</span><span class="o">=</span><span class="s2">&quot;recurrent&quot;</span><span class="p">,</span>
+            <span class="n">name</span><span class="o">=</span><span class="s2">"recurrent"</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="n">summary_dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">&quot;output_projector&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="n">units</span><span class="o">=</span><span class="n">summary_dim</span><span class="p">,</span> <span class="n">name</span><span class="o">=</span><span class="s2">"output_projector"</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">summary_dim</span> <span class="o">=</span> <span class="n">summary_dim</span>
 
 <div class="viewcode-block" id="TimeSeriesNetwork.call">
 <a class="viewcode-back" href="../../../../../api/bayesflow.networks.summary.TimeSeriesNetwork.html#bayesflow.networks.summary.TimeSeriesNetwork.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Performs the forward pass of the hybrid convolutional-recurrent network.</span>
 
 <span class="sd">        This function applies a sequence of convolutional layers followed by a recurrent module to extract spatial</span>
@@ -631,7 +631,7 @@
 <span class="sd">        output: Tensor</span>
 <span class="sd">            Transformed tensor representing the summarized feature representation</span>
 <span class="sd">            of the input sequence.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">recurrent</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
         <span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">output_projector</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
@@ -667,8 +667,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -702,7 +702,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

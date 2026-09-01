@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=594047cd"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/wrappers/mamba/mamba';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.12';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -494,9 +494,9 @@
 
 <div class="viewcode-block" id="Mamba">
 <a class="viewcode-back" href="../../../../api/bayesflow.wrappers.mamba.mamba.Mamba.html#bayesflow.wrappers.mamba.mamba.Mamba">[docs]</a>
-<span class="nd">@serializable</span><span class="p">(</span><span class="s2">&quot;bayesflow.wrappers&quot;</span><span class="p">)</span>
+<span class="nd">@serializable</span><span class="p">(</span><span class="s2">"bayesflow.wrappers"</span><span class="p">)</span>
 <span class="k">class</span><span class="w"> </span><span class="nc">Mamba</span><span class="p">(</span><span class="n">SummaryNetwork</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    (SN) Wraps a sequence of Mamba modules using the simple Mamba module from:</span>
 <span class="sd">    https://github.com/state-spaces/mamba/blob/main/mamba_ssm/modules/mamba_simple.py</span>
 
@@ -505,7 +505,7 @@
 <span class="sd">    Example usage in a BayesFlow workflow as a summary network:</span>
 
 <span class="sd">    `summary_net = bayesflow.wrappers.Mamba(summary_dim=32)`</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
@@ -518,10 +518,10 @@
         <span class="n">dt_min</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.001</span><span class="p">,</span>
         <span class="n">dt_max</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.1</span><span class="p">,</span>
         <span class="n">dropout</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">0.05</span><span class="p">,</span>
-        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">,</span>
+        <span class="n">device</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"cuda"</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        A time-series summarization network using Mamba-based State Space Models (SSM). This model processes</span>
 <span class="sd">        sequential input data using a sequence of Mamba SSM layers (determined by the length of the tuples),</span>
 <span class="sd">        followed by optional pooling, dropout, and a dense layer for extracting summary statistics.</span>
@@ -549,15 +549,15 @@
 <span class="sd">        dropout: float, optional</span>
 <span class="sd">            Dropout probability; dropout is applied to the pooled summary vector.</span>
 <span class="sd">        device : str, optional</span>
-<span class="sd">            The computing device. Currently, only &quot;cuda&quot; is supported (default is &quot;cuda&quot;).</span>
+<span class="sd">            The computing device. Currently, only "cuda" is supported (default is "cuda").</span>
 <span class="sd">        **kwargs :</span>
 <span class="sd">            Additional keyword arguments passed to the `SummaryNetwork` parent class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">device</span> <span class="o">!=</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;MambaSSM only supports cuda as `device`.&quot;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">device</span> <span class="o">!=</span> <span class="s2">"cuda"</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"MambaSSM only supports cuda as `device`."</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">mamba_blocks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">feature_dim</span><span class="p">,</span> <span class="n">state_dim</span><span class="p">,</span> <span class="n">conv_dim</span><span class="p">,</span> <span class="n">expand</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">feature_dims</span><span class="p">,</span> <span class="n">state_dims</span><span class="p">,</span> <span class="n">conv_dims</span><span class="p">,</span> <span class="n">expand_dims</span><span class="p">):</span>
@@ -571,7 +571,7 @@
 <div class="viewcode-block" id="Mamba.call">
 <a class="viewcode-back" href="../../../../api/bayesflow.wrappers.mamba.mamba.Mamba.html#bayesflow.wrappers.mamba.mamba.Mamba.call">[docs]</a>
     <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_series</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">training</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        Apply a sequence of Mamba blocks, followed by pooling, dropout, and summary statistics.</span>
 
 <span class="sd">        Parameters</span>
@@ -589,7 +589,7 @@
 <span class="sd">        -------</span>
 <span class="sd">        Tensor</span>
 <span class="sd">            Output tensor after applying Mamba blocks, pooling, dropout, and summary statistics.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
 
         <span class="n">summary</span> <span class="o">=</span> <span class="n">time_series</span>
         <span class="k">for</span> <span class="n">mamba_block</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">mamba_blocks</span><span class="p">:</span>
@@ -631,8 +631,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -666,7 +666,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

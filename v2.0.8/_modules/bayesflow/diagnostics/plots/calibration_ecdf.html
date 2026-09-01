@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/diagnostics/plots/calibration_ecdf';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -502,20 +502,20 @@
     <span class="n">test_quantities</span><span class="p">:</span> <span class="nb">dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">difference</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
     <span class="n">stacked</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
-    <span class="n">rank_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="s2">&quot;fractional&quot;</span><span class="p">,</span>
+    <span class="n">rank_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">|</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span> <span class="o">=</span> <span class="s2">"fractional"</span><span class="p">,</span>
     <span class="n">figsize</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">label_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">16</span><span class="p">,</span>
     <span class="n">legend_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">14</span><span class="p">,</span>
-    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;lower right&quot;</span><span class="p">,</span>
+    <span class="n">legend_location</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"lower right"</span><span class="p">,</span>
     <span class="n">title_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">18</span><span class="p">,</span>
     <span class="n">tick_fontsize</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">12</span><span class="p">,</span>
-    <span class="n">rank_ecdf_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;#132a70&quot;</span><span class="p">,</span>
-    <span class="n">fill_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;grey&quot;</span><span class="p">,</span>
+    <span class="n">rank_ecdf_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"#132a70"</span><span class="p">,</span>
+    <span class="n">fill_color</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"grey"</span><span class="p">,</span>
     <span class="n">num_row</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">num_col</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">plt</span><span class="o">.</span><span class="n">Figure</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Creates the empirical CDFs for each marginal rank distribution</span>
 <span class="sd">    and plots it against a uniform ECDF.</span>
 <span class="sd">    ECDF simultaneous bands are drawn using simulations from the uniform,</span>
@@ -524,7 +524,7 @@
 <span class="sd">    For models with many parameters, use `stacked=True` to obtain an idea</span>
 <span class="sd">    of the overall calibration of a posterior approximator.</span>
 
-<span class="sd">    To compute ranks based on the Euclidean distance to the origin or a reference, use `rank_type=&#39;distance&#39;` (and</span>
+<span class="sd">    To compute ranks based on the Euclidean distance to the origin or a reference, use `rank_type='distance'` (and</span>
 <span class="sd">    pass a reference array, respectively). This can be used to check the joint calibration of the posterior approximator</span>
 <span class="sd">    and might show potential biases in the posterior approximation which are not detected by the fractional ranks (e.g.,</span>
 <span class="sd">    when the prior equals the posterior). This is motivated by [2].</span>
@@ -534,8 +534,8 @@
 <span class="sd">    and multiple sample comparison. Statistics and Computing, 32(2), 1-21.</span>
 <span class="sd">    https://arxiv.org/abs/2103.10522</span>
 
-<span class="sd">    [2] Lemos, Pablo, et al. &quot;Sampling-based accuracy testing of posterior estimators</span>
-<span class="sd">     for general inference.&quot; International Conference on Machine Learning. PMLR, 2023.</span>
+<span class="sd">    [2] Lemos, Pablo, et al. "Sampling-based accuracy testing of posterior estimators</span>
+<span class="sd">     for general inference." International Conference on Machine Learning. PMLR, 2023.</span>
 <span class="sd">     https://proceedings.mlr.press/v202/lemos23a.html</span>
 
 <span class="sd">    Parameters</span>
@@ -551,7 +551,7 @@
 <span class="sd">        If `True`, all ECDFs will be plotted on the same plot.</span>
 <span class="sd">        If `False`, each ECDF will have its own subplot,</span>
 <span class="sd">        similar to the behavior of `calibration_histogram`.</span>
-<span class="sd">    rank_type   : str, optional, default: &#39;fractional&#39;</span>
+<span class="sd">    rank_type   : str, optional, default: 'fractional'</span>
 <span class="sd">        If `fractional` (default), the ranks are computed as the fraction</span>
 <span class="sd">        of posterior samples that are smaller than the prior.</span>
 <span class="sd">        If `distance`, the ranks are computed as the fraction of posterior</span>
@@ -584,16 +584,16 @@
 <span class="sd">        The font size of the y-label and y-label texts</span>
 <span class="sd">    legend_fontsize   : int, optional, default: 14</span>
 <span class="sd">        The font size of the legend text.</span>
-<span class="sd">    legend_location : str, optional, default: &#39;lower right</span>
+<span class="sd">    legend_location : str, optional, default: 'lower right</span>
 <span class="sd">        The location of the legend.</span>
 <span class="sd">    title_fontsize    : int, optional, default: 18</span>
 <span class="sd">        The font size of the title text.</span>
 <span class="sd">        Only relevant if `stacked=False`</span>
 <span class="sd">    tick_fontsize     : int, optional, default: 12</span>
 <span class="sd">        The font size of the axis ticklabels</span>
-<span class="sd">    rank_ecdf_color   : str, optional, default: &#39;#a34f4f&#39;</span>
+<span class="sd">    rank_ecdf_color   : str, optional, default: '#a34f4f'</span>
 <span class="sd">        The color to use for the rank ECDFs</span>
-<span class="sd">    fill_color        : str, optional, default: &#39;grey&#39;</span>
+<span class="sd">    fill_color        : str, optional, default: 'grey'</span>
 <span class="sd">        The color of the fill arguments.</span>
 <span class="sd">    num_row           : int, optional, default: None</span>
 <span class="sd">        The number of rows for the subplots.</span>
@@ -619,7 +619,7 @@
 <span class="sd">        and `targets`.</span>
 <span class="sd">    ValueError</span>
 <span class="sd">        If an unknown `rank_type` is passed.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
 
     <span class="c1"># Optionally, compute and prepend test quantities from draws</span>
     <span class="k">if</span> <span class="n">test_quantities</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
@@ -630,10 +630,10 @@
             <span class="n">variable_names</span><span class="o">=</span><span class="n">variable_names</span><span class="p">,</span>
             <span class="n">test_quantities</span><span class="o">=</span><span class="n">test_quantities</span><span class="p">,</span>
         <span class="p">)</span>
-        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
-        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;variable_keys&quot;</span><span class="p">]</span>
-        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;estimates&quot;</span><span class="p">]</span>
-        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">&quot;targets&quot;</span><span class="p">]</span>
+        <span class="n">variable_names</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">]</span>
+        <span class="n">variable_keys</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"variable_keys"</span><span class="p">]</span>
+        <span class="n">estimates</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"estimates"</span><span class="p">]</span>
+        <span class="n">targets</span> <span class="o">=</span> <span class="n">updated_data</span><span class="p">[</span><span class="s2">"targets"</span><span class="p">]</span>
 
     <span class="n">plot_data</span> <span class="o">=</span> <span class="n">prepare_plot_data</span><span class="p">(</span>
         <span class="n">estimates</span><span class="o">=</span><span class="n">estimates</span><span class="p">,</span>
@@ -646,17 +646,17 @@
         <span class="n">stacked</span><span class="o">=</span><span class="n">stacked</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">estimates</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;estimates&quot;</span><span class="p">)</span>
-    <span class="n">targets</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;targets&quot;</span><span class="p">)</span>
+    <span class="n">estimates</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"estimates"</span><span class="p">)</span>
+    <span class="n">targets</span> <span class="o">=</span> <span class="n">plot_data</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"targets"</span><span class="p">)</span>
 
-    <span class="k">if</span> <span class="n">rank_type</span> <span class="o">==</span> <span class="s2">&quot;fractional&quot;</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">rank_type</span> <span class="o">==</span> <span class="s2">"fractional"</span><span class="p">:</span>
         <span class="c1"># Compute fractional ranks</span>
         <span class="n">ranks</span> <span class="o">=</span> <span class="n">fractional_ranks</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
-    <span class="k">elif</span> <span class="n">rank_type</span> <span class="o">==</span> <span class="s2">&quot;distance&quot;</span><span class="p">:</span>
+    <span class="k">elif</span> <span class="n">rank_type</span> <span class="o">==</span> <span class="s2">"distance"</span><span class="p">:</span>
         <span class="c1"># Compute ranks based on distance to the origin</span>
-        <span class="n">ranks</span> <span class="o">=</span> <span class="n">distance_ranks</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="n">stacked</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;ranks_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+        <span class="n">ranks</span> <span class="o">=</span> <span class="n">distance_ranks</span><span class="p">(</span><span class="n">estimates</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">stacked</span><span class="o">=</span><span class="n">stacked</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"ranks_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Unknown rank type: </span><span class="si">{</span><span class="n">rank_type</span><span class="si">}</span><span class="s2">. Use &#39;fractional&#39; or &#39;distance&#39;.&quot;</span><span class="p">)</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Unknown rank type: </span><span class="si">{</span><span class="n">rank_type</span><span class="si">}</span><span class="s2">. Use 'fractional' or 'distance'."</span><span class="p">)</span>
 
     <span class="c1"># Plot individual ecdf of parameters</span>
     <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">ranks</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]):</span>
@@ -671,53 +671,53 @@
 
         <span class="k">if</span> <span class="n">stacked</span><span class="p">:</span>
             <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
-                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
-                    <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]])</span>  <span class="c1"># in case of single axis</span>
-                <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Rank ECDFs&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">],</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+                    <span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">]])</span>  <span class="c1"># in case of single axis</span>
+                <span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Rank ECDFs"</span><span class="p">)</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
+                <span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Rank ECDF&quot;</span><span class="p">)</span>
+            <span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">[</span><span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">xx</span><span class="p">,</span> <span class="n">yy</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">rank_ecdf_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.95</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Rank ECDF"</span><span class="p">)</span>
 
     <span class="c1"># Compute uniform ECDF and bands</span>
-    <span class="n">alpha</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span> <span class="o">=</span> <span class="n">simultaneous_ecdf_bands</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;ecdf_bands_kwargs&quot;</span><span class="p">,</span> <span class="p">{}))</span>
+    <span class="n">alpha</span><span class="p">,</span> <span class="n">z</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span> <span class="o">=</span> <span class="n">simultaneous_ecdf_bands</span><span class="p">(</span><span class="n">estimates</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="o">**</span><span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">"ecdf_bands_kwargs"</span><span class="p">,</span> <span class="p">{}))</span>
 
     <span class="c1"># Difference, if specified</span>
     <span class="k">if</span> <span class="n">difference</span><span class="p">:</span>
         <span class="n">L</span> <span class="o">-=</span> <span class="n">z</span>
         <span class="n">U</span> <span class="o">-=</span> <span class="n">z</span>
-        <span class="n">ylab</span> <span class="o">=</span> <span class="s2">&quot;ECDF Difference&quot;</span>
+        <span class="n">ylab</span> <span class="o">=</span> <span class="s2">"ECDF Difference"</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">ylab</span> <span class="o">=</span> <span class="s2">&quot;ECDF&quot;</span>
+        <span class="n">ylab</span> <span class="o">=</span> <span class="s2">"ECDF"</span>
 
     <span class="c1"># Add simultaneous bounds</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">stacked</span><span class="p">:</span>
-        <span class="n">titles</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;variable_names&quot;</span><span class="p">]</span>
-    <span class="k">elif</span> <span class="n">rank_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;distance&quot;</span><span class="p">,</span> <span class="s2">&quot;random&quot;</span><span class="p">]:</span>
-        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Joint ECDFs&quot;</span><span class="p">]</span>
+        <span class="n">titles</span> <span class="o">=</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"variable_names"</span><span class="p">]</span>
+    <span class="k">elif</span> <span class="n">rank_type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"distance"</span><span class="p">,</span> <span class="s2">"random"</span><span class="p">]:</span>
+        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Joint ECDFs"</span><span class="p">]</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;Stacked ECDFs&quot;</span><span class="p">]</span>
+        <span class="n">titles</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"Stacked ECDFs"</span><span class="p">]</span>
 
-    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">titles</span><span class="p">)):</span>
-        <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">alpha</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">$\%$ Confidence Bands&quot;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">ax</span><span class="p">,</span> <span class="n">title</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">]</span><span class="o">.</span><span class="n">flat</span><span class="p">,</span> <span class="n">titles</span><span class="p">)):</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">fill_between</span><span class="p">(</span><span class="n">z</span><span class="p">,</span> <span class="n">L</span><span class="p">,</span> <span class="n">U</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">fill_color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.2</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="sa">rf</span><span class="s2">"</span><span class="si">{</span><span class="nb">int</span><span class="p">((</span><span class="mi">1</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="n">alpha</span><span class="p">)</span><span class="w"> </span><span class="o">*</span><span class="w"> </span><span class="mi">100</span><span class="p">)</span><span class="si">}</span><span class="s2">$\%$ Confidence Bands"</span><span class="p">)</span>
         <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">title_fontsize</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
             <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">fontsize</span><span class="o">=</span><span class="n">legend_fontsize</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">legend_location</span><span class="p">)</span>
 
-    <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_variables&quot;</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
+    <span class="n">prettify_subplots</span><span class="p">(</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">],</span> <span class="n">num_subplots</span><span class="o">=</span><span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_variables"</span><span class="p">],</span> <span class="n">tick_fontsize</span><span class="o">=</span><span class="n">tick_fontsize</span><span class="p">)</span>
 
     <span class="n">add_titles_and_labels</span><span class="p">(</span>
-        <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;axes&quot;</span><span class="p">],</span>
-        <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_row&quot;</span><span class="p">],</span>
-        <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;num_col&quot;</span><span class="p">],</span>
-        <span class="n">xlabel</span><span class="o">=</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">rank_type</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> rank statistic&quot;</span><span class="p">,</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">"axes"</span><span class="p">],</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_row"</span><span class="p">],</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s2">"num_col"</span><span class="p">],</span>
+        <span class="n">xlabel</span><span class="o">=</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">rank_type</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s2"> rank statistic"</span><span class="p">,</span>
         <span class="n">ylabel</span><span class="o">=</span><span class="n">ylab</span><span class="p">,</span>
         <span class="n">label_fontsize</span><span class="o">=</span><span class="n">label_fontsize</span><span class="p">,</span>
     <span class="p">)</span>
 
-    <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;fig&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">&quot;fig&quot;</span><span class="p">]</span></div>
+    <span class="n">plot_data</span><span class="p">[</span><span class="s2">"fig"</span><span class="p">]</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">plot_data</span><span class="p">[</span><span class="s2">"fig"</span><span class="p">]</span></div>
 
 </pre></div>
 
@@ -748,8 +748,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -783,7 +783,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

@@ -26,8 +26,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../../../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../../../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../../../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../../../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../../../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -35,10 +35,10 @@
     <link rel="stylesheet" type="text/css" href="../../../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../../../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../../../_static/documentation_options.js?v=649c0a16"></script>
     <script src="../../../_static/doctools.js?v=fd6eb6e6"></script>
@@ -46,7 +46,7 @@
     <script src="../../../_static/design-tabs.js?v=f930bc37"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_modules/bayesflow/utils/hparam_utils';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.8';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -490,15 +490,15 @@
 
 <div class="viewcode-block" id="find_batch_size">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.find_batch_size.html#bayesflow.utils.find_batch_size">[docs]</a>
-<span class="k">def</span><span class="w"> </span><span class="nf">find_batch_size</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">memory_budget</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;auto&quot;</span><span class="p">,</span> <span class="nb">min</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="nb">max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an estimation of an optimal batch size based on memory budget and sample memory footprint.</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">find_batch_size</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="n">memory_budget</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">"auto"</span><span class="p">,</span> <span class="nb">min</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">4</span><span class="p">,</span> <span class="nb">max</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1024</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">"""Returns an estimation of an optimal batch size based on memory budget and sample memory footprint.</span>
 
 <span class="sd">    :param sample: Any nested structure of tensors, representing a single sample.</span>
 <span class="sd">    :param memory_budget: The maximum available memory for a single batch.</span>
 <span class="sd">    :param min: The minimum batch size.</span>
 <span class="sd">    :param max: The maximum batch size.</span>
-<span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">memory_budget</span> <span class="o">==</span> <span class="s2">&quot;auto&quot;</span><span class="p">:</span>
+<span class="sd">    """</span>
+    <span class="k">if</span> <span class="n">memory_budget</span> <span class="o">==</span> <span class="s2">"auto"</span><span class="p">:</span>
         <span class="n">memory_budget</span> <span class="o">=</span> <span class="n">find_memory_budget</span><span class="p">()</span>
     <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">memory_budget</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
         <span class="n">memory_budget</span> <span class="o">=</span> <span class="n">parse_bytes</span><span class="p">(</span><span class="n">memory_budget</span><span class="p">)</span>
@@ -506,16 +506,16 @@
     <span class="c1"># find the size of one sample</span>
     <span class="n">sample_memory</span> <span class="o">=</span> <span class="n">size_of</span><span class="p">(</span><span class="n">sample</span><span class="p">)</span>
 
-    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Estimating memory footprint of one sample at </span><span class="si">{</span><span class="n">format_bytes</span><span class="p">(</span><span class="n">sample_memory</span><span class="p">,</span><span class="w"> </span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">.&quot;</span><span class="p">)</span>
+    <span class="n">logging</span><span class="o">.</span><span class="n">info</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Estimating memory footprint of one sample at </span><span class="si">{</span><span class="n">format_bytes</span><span class="p">(</span><span class="n">sample_memory</span><span class="p">,</span><span class="w"> </span><span class="n">precision</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s2">."</span><span class="p">)</span>
 
     <span class="c1"># use a conservative (low) estimate for the optimal batch size</span>
     <span class="n">batch_size</span> <span class="o">=</span> <span class="n">memory_budget</span> <span class="o">/</span> <span class="p">(</span><span class="mi">4</span> <span class="o">*</span> <span class="n">sample_memory</span><span class="p">)</span>
 
     <span class="k">if</span> <span class="n">batch_size</span> <span class="o">&lt;</span> <span class="mi">16</span><span class="p">:</span>
         <span class="n">logging</span><span class="o">.</span><span class="n">warning</span><span class="p">(</span>
-            <span class="s2">&quot;Memory budget is very small compared to sample size. You may need to accumulate gradients over &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;multiple batches using `gradient_accumulation_steps` in the optimizer. We recommend accumulating &quot;</span>
-            <span class="sa">f</span><span class="s2">&quot;at least </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mi">32</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">batch_size</span><span class="p">)</span><span class="si">}</span><span class="s2"> steps.&quot;</span>
+            <span class="s2">"Memory budget is very small compared to sample size. You may need to accumulate gradients over "</span>
+            <span class="sa">f</span><span class="s2">"multiple batches using `gradient_accumulation_steps` in the optimizer. We recommend accumulating "</span>
+            <span class="sa">f</span><span class="s2">"at least </span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="mi">32</span><span class="w"> </span><span class="o">/</span><span class="w"> </span><span class="n">batch_size</span><span class="p">)</span><span class="si">}</span><span class="s2"> steps."</span>
         <span class="p">)</span>
 
     <span class="c1"># limit estimate to sensible range</span>
@@ -528,9 +528,9 @@
 <div class="viewcode-block" id="find_memory_budget">
 <a class="viewcode-back" href="../../../api/bayesflow.utils.find_memory_budget.html#bayesflow.utils.find_memory_budget">[docs]</a>
 <span class="k">def</span><span class="w"> </span><span class="nf">find_memory_budget</span><span class="p">(</span><span class="n">device_type</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="kc">None</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;Returns an estimation of available memory in bytes for the given device type.&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""Returns an estimation of available memory in bytes for the given device type."""</span>
     <span class="c1"># keras utilities for device information are not very mature yet</span>
-    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">&quot;Automatic memory budget is not yet supported. Please pass an explicit value.&quot;</span><span class="p">)</span></div>
+    <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">(</span><span class="s2">"Automatic memory budget is not yet supported. Please pass an explicit value."</span><span class="p">)</span></div>
 
 </pre></div>
 
@@ -561,8 +561,8 @@
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../../../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../../../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../../../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -596,7 +596,7 @@
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

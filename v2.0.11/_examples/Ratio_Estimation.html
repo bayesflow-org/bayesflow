@@ -27,8 +27,8 @@
   </noscript>
   
   <!-- Loaded before other Sphinx assets -->
-  <link href="../_static/styles/theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
-<link href="../_static/styles/pydata-sphinx-theme.css?digest=90905a2f556bf617f1a9" rel="stylesheet" />
+  <link href="../_static/styles/theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=cb8930eaaf36d9849b67" rel="stylesheet" />
 
     <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
     <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
@@ -36,10 +36,10 @@
     <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
   
   <!-- So that users can add custom icons -->
-  <script defer src="../_static/scripts/fontawesome.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/fontawesome.js?digest=cb8930eaaf36d9849b67"></script>
   <!-- Pre-loaded scripts that we'll load fully later -->
-  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9" />
-<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9" />
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67" />
 
     <script src="../_static/documentation_options.js?v=4e34c7ab"></script>
     <script src="../_static/doctools.js?v=fd6eb6e6"></script>
@@ -49,7 +49,7 @@
     <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
     <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Ratio_Estimation';</script>
     <script>
-        DOCUMENTATION_OPTIONS.theme_version = '0.20.0';
+        DOCUMENTATION_OPTIONS.theme_version = '0.21.0';
         DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
         DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.0.11';
         DOCUMENTATION_OPTIONS.show_version_warning_banner =
@@ -542,9 +542,9 @@
 Defaulting to JAX.
 To override, set the KERAS_BACKEND environment variable before importing bayesflow.
 See: https://keras.io/getting_started/#configuring-your-backend
-INFO:2026-02-28 21:36:22,781:jax._src.xla_bridge:834: Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
-INFO:jax._src.xla_bridge:Unable to initialize backend &#39;tpu&#39;: UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
-INFO:bayesflow:Using backend &#39;jax&#39;
+INFO:2026-02-28 21:36:22,781:jax._src.xla_bridge:834: Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:jax._src.xla_bridge:Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+INFO:bayesflow:Using backend 'jax'
 </pre></div>
 </div>
 </div>
@@ -596,10 +596,10 @@ Taking logs gives the additive form:
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
     <span class="n">mu</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">10</span><span class="p">,</span> <span class="mi">10</span><span class="p">)</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">mu</span><span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"mu"</span><span class="p">:</span> <span class="n">mu</span><span class="p">}</span>
 
 <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">mu</span><span class="p">):</span>
-    <span class="k">return</span> <span class="p">{</span><span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">()}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="s2">"x"</span><span class="p">:</span> <span class="n">mu</span> <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">standard_normal</span><span class="p">()}</span>
 </pre></div>
 </div>
 </div>
@@ -633,8 +633,8 @@ x (3, 1)
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">approximators</span><span class="o">.</span><span class="n">RatioApproximator</span><span class="o">.</span><span class="n">build_adapter</span><span class="p">(</span>
-    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">],</span> 
-    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="p">[</span><span class="s2">"mu"</span><span class="p">],</span> 
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
 <span class="p">)</span>
 </pre></div>
 </div>
@@ -654,7 +654,7 @@ x (3, 1)
 </div>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ratio_approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">&quot;adam&quot;</span><span class="p">)</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ratio_approximator</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="n">optimizer</span><span class="o">=</span><span class="s2">"adam"</span><span class="p">)</span>
 
 <span class="n">history</span> <span class="o">=</span> <span class="n">ratio_approximator</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
     <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
@@ -794,8 +794,8 @@ Epoch 50/50
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">)</span>
 <span class="n">contrastive_sims</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;mu&quot;</span><span class="p">:</span> <span class="n">sims</span><span class="p">[</span><span class="s2">&quot;mu&quot;</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
-    <span class="s2">&quot;x&quot;</span><span class="p">:</span> <span class="n">sims</span><span class="p">[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+    <span class="s2">"mu"</span><span class="p">:</span> <span class="n">sims</span><span class="p">[</span><span class="s2">"mu"</span><span class="p">][::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+    <span class="s2">"x"</span><span class="p">:</span> <span class="n">sims</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span>
 <span class="p">}</span>
 </pre></div>
 </div>
@@ -812,8 +812,8 @@ Epoch 50/50
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span><span class="n">log_ratio_positive</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;density&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Positive&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;green&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
-<span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span><span class="n">log_ratio_negative</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">&quot;density&quot;</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">&quot;Negative&quot;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span><span class="n">log_ratio_positive</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">"density"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Positive"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"green"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+<span class="n">sns</span><span class="o">.</span><span class="n">histplot</span><span class="p">(</span><span class="n">log_ratio_negative</span><span class="p">,</span> <span class="n">stat</span><span class="o">=</span><span class="s2">"density"</span><span class="p">,</span> <span class="n">ax</span><span class="o">=</span><span class="n">ax</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Negative"</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"red"</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
 <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
 </pre></div>
 </div>
@@ -853,8 +853,8 @@ Epoch 50/50
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">mu</span><span class="p">,</span> <span class="n">le</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">&#39;mu&#39;</span><span class="p">)</span>
-<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">&#39;log evidence&#39;</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s1">'mu'</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s1">'log evidence'</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
@@ -876,14 +876,14 @@ Epoch 50/50
 <span class="kn">from</span><span class="w"> </span><span class="nn">pytensor.graph</span><span class="w"> </span><span class="kn">import</span> <span class="n">Op</span><span class="p">,</span> <span class="n">Apply</span>
 
 <span class="k">class</span><span class="w"> </span><span class="nc">RatioOp</span><span class="p">(</span><span class="n">Op</span><span class="p">):</span>
-<span class="w">    </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">    </span><span class="sd">"""</span>
 <span class="sd">    Op for likelihood-to-evidence approximator: computes p(x|theta) / p(x)</span>
-<span class="sd">    &quot;&quot;&quot;</span>
+<span class="sd">    """</span>
     <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">ratio_approximator</span><span class="p">,</span> <span class="n">x_obs</span><span class="p">):</span>
-<span class="w">        </span><span class="sd">&quot;&quot;&quot;</span>
+<span class="w">        </span><span class="sd">"""</span>
 <span class="sd">        ratio_approximator: trained ratio approximator</span>
 <span class="sd">        x_obs: vector of observations</span>
-<span class="sd">        &quot;&quot;&quot;</span>
+<span class="sd">        """</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span> <span class="o">=</span> <span class="n">ratio_approximator</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">x_obs</span> <span class="o">=</span> <span class="n">x_obs</span>
         
@@ -898,7 +898,7 @@ Epoch 50/50
         <span class="n">data</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">x</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">x_obs</span><span class="p">,</span> <span class="n">mu</span> <span class="o">=</span> <span class="n">mu</span><span class="p">)</span>
         <span class="c1"># results in a vector of log_ratio values; one per element of x_obs</span>
         <span class="n">log_ratio</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">approximator</span><span class="o">.</span><span class="n">log_ratio</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
-        <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_ratio</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">&#39;float64&#39;</span><span class="p">)</span>
+        <span class="n">outputs</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">log_ratio</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="s1">'float64'</span><span class="p">)</span>
 </pre></div>
 </div>
 </div>
@@ -913,7 +913,7 @@ INFO:arviz.preview:arviz_plots not installed
 <p>We instantiate our ratio likelihood with a simulated dataset of 10 observations, all generated by the same true value of <code class="docutils literal notranslate"><span class="pre">mu</span></code>.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_obs_vector</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="s2">&quot;x&quot;</span><span class="p">]</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">x_obs_vector</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">1</span><span class="p">)[</span><span class="s2">"x"</span><span class="p">]</span>
 <span class="n">ratio_op</span> <span class="o">=</span> <span class="n">RatioOp</span><span class="p">(</span><span class="n">ratio_approximator</span><span class="p">,</span> <span class="n">x_obs</span><span class="o">=</span><span class="n">x_obs_vector</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -925,9 +925,9 @@ INFO:arviz.preview:arviz_plots not installed
 <div class="cell docutils container">
 <div class="cell_input docutils container">
 <div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">with</span> <span class="n">pm</span><span class="o">.</span><span class="n">Model</span><span class="p">()</span> <span class="k">as</span> <span class="n">model</span><span class="p">:</span>
-    <span class="n">mu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">&#39;mu&#39;</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">mu</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="s1">'mu'</span><span class="p">,</span> <span class="n">mu</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">shape</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">log_likelihood</span> <span class="o">=</span> <span class="n">ratio_op</span><span class="p">(</span><span class="n">mu</span><span class="p">)</span>
-    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s1">&#39;log_likelihood&#39;</span><span class="p">,</span> <span class="n">log_likelihood</span><span class="p">)</span>
+    <span class="n">pm</span><span class="o">.</span><span class="n">Potential</span><span class="p">(</span><span class="s1">'log_likelihood'</span><span class="p">,</span> <span class="n">log_likelihood</span><span class="p">)</span>
     <span class="n">trace</span> <span class="o">=</span> <span class="n">pm</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">1000</span><span class="p">,</span> <span class="n">step</span><span class="o">=</span><span class="n">pm</span><span class="o">.</span><span class="n">Slice</span><span class="p">(),</span> <span class="n">chains</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">cores</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
 </pre></div>
 </div>
@@ -951,7 +951,7 @@ INFO:pymc.sampling.mcmc:Slice: [mu]
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>array([[&lt;Axes: title={&#39;center&#39;: &#39;mu&#39;}&gt;, &lt;Axes: title={&#39;center&#39;: &#39;mu&#39;}&gt;]],
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>array([[&lt;Axes: title={'center': 'mu'}&gt;, &lt;Axes: title={'center': 'mu'}&gt;]],
       dtype=object)
 </pre></div>
 </div>
@@ -961,15 +961,15 @@ INFO:pymc.sampling.mcmc:Slice: [mu]
 <p>MCMC sampling took just a few seconds and the estimation posterior looks reasonable. We further verify the posterior’s accuracy by comparing it with empirical moments directly obtained from the observed data. Since we used a simple normal means model and uninformative priors, the true posterior mean of <code class="docutils literal notranslate"><span class="pre">mu</span></code> is essentially the empirical mean of the data. The same goes for the posterior standard deviation of <code class="docutils literal notranslate"><span class="pre">mu</span></code>, which is essentially the empirical standard error of the observed data mean. Of course, these special relationships only hold for this simple model.</p>
 <div class="cell docutils container">
 <div class="cell_input docutils container">
-<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">trace</span><span class="p">[</span><span class="s2">&quot;posterior&quot;</span><span class="p">][</span><span class="s2">&quot;mu&quot;</span><span class="p">]))</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">trace</span><span class="p">[</span><span class="s2">&quot;posterior&quot;</span><span class="p">][</span><span class="s2">&quot;mu&quot;</span><span class="p">]))</span>
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">trace</span><span class="p">[</span><span class="s2">"posterior"</span><span class="p">][</span><span class="s2">"mu"</span><span class="p">]))</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">trace</span><span class="p">[</span><span class="s2">"posterior"</span><span class="p">][</span><span class="s2">"mu"</span><span class="p">]))</span>
 </pre></div>
 </div>
 </div>
 <div class="cell_output docutils container">
-<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;xarray.DataArray &#39;mu&#39; ()&gt; Size: 8B
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>&lt;xarray.DataArray 'mu' ()&gt; Size: 8B
 array(0.65915859)
-&lt;xarray.DataArray &#39;mu&#39; ()&gt; Size: 8B
+&lt;xarray.DataArray 'mu' ()&gt; Size: 8B
 array(0.35842967)
 </pre></div>
 </div>
@@ -1078,8 +1078,8 @@ array(0.35842967)
   </div>
   
   <!-- Scripts loaded after <body> so the DOM is not blocked -->
-  <script defer src="../_static/scripts/bootstrap.js?digest=90905a2f556bf617f1a9"></script>
-<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=90905a2f556bf617f1a9"></script>
+  <script defer src="../_static/scripts/bootstrap.js?digest=cb8930eaaf36d9849b67"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=cb8930eaaf36d9849b67"></script>
 
   <footer class="bd-footer">
 <div class="bd-footer__inner bd-page-width">
@@ -1113,7 +1113,7 @@ array(0.35842967)
         <div class="footer-item">
 <p class="theme-version">
   <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
-  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.20.0.
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.21.0.
 </p></div>
       
     </div>

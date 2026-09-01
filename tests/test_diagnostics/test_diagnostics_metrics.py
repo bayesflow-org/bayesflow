@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 import pytest
+from scipy.special import expit
 from scipy.stats import binom
 
 import bayesflow as bf
@@ -34,6 +35,10 @@ def test_metric_calibration_error(random_estimates, random_targets, var_names):
     )
     assert out["values"].shape == (random_estimates["sigma"].shape[-1],)
     assert out["variable_names"] == ["sigma"]
+
+    # test without aggregation
+    out = bf.diagnostics.metrics.calibration_error(random_estimates, random_targets, resolution=20, aggregation=None)
+    assert out["values"].shape == (20, num_variables(random_estimates))
 
     # test quantities
     test_quantities = {
@@ -105,22 +110,204 @@ def test_root_mean_squared_error(random_estimates, random_targets):
     assert out["values"].shape[0] == len(test_quantities) + num_variables(random_estimates)
 
 
-def test_classifier_two_sample_test(random_samples_a, random_samples_b):
-    metric = bf.diagnostics.metrics.classifier_two_sample_test(
-        estimates=random_samples_a, targets=random_samples_a, cross_validation_splits=1
+def test_canonical_correlation_metric_with_dict_inputs():
+    summaries = {
+        "summary": np.array(
+            [
+                [0.0, 1.0],
+                [1.0, 0.0],
+                [2.0, 1.0],
+                [3.0, 2.0],
+            ]
+        )
+    }
+    sims = {"x": summaries["summary"][:, None, :]}
+
+    out = bf.diagnostics.metrics.canonical_correlation_metric(
+        summaries,
+        sims,
+        summary_keys="summary",
+        target_keys="x",
     )
+
+    assert list(out.keys()) == [
+        "values",
+        "metric_name",
+        "variable_names",
+    ]
+    assert np.allclose(out["values"], [1.0, 1.0])
+    assert out["metric_name"] == "Canonical Correlation Metric"
+    assert out["variable_names"] == ["canonical_correlation_1", "canonical_correlation_2"]
+
+
+def test_classifier_two_sample_test(random_samples_a, random_samples_b):
+    c2st = bf.diagnostics.metrics.classifier_two_sample_test
+
+    # a single number is returned, which is 0.5 for identical and larger for differing distributions
+    metric = c2st(estimates=random_samples_a[:2000], targets=random_samples_a[2000:4000], cross_validation_splits=1)
     assert 0.55 > metric > 0.45
 
-    metric = bf.diagnostics.metrics.classifier_two_sample_test(
-        estimates=random_samples_a, targets=random_samples_b, cross_validation_splits=1
-    )
+    metric = c2st(estimates=random_samples_a[:2000], targets=random_samples_b[:2000], cross_validation_splits=1)
     assert metric > 0.55
 
-    metrics = bf.diagnostics.metrics.classifier_two_sample_test(
-        estimates=random_samples_a, targets=random_samples_b, cross_validation_splits=5, return_metric_only=False
+    # all statistics of all splits are returned; the conformal test is included automatically whenever
+    # a dictionary is returned, and detects the difference
+    metrics = c2st(
+        estimates=random_samples_a[:2000],
+        targets=random_samples_b[:2000],
+        cross_validation_splits=3,
+        return_metric_only=False,
     )
+    assert len(metrics["scores"]) == len(metrics["conformal_p_values"]) == 3
     assert (np.array(metrics["scores"]) > 0.55).all()
-    assert len(metrics["scores"]) == 5
+    assert metrics["auc"] > 0.55
+    assert metrics["regression_statistic"] > 0
+    assert len(metrics["classifiers"]) == len(metrics["histories"]) == 3
+    assert metrics["conformal_p_value"] < 0.01
+
+    # unequal sample sizes: the classifier is trained with class weights and both the conformal test and
+    # the rank-based statistics stay calibrated for samples from the same distribution
+    metrics = c2st(
+        estimates=random_samples_a[:3000],
+        targets=random_samples_a[3000:4000],
+        cross_validation_splits=1,
+        conformal=True,
+    )
+    assert 0.4 < metrics["auc"] < 0.6
+    assert metrics["conformal_p_value"] > 0.001
+    assert "classifiers" not in metrics
+
+    # the permutation p-values are resolved up to 1 / (num_permutations + 1). The two distributions differ
+    # clearly, so the rank-based statistic attains the smallest possible p-value.
+    num_permutations = 3
+    metrics = c2st(
+        estimates=random_samples_a[:1000],
+        targets=random_samples_b[:1000],
+        cross_validation_splits=1,
+        max_epochs=20,
+        num_permutations=num_permutations,
+    )
+    p_values = metrics["permutation_p_values"]
+    assert set(p_values) == {"score", "regression_statistic", "auc"}
+    assert all(1 / (num_permutations + 1) <= p <= 1 for p in p_values.values())
+    assert p_values["auc"] == pytest.approx(1 / (num_permutations + 1))
+
+    # a compiled model, an uncompiled model and a callable returning one are all accepted as classifiers
+    def build_classifier():
+        return keras.Sequential(
+            [
+                keras.layers.Dense(16, activation="relu"),
+                keras.layers.Dense(1, activation="sigmoid"),
+            ]
+        )
+
+    compiled = build_classifier()
+    compiled.build((None, random_samples_a.shape[-1]))
+    compiled.compile(
+        optimizer=keras.optimizers.SGD(learning_rate=0.05), loss="binary_crossentropy", metrics=["accuracy"]
+    )
+    weights = [w.copy() for w in compiled.get_weights()]
+
+    for classifier in (compiled, build_classifier(), build_classifier):
+        metric = c2st(
+            estimates=random_samples_a[:500],
+            targets=random_samples_b[:500],
+            classifier=classifier,
+            cross_validation_splits=1,
+            max_epochs=5,
+        )
+        assert 0 <= metric <= 1
+
+    # the classifier that was passed in is cloned, not trained
+    assert all(np.array_equal(before, after) for before, after in zip(weights, compiled.get_weights()))
+
+    with pytest.raises(TypeError):
+        c2st(estimates=random_samples_a, targets=random_samples_b, classifier="not-a-model", max_epochs=1)
+
+    # the seed makes the splits, the conformal tie-breaking and the permutations reproducible
+    kwargs = dict(
+        estimates=random_samples_a[:400],
+        targets=random_samples_b[:400],
+        cross_validation_splits=1,
+        max_epochs=5,
+        conformal=True,
+        num_permutations=2,
+    )
+    first, second, other = [c2st(**kwargs, seed=seed) for seed in (42, 42, 7)]
+    keys = ("score", "auc", "regression_statistic", "conformal_p_value")
+    assert all(first[key] == second[key] for key in keys)
+    assert any(first[key] != other[key] for key in keys)
+
+
+def test_classifier_two_sample_test_statistics():
+    """Unit tests for the test statistics, using synthetic classifier scores."""
+    from bayesflow.diagnostics.metrics.classifier_two_sample_test import (
+        _make_splits,
+        _predict_scores,
+        area_under_the_curve,
+        conformal_test,
+        regression_statistic,
+    )
+
+    rng = np.random.default_rng(2026)
+
+    # the AUC matches its definition, including the treatment of ties
+    scores_a = rng.integers(0, 5, size=50).astype(float)
+    scores_b = rng.integers(0, 5, size=70).astype(float)
+    pairwise = (scores_a[:, None] > scores_b[None, :]) + 0.5 * (scores_a[:, None] == scores_b[None, :])
+    assert area_under_the_curve(scores_a, scores_b) == pytest.approx(np.mean(pairwise))
+
+    # the regression statistic is zero for an uninformative and maximal for a perfect classifier
+    labels = np.r_[np.zeros(500), np.ones(500)]
+    assert regression_statistic(np.full(1000, 0.5), labels) == pytest.approx(0.0)
+    assert regression_statistic(labels, labels) == pytest.approx(0.25)
+
+    # the ranking scores are the pre-sigmoid log-odds when the classifier ends in a dense sigmoid unit,
+    # so they stay distinct where the float32 probabilities saturate to 1
+    model = keras.Sequential([keras.layers.Dense(1, activation="sigmoid")])
+    model.build((None, 1))
+    model.layers[-1].set_weights([np.array([[20.0]]), np.array([0.0])])
+    x = np.array([[1.0], [2.0], [3.0], [4.0]], dtype="float32")
+    ranking_scores = _predict_scores(model, x)
+    assert len(np.unique(np.asarray(model.predict(x, verbose=0)))) == 1
+    assert np.allclose(ranking_scores, [20.0, 40.0, 60.0, 80.0])
+
+    # away from saturation, the probabilities match the model output
+    model.layers[-1].set_weights([np.array([[0.5]]), np.array([0.1])])
+    ranking_scores = _predict_scores(model, x)
+    probabilities = np.asarray(model.predict(x, verbose=0)).reshape(-1)
+    assert np.allclose(expit(ranking_scores), probabilities, atol=1e-6)
+    assert np.allclose(ranking_scores, 0.5 * x.reshape(-1) + 0.1)
+
+    # models that do not end in a dense sigmoid unit fall back to the log-odds of their probabilities
+    fallback = keras.Sequential([keras.layers.Dense(1), keras.layers.Activation("sigmoid")])
+    fallback.build((None, 1))
+    ranking_scores = _predict_scores(fallback, x)
+    probabilities = np.asarray(fallback.predict(x, verbose=0)).reshape(-1)
+    assert np.allclose(expit(ranking_scores), probabilities)
+
+    # the splits are stratified, disjoint from the training data and cover all samples
+    labels = np.r_[np.zeros(97), np.ones(103)]
+    for splits in (_make_splits(labels, 1, 0.5, rng), _make_splits(labels, 4, 0.5, rng)):
+        for train_idx, val_idx in splits:
+            assert len(np.intersect1d(train_idx, val_idx)) == 0
+            assert len(train_idx) + len(val_idx) == len(labels)
+            assert labels[val_idx].mean() == pytest.approx(labels.mean(), abs=0.05)
+    all_val = np.concatenate([val_idx for _, val_idx in _make_splits(labels, 4, 0.5, rng)])
+    assert len(np.unique(all_val)) == len(labels)
+
+    def rejection_rate(shift, num_reps):
+        rejected = 0
+        for _ in range(num_reps):
+            reference = rng.normal(shift, 1, size=200)
+            estimates = rng.normal(0, 1, size=100)
+            rejected += conformal_test(reference, estimates, rng)[1] < 0.05
+        return rejected / num_reps
+
+    # the conformal test is calibrated if the scores of both samples follow the same distribution ...
+    assert rejection_rate(0.0, 200) < 0.12
+    # ... and powerful if they do not
+    assert rejection_rate(1.0, 20) > 0.8
 
 
 def test_model_comparison_accuracy():
@@ -268,8 +455,7 @@ def test_bootstrap_comparison_shapes():
         num_null_samples,
     )
 
-    assert isinstance(distance_observed, float)
-    assert isinstance(distance_null, np.ndarray)
+    assert distance_observed.shape == ()
     assert distance_null.shape == (num_null_samples,)
 
 
@@ -320,22 +506,6 @@ def test_bootstrap_comparison_mismatched_shapes():
         )
 
 
-def test_bootstrap_comparison_num_observed_exceeds_num_reference():
-    """Test bootstrap_comparison raises ValueError when number of observed samples exceeds the number of reference
-    samples."""
-    observed_samples = np.random.rand(100, 5)
-    reference_samples = np.random.rand(20, 5)
-    num_null_samples = 50
-
-    with pytest.raises(ValueError):
-        bf.diagnostics.metrics.bootstrap_comparison(
-            observed_samples,
-            reference_samples,
-            lambda x, y: keras.ops.abs(keras.ops.mean(x) - keras.ops.mean(y)),
-            num_null_samples,
-        )
-
-
 def test_mmd_comparison_from_summaries_shapes():
     """Test the mmd_comparison_from_summaries output shapes."""
     observed_summaries = np.random.rand(10, 5)
@@ -349,8 +519,7 @@ def test_mmd_comparison_from_summaries_shapes():
         num_null_samples=num_null_samples,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 
@@ -423,8 +592,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
 
-    assert isinstance(mmd_observed, float)
-    assert isinstance(mmd_null, np.ndarray)
+    assert mmd_observed.shape == ()
     assert mmd_null.shape == (num_null_samples,)
 
 

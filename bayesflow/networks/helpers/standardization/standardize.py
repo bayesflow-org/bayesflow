@@ -25,6 +25,12 @@ class Standardize(keras.Layer):
         self.moving_m2 = None
         self.count = None
 
+    def compute_mask(self, inputs, mask=None):
+        # `mask` (magic keyword in Keras) is terminated here by `return None`
+        # to prevent warnings about inability to inject it downstream.
+        # We explicitly pass mask and do not rely on having it travel with as a tensor attribute.
+        return None
+
     def moving_std(self, index: int) -> Tensor:
         """Calculates the standard deviation from the moving M^2 at the given index and the count.
 
@@ -54,6 +60,7 @@ class Standardize(keras.Layer):
         forward: bool = True,
         log_det_jac: bool = False,
         transformation_type: str = "location_scale",
+        mask: Tensor | None = None,
     ) -> Tensor | Sequence[Tensor]:
         """
         Apply standardization or its inverse to the input tensor. Optionally compute the log determinant
@@ -72,6 +79,9 @@ class Standardize(keras.Layer):
         transformation_type: str, optional
             The type of inverse transform to apply. Only relevant if used with arbitrary point estimates.
             Default is "location_scale", i.e., undo standardization.
+        mask: Tensor, optional
+            A mask restricting what to take into account when computing moments during training for standardization.
+            The shape needs to be broadcastable to all sample/batch axes of the input, i.e. `x.shape[:-1]`.
 
         Returns
         -------
@@ -89,7 +99,7 @@ class Standardize(keras.Layer):
 
         for idx, val in enumerate(flattened):
             if stage == "training":
-                self._update_moments(val, idx)
+                self._update_moments(val, idx, mask)
 
             mean = expand_left_as(self.moving_mean[idx], val)
             # moving_std will return 1 in the case of std=0, so no further checks are necessary here
@@ -132,7 +142,7 @@ class Standardize(keras.Layer):
 
         return outputs
 
-    def _update_moments(self, x: Tensor, index: int):
+    def _update_moments(self, x: Tensor, index: int, mask: Tensor | None = None):
         """
         Incrementally updates the running mean and variance (M2) per feature using a numerically
         stable online algorithm.
@@ -145,14 +155,21 @@ class Standardize(keras.Layer):
             running totals (mean, M2, and sample count) accordingly.
         index : int
             The index of the corresponding running statistics to be updated.
+        mask : Tensor, optional
+            Mask for the input, broadcastable to the batch/sample axes, i.e. `x.shape[:-1]`.
         """
 
         reduce_axes = tuple(range(x.ndim - 1))
-        batch_count = keras.ops.cast(keras.ops.prod(keras.ops.shape(x)[:-1]), self.count[index].dtype)
 
-        # Compute batch mean and M2 per feature
-        batch_mean = keras.ops.mean(x, axis=reduce_axes)
-        batch_m2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+        if mask is None:
+            batch_count = keras.ops.cast(keras.ops.prod(keras.ops.shape(x)[:-1]), self.count[index].dtype)
+            batch_mean = keras.ops.mean(x, axis=reduce_axes)
+            batch_m2 = keras.ops.sum((x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
+        else:
+            mask = keras.ops.cast(keras.ops.broadcast_to(mask, keras.ops.shape(x)[:-1]), x.dtype)[..., None]
+            batch_count = keras.ops.cast(keras.ops.sum(mask), self.count[index].dtype)
+            batch_mean = keras.ops.sum(x * mask, axis=reduce_axes) / batch_count
+            batch_m2 = keras.ops.sum(mask * (x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
 
         # Read current totals
         mean = self.moving_mean[index]

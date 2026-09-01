@@ -1,4 +1,5 @@
 import keras
+import numpy as np
 import pytest
 
 
@@ -74,6 +75,38 @@ def test_unconditional_mvn(multivariate_normal_score):
     mean = keras.ops.convert_to_tensor([[0.0, 1.0]])
     covariance = keras.ops.convert_to_tensor([[[1.0, 0.0], [0.0, 1.0]]])
     multivariate_normal_score.sample((10,), mean, covariance)
+
+
+def test_mvn_sample_scales_with_precision_factor(multivariate_normal_score):
+    """Samples are scaled by the inverse of the precision Cholesky factor, not by the factor itself."""
+    mean = keras.ops.zeros((3, 2))
+    identity = keras.ops.broadcast_to(keras.ops.eye(2)[None], (3, 2, 2))
+
+    unit = multivariate_normal_score.sample((3,), mean=mean, precision_cholesky_factor=identity, seed=0)
+    halved = multivariate_normal_score.sample((3,), mean=mean, precision_cholesky_factor=2.0 * identity, seed=0)
+
+    np.testing.assert_allclose(
+        keras.ops.convert_to_numpy(halved), keras.ops.convert_to_numpy(unit) / 2.0, rtol=1e-5, atol=1e-6
+    )
+
+
+def test_mvn_sample_with_ill_conditioned_precision(multivariate_normal_score):
+    """Untrained heads emit precision factors that a general matrix inverse rejects as singular."""
+    num_factors, dim = 32, 4
+    rng = np.random.default_rng(0)
+
+    # diagonals at the floor of the CholeskyFactor link, with far larger off-diagonal entries
+    factor = np.tril(rng.normal(0.0, 5.0, (num_factors, dim, dim)).astype("float32"), k=-1)
+    factor[:, np.arange(dim), np.arange(dim)] = 1e-5
+
+    samples = multivariate_normal_score.sample(
+        (num_factors,),
+        mean=keras.ops.zeros((num_factors, dim)),
+        precision_cholesky_factor=keras.ops.convert_to_tensor(factor),
+    )
+
+    assert keras.ops.shape(samples) == (num_factors, dim)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(samples)))
 
 
 def test_mixture_score_constructor_validation():
@@ -280,8 +313,8 @@ def test_brier_score_reports_true_brier_value():
     brier = BrierScore().score({"probs": probs}, targets)
 
     # Exact (mean) Brier score sum((p - y)^2).
-    probs_np = np.asarray(probs)
-    expected = np.mean(np.sum((probs_np - np.asarray(targets)) ** 2, axis=-1))
+    probs_np = keras.ops.convert_to_numpy(probs)
+    expected = np.mean(np.sum((probs_np - keras.ops.convert_to_numpy(targets)) ** 2, axis=-1))
     assert keras.ops.allclose(brier, expected, atol=1e-6)
 
     # ...recovered from the alpha=2 Tsallis score via the affine map S_Brier = 2 S_poly + 1.

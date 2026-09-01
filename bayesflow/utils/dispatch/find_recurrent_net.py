@@ -18,9 +18,12 @@ def _(name: str, *args, **kwargs):
         case other:
             raise ValueError(f"Unsupported network name: '{other}'.")
 
-    return constructor
+    return constructor(*args, **kwargs)
 
 
 @find_recurrent_net.register
 def _(network: keras.Layer, *args, **kwargs):
+    if args or kwargs:
+        raise TypeError("Cannot pass construction arguments when a recurrent network is already constructed.")
+
     return network

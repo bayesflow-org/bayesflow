@@ -139,19 +139,20 @@ class RatioApproximator(Approximator):
         batch_size = keras.ops.shape(inference_variables)[0]
 
         log_gamma = keras.ops.broadcast_to(keras.ops.log(self.gamma), (batch_size,))
-        log_K = keras.ops.broadcast_to(keras.ops.log(self.K), (batch_size,))
-
         marginal_weight = 1 / (1 + self.gamma)
         joint_weight = self.gamma / (1 + self.gamma)
 
         # Get (batch_size, K+1, dim) inference variables (theta)
         bootstrap_inference_variables = self._sample_from_batch(inference_variables)
+        num_contrastive = keras.ops.shape(bootstrap_inference_variables)[1]
+
+        log_K = keras.ops.broadcast_to(keras.ops.log(num_contrastive), (batch_size,))
         bootstrap_inference_variables = keras.ops.concatenate(
             [inference_variables[:, None, :], bootstrap_inference_variables], axis=1
         )
 
         # Get (batch_size, K, dim) conditions (already resolved from condition builder)
-        conditions = expand_tile(resolved_conditions, n=self.K, axis=1)
+        conditions = expand_tile(resolved_conditions, n=num_contrastive, axis=1)
 
         marginal_logits = self.logits(
             bootstrap_inference_variables[:, 1:, :], conditions, stage=stage, **inference_kwargs
@@ -187,7 +188,7 @@ class RatioApproximator(Approximator):
             total_loss = inference_loss
 
         # Format metrics with prefixes
-        inference_metrics = {"loss": total_loss}
+        inference_metrics = self._with_layer_losses(total_loss)
         summary_metrics = {f"{key}/summary_{key}": value for key, value in summary_metrics.items()}
 
         metrics = inference_metrics | summary_metrics
@@ -274,22 +275,18 @@ class RatioApproximator(Approximator):
 
     def _sample_from_batch(self, inference_variables: Tensor) -> Tensor:
         B = keras.ops.shape(inference_variables)[0]
+        num_contrastive = min(self.K, B - 1) if isinstance(B, int) else keras.ops.minimum(self.K, B - 1)
 
-        if isinstance(B, int) and self.K > B - 1:
-            num_contrastive = B - 1
-        else:
-            num_contrastive = self.K
-
-        # Sample from (B, B-1) space — O(B*K) instead of O(B^2)
+        # Sample from (B, B-1) space in O(B*K) instead of O(B^2)
         scores = keras.random.uniform(
             shape=(B, B - 1),
-            dtype="float32",
+            dtype=keras.config.floatx(),
             seed=self.seed_generator,
         )
         _, idx = keras.ops.top_k(scores, k=num_contrastive)
 
         # Remap indices >= row index to skip self: [0..i-1] unchanged, [i..B-2] -> [i+1..B-1]
-        row = keras.ops.arange(B)[:, None]  # (B, 1)
+        row = keras.ops.arange(B)[:, None]
         idx = idx + keras.ops.cast(idx >= row, dtype=idx.dtype)
 
         return keras.ops.take(inference_variables, idx, axis=0)

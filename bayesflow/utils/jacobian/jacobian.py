@@ -41,27 +41,18 @@ def jacobian(f: Callable[[Tensor], Tensor], x: Tensor, return_output: bool = Fal
     )
     fx, vjp_fn = vjp(f, x, return_output=True)
 
-    batch_shape = keras.ops.shape(x)[:-1]
-    batch_size = np.prod(batch_shape)
-
-    rows = keras.ops.shape(fx)[-1]
     cols = keras.ops.shape(x)[-1]
 
-    jac = keras.ops.zeros((*batch_shape, rows, cols))
-
+    jac_columns = []
     for col in range(cols):
         projector = np.zeros(keras.ops.shape(x), dtype=keras.ops.dtype(x))
         projector[..., col] = 1.0
         projector = keras.ops.convert_to_tensor(projector)
 
         # jac[..., col] = vjp_fn(projector)
-        indices = np.stack(list(np.ndindex(batch_shape + (rows,))))
-        indices = np.concatenate([indices, np.full((batch_size * rows, 1), col)], axis=1)
-        indices = keras.ops.convert_to_tensor(indices)
+        jac_columns.append(vjp_fn(projector))
 
-        updates = vjp_fn(projector)
-        updates = keras.ops.reshape(updates, (-1,))
-        jac = keras.ops.scatter_update(jac, indices, updates)
+    jac = keras.ops.stack(jac_columns, axis=-1)
 
     if return_output:
         return fx, jac

@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 import keras
@@ -19,7 +20,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
+from ...defaults import CONSISTENCY_MODEL_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -99,7 +100,7 @@ class ConsistencyModel(InferenceNetwork):
         rho: float = 7.0,
         noise_dist_mean: float = -1.1,
         noise_dist_std: float = 2.0,
-        subnet_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -108,14 +109,13 @@ class ConsistencyModel(InferenceNetwork):
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+            subnet_kwargs = CONSISTENCY_MODEL_DEFAULTS | subnet_kwargs
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-
         self.sigma2 = ops.convert_to_tensor(sigma2)
         self.sigma = ops.sqrt(sigma2)
         self.eps = eps
@@ -134,7 +134,6 @@ class ConsistencyModel(InferenceNetwork):
         self._current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self._current_step.assign(0)
 
-        self.seed_generator = keras.random.SeedGenerator()
         self._discretized_times = None
         self._discretization_map = None
         self._c_huber = None
@@ -185,13 +184,13 @@ class ConsistencyModel(InferenceNetwork):
         """Function for obtaining the discretized time according to [2],
         Section 2, bottom of page 2.
         """
-        indices = ops.arange(1, n_k + 1, dtype="float32")
+
+        dtype = keras.config.floatx()
+        indices = ops.arange(1, n_k + 1, dtype=dtype)
         one_over_rho = 1.0 / self.rho
         discretized_time = (
             self.eps**one_over_rho
-            + (indices - 1.0)
-            / (ops.cast(n_k, "float32") - 1.0)
-            * (self.max_time**one_over_rho - self.eps**one_over_rho)
+            + (indices - 1.0) / (ops.cast(n_k, dtype) - 1.0) * (self.max_time**one_over_rho - self.eps**one_over_rho)
         ) ** self.rho
         return discretized_time
 
@@ -203,16 +202,18 @@ class ConsistencyModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector = keras.layers.Dense(
-            units=xz_shape[-1],
-            bias_initializer="zeros",
-            name="output_projector",
-        )
-
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
+        if out_shape[-1] != xz_shape[-1]:
+            self.output_projector = keras.layers.Dense(
+                units=xz_shape[-1],
+                bias_initializer="zeros",
+                name="output_projector",
+            )
+        else:
+            self.output_projector = keras.layers.Identity()
         self.output_projector.build(out_shape)
 
         # Choose coefficient according to [2] Section 3.3
@@ -246,7 +247,7 @@ class ConsistencyModel(InferenceNetwork):
             discretization_map[n] = i
 
         # Finally, we convert the vectors to tensors
-        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
+        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype=keras.config.floatx())
         self._discretization_map = ops.convert_to_tensor(discretization_map)
 
     def _forward_train(
@@ -291,7 +292,7 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         # Extract subnet masks from kwargs
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))
@@ -319,7 +320,9 @@ class ConsistencyModel(InferenceNetwork):
 
         for n in range(1, steps):
             noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=seed)
-            x_n = x + keras.ops.sqrt(keras.ops.square(discretized_time[n]) - self.eps**2) * noise
+            # discretized_time[n] >= eps by construction, but floating-point error can turn it slightly negative on mps
+            sqrt_arg = keras.ops.maximum(keras.ops.square(discretized_time[n]) - self.eps**2, 0.0)
+            x_n = x + keras.ops.sqrt(sqrt_arg) * noise
             t = keras.ops.full_like(t, discretized_time[n])
             x_n = maybe_mask_tensor(x_n, mask=fixed_target_mask, replacement=targets_fixed)
             x = self.consistency_function(x_n, t, conditions=conditions, training=training, **subnet_kwargs)

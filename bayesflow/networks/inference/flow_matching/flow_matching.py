@@ -69,7 +69,7 @@ class FlowMatching(InferenceNetwork):
     time_power_law_alpha : float
         Changes the distribution of sampled times during training.  Time is sampled
         from a power-law distribution ``p(t) ~ t^(1/(1+alpha))``, where
-        ``alpha`` is the provided value.  Default is 0 (uniform sampling).
+        ``alpha`` is the provided value.  Default is 0.5.
     fixed_target_prob : float
         Probability of fixing each target during training (so the network learns arbitrary
         conditionals). Default is 0.0.
@@ -120,7 +120,7 @@ class FlowMatching(InferenceNetwork):
         integrate_kwargs: dict[str, any] = None,
         optimal_transport_kwargs: dict[str, any] = None,
         subnet_kwargs: dict[str, any] = None,
-        time_power_law_alpha: float = 0.0,
+        time_power_law_alpha: float = 0.5,
         fixed_target_prob: float = 0.0,
         missing_target_prob: float = 0.0,
         missing_conditions_prob: float = 0.0,
@@ -134,11 +134,10 @@ class FlowMatching(InferenceNetwork):
         self.optimal_transport_kwargs = OPTIMAL_TRANSPORT_DEFAULTS | (optimal_transport_kwargs or {})
 
         self.loss_fn = keras.losses.get(loss_fn)
-        self.time_power_law_alpha = float(time_power_law_alpha)
+
+        self.time_power_law_alpha = time_power_law_alpha
         if self.time_power_law_alpha <= -1.0:
             raise ValueError("'time_power_law_alpha' must be greater than -1.0.")
-
-        self.seed_generator = keras.random.SeedGenerator()
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
@@ -146,6 +145,7 @@ class FlowMatching(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
+
         self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
@@ -220,17 +220,18 @@ class FlowMatching(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.output_projector = keras.layers.Dense(
-            units=xz_shape[-1],
-            bias_initializer="zeros",
-            name="output_projector",
-        )
-
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-
+        if out_shape[-1] != xz_shape[-1]:
+            self.output_projector = keras.layers.Dense(
+                units=xz_shape[-1],
+                bias_initializer="zeros",
+                name="output_projector",
+            )
+        else:
+            self.output_projector = keras.layers.Identity()
         self.output_projector.build(out_shape)
 
     def get_config(self):
@@ -289,7 +290,7 @@ class FlowMatching(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
 
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs
@@ -345,7 +346,7 @@ class FlowMatching(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
 
         # Build integrate kwargs: instance config -> call-time overrides
         integrate_kwargs = self.integrate_kwargs | kwargs

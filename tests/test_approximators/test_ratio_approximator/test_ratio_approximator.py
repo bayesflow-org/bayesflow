@@ -51,6 +51,15 @@ def test_contrastive_sampling(adapter, simulator, approximator):
         assert not keras.ops.all(keras.ops.isclose(iv, civ[:, k]))
 
 
+def test_compute_metrics_with_fewer_samples_than_k(adapter, simulator, approximator):
+    batch = adapter(simulator.sample(approximator.K - 1))
+    approximator.build_from_data(batch)
+
+    metrics = approximator.compute_metrics(**batch)
+
+    assert keras.ops.isfinite(metrics["loss"])
+
+
 def test_fit(approximator, train_dataset, validation_dataset):
     approximator.compile(optimizer="AdamW")
     num_epochs = 1

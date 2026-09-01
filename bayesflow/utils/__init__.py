@@ -29,6 +29,7 @@ from .dict_utils import (
     squeeze_inner_estimates_dict,
     slice_maybe_nested,
     dim_maybe_nested,
+    expand_singletons_to_common_length,
 )
 
 from .dispatch import (

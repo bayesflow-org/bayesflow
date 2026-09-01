@@ -1,3 +1,4 @@
+from typing import Any
 from math import pi
 
 import keras
@@ -21,7 +22,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS, WEIGHT_MLP_DEFAULTS
+from ...defaults import CONSISTENCY_MODEL_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS, WEIGHT_MLP_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -48,13 +49,16 @@ class StableConsistencyModel(InferenceNetwork):
         Controls the scale of the noise injected during training.  Default is 1.0.
     noise_dist_mean : float
         Mean of the log-normal proposal distribution over noise levels used to
-        sample training times (``P_mean`` in [1]). Default is ``-1.0``.
+        sample training times (``P_mean`` in [1]). Default is ``-1.1``.
     noise_dist_std : float
         Standard deviation of that proposal distribution (``P_std`` in [1]).
-        Default is ``1.6``.
+        Default is ``2.0``.
     tangent_norm_eps : float
         Small constant added to the tangent norm when normalizing the training
         target for stability (``c`` in [1]). Default is ``0.1``.
+    r_scale : float
+        Scale of the second stable tangent term in the continuous-time
+        consistency target. Default is ``0.5``.
     steps : int
         Default number of steps used by the multistep sampler. Can be overridden
         per call by passing ``steps=`` to sampling. Default is ``15``.
@@ -62,10 +66,10 @@ class StableConsistencyModel(InferenceNetwork):
         Exponent controlling the curvature of the time discretization schedule
         used at sampling time. Can be overridden per call by passing ``rho=`` to
         sampling. Default is ``3.5``.
-    subnet_kwargs : dict[str, any], optional
+    subnet_kwargs : dict[str, Any], optional
         Keyword arguments passed to the constructor of the chosen *subnet*
         (e.g., number of hidden units, activation functions, or dropout settings).
-    weight_mlp_kwargs : dict[str, any], optional
+    weight_mlp_kwargs : dict[str, Any], optional
         Keyword arguments for an auxiliary MLP used to generate weights within the
         consistency model (e.g., depth, hidden sizes, non-linearity choices).
     **kwargs
@@ -92,20 +96,21 @@ class StableConsistencyModel(InferenceNetwork):
         self,
         subnet: str | type | keras.Layer = "time_mlp",
         sigma: float = 1.0,
-        noise_dist_mean: float = -1.0,
-        noise_dist_std: float = 1.6,
+        noise_dist_mean: float = -1.1,
+        noise_dist_std: float = 2.0,
         tangent_norm_eps: float = 0.1,
+        r_scale: float = 0.5,
         steps: int = 15,
         rho: float = 3.5,
-        subnet_kwargs: dict[str, any] = None,
-        weight_mlp_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
+        weight_mlp_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+            subnet_kwargs = CONSISTENCY_MODEL_DEFAULTS | subnet_kwargs
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
@@ -125,12 +130,12 @@ class StableConsistencyModel(InferenceNetwork):
         self.noise_dist_mean = noise_dist_mean
         self.noise_dist_std = noise_dist_std
         self.tangent_norm_eps = tangent_norm_eps
+        self.r_scale = r_scale
         self.steps = steps
         self.rho = rho
         self.fixed_target_prob = kwargs.get("fixed_target_prob", 0.0)
         self.missing_target_prob = kwargs.get("missing_target_prob", 0.0)
         self.missing_conditions_prob = kwargs.get("missing_conditions_prob", 0.0)
-        self.seed_generator = keras.random.SeedGenerator()
 
     def get_config(self):
         base_config = super().get_config()
@@ -142,6 +147,7 @@ class StableConsistencyModel(InferenceNetwork):
             "noise_dist_mean": self.noise_dist_mean,
             "noise_dist_std": self.noise_dist_std,
             "tangent_norm_eps": self.tangent_norm_eps,
+            "r_scale": self.r_scale,
             "steps": self.steps,
             "rho": self.rho,
             "fixed_target_prob": self.fixed_target_prob,
@@ -153,11 +159,11 @@ class StableConsistencyModel(InferenceNetwork):
 
     @staticmethod
     def _discretize_time(num_steps: int, rho: float):
-        t = keras.ops.linspace(0.0, pi / 2, num_steps)
+        t = keras.ops.linspace(0.0, pi / 2, num_steps + 1)[1:]
         times = keras.ops.exp((t - pi / 2) * rho) * pi / 2
 
         # if rho is set too low, bad schedules can occur
-        if times[1] > StableConsistencyModel.EPS_WARN:
+        if times[0] > StableConsistencyModel.EPS_WARN:
             logging.warning("Warning: The last time step is large.")
             logging.warning(f"Increasing rho (was {rho}) or n_steps (was {num_steps}) might improve results.")
         return times
@@ -170,17 +176,19 @@ class StableConsistencyModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        self.subnet_projector = keras.layers.Dense(
-            units=xz_shape[-1],
-            bias_initializer="zeros",
-            name="output_projector",
-        )
-
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)  # same batch dims, 1 feature
         self.subnet.build((xz_shape, time_shape, conditions_shape))
-        input_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
-        self.subnet_projector.build(input_shape)
+        out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
+        if out_shape[-1] != xz_shape[-1]:
+            self.subnet_projector = keras.layers.Dense(
+                units=xz_shape[-1],
+                bias_initializer="zeros",
+                name="subnet_projector",
+            )
+        else:
+            self.subnet_projector = keras.layers.Identity()
+        self.subnet_projector.build(out_shape)
 
         # input shape for weight function and projector
         input_shape = (xz_shape[0], 1)
@@ -213,7 +221,7 @@ class StableConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
 
         steps = kwargs.get("steps", self.steps)
@@ -308,8 +316,6 @@ class StableConsistencyModel(InferenceNetwork):
         dxtdt = ops.cos(t) * z - ops.sin(t) * x
         dxtdt = maybe_mask_tensor(dxtdt, mask=mask_x)  # replace with zeros
 
-        r = 1.0  # TODO: if consistency distillation training (not supported yet) is unstable, add schedule here
-
         def f_teacher(x, t):
             o = self.subnet((x, t, conditions), training=training, **subnet_kwargs)
             return self.subnet_projector(o)
@@ -329,7 +335,7 @@ class StableConsistencyModel(InferenceNetwork):
         student_out = self.subnet_projector(subnet_out)
 
         # calculate the tangent
-        g = -(ops.cos(t) ** 2) * (self.sigma * teacher_output - dxtdt) - r * ops.cos(t) * ops.sin(t) * (
+        g = -(ops.cos(t) ** 2) * (self.sigma * teacher_output - dxtdt) - self.r_scale * ops.cos(t) * ops.sin(t) * (
             xt + self.sigma * cos_sin_dFdt
         )
 

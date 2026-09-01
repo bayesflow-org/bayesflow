@@ -47,6 +47,9 @@ class TimeMLP(keras.Layer):
         Default is ``"concat"``.
     film_use_gamma : bool, optional
         Whether film uses a learnable gamma. Default is ``False``.
+    persistent_conditioning : bool, optional
+        Whether the conditioning vector is injected into every FiLM block together with time.
+        Default is ``False``.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -65,6 +68,7 @@ class TimeMLP(keras.Layer):
         norm: Literal["batch", "layer", "rms"] | keras.Layer = "layer",
         merge: Literal["add", "concat"] = "concat",
         film_use_gamma: bool = False,
+        persistent_conditioning: bool = False,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -84,6 +88,7 @@ class TimeMLP(keras.Layer):
         self.norm = norm
         self.merge = merge
         self.film_use_gamma = film_use_gamma
+        self.persistent_conditioning = persistent_conditioning
 
         # Time embedding
         if time_emb is None:
@@ -129,6 +134,8 @@ class TimeMLP(keras.Layer):
     ) -> Tensor:
         x, t, conditions = inputs
         h = self.x_proj(x)
+        t_emb = self.time_emb(t)
+        block_condition = t_emb
 
         if conditions is not None and self.c_proj is not None:
             hc = self.c_proj(conditions)
@@ -137,12 +144,12 @@ class TimeMLP(keras.Layer):
             else:
                 h = h + hc
             h = self.merge_proj(self.activation(h))
+            if self.persistent_conditioning:
+                block_condition = keras.ops.concatenate([t_emb, hc], axis=-1)
         h = self.activation(h)
 
-        t_emb = self.time_emb(t)
-
         for block in self.blocks:
-            h = block((h, t_emb), training=training)
+            h = block((h, block_condition), training=training)
 
         return h
 
@@ -159,11 +166,13 @@ class TimeMLP(keras.Layer):
         # Input projection
         self.x_proj.build(x_shape)
         h_shape = self.x_proj.compute_output_shape(x_shape)
+        block_condition_shape = t_emb_shape
 
         # Condition projection and merge
         if conditions_shape is not None:
             self.c_proj = keras.layers.Dense(self.widths[0], kernel_initializer=self.kernel_initializer, name="c_proj")
             self.c_proj.build(conditions_shape)
+            hc_shape = self.c_proj.compute_output_shape(conditions_shape)
 
             if self.merge == "concat":
                 merge_shape = list(h_shape)
@@ -176,19 +185,30 @@ class TimeMLP(keras.Layer):
                 self.widths[0], kernel_initializer=self.kernel_initializer, name="merge_proj"
             )
             self.merge_proj.build(merge_shape)
+            h_shape = self.merge_proj.compute_output_shape(merge_shape)
+            if self.persistent_conditioning:
+                block_condition_shape = tuple(t_emb_shape[:-1]) + (t_emb_shape[-1] + hc_shape[-1],)
 
         # Time-conditional blocks
         for block in self.blocks:
-            block.build((h_shape, t_emb_shape))
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+            block.build((h_shape, block_condition_shape))
+            h_shape = block.compute_output_shape((h_shape, block_condition_shape))
 
     def compute_output_shape(self, input_shape):
         x_shape, t_shape, conditions_shape = input_shape
         h_shape = self.x_proj.compute_output_shape(x_shape)
         t_emb_shape = self.time_emb.compute_output_shape(t_shape)
+        block_condition_shape = t_emb_shape
+
+        if conditions_shape is not None:
+            if self.merge == "concat":
+                h_shape = tuple(h_shape[:-1]) + (h_shape[-1] + self.widths[0],)
+            h_shape = tuple(h_shape[:-1]) + (self.widths[0],)
+            if self.persistent_conditioning:
+                block_condition_shape = tuple(t_emb_shape[:-1]) + (t_emb_shape[-1] + self.widths[0],)
 
         for block in self.blocks:
-            h_shape = block.compute_output_shape((h_shape, t_emb_shape))
+            h_shape = block.compute_output_shape((h_shape, block_condition_shape))
 
         return h_shape
 
@@ -212,5 +232,6 @@ class TimeMLP(keras.Layer):
             "norm": self.norm,
             "merge": self.merge,
             "film_use_gamma": self.film_use_gamma,
+            "persistent_conditioning": self.persistent_conditioning,
         }
         return base_config | serialize(config)

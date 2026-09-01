@@ -1,4 +1,5 @@
 import inspect
+from collections.abc import Mapping
 
 import keras
 import numpy as np
@@ -14,11 +15,39 @@ def logits_relative_to_target(logits: Tensor, targets: Tensor) -> Tensor:
     return logits - logit_m
 
 
-def resolve_seed(seed):
-    """Convert an integer seed to a SeedGenerator; pass a SeedGenerator or None through unchanged."""
+def resolve_seed(seed, seed_generator):
+    """Resolve a user-provided ``seed`` against an instance's own seed generator.
+
+    An integer is converted to a fresh ``SeedGenerator``, a ``SeedGenerator`` is passed through
+    unchanged, and ``None`` falls back to ``seed_generator``.
+
+    Every object that owns randomness passes its own ``self.seed_generator`` here, whether it
+    draws itself or fans the seed out to sub-components. Draws therefore never fall through to
+    Keras' global generator (which cannot be traced under ``jax.jit``), and an integer seed
+    becomes one generator shared by all sub-components and batches of the call, rather than one
+    identically seeded generator per draw site.
+    """
     if isinstance(seed, int):
         return keras.random.SeedGenerator(seed)
+    if seed is None:
+        return seed_generator
     return seed
+
+
+def multinomial_allocation(weights: Mapping[str, float], num_samples: int, seed=None) -> dict[str, int]:
+    """Allocate `num_samples` draws across `weights` via multinomial sampling."""
+    names = tuple(weights.keys())
+    probs = np.array(list(weights.values()), dtype=keras.config.floatx())
+
+    num_categories = len(probs)
+    logits_broadcast = keras.ops.broadcast_to(
+        keras.ops.expand_dims(keras.ops.log(probs), axis=0), (num_samples, num_categories)
+    )
+    cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
+    one_hot = keras.ops.one_hot(cat_indices, num_categories)
+    counts = keras.ops.sum(one_hot, axis=0)
+
+    return {name: int(count) for name, count in zip(names, counts)}
 
 
 def call_accepts_kwarg(call, key: str) -> bool:

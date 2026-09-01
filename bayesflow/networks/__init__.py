@@ -14,6 +14,10 @@ Examples
 from .inference import InferenceNetwork
 from .summary import SummaryNetwork
 
+# Decoders
+from . import decoders
+from .decoders import RecurrentDecoder, TransformerDecoder
+
 # Inference networks
 from . import inference
 from .inference import ConsistencyModel, StableConsistencyModel
@@ -27,7 +31,7 @@ from . import summary
 from .summary import ConvolutionalNetwork
 from .summary import DeepSet
 from .summary import FusionNetwork
-from .summary import TimeSeriesNetwork
+from .summary import RecurrentNetwork, TimeSeriesNetwork
 from .summary import SetTransformer, TimeSeriesTransformer, FusionTransformer
 
 # Subnets (backbones for inference / summary networks)
@@ -37,4 +41,4 @@ from .subnets import UViT, UNet, ResidualUViT
 
 from . import defaults
 
-__all__ = ["inference", "summary", "subnets", "defaults"]
+__all__ = ["inference", "summary", "decoders", "subnets", "defaults"]

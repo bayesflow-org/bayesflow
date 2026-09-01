@@ -55,15 +55,15 @@ class DiffusionModel(InferenceNetwork):
     subnet : str, type, or keras.Layer
         A neural network type for the diffusion model, will be instantiated using
         *subnet_kwargs*.  If a string is provided, it should be a registered name
-        (e.g., ``"time_mlp"``).  If a type or ``keras.Layer`` is provided, it will
-        be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        (e.g., ``"time_mlp"``, ``"diffusion_transformer"``).  If a type or ``keras.Layer`` is provided,
+        it will be directly instantiated with the given *subnet_kwargs*.  Any subnet must
         accept a tuple of tensors ``(target, time, conditions)``.
     noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type
         Noise schedule controlling the diffusion dynamics.  Can be a string
         identifier, a schedule class, or a pre-initialised schedule instance.
-        Default is ``"edm"``.
+        Default is ``"cosine"``.
     prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}
-        Output format of the model's prediction.  Default is ``"F"``.
+        Output format of the model's prediction.  Default is ``"velocity"``.
     loss_type : {'velocity', 'noise', 'F'}
         Loss function used to train the model.  Default is ``"noise"``.
     subnet_kwargs : dict[str, Any], optional
@@ -112,8 +112,8 @@ class DiffusionModel(InferenceNetwork):
         self,
         *,
         subnet: str | type | keras.Layer = "time_mlp",
-        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "edm",
-        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "F",
+        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
+        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "velocity",
         loss_type: Literal["velocity", "noise", "F"] = "noise",
         subnet_kwargs: dict[str, Any] = None,
         schedule_kwargs: dict[str, Any] = None,
@@ -145,8 +145,6 @@ class DiffusionModel(InferenceNetwork):
         self.noise_schedule.validate()
 
         self.integrate_kwargs = DIFFUSION_INTEGRATE_DEFAULTS | (integrate_kwargs or {})
-        self.seed_generator = keras.random.SeedGenerator()
-
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
             subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
@@ -268,14 +266,20 @@ class DiffusionModel(InferenceNetwork):
 
         self.base_distribution.build(xz_shape)
 
-        units = 1 if self._prediction_type == "potential" else xz_shape[-1]
-        self.output_projector = keras.layers.Dense(units=units, bias_initializer="zeros")
-
         # construct input shape for subnet and subnet projector
         time_shape = (xz_shape[0], 1)
         self.subnet.build((xz_shape, time_shape, conditions_shape))
         out_shape = self.subnet.compute_output_shape((xz_shape, time_shape, conditions_shape))
 
+        units = 1 if self._prediction_type == "potential" else xz_shape[-1]
+        if out_shape[-1] != units:
+            self.output_projector = keras.layers.Dense(
+                units=units,
+                bias_initializer="zeros",
+                name="output_projector",
+            )
+        else:
+            self.output_projector = keras.layers.Identity()
         self.output_projector.build(out_shape)
 
     def get_config(self):
@@ -741,7 +745,7 @@ class DiffusionModel(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
 
         # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
@@ -1330,7 +1334,7 @@ class DiffusionModel(InferenceNetwork):
         """
         Inverse pass for compositional diffusion sampling.
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
         integrate_kwargs |= kwargs

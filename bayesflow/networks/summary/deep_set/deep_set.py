@@ -59,7 +59,8 @@ class DeepSet(SummaryNetwork):
     activation : str, optional
         Activation function used throughout. Default is ``"silu"``.
     kernel_initializer : str, optional
-        Weight initializer for Dense projections. Default is ``"he_normal"``.
+        Weight initializer for Dense projections and the final summary projection.
+        Default is ``"orthogonal"``.
     dropout : float or None, optional
         Dropout rate. Default is 0.05.
     **kwargs
@@ -81,7 +82,7 @@ class DeepSet(SummaryNetwork):
         use_bias: bool = False,
         layer_norm: bool = True,
         activation: str = "silu",
-        kernel_initializer: str = "he_normal",
+        kernel_initializer: str = "orthogonal",
         dropout: float | None = 0.05,
         **kwargs,
     ):
@@ -115,12 +116,12 @@ class DeepSet(SummaryNetwork):
             layer_norm=layer_norm,
         )
 
-        self.output_projector = keras.layers.Dense(units=summary_dim)
+        self.output_projector = keras.layers.Dense(units=summary_dim, kernel_initializer=kernel_initializer)
 
     def call(self, x: Tensor, training: bool = False, **kwargs) -> Tensor:
         for em in self.equivariant_modules:
             x = em(x, training=training)
 
-        x = self.pooling_by_attention(x, training=training)
+        x = self.pooling_by_attention(x, training=training, **kwargs)
 
         return self.output_projector(x)

@@ -16,7 +16,6 @@ def three_level_approximator():
         DeepSet(summary_dim=30),
         DeepSet(summary_dim=40),
         DeepSet(summary_dim=50),
-        DeepSet(summary_dim=60),
     ]
     inference_networks = [CouplingFlow(), CouplingFlow(), CouplingFlow()]
 

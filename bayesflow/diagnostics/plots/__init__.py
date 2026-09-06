@@ -14,6 +14,7 @@ from .mc_confusion_matrix import mc_confusion_matrix
 from .mmd_hypothesis_test import mmd_hypothesis_test
 from .pairs_posterior import pairs_posterior
 from .pairs_quantity import pairs_quantity
+from .pairs_recovery import pairs_recovery
 from .plot_quantity import plot_quantity
 from .pairs_samples import pairs_samples
 from .recovery import recovery

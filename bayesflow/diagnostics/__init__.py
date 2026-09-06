@@ -35,6 +35,7 @@ from .plots import (
     mmd_hypothesis_test,
     pairs_posterior,
     pairs_quantity,
+    pairs_recovery,
     pairs_samples,
     plot_quantity,
     recovery,

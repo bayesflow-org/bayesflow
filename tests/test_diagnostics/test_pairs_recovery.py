@@ -35,8 +35,8 @@ def test_cell_coordinates_and_geometry(recovery_data):
                 bounds = label.get_window_extent(fig.canvas.get_renderer())
                 assert bounds.x0 >= 0 and bounds.y0 >= 0
                 assert bounds.x1 <= fig.bbox.width and bounds.y1 <= fig.bbox.height
-            assert ax.get_xlabel() == f"v_{j}\n({'Ground truth' if i >= j else 'Estimate'})"
-            assert ax.get_ylabel() == f"v_{i}\n({'Ground truth' if i > j else 'Estimate'})"
+            assert ax.get_xlabel() == f"v_{j} {'True' if i >= j else 'Estimate'}"
+            assert ax.get_ylabel() == f"v_{i} {'True' if i > j else 'Estimate'}"
             if i == j:
                 np.testing.assert_allclose(ax.get_xlim(), ax.get_ylim())
                 np.testing.assert_allclose(ax.lines[0].get_xdata(), ax.lines[0].get_ydata())
@@ -75,7 +75,26 @@ def test_uncertainty_endpoints_and_aggregation(recovery_data, kind):
     before = bounds.copy()
     fig = diagnostics.pairs_recovery(draws, targets, **kwargs)
     axes = np.array(fig.axes).reshape(3, 3)
-    np.testing.assert_allclose(axes[0, 2].collections[0].get_offsets(), points[:, [2, 0]])
+    upper_container = axes[0, 2].containers[0]
+    np.testing.assert_allclose(upper_container.lines[0].get_xdata(), points[:, 2])
+    np.testing.assert_allclose(upper_container.lines[0].get_ydata(), points[:, 0])
+    x_segments, y_segments = (lines.get_segments() for lines in upper_container.lines[2])
+    expected_x_segments = np.stack(
+        (
+            np.column_stack((points[:, 2] - (points[:, 2] - bounds[0, :, 2]), points[:, 0])),
+            np.column_stack((points[:, 2] + (bounds[1, :, 2] - points[:, 2]), points[:, 0])),
+        ),
+        axis=1,
+    )
+    expected_y_segments = np.stack(
+        (
+            np.column_stack((points[:, 2], points[:, 0] - (points[:, 0] - bounds[0, :, 0]))),
+            np.column_stack((points[:, 2], points[:, 0] + (bounds[1, :, 0] - points[:, 0]))),
+        ),
+        axis=1,
+    )
+    np.testing.assert_allclose(x_segments, expected_x_segments)
+    np.testing.assert_allclose(y_segments, expected_y_segments)
     for i in range(3):
         ax = axes[i, i]
         container = ax.containers[0]
@@ -100,7 +119,7 @@ def test_dictionary_selection_names_and_test_quantity(recovery_data):
     targets = {"beta": truth[..., :2], "sigma": truth[..., 2:], "unused": np.ones((4, 7))}
     fig = diagnostics.pairs_recovery(estimates, targets, variable_keys="sigma", add_corr=False)
     assert len(fig.axes) == 1
-    assert fig.axes[0].get_xlabel() == "sigma\n(Ground truth)"
+    assert fig.axes[0].get_xlabel() == "sigma True"
     fig = diagnostics.pairs_recovery(
         estimates,
         targets,
@@ -116,7 +135,7 @@ def test_dictionary_selection_names_and_test_quantity(recovery_data):
     expected_truth = np.column_stack((truth[..., :2].sum(axis=-1), truth[..., 2:], truth[..., :2]))
     expected_points = np.median(expected_draws, axis=1)
     for i, name in enumerate(["sum", "s", "b0", "b1"]):
-        assert axes[i, i].get_xlabel() == f"{name}\n(Ground truth)"
+        assert axes[i, i].get_xlabel() == f"{name} True"
         np.testing.assert_allclose(
             axes[i, i].collections[0].get_offsets(), np.column_stack((expected_truth[:, i], expected_points[:, i]))
         )
@@ -165,8 +184,8 @@ def test_inferred_keys_and_names_with_test_quantity(recovery_data):
         test_quantities={"square": lambda data: data["sigma"][:, 0] ** 2},
         uncertainty_agg=None,
     )
-    assert fig.axes[0].get_xlabel() == "square\n(Ground truth)"
-    assert fig.axes[-1].get_xlabel() == "sigma\n(Ground truth)"
+    assert fig.axes[0].get_xlabel() == "square True"
+    assert fig.axes[-1].get_xlabel() == "sigma True"
 
 
 @pytest.mark.parametrize("bounds", [False, True])
@@ -189,8 +208,8 @@ def test_array_labels_and_single_dataset(recovery_data):
         height=4,
     )
     np.testing.assert_allclose(fig.get_size_inches(), [4, 4])
-    assert fig.axes[0].get_xlabel() == "custom\n(Ground truth)"
-    assert fig.axes[0].get_ylabel() == "custom\n(Estimate)"
+    assert fig.axes[0].get_xlabel() == "custom True"
+    assert fig.axes[0].get_ylabel() == "custom Estimate"
 
 
 def test_string_selection_with_test_quantity(recovery_data):
@@ -208,4 +227,4 @@ def test_string_selection_with_test_quantity(recovery_data):
         fig.axes[0].collections[0].get_offsets(),
         np.column_stack((targets[:, 2] ** 2, np.median(draws[:, :, 2] ** 2, axis=1))),
     )
-    assert fig.axes[-1].get_xlabel() == "s\n(Ground truth)"
+    assert fig.axes[-1].get_xlabel() == "s True"

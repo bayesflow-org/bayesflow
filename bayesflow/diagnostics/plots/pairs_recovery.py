@@ -33,7 +33,8 @@ def pairs_recovery(
 
     Diagonal cells show ground truth (x) versus point estimate (y), with
     optional uncertainty intervals and an identity line. Upper cells show
-    pairs of point estimates; lower cells show pairs of ground truths.
+    pairs of point estimates with uncertainty in both directions; lower cells
+    show pairs of ground truths.
     In cell (i, j), the x variable is j and the y variable is i. Each point
     represents one dataset, including in the off-diagonal cells.
 
@@ -159,8 +160,17 @@ def pairs_recovery(
             ax = axes[i, j]
             x = targets[:, j] if i >= j else points[:, j]
             y = targets[:, i] if i > j else points[:, i]
-            if i == j and errors is not None:
-                ax.errorbar(x, y, yerr=errors[..., i], fmt="o", color=color, alpha=alpha, markersize=markersize)
+            if errors is not None and i <= j:
+                ax.errorbar(
+                    x,
+                    y,
+                    xerr=errors[..., j] if i < j else None,
+                    yerr=errors[..., i],
+                    fmt="o",
+                    color=color,
+                    alpha=alpha,
+                    markersize=markersize,
+                )
             else:
                 ax.scatter(x, y, color=color, alpha=alpha, s=None if markersize is None else markersize**2)
             if i == j:
@@ -169,7 +179,7 @@ def pairs_recovery(
                 if add_corr:
                     add_metric(ax, "$r$", np.corrcoef(x, y)[0, 1], metric_fontsize=metric_fontsize)
             ax.set_box_aspect(1)
-            ax.set_xlabel(f"{variable_names[j]}\n({'Ground truth' if i >= j else 'Estimate'})", fontsize=label_fontsize)
-            ax.set_ylabel(f"{variable_names[i]}\n({'Ground truth' if i > j else 'Estimate'})", fontsize=label_fontsize)
+            ax.set_xlabel(f"{variable_names[j]} {'True' if i >= j else 'Estimate'}", fontsize=label_fontsize)
+            ax.set_ylabel(f"{variable_names[i]} {'True' if i > j else 'Estimate'}", fontsize=label_fontsize)
     prettify_subplots(axes, num_subplots=n * n, tick_fontsize=tick_fontsize)
     return fig

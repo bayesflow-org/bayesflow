@@ -3,11 +3,10 @@ from collections.abc import Callable, Mapping, Sequence
 import matplotlib.pyplot as plt
 import numpy as np
 
-from bayesflow.utils.dict_utils import compute_test_quantities, dicts_to_arrays
+from bayesflow.utils.dict_utils import compute_test_quantities
 from bayesflow.utils.exceptions import ShapeError
 from bayesflow.utils.numpy_utils import credible_interval
-from bayesflow.utils.plot_utils import add_metric, make_quadratic, prettify_subplots
-from bayesflow.utils.validators import check_estimates_prior_shapes
+from bayesflow.utils.plot_utils import add_metric, make_quadratic, prepare_plot_data, prettify_subplots
 
 
 def pairs_recovery(
@@ -126,19 +125,21 @@ def pairs_recovery(
         estimates, targets = updated["estimates"], updated["targets"]
         variable_keys, variable_names = updated["variable_keys"], updated["variable_names"]
 
-    data = dicts_to_arrays(
+    plot_data = prepare_plot_data(
         estimates=estimates,
         targets=targets,
         variable_keys=variable_keys,
         variable_names=variable_names,
+        pairwise=True,
     )
-    estimates, targets = data["estimates"], data["targets"]
-    check_estimates_prior_shapes(estimates, targets)
+    estimates, targets = plot_data["estimates"], plot_data["targets"]
     if estimates.ndim != 3 or any(size == 0 for size in estimates.shape):
+        plt.close(plot_data["fig"])
         raise ShapeError("estimates must have nonempty dataset, draw, and variable axes.")
-    variable_names = estimates.variable_names
+    variable_names = plot_data["variable_names"]
     points = np.asarray(point_agg(estimates, axis=1, **(point_agg_kwargs or {})))
     if points.shape != targets.shape:
+        plt.close(plot_data["fig"])
         raise ShapeError("point_agg must return shape (num_datasets, num_variables).")
     errors = None
     if uncertainty_agg is not None:
@@ -149,12 +150,17 @@ def pairs_recovery(
         elif uncertainty.shape == points.shape:
             errors = np.stack((uncertainty, uncertainty))
         else:
+            plt.close(plot_data["fig"])
             raise ShapeError("uncertainty_agg must return shape (num_datasets, num_variables) or (2, ...).")
         if np.any(errors < 0):
+            plt.close(plot_data["fig"])
             raise ValueError("Uncertainty errors must be nonnegative and bounds must enclose the point estimates.")
 
     n = points.shape[-1]
-    fig, axes = plt.subplots(n, n, figsize=(height * n, height * n), squeeze=False, layout="constrained")
+    fig = plot_data["fig"]
+    axes = np.asarray(plot_data["axes"]).reshape(n, n)
+    fig.set_size_inches(height * n, height * n)
+    fig.set_layout_engine("constrained")
     for i in range(n):
         for j in range(n):
             ax = axes[i, j]

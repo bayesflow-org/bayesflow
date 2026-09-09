@@ -13,6 +13,7 @@ from matplotlib.legend_handler import HandlerPatch
 
 from .validators import check_estimates_prior_shapes
 from .dict_utils import dicts_to_arrays
+from .exceptions import ShapeError
 
 
 def prepare_plot_data(
@@ -24,6 +25,7 @@ def prepare_plot_data(
     num_row: int = None,
     figsize: tuple = None,
     stacked: bool = False,
+    pairwise: bool = False,
     default_name: str = "v",
 ) -> dict[str, Any]:
     """
@@ -56,6 +58,8 @@ def prepare_plot_data(
         Size of the figure adjusting to the display resolution
     stacked           : bool, optional, default: False
         Whether the plots are stacked horizontally
+    pairwise          : bool, optional, default: False
+        Whether to arrange one row and column per variable.
     default_name      : str, optional (default = "v")
         The default name to use for estimates if None provided
 
@@ -82,7 +86,12 @@ def prepare_plot_data(
     plot_data["num_variables"] = num_variables
 
     # Configure layout
-    num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
+    if pairwise:
+        if num_variables == 0:
+            raise ShapeError("Pairwise plots require at least one variable.")
+        num_row = num_col = num_variables
+    else:
+        num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)

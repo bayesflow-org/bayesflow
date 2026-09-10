@@ -394,6 +394,19 @@ def compute_test_quantities(
     """Compute additional test quantities for given targets and estimates."""
     import keras
 
+    if not isinstance(targets, Mapping) or (estimates is not None and not isinstance(estimates, Mapping)):
+        raise TypeError("test_quantities requires dictionaries for estimates and targets.")
+
+    if isinstance(variable_keys, str):
+        variable_keys = [variable_keys]
+    elif variable_keys is not None:
+        variable_keys = list(variable_keys)
+
+    if isinstance(variable_names, str):
+        variable_names = [variable_names]
+    elif variable_names is not None:
+        variable_names = list(variable_names)
+
     test_quantities_estimates = {} if estimates is not None else None
     test_quantities_targets = {}
 
@@ -420,7 +433,7 @@ def compute_test_quantities(
 
     if variable_keys is None:
         variable_keys = list(estimates.keys() if estimates is not None else targets.keys())
-    if isinstance(variable_names, list):
+    if variable_names is not None:
         variable_names = test_quantities_names + variable_names
 
     variable_keys = test_quantities_names + variable_keys

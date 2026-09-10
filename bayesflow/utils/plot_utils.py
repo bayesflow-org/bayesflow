@@ -104,6 +104,40 @@ def prepare_plot_data(
     return plot_data
 
 
+def compute_recovery_estimates(
+    estimates: np.ndarray,
+    targets: np.ndarray,
+    point_agg,
+    uncertainty_agg,
+    point_agg_kwargs: dict = None,
+    uncertainty_agg_kwargs: dict = None,
+) -> tuple[np.ndarray, np.ndarray | None]:
+    """Compute and validate point estimates and error bars for recovery plots."""
+    if estimates.ndim != 3 or any(size == 0 for size in estimates.shape):
+        raise ShapeError("estimates must have nonempty dataset, draw, and variable axes.")
+
+    points = np.asarray(point_agg(estimates, axis=1, **(point_agg_kwargs or {})))
+    if points.shape != targets.shape:
+        raise ShapeError("point_agg must return shape (num_datasets, num_variables).")
+
+    if uncertainty_agg is None:
+        return points, None
+
+    uncertainty = np.asarray(uncertainty_agg(estimates, axis=1, **(uncertainty_agg_kwargs or {})))
+    if uncertainty.shape == (2, *points.shape):
+        # Do not modify a caller-owned (possibly read-only) bounds array.
+        errors = np.stack((points - uncertainty[0], uncertainty[1] - points))
+    elif uncertainty.shape == points.shape:
+        errors = np.stack((uncertainty, uncertainty))
+    else:
+        raise ShapeError("uncertainty_agg must return shape (num_datasets, num_variables) or (2, ...).")
+
+    if np.any(errors < 0):
+        raise ValueError("Uncertainty errors must be nonnegative and bounds must enclose the point estimates.")
+
+    return points, errors
+
+
 def compute_empirical_coverage(
     estimates: np.ndarray,
     targets: np.ndarray,

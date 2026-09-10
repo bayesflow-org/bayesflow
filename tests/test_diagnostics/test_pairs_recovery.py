@@ -163,12 +163,13 @@ def test_invalid_shapes_do_not_create_figure(draw_shape, truth_shape):
     assert plt.get_fignums() == before
 
 
-def test_invalid_aggregate_shapes(recovery_data):
+@pytest.mark.parametrize("plot", [diagnostics.pairs_recovery, diagnostics.recovery])
+def test_invalid_aggregate_shapes(recovery_data, plot):
     draws, targets = recovery_data
     with pytest.raises(ShapeError, match="point_agg"):
-        diagnostics.pairs_recovery(draws, targets, point_agg=lambda x, axis: x.mean())
+        plot(draws, targets, point_agg=lambda x, axis: x.mean())
     with pytest.raises(ShapeError, match="uncertainty_agg"):
-        diagnostics.pairs_recovery(draws, targets, uncertainty_agg=lambda x, axis: np.ones((4, 1)))
+        plot(draws, targets, uncertainty_agg=lambda x, axis: np.ones((4, 1)))
 
 
 def test_array_test_quantities_rejected(recovery_data):
@@ -188,13 +189,14 @@ def test_inferred_keys_and_names_with_test_quantity(recovery_data):
     assert fig.axes[-1].get_xlabel() == "sigma True"
 
 
+@pytest.mark.parametrize("plot", [diagnostics.pairs_recovery, diagnostics.recovery])
 @pytest.mark.parametrize("bounds", [False, True])
-def test_invalid_uncertainty_does_not_create_figure(recovery_data, bounds):
+def test_invalid_uncertainty_does_not_create_figure(recovery_data, bounds, plot):
     draws, targets = recovery_data
     invalid = np.ones((2, *targets.shape)) * 1000 if bounds else -np.ones(targets.shape)
     before = plt.get_fignums()
     with pytest.raises(ValueError, match="nonnegative"):
-        diagnostics.pairs_recovery(draws, targets, uncertainty_agg=lambda x, axis: invalid)
+        plot(draws, targets, uncertainty_agg=lambda x, axis: invalid)
     assert plt.get_fignums() == before
 
 

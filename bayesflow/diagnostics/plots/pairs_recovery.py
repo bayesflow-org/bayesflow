@@ -6,7 +6,13 @@ import numpy as np
 from bayesflow.utils.dict_utils import compute_test_quantities
 from bayesflow.utils.exceptions import ShapeError
 from bayesflow.utils.numpy_utils import credible_interval
-from bayesflow.utils.plot_utils import add_metric, make_quadratic, prepare_plot_data, prettify_subplots
+from bayesflow.utils.plot_utils import (
+    add_metric,
+    compute_recovery_estimates,
+    make_quadratic,
+    prepare_plot_data,
+    prettify_subplots,
+)
 
 
 def pairs_recovery(
@@ -109,12 +115,6 @@ def pairs_recovery(
     are heuristic and can be misleading for multimodal distributions.
     """
     if test_quantities is not None:
-        if not isinstance(estimates, Mapping) or not isinstance(targets, Mapping):
-            raise TypeError("test_quantities requires dictionaries for estimates and targets.")
-        if variable_keys is not None:
-            variable_keys = [variable_keys] if isinstance(variable_keys, str) else list(variable_keys)
-        if variable_names is not None:
-            variable_names = [variable_names] if isinstance(variable_names, str) else list(variable_names)
         updated = compute_test_quantities(
             estimates=estimates,
             targets=targets,
@@ -133,28 +133,19 @@ def pairs_recovery(
         pairwise=True,
     )
     estimates, targets = plot_data["estimates"], plot_data["targets"]
-    if estimates.ndim != 3 or any(size == 0 for size in estimates.shape):
-        plt.close(plot_data["fig"])
-        raise ShapeError("estimates must have nonempty dataset, draw, and variable axes.")
     variable_names = plot_data["variable_names"]
-    points = np.asarray(point_agg(estimates, axis=1, **(point_agg_kwargs or {})))
-    if points.shape != targets.shape:
+    try:
+        points, errors = compute_recovery_estimates(
+            estimates,
+            targets,
+            point_agg,
+            uncertainty_agg,
+            point_agg_kwargs,
+            uncertainty_agg_kwargs,
+        )
+    except (ShapeError, ValueError):
         plt.close(plot_data["fig"])
-        raise ShapeError("point_agg must return shape (num_datasets, num_variables).")
-    errors = None
-    if uncertainty_agg is not None:
-        uncertainty = np.asarray(uncertainty_agg(estimates, axis=1, **(uncertainty_agg_kwargs or {})))
-        if uncertainty.shape == (2, *points.shape):
-            # Do not modify a caller-owned (possibly read-only) bounds array.
-            errors = np.stack((points - uncertainty[0], uncertainty[1] - points))
-        elif uncertainty.shape == points.shape:
-            errors = np.stack((uncertainty, uncertainty))
-        else:
-            plt.close(plot_data["fig"])
-            raise ShapeError("uncertainty_agg must return shape (num_datasets, num_variables) or (2, ...).")
-        if np.any(errors < 0):
-            plt.close(plot_data["fig"])
-            raise ValueError("Uncertainty errors must be nonnegative and bounds must enclose the point estimates.")
+        raise
 
     n = points.shape[-1]
     fig = plot_data["fig"]

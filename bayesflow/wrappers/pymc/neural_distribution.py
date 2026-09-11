@@ -77,7 +77,7 @@ class NeuralDistribution:
         simulator_fn: Callable | None = None,
     ):
         # Match float precision of pytensor with keras
-        pytensor.config.floatX = keras.backend.floatx()
+        pytensor.config.floatX = keras.config.floatx()
 
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
@@ -161,7 +161,7 @@ class NeuralDistribution:
         custom_kwargs = {
             "logp": self.logp,
             "signature": signature,
-            "dtype": keras.backend.floatx(),
+            "dtype": keras.config.floatx(),
         }
 
         if self.simulator_fn is not None:

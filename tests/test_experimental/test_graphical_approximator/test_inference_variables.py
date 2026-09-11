@@ -108,16 +108,16 @@ def test_inference_variables_by_network_three_level(three_level_simulator, three
     expected_output = concatenate([school_mu, school_sigma, shared_sigma])
     assert keras.ops.all(variables[0] == expected_output)
 
-    classroom_mu = approximator.standardize_layers["classroom_mu"](data["classroom_mu"], stage="validation")
-    classroom_sigma = approximator.standardize_layers["classroom_sigma"](data["classroom_sigma"], stage="validation")
-
-    expected_output = concatenate([classroom_mu, classroom_sigma])
-    assert keras.ops.all(variables[1] == expected_output)
-
     student_mu = approximator.standardize_layers["student_mu"](data["student_mu"], stage="validation")
     student_sigma = approximator.standardize_layers["student_sigma"](data["student_sigma"], stage="validation")
 
     expected_output = concatenate([student_mu, student_sigma])
+    assert keras.ops.all(variables[1] == expected_output)
+
+    classroom_mu = approximator.standardize_layers["classroom_mu"](data["classroom_mu"], stage="validation")
+    classroom_sigma = approximator.standardize_layers["classroom_sigma"](data["classroom_sigma"], stage="validation")
+
+    expected_output = concatenate([classroom_mu, classroom_sigma])
     assert keras.ops.all(variables[2] == expected_output)
 
     variable_shapes = inference_variable_shapes_by_network(approximator, data_shapes)
@@ -196,13 +196,13 @@ def test_inference_variable_shapes_by_network_three_level(three_level_approximat
 
     expected_shapes = {
         0: (sp.Symbol("B"), 3),  # 3 variables (school_mu, school_sigma, shared_sigma)
-        1: (sp.Symbol("B"), sp.Symbol("N_classrooms"), 2),  # 2 variables (classroom_mu, classroom_sigma)
-        2: (
+        1: (
             sp.Symbol("B"),
             sp.Symbol("N_classrooms"),
             sp.Symbol("N_students"),
             2,
         ),  # 2 variables (student_mu, student_sigma)
+        2: (sp.Symbol("B"), sp.Symbol("N_classrooms"), 2),  # 2 variables (classroom_mu, classroom_sigma)
     }
     assert inference_variable_shapes_by_network(three_level_approximator) == expected_shapes
 

@@ -13,7 +13,7 @@ def calibration_error(
     variable_names: Sequence[str] = None,
     test_quantities: dict[str, Callable] = None,
     resolution: int = 20,
-    aggregation: Callable = np.median,
+    aggregation: Callable | None = np.median,
     min_quantile: float = 0.005,
     max_quantile: float = 0.995,
 ) -> dict[str, Any]:
@@ -116,10 +116,11 @@ def calibration_error(
     alpha_pred = np.mean(inlier_id, axis=1)
 
     # Calculate absolute error between predicted inliers and alpha
-    absolute_errors = np.abs(alpha_pred - alphas[:, None])
+    error = np.abs(alpha_pred - alphas[:, None])
 
     # Aggregate errors across alpha
-    error = aggregation(absolute_errors, axis=0)
+    if aggregation is not None:
+        error = aggregation(error, axis=0)
 
     variable_names = samples["estimates"].variable_names
     return {"values": error, "metric_name": "Calibration Error", "variable_names": variable_names}

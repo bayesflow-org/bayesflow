@@ -41,6 +41,9 @@ class OfflineDataset(keras.utils.PyDataset):
     shuffle : bool, optional
         Whether to shuffle the dataset at initialization and at the end of each epoch.
         Default is ``True``.
+    drop_last : bool, optional
+        Whether to drop the last batch if it contains fewer than ``batch_size`` samples.
+        Default is ``False``.
     **kwargs
         Additional keyword arguments passed to the base ``PyDataset``.
     """
@@ -54,10 +57,12 @@ class OfflineDataset(keras.utils.PyDataset):
         *,
         augmentations: Callable | Mapping[str, Callable] | Sequence[Callable] = None,
         shuffle: bool = True,
+        drop_last: bool = False,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.batch_size = batch_size
+        self.drop_last = drop_last
         self.data = data
         self.adapter = adapter
 
@@ -76,6 +81,8 @@ class OfflineDataset(keras.utils.PyDataset):
 
     @property
     def num_batches(self) -> int:
+        if self.drop_last:
+            return self.num_samples // self.batch_size
         return int(np.ceil(self.num_samples / self.batch_size))
 
     def __getitem__(self, item: int) -> dict[str, np.ndarray]:
@@ -97,8 +104,14 @@ class OfflineDataset(keras.utils.PyDataset):
         IndexError
             If the requested batch index is out of range.
         """
+        # copy so we can give error messages with the original input
+        original_item = item
+
+        if item < 0:
+            item += self.num_batches
+
         if not 0 <= item < self.num_batches:
-            raise IndexError(f"Index {item} is out of bounds for dataset with {self.num_batches} batches.")
+            raise IndexError(f"Index {original_item} is out of bounds for dataset with {self.num_batches} batches.")
 
         start = item * self.batch_size
         stop = min((item + 1) * self.batch_size, self.num_samples)

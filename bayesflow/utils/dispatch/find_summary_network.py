@@ -35,6 +35,11 @@ def _(name: str, *args, **kwargs):
 
             return TimeSeriesNetwork(*args, **kwargs)
 
+        case "recurrent_net" | "recurrent_network":
+            from bayesflow.networks import RecurrentNetwork
+
+            return RecurrentNetwork(*args, **kwargs)
+
         case unknown_network:
             raise ValueError(f"Unknown summary network: '{unknown_network}'")
 

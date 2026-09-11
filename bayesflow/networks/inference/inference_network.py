@@ -34,6 +34,13 @@ class InferenceNetwork(keras.Layer):
         **must** contain at least a ``"loss"`` key. This is where you implement
         the training objective for your custom inference network.
 
+    Every inference network owns a ``self.seed_generator``, and :meth:`sample` resolves the
+    user-provided ``seed`` against it via :func:`~bayesflow.utils.keras_utils.resolve_seed` before
+    passing the result on to ``base_distribution`` and ``_inverse``.  Subclasses that draw
+    randomness of their own (e.g. stochastic solvers or training-time noise) must likewise resolve
+    an omitted ``seed`` against ``self.seed_generator``, so that they never fall back to Keras'
+    global generator (which cannot be traced under ``jax.jit``).
+
     Optionally override:
 
     ``sample(batch_shape, conditions, **kwargs)``
@@ -64,6 +71,7 @@ class InferenceNetwork(keras.Layer):
     def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
+        self.seed_generator = keras.random.SeedGenerator()
 
     @staticmethod
     def _collect_mask_kwargs(keys: Sequence[str], source: dict) -> dict:
@@ -81,11 +89,12 @@ class InferenceNetwork(keras.Layer):
         inverse: bool = False,
         density: bool = False,
         training: bool = False,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, conditions=conditions, density=density, training=training, **kwargs)
-        return self._forward(xz, conditions=conditions, density=density, training=training, **kwargs)
+            return self._inverse(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
+        return self._forward(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
 
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
@@ -117,7 +126,9 @@ class InferenceNetwork(keras.Layer):
         seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> Tensor:
-        seed = resolve_seed(seed)
+        # resolved here once instead of in every subclass
+        seed = resolve_seed(seed, self.seed_generator)
+
         samples = self.base_distribution.sample(batch_shape, seed=seed)
         if "compute_prior_score" in kwargs:
             samples = self._inverse_compositional(

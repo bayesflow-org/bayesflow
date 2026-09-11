@@ -1,10 +1,14 @@
 import keras
 import pytest
 
-from bayesflow.utils import find_inference_network, find_distribution, find_network, find_summary_network
 from bayesflow.networks.inference.diffusion import find_noise_schedule
-
-# --- Tests for find__network.py ---
+from bayesflow.utils import (
+    find_distribution,
+    find_inference_network,
+    find_network,
+    find_recurrent_net,
+    find_summary_network,
+)
 
 
 class DummyNetwork:
@@ -66,7 +70,22 @@ def test_find_network_invalid_type():
         find_network(12345)
 
 
-# --- Tests for find_inference_network.py ---
+def test_find_recurrent_net_by_name_returns_constructed_layer():
+    net = find_recurrent_net("gru", units=4)
+    assert isinstance(net, keras.layers.GRU)
+    assert net.units == 4
+
+
+def test_find_recurrent_net_by_keras_layer():
+    layer = keras.layers.LSTM(4)
+    result = find_recurrent_net(layer)
+    assert result is layer
+
+
+def test_find_recurrent_net_rejects_constructor_kwargs_for_keras_layer():
+    layer = keras.layers.GRU(4)
+    with pytest.raises(TypeError):
+        find_recurrent_net(layer, units=8)
 
 
 class DummyInferenceNetwork:
@@ -128,9 +147,6 @@ def test_find_inference_network_invalid_type():
         find_inference_network(12345)
 
 
-# --- Tests for find_distribution.py ---
-
-
 class DummyDistribution:
     def __init__(self, *a, **kw):
         self.args = a
@@ -183,9 +199,6 @@ def test_find_distribution_invalid_name():
 def test_find_distribution_invalid_type():
     with pytest.raises(TypeError):
         find_distribution(3.14)
-
-
-# --- Tests for find_summary_network.py ---
 
 
 class DummySummaryNetwork:
@@ -299,9 +312,6 @@ def test_find_noise_schedule_invalid_class():
 def test_find_noise_schedule_invalid_object():
     with pytest.raises(TypeError):
         find_noise_schedule(1.0)
-
-
-# --- Tests for find_scoring_rule.py ---
 
 
 @pytest.mark.parametrize(

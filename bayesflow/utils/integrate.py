@@ -356,13 +356,13 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    # density computation (state carries more than one entry) needs higher accuracy than sampling,
-    floatx = keras.backend.floatx()
-    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=floatx)
-    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=floatx)
-    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=floatx)
-    step0 = keras.ops.convert_to_tensor(0.0, dtype=floatx)
-    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype=floatx)
+    # density computation (state carries more than one entry) needs higher accuracy than sampling
+    dtype = keras.config.floatx()
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=dtype)
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=dtype)
+    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=dtype)
+    step0 = keras.ops.convert_to_tensor(0.0, dtype=dtype)
+    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype=dtype)
 
     # "First Same As Last" (FSAL) property
     k1_0 = fn(start_time, **filter_kwargs(state, fn))
@@ -486,7 +486,7 @@ def integrate_scipy(
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
-        time = keras.ops.convert_to_tensor(time, dtype=keras.backend.floatx())
+        time = keras.ops.convert_to_tensor(time, dtype=keras.config.floatx())
         deltas = fn(time, **filter_kwargs(state, fn))
         return state_to_vector(deltas)
 
@@ -1151,9 +1151,7 @@ def integrate_stochastic_adaptive(
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
-    if keras.backend.backend() == "jax":
-        seed = None  # not needed, noise is generated upfront
-    seed_body = seed
+    seed_body = None if keras.backend.backend() == "jax" else seed
 
     def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))

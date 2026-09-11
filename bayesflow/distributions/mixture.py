@@ -20,7 +20,6 @@ class Mixture(Distribution):
         distributions: Sequence[Distribution],
         mixture_logits: Sequence[float] | None = None,
         trainable_mixture: bool = False,
-        seed_generator: keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
         """
@@ -36,8 +35,6 @@ class Mixture(Distribution):
         trainable_mixture : bool, optional
             Whether the mixture weights (`mixture_logits`) should be trainable.
             Default is `False`.
-        seed_generator : keras.random.SeedGenerator, optional
-            Seed generator for reproducible sampling. If ``None``, a new one is created.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
         """
@@ -52,7 +49,7 @@ class Mixture(Distribution):
             self.mixture_logits = ops.convert_to_tensor(mixture_logits)
 
         self.trainable_mixture = trainable_mixture
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.dim = None
         self._mixture_logits = None
@@ -81,17 +78,17 @@ class Mixture(Distribution):
         Tensor
             Samples with shape ``batch_shape + (event_dim,)``.
         """
-        sg = resolve_seed(seed) or self.seed_generator
+        seed = resolve_seed(seed, self.seed_generator)
         K = len(self.distributions)
         total = math.prod(batch_shape)
 
         # Sample component indices: (total,)
         logits_broadcast = keras.ops.broadcast_to(keras.ops.expand_dims(self._mixture_logits, 0), (total, K))
-        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=sg), axis=-1)
+        cat_indices = keras.ops.squeeze(keras.random.categorical(logits_broadcast, num_samples=1, seed=seed), axis=-1)
 
         # Sample from all components and select via one-hot mask (avoids dynamic shapes)
         all_flat = keras.ops.stack(
-            [keras.ops.reshape(dist.sample(batch_shape, seed=sg), (total, self.dim)) for dist in self.distributions]
+            [keras.ops.reshape(dist.sample(batch_shape, seed=seed), (total, self.dim)) for dist in self.distributions]
         )
         all_flat = keras.ops.transpose(all_flat, (1, 0, 2))
 
@@ -139,7 +136,7 @@ class Mixture(Distribution):
         self._mixture_logits = self.add_weight(
             shape=(len(self.distributions),),
             initializer=keras.initializers.get(keras.ops.copy(self.mixture_logits)),
-            dtype="float32",
+            dtype=keras.config.floatx(),
             trainable=self.trainable_mixture,
         )
 
@@ -150,7 +147,6 @@ class Mixture(Distribution):
             "distributions": self.distributions,
             "mixture_logits": self.mixture_logits,
             "trainable_mixture": self.trainable_mixture,
-            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

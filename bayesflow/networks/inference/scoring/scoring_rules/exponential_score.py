@@ -66,7 +66,7 @@ class ExponentialScore(CategoricalScoringRule):
         """
         diff = logits_relative_to_target(estimates["logits"], targets)
         mask = 1.0 - targets
-        M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
+        M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype=keras.config.floatx())
         clip_max = FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
         half_diff = 0.5 * diff
         scores = keras.ops.sum(

@@ -16,6 +16,18 @@ class EDMNoiseSchedule(NoiseSchedule):
 
     [1] Karras, T., Aittala, M., Aila, T., & Laine, S. (2022). Elucidating the design space of diffusion-based
     generative models. Advances in Neural Information Processing Systems, 35, 26565-26577.
+
+    Parameters
+    ----------
+    sigma_data : float, optional
+        The standard deviation of the output distribution. Input of the network is scaled by this factor and
+        the weighting function is scaled by this factor as well. Default is 1.0.
+    sigma_min : float, optional
+        The minimum noise level. Only relevant for sampling. Default is 1e-4.
+    sigma_max : float, optional
+        The maximum noise level. Only relevant for sampling. Default is 80.0.
+    variance_type : Literal["preserving", "exploding"], optional
+        The type of variance to use. Default is "preserving". Original EDM paper uses "exploding".
     """
 
     def __init__(
@@ -25,21 +37,6 @@ class EDMNoiseSchedule(NoiseSchedule):
         sigma_max: float = 80.0,
         variance_type: Literal["preserving", "exploding"] = "preserving",
     ):
-        """
-        Initialize the EDM noise schedule.
-
-        Parameters
-        ----------
-        sigma_data : float, optional
-            The standard deviation of the output distribution. Input of the network is scaled by this factor and
-            the weighting function is scaled by this factor as well. Default is 1.0.
-        sigma_min : float, optional
-            The minimum noise level. Only relevant for sampling. Default is 1e-4.
-        sigma_max : float, optional
-            The maximum noise level. Only relevant for sampling. Default is 80.0.
-        variance_type : Literal["preserving", "exploding"], optional
-            The type of variance to use. Default is "preserving". Original EDM paper uses "exploding".
-        """
         super().__init__(name="edm_noise_schedule", variance_type=variance_type)
         self.sigma_data = sigma_data
         # training settings

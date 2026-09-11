@@ -1,3 +1,4 @@
+from typing import Any
 import numpy as np
 
 import keras
@@ -19,7 +20,7 @@ from bayesflow.utils import (
 from bayesflow.utils.serialization import serializable, serialize
 
 from ...inference import InferenceNetwork
-from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
+from ...defaults import CONSISTENCY_MODEL_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS
 
 
 @serializable("bayesflow.networks")
@@ -99,7 +100,7 @@ class ConsistencyModel(InferenceNetwork):
         rho: float = 7.0,
         noise_dist_mean: float = -1.1,
         noise_dist_std: float = 2.0,
-        subnet_kwargs: dict[str, any] = None,
+        subnet_kwargs: dict[str, Any] = None,
         **kwargs,
     ):
         super().__init__(base_distribution="normal", **kwargs)
@@ -108,7 +109,7 @@ class ConsistencyModel(InferenceNetwork):
 
         subnet_kwargs = subnet_kwargs or {}
         if subnet == "time_mlp":
-            subnet_kwargs = TIME_MLP_DEFAULTS | subnet_kwargs
+            subnet_kwargs = CONSISTENCY_MODEL_DEFAULTS | subnet_kwargs
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
@@ -133,7 +134,6 @@ class ConsistencyModel(InferenceNetwork):
         self._current_step = self.add_weight(name="current_step", initializer="zeros", trainable=False, dtype="int")
         self._current_step.assign(0)
 
-        self.seed_generator = keras.random.SeedGenerator()
         self._discretized_times = None
         self._discretization_map = None
         self._c_huber = None
@@ -184,13 +184,13 @@ class ConsistencyModel(InferenceNetwork):
         """Function for obtaining the discretized time according to [2],
         Section 2, bottom of page 2.
         """
-        indices = ops.arange(1, n_k + 1, dtype="float32")
+
+        dtype = keras.config.floatx()
+        indices = ops.arange(1, n_k + 1, dtype=dtype)
         one_over_rho = 1.0 / self.rho
         discretized_time = (
             self.eps**one_over_rho
-            + (indices - 1.0)
-            / (ops.cast(n_k, "float32") - 1.0)
-            * (self.max_time**one_over_rho - self.eps**one_over_rho)
+            + (indices - 1.0) / (ops.cast(n_k, dtype) - 1.0) * (self.max_time**one_over_rho - self.eps**one_over_rho)
         ) ** self.rho
         return discretized_time
 
@@ -247,7 +247,7 @@ class ConsistencyModel(InferenceNetwork):
             discretization_map[n] = i
 
         # Finally, we convert the vectors to tensors
-        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype="float32")
+        self._discretized_times = ops.convert_to_tensor(discretized_times, dtype=keras.config.floatx())
         self._discretization_map = ops.convert_to_tensor(discretization_map)
 
     def _forward_train(
@@ -292,7 +292,7 @@ class ConsistencyModel(InferenceNetwork):
         x            : Tensor
             The approximate samples
         """
-        seed = resolve_seed(kwargs.pop("seed", None)) or self.seed_generator
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         # Extract subnet masks from kwargs
         subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
         steps = int(kwargs.get("steps", self.s0 + 1))

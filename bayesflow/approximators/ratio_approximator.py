@@ -280,7 +280,7 @@ class RatioApproximator(Approximator):
         # Sample from (B, B-1) space in O(B*K) instead of O(B^2)
         scores = keras.random.uniform(
             shape=(B, B - 1),
-            dtype="float32",
+            dtype=keras.config.floatx(),
             seed=self.seed_generator,
         )
         _, idx = keras.ops.top_k(scores, k=num_contrastive)

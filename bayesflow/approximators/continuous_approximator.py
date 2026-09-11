@@ -64,6 +64,8 @@ class ContinuousApproximator(Approximator):
         self.condition_builder = ConditionBuilder()
         self.has_distribution = True
 
+        self.seed_generator = keras.random.SeedGenerator()
+
     def compute_metrics(
         self,
         inference_variables: Tensor,
@@ -255,7 +257,7 @@ class ContinuousApproximator(Approximator):
         seed : int, keras.random.SeedGenerator, or None, optional
             Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
             and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
-            as-is. If ``None`` (default), each component uses its own instance seed generator.
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         to_numpy: bool, optional
             If True, the returned samples be converted to numpy arrays
             (as opposed to returned as keras backend tensors).
@@ -267,6 +269,8 @@ class ContinuousApproximator(Approximator):
         dict[str, np.ndarray]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
+        seed = resolve_seed(seed, self.seed_generator)
+
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, batch_size=batch_size)
 
         kwargs = self._maybe_standardize_fixed_target_value(kwargs)
@@ -279,7 +283,7 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
-            seed=resolve_seed(seed),
+            seed=seed,
             **inference_kwargs,
         )
 
@@ -373,6 +377,7 @@ class ContinuousApproximator(Approximator):
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         summary_outputs: Tensor | np.ndarray | None = None,
+        seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ) -> dict[str, np.ndarray]:
         """
@@ -408,6 +413,10 @@ class ContinuousApproximator(Approximator):
         summary_outputs : Tensor | np.ndarray | None, optional
             Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
             of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
+        seed : int, keras.random.SeedGenerator, or None, optional
+            Seed for reproducible sampling. An integer is converted to a ``keras.random.SeedGenerator``
+            and shared across all stochastic operations in the call. A ``SeedGenerator`` is passed through
+            as-is. If ``None`` (default), this instance's own seed generator is used.
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
@@ -417,6 +426,8 @@ class ContinuousApproximator(Approximator):
             Dictionary containing generated samples with the same keys as `conditions`.
             Samples of shape (n_datasets, n_children, n_samples, ...)
         """
+        seed = resolve_seed(seed, self.seed_generator)
+
         first_conditions_arr = np.asarray(next(iter(conditions.values())))
         first_ancestral_arr = np.asarray(next(iter(ancestral_conditions.values())))
         n_datasets = first_conditions_arr.shape[0]
@@ -440,6 +451,7 @@ class ContinuousApproximator(Approximator):
             conditions=resolved_conditions,
             batch_size=batch_size,
             sample_shape=sample_shape,
+            seed=seed,
             **inference_kwargs,
         )
 

@@ -94,7 +94,7 @@ class VariationalAutoEncoder(AutoEncoder):
         seed: int | keras.random.SeedGenerator | None = None,
         **kwargs,
     ):
-        seed = resolve_seed(seed)
+        seed = resolve_seed(seed, self.seed_generator)
 
         z = super()._forward(x, training=training, **kwargs)
         mean, log_var = keras.ops.split(z, 2, axis=-1)
@@ -160,7 +160,7 @@ class VariationalAutoEncoder(AutoEncoder):
         **kwargs,
     ) -> dict[str, Tensor]:
         training = stage == "training"
-        seed = resolve_seed(seed)
+        seed = resolve_seed(seed, self.seed_generator)
 
         _, mean, log_var, _, sample = self._encode(
             x,

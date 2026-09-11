@@ -81,7 +81,7 @@ class LogisticScore(CategoricalScoringRule):
         if self.alpha == 0:
             scores = keras.ops.sum(mask * log_terms, axis=-1)
         else:
-            M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype="float32")
+            M = keras.ops.cast(keras.ops.shape(diff)[-1], dtype=keras.config.floatx())
             clip_max = FLOAT32_EXP_MAX - keras.ops.log(keras.ops.maximum(M - 1.0, 1.0))
             scores = keras.ops.sum(
                 mask * keras.ops.exp(keras.ops.minimum(self.alpha * log_terms, clip_max)),

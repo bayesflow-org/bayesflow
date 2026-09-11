@@ -3,6 +3,8 @@ from typing import Any
 
 import keras
 
+from bayesflow.utils import logging
+
 from .ensemble_online_dataset import EnsembleOnlineDataset
 from .ensemble_indexed_dataset import EnsembleIndexedDataset
 
@@ -50,6 +52,11 @@ class EnsembleDataset(keras.utils.PyDataset):
     data_reuse : float, default=1.0
         Degree of independence between ensemble members in ``[0, 1]``.
         See Notes for how it is applied for different dataset types.
+    drop_last : bool, optional
+        Whether to drop the last step of each epoch if fewer than ``batch_size`` samples
+        are left for it. If ``None`` (the default), the setting is inherited from the
+        wrapped dataset. Only applies to OfflineDataset / DiskDataset, since online
+        simulation always produces full batches.
     """
 
     def __init__(
@@ -57,12 +64,18 @@ class EnsembleDataset(keras.utils.PyDataset):
         dataset: keras.utils.PyDataset,
         member_names: Sequence[str],
         data_reuse: float = 1.0,
+        drop_last: bool | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
 
         # Dispatch based on capabilities (duck typing)
         if hasattr(dataset, "simulator") and hasattr(dataset, "num_batches"):
+            if drop_last is not None:
+                logging.warning(
+                    "EnsembleDataset: ignoring `drop_last`, which has no effect for OnlineDataset-like "
+                    "datasets because they always simulate full batches."
+                )
             self._wrapped = EnsembleOnlineDataset(
                 dataset,
                 member_names=member_names,
@@ -73,6 +86,7 @@ class EnsembleDataset(keras.utils.PyDataset):
                 dataset,
                 member_names=member_names,
                 data_reuse=data_reuse,
+                drop_last=drop_last,
             )
         else:
             raise TypeError(

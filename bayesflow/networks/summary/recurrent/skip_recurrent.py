@@ -23,7 +23,7 @@ class SkipRecurrentNet(keras.Layer):
         bidirectional: bool = True,
         input_channels: int = 64,
         skip_steps: int = 4,
-        dropout: float = 0.05,
+        kernel_initializer: str = "orthogonal",
         **kwargs,
     ):
         """
@@ -46,8 +46,9 @@ class SkipRecurrentNet(keras.Layer):
         skip_steps : int, optional
             Step size and kernel size used in the skip convolution. Determines how many steps are skipped.
             Also determines the multiplier for the number of filters. Default is 4.
-        dropout : float, optional
-            Dropout rate applied within the recurrent layers. Default is 0.05.
+        kernel_initializer : str, optional
+            Initializer for the skip convolution and recurrent input kernels.
+            Default is ``"orthogonal"``.
         **kwargs
             Additional keyword arguments passed to the parent class constructor.
         """
@@ -58,34 +59,39 @@ class SkipRecurrentNet(keras.Layer):
             kernel_size=skip_steps,
             strides=skip_steps,
             padding="same",
+            kernel_initializer=kernel_initializer,
             name="skip_conv",
         )
 
-        recurrent_constructor = find_recurrent_net(recurrent_type)
-
         if bidirectional:
             # Manually implement bidirectional to avoid Keras serialization issues with Bidirectional
-            forward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            backward_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            forward_recurrent = find_recurrent_net(
+                recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer
+            )
+            backward_recurrent = find_recurrent_net(
+                recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer
+            )
             self.recurrent_forward = forward_recurrent
             self.recurrent_backward = backward_recurrent
 
             # Same for skip recurrent
-            forward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            backward_skip = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            forward_skip = find_recurrent_net(recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer)
+            backward_skip = find_recurrent_net(recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer)
             self.skip_recurrent_forward = forward_skip
             self.skip_recurrent_backward = backward_skip
 
         else:
-            self.recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
-            self.skip_recurrent = recurrent_constructor(units=hidden_dim, dropout=dropout)
+            self.recurrent = find_recurrent_net(recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer)
+            self.skip_recurrent = find_recurrent_net(
+                recurrent_type, units=hidden_dim, kernel_initializer=kernel_initializer
+            )
 
         self.input_channels = input_channels
         self.hidden_dim = hidden_dim
         self.recurrent_type = recurrent_type
         self.bidirectional = bidirectional
         self.skip_steps = skip_steps
-        self.dropout = dropout
+        self.kernel_initializer = kernel_initializer
 
     def call(self, time_series: Tensor, training: bool = False, **kwargs) -> Tensor:
         if self.bidirectional:
@@ -93,7 +99,6 @@ class SkipRecurrentNet(keras.Layer):
             forward_direct = self.recurrent_forward(time_series, training=training)
             # Backward pass for recurrent branch using reversed time axis
             backward_direct = self.recurrent_backward(keras.ops.flip(time_series, axis=1), training=training)
-            backward_direct = keras.ops.flip(backward_direct, axis=1)
             direct_summary = forward_direct + backward_direct
 
             # Forward pass for skip recurrent branch
@@ -102,7 +107,6 @@ class SkipRecurrentNet(keras.Layer):
 
             # Backward pass for skip recurrent branch
             backward_skip = self.skip_recurrent_backward(keras.ops.flip(skip_conv_output, axis=1), training=training)
-            backward_skip = keras.ops.flip(backward_skip, axis=1)
             skip_summary = forward_skip + backward_skip
         else:
             direct_summary = self.recurrent(time_series, training=training)
@@ -118,7 +122,7 @@ class SkipRecurrentNet(keras.Layer):
             "bidirectional": self.bidirectional,
             "input_channels": self.input_channels,
             "skip_steps": self.skip_steps,
-            "dropout": self.dropout,
+            "kernel_initializer": self.kernel_initializer,
         }
 
         return base_config | serialize(config)

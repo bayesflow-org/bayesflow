@@ -72,7 +72,7 @@ def build_prior_score_fn(
         else:
             prior_score = compute_prior_score(adapted_samples)
 
-        floatx = keras.backend.floatx()
+        floatx = keras.config.floatx()
         cotangent = (
             {key: keras.ops.cast(prior_score[key], floatx) for key in adapted_samples},
             # log |det J| enters log p_Z with unit weight

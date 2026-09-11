@@ -229,7 +229,7 @@ class NeuralRatioDistribution:
         custom_kwargs = {
             "logp": self.logp,
             "signature": signature,
-            "dtype": keras.backend.floatx(),
+            "dtype": keras.config.floatx(),
         }
 
         if self.simulator_fn is not None:

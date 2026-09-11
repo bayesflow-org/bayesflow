@@ -280,7 +280,7 @@ def inference_conditions_by_network(
     data_shape = keras.ops.shape(data_tensor)
     spatial_dims = [data_shape[i] for i in range(1, data_tensor.ndim - 1)]
     node_reps = keras.ops.expand_dims(
-        keras.ops.sqrt(keras.ops.cast(keras.ops.stack(spatial_dims), "float32")),
+        keras.ops.sqrt(keras.ops.cast(keras.ops.stack(spatial_dims), keras.config.floatx())),
         axis=0,
     )
 
@@ -335,6 +335,7 @@ def inference_condition_shapes_by_network(
     data_shapes: dict | None = None,
     meta_dict: dict | None = None,
 ) -> dict[int, tuple[int | sp.Expr, ...]]:
+
     if not data_shapes:
         data_shapes = approximator.output_shapes
 

@@ -7,7 +7,7 @@ from networkx.readwrite import json_graph
 from bayesflow.utils.serialization import serializable, serialize
 
 from .simulation_graph import SimulationGraph
-from .utils import has_open_path, merge_root_nodes
+from .utils import has_open_path
 
 Node: TypeAlias = str
 SimulationNode: TypeAlias = str
@@ -34,7 +34,7 @@ class ExpandedGraph(nx.DiGraph):
             self.add_nodes_from(g.nodes(data=True))
             self.add_edges_from(g.edges(data=True))
 
-    def invert(self, merge_roots: bool = True):
+    def invert(self, node_ordering=None):
         """
         Inverts a graph by following the algorithm described by [1], but sorting
         latent nodes by outer nodes first.
@@ -43,19 +43,18 @@ class ExpandedGraph(nx.DiGraph):
         In Advances in Neural Information Processing Systems (pp. 3048–3056).
         """
         from .inverted_graph import InvertedGraph
+        from .factorizations import enumerate_factorizations, select_factorization
+
+        if not node_ordering:
+            factorizations = enumerate_factorizations(self)
+            return select_factorization(factorizations)
 
         graph = deepcopy(self)
-        if merge_roots:
-            graph = merge_root_nodes(graph)
 
         undirected = graph.to_undirected()
         leaf_nodes = [node for node in graph.nodes() if graph.out_degree(node) == 0]
 
-        # Sort nodes by outer nodes first (instead of last as in Stuhlmüller2013).
-        # We assume that this ordering preserves amortization over exchangeable nodes in most cases.
-        latent_nodes = [
-            node for node in list(nx.lexicographical_topological_sort(graph)) if graph.out_degree(node) != 0
-        ]
+        latent_nodes = node_ordering
 
         inverse = InvertedGraph(expanded_graph=self)
         inverse.add_nodes_from(leaf_nodes)
@@ -75,6 +74,26 @@ class ExpandedGraph(nx.DiGraph):
                     inverse.add_edge(node, x_j)
 
         return inverse
+
+    def original_node_names(self) -> dict[ExpandedNode, SimulationNode]:
+        """
+        Maps node names of the inverted graph to node names in the corresponding
+        SimulationGraph.
+        """
+        mapping = {}
+
+        for name, attributes in self.nodes(data=True):
+            merged_from = attributes["merged_from"]
+            previous_names = attributes["previous_names"]
+
+            if merged_from:
+                mapping[name] = merged_from[0] if len(merged_from) == 1 else merged_from
+            elif previous_names:
+                mapping[name] = previous_names[0]
+            else:
+                mapping[name] = name
+
+        return mapping
 
     def get_config(self):
         graph_data = json_graph.node_link_data(self)

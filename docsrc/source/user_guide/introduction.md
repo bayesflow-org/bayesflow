@@ -27,7 +27,7 @@ It lets you define the generative process, adapt simulator output into training-
 This guide introduces all components that let you create and run amortized workflows. These components are organized around several modules:
 
 - {py:mod}`~bayesflow.simulators` provides tools for defining and combining priors, simulators, and meta-functions. These components generate the model-implied quantities used for training, validation, diagnostics, and inference.
-- {py:mod}`~bayesflow.adapters` defines the bridge between simulator output and neural-network input. Adapters make preprocessing explicit, reproducible, and shared between training and inference. They also convert adapter outputs to tensors in the active Keras backend and cast them to `keras.backend.floatx()`.
+- {py:mod}`~bayesflow.adapters` defines the bridge between simulator output and neural-network input. Adapters make preprocessing explicit, reproducible, and shared between training and inference. They also convert adapter outputs to tensors in the active Keras backend and cast them to `keras.config.floatx()`.
 - {py:mod}`~bayesflow.networks` contains neural architectures for amortized inference and representation learning, including generative networks for posterior approximation and summary networks for structured or variable-size observations.
 - {py:mod}`~bayesflow.approximators` connects networks to concrete inference goals, such as posterior estimation, likelihood estimation, ratio estimation, or point estimation.
 High-level workflows, such as {py:class}`~bayesflow.workflows.BasicWorkflow`, orchestrate the full process from simulation to training, diagnostics, and application.

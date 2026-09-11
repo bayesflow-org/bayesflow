@@ -302,7 +302,7 @@ def integrate_scheduled(
     method: str,
     **kwargs,
 ) -> StateDict:
-    steps = keras.ops.convert_to_tensor(steps, dtype=keras.backend.floatx())
+    steps = keras.ops.convert_to_tensor(steps, dtype=keras.config.floatx())
 
     match method:
         case "euler":
@@ -480,7 +480,7 @@ def integrate_scipy(
     def vector_to_state(x):
         parts = np.split(np.asarray(x), split_indices)
         return {
-            key: keras.ops.convert_to_tensor(np.reshape(part, shapes[key]), dtype=keras.backend.floatx())
+            key: keras.ops.convert_to_tensor(np.reshape(part, shapes[key]), dtype=keras.config.floatx())
             for key, part in zip(keys, parts)
         }
 

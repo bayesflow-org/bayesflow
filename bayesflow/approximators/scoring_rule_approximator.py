@@ -432,7 +432,6 @@ class ScoringRuleApproximator(ContinuousApproximator):
         self, estimates: Mapping[str, Mapping[str, Tensor]], **kwargs
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         """Applies the inverse adapter on each inner element of the _estimate output dictionary."""
-        estimates = keras.tree.map_structure(keras.ops.convert_to_numpy, estimates)
         processed = {}
         for score_key, score_val in estimates.items():
             processed[score_key] = {}

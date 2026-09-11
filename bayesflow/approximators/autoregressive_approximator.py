@@ -148,13 +148,13 @@ class AutoregressiveApproximator(ContinuousApproximator):
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
+        to_numpy: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | Tensor]:
         if conditions is None:
             raise ValueError("Autoregressive sampling requires summary_variables.")
 
         adapted = self.adapter(conditions, strict=False, stage="inference")
-        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
 
         encoder_outputs, decoder_time = self.condition_builder.resolve_encoder(
             standardizer=self.standardizer,
@@ -195,7 +195,7 @@ class AutoregressiveApproximator(ContinuousApproximator):
         )
         samples = keras.tree.map_structure(
             lambda value: self.adapter(
-                {"inference_variables": keras.ops.convert_to_numpy(value)},
+                {"inference_variables": value},
                 inverse=True,
                 strict=False,
             ),
@@ -203,19 +203,25 @@ class AutoregressiveApproximator(ContinuousApproximator):
         )
 
         if return_summaries:
-            samples["_summaries"] = keras.ops.convert_to_numpy(encoder_outputs)
+            samples["_summaries"] = encoder_outputs
+        if to_numpy:
+            samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
         if split:
             samples = split_arrays(samples, axis=-1)
         return samples
 
-    def log_prob(self, data: Mapping[str, np.ndarray], **kwargs) -> np.ndarray:
+    def log_prob(
+        self,
+        data: Mapping[str, np.ndarray],
+        to_numpy: bool = True,
+        **kwargs,
+    ) -> np.ndarray | Tensor:
         adapted, adapter_log_det = self.adapter(
             data,
             strict=False,
             log_det_jac=True,
             stage="inference",
         )
-        adapted = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted)
         inference_variables, standardizer_log_det = self.standardizer.maybe_standardize(
             adapted.get("inference_variables"),
             key="inference_variables",
@@ -252,10 +258,13 @@ class AutoregressiveApproximator(ContinuousApproximator):
             )
         log_prob = keras.ops.sum(step_log_prob, axis=-1)
         adapter_log_det = keras.ops.cast(
-            keras.ops.convert_to_tensor(adapter_log_det.get("inference_variables", 0.0)),
+            adapter_log_det.get("inference_variables", 0.0),
             log_prob.dtype,
         )
-        return keras.ops.convert_to_numpy(log_prob + adapter_log_det)
+        log_prob = log_prob + adapter_log_det
+        if to_numpy:
+            log_prob = keras.ops.convert_to_numpy(log_prob)
+        return log_prob
 
     def get_config(self):
         config = super().get_config()

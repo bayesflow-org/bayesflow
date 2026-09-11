@@ -134,7 +134,7 @@ class SelfConsistencyLoss:
 
         data = data | samples
 
-        data = keras.tree.map_structure(lambda s: keras.ops.convert_to_tensor(s, dtype=keras.backend.floatx()), data)
+        data = keras.tree.map_structure(lambda s: keras.ops.convert_to_tensor(s, dtype=keras.config.floatx()), data)
 
         return data
 

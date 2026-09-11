@@ -226,7 +226,7 @@ class Adapter(MutableSequence[Transform]):
 
     def device_handoff(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
         """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""
-        floatx = keras.backend.floatx()
+        floatx = keras.config.floatx()
 
         def convert(x):
             if keras.ops.is_tensor(x):

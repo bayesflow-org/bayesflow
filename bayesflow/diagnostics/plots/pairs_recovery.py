@@ -135,7 +135,7 @@ def pairs_recovery(
     estimates, targets = plot_data["estimates"], plot_data["targets"]
     variable_names = plot_data["variable_names"]
     try:
-        points, errors = compute_recovery_estimates(
+        recovery_estimates = compute_recovery_estimates(
             estimates,
             targets,
             point_agg,
@@ -146,6 +146,8 @@ def pairs_recovery(
     except (ShapeError, ValueError):
         plt.close(plot_data["fig"])
         raise
+    points = recovery_estimates["point_estimates"]
+    errors = recovery_estimates["uncertainty"]
 
     n = points.shape[-1]
     fig = plot_data["fig"]

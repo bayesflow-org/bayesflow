@@ -4,6 +4,7 @@ import pytest
 
 from bayesflow import diagnostics
 from bayesflow.utils.exceptions import ShapeError
+from bayesflow.utils.plot_utils import compute_recovery_estimates
 
 
 @pytest.fixture
@@ -14,6 +15,14 @@ def recovery_data():
     points += np.array([[0, 3, -2], [2, -5, 1], [-1, 2, 4], [3, 1, -3]])
     draws = points[:, None, :] + np.array([-3, -1, 0, 2, 8])[None, :, None]
     return draws, targets
+
+
+def test_compute_recovery_estimates_returns_named_elements(recovery_data):
+    draws, targets = recovery_data
+    result = compute_recovery_estimates(draws, targets, np.median, None)
+    assert list(result) == ["point_estimates", "uncertainty"]
+    np.testing.assert_allclose(result["point_estimates"], np.median(draws, axis=1))
+    assert result["uncertainty"] is None
 
 
 def test_cell_coordinates_and_geometry(recovery_data):

@@ -150,7 +150,7 @@ def recovery(
 
     # Compute point estimates and uncertainties
     try:
-        point_estimate, uncertainty = compute_recovery_estimates(
+        recovery_estimates = compute_recovery_estimates(
             estimates,
             targets,
             point_agg,
@@ -161,6 +161,8 @@ def recovery(
     except (ShapeError, ValueError):
         plt.close(plot_data["fig"])
         raise
+    point_estimate = recovery_estimates["point_estimates"]
+    uncertainty = recovery_estimates["uncertainty"]
 
     for i, ax in enumerate(plot_data["axes"].flat):
         if i >= plot_data["num_variables"]:

@@ -13,6 +13,7 @@ from matplotlib.legend_handler import HandlerPatch
 
 from .validators import check_estimates_prior_shapes
 from .dict_utils import dicts_to_arrays
+from .exceptions import ShapeError
 
 
 def prepare_plot_data(
@@ -24,6 +25,7 @@ def prepare_plot_data(
     num_row: int = None,
     figsize: tuple = None,
     stacked: bool = False,
+    pairwise: bool = False,
     default_name: str = "v",
 ) -> dict[str, Any]:
     """
@@ -56,6 +58,8 @@ def prepare_plot_data(
         Size of the figure adjusting to the display resolution
     stacked           : bool, optional, default: False
         Whether the plots are stacked horizontally
+    pairwise          : bool, optional, default: False
+        Whether to arrange one row and column per variable.
     default_name      : str, optional (default = "v")
         The default name to use for estimates if None provided
 
@@ -82,7 +86,12 @@ def prepare_plot_data(
     plot_data["num_variables"] = num_variables
 
     # Configure layout
-    num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
+    if pairwise:
+        if num_variables == 0:
+            raise ShapeError("Pairwise plots require at least one variable.")
+        num_row = num_col = num_variables
+    else:
+        num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)
@@ -93,6 +102,47 @@ def prepare_plot_data(
     plot_data["num_col"] = num_col
 
     return plot_data
+
+
+def compute_recovery_estimates(
+    estimates: np.ndarray,
+    targets: np.ndarray,
+    point_agg,
+    uncertainty_agg,
+    point_agg_kwargs: dict = None,
+    uncertainty_agg_kwargs: dict = None,
+) -> dict[str, np.ndarray | None]:
+    """Compute and validate point estimates and error bars for recovery plots.
+
+    Returns
+    -------
+    dict[str, np.ndarray or None]
+        The computed ``point_estimates`` and ``uncertainty`` errors. The latter
+        is ``None`` when no uncertainty aggregator is supplied.
+    """
+    if estimates.ndim != 3 or any(size == 0 for size in estimates.shape):
+        raise ShapeError("estimates must have nonempty dataset, draw, and variable axes.")
+
+    points = np.asarray(point_agg(estimates, axis=1, **(point_agg_kwargs or {})))
+    if points.shape != targets.shape:
+        raise ShapeError("point_agg must return shape (num_datasets, num_variables).")
+
+    if uncertainty_agg is None:
+        return {"point_estimates": points, "uncertainty": None}
+
+    uncertainty = np.asarray(uncertainty_agg(estimates, axis=1, **(uncertainty_agg_kwargs or {})))
+    if uncertainty.shape == (2, *points.shape):
+        # Do not modify a caller-owned (possibly read-only) bounds array.
+        errors = np.stack((points - uncertainty[0], uncertainty[1] - points))
+    elif uncertainty.shape == points.shape:
+        errors = np.stack((uncertainty, uncertainty))
+    else:
+        raise ShapeError("uncertainty_agg must return shape (num_datasets, num_variables) or (2, ...).")
+
+    if np.any(errors < 0):
+        raise ValueError("Uncertainty errors must be nonnegative and bounds must enclose the point estimates.")
+
+    return {"point_estimates": points, "uncertainty": errors}
 
 
 def compute_empirical_coverage(

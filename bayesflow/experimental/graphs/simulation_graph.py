@@ -96,7 +96,7 @@ class SimulationGraph(nx.DiGraph):
             Inverted representation of the expanded graph.
         """
         expanded_graph = self.expand(merge_roots=merge_roots)
-        inverted_graph = expanded_graph.invert(merge_roots=merge_roots)
+        inverted_graph = expanded_graph.invert()
 
         return inverted_graph
 

@@ -18,7 +18,7 @@ def test_network_conditions(single_level_graph, two_level_graph, three_level_gra
     assert three_level_graph.network_conditions() == {
         0: ["scores"],
         1: ["schools", "shared", "scores"],
-        2: ["schools", "shared", "students"],
+        2: ["schools", "classrooms", "shared", "scores"],
     }
 
     assert crossed_design_irt_graph.network_conditions() == {
@@ -35,8 +35,8 @@ def test_network_compositions(single_level_graph, two_level_graph, three_level_g
 
     assert three_level_graph.network_composition() == {
         0: ["schools", "shared"],
-        1: ["students"],
-        2: ["classrooms"],
+        1: ["classrooms"],
+        2: ["students"],
     }
 
     assert crossed_design_irt_graph.network_composition() == {
@@ -86,13 +86,17 @@ def test_original_node_names(single_level_graph, two_level_graph, three_level_gr
         "locals_2": "locals",
     }
     assert three_level_graph.original_node_names() == {
-        "scores_1": "scores",
-        "scores_2": "scores",
+        "scores_11": "scores",
+        "scores_12": "scores",
+        "scores_21": "scores",
+        "scores_22": "scores",
         "schools, shared": ["schools", "shared"],
         "classrooms_1": "classrooms",
         "classrooms_2": "classrooms",
-        "students_1": "students",
-        "students_2": "students",
+        "students_11": "students",
+        "students_12": "students",
+        "students_21": "students",
+        "students_22": "students",
     }
     assert crossed_design_irt_graph.original_node_names() == {
         "observations_11": "observations",
@@ -119,8 +123,8 @@ def test_conditions_by_node(single_level_graph, two_level_graph, three_level_gra
         "scores": [],
         "schools": ["scores"],
         "shared": ["scores"],
-        "students": ["schools", "shared", "scores"],
-        "classrooms": ["schools", "shared", "students"],
+        "classrooms": ["schools", "shared", "scores"],
+        "students": ["schools", "classrooms", "shared", "scores"],
     }
     assert crossed_design_irt_graph.conditions_by_node() == {
         "observations": [],
@@ -140,13 +144,17 @@ def test_detailed_conditions_by_node(single_level_graph, two_level_graph, three_
         "locals_2": ["hypers, shared", "y_2"],
     }
     assert three_level_graph.detailed_conditions_by_node() == {
-        "scores_1": [],
-        "scores_2": [],
-        "schools, shared": ["scores_1", "scores_2"],
-        "students_1": ["scores_1", "schools, shared"],
-        "students_2": ["scores_2", "schools, shared"],
-        "classrooms_1": ["schools, shared", "students_1"],
-        "classrooms_2": ["schools, shared", "students_2"],
+        "scores_11": [],
+        "scores_12": [],
+        "scores_21": [],
+        "scores_22": [],
+        "schools, shared": ["scores_11", "scores_12", "scores_21", "scores_22"],
+        "classrooms_1": ["schools, shared", "scores_11", "scores_12"],
+        "classrooms_2": ["schools, shared", "scores_21", "scores_22"],
+        "students_11": ["classrooms_1", "scores_11", "schools, shared"],
+        "students_12": ["classrooms_1", "scores_12", "schools, shared"],
+        "students_21": ["classrooms_2", "scores_21", "schools, shared"],
+        "students_22": ["classrooms_2", "scores_22", "schools, shared"],
     }
     assert crossed_design_irt_graph.detailed_conditions_by_node() == {
         "observations_11": [],
@@ -195,10 +203,10 @@ def test_non_amortizable_summary_input_shapes(crossed_design_irt_graph):
 def test_is_per_level_summary(three_level_graph):
     # schools is merged with shared in the inverted graph, so no classrooms condition on it directly
     assert three_level_graph.is_per_level_summary("classrooms", "schools") is False
-    # classrooms are inferred after students, so they no longer condition on scores directly
-    assert three_level_graph.is_per_level_summary("classrooms", "scores") is False
-    # students are nested within classrooms, not shared across groups
-    assert three_level_graph.is_per_level_summary("classrooms", "students") is True
+    # classrooms are inferred before students, so each classroom conditions on the scores nested within it
+    assert three_level_graph.is_per_level_summary("classrooms", "scores") is True
+    # classrooms are inferred before students, so they do not condition on students
+    assert three_level_graph.is_per_level_summary("classrooms", "students") is False
 
 
 def test_inverted_graph_serialization(single_level_graph):

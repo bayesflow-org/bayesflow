@@ -65,6 +65,9 @@ class DualCoupling(InvertibleLayer):
 
         if self.pivot:
             self.coupling2.build(x2_shape, x1_shape, conditions_shape)
+        else:
+            self._tracker.untrack(self.coupling2)
+            self.coupling2 = None
 
     def call(
         self, xz: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs

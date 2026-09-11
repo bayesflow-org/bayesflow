@@ -88,6 +88,22 @@ def test_unconditional_sampling(inference_network):
     assert samples["parameters"].shape == (3, 2)
 
 
+def test_one_dimensional_coupling_flow():
+    data = {
+        "parameters": np.random.normal(size=(4, 1)),
+        "observables": np.random.normal(size=(4, 2)),
+    }
+    workflow = bf.BasicWorkflow(
+        inference_network=bf.networks.CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
+        inference_variables="parameters",
+        inference_conditions="observables",
+    )
+
+    history = workflow.fit_offline(data, epochs=1, batch_size=2, verbose=0)
+
+    assert len(history.history["loss"]) == 1
+
+
 def test_ancestral_sampling():
     """
     Hierarchical scenario:

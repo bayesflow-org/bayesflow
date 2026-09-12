@@ -4,6 +4,12 @@ import numpy as np
 from tests.utils import assert_allclose
 
 
+def numerical_log_det(jacobian):
+    """Compute the reference log-|det J| without backend device kernels."""
+    jacobian = keras.ops.convert_to_numpy(jacobian)
+    return np.linalg.slogdet(jacobian)[1]
+
+
 def test_build(invertible_layer, random_samples, random_conditions):
     assert invertible_layer.built is False
 
@@ -65,7 +71,7 @@ def test_jacobian_numerically(invertible_layer, random_samples, random_condition
 
     numerical_forward_jacobian = jacobian(lambda x: invertible_layer(x)[0], random_samples)
 
-    numerical_forward_log_det = keras.ops.logdet(numerical_forward_jacobian)
+    numerical_forward_log_det = numerical_log_det(numerical_forward_jacobian)
 
     assert_allclose(forward_log_det, numerical_forward_log_det, rtol=1e-4, atol=1e-5)
 
@@ -73,6 +79,6 @@ def test_jacobian_numerically(invertible_layer, random_samples, random_condition
 
     numerical_inverse_jacobian = jacobian(lambda z: invertible_layer(z, inverse=True)[0], random_samples)
 
-    numerical_inverse_log_det = keras.ops.logdet(numerical_inverse_jacobian)
+    numerical_inverse_log_det = numerical_log_det(numerical_inverse_jacobian)
 
     assert_allclose(inverse_log_det, numerical_inverse_log_det, rtol=1e-4, atol=1e-5)

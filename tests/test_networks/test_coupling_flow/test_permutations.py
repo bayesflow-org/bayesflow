@@ -2,6 +2,7 @@ import pytest
 import keras
 import numpy as np
 
+from bayesflow.utils import log_abs_det
 from bayesflow.networks.inference.coupling.permutations import (
     FixedPermutation,
     OrthogonalPermutation,
@@ -84,7 +85,7 @@ def test_orthogonal_permutation_broadcasts_log_det_for_non_vector_inputs():
     z, log_det = layer(x)
     x_inv, log_det_inv = layer(z, inverse=True)
 
-    expected_log_det = keras.ops.log(keras.ops.abs(keras.ops.det(weight)))
+    expected_log_det = log_abs_det(weight)
     expected_log_det = keras.ops.broadcast_to(expected_log_det, input_shape[:-1])
 
     assert z.shape == x.shape

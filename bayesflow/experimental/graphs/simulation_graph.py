@@ -22,7 +22,7 @@ SimulationNode: TypeAlias = str
 ExpandedNode: TypeAlias = str
 
 
-@serializable("bayesflow.experimental")  # type: ignore[missing-argument]
+@serializable("bayesflow.experimental")
 class SimulationGraph(nx.DiGraph):
     """
     Directed acyclic graph defining a model.
@@ -68,11 +68,18 @@ class SimulationGraph(nx.DiGraph):
         if merge_roots:
             graph = merge_root_nodes(graph)
 
-        for node in nx.lexicographical_topological_sort(graph):
-            interior_node = graph.in_degree(node) != 0 and graph.out_degree(node) != 0
+        for node in list(nx.lexicographical_topological_sort(graph)):
+            node_copies = []
+            for candidate in graph.nodes:
+                previous_names = graph.nodes[candidate].get("previous_names", [])
+                if candidate == node or node in previous_names:
+                    node_copies.append(candidate)
 
-            if interior_node and node in graph.nodes:
-                graph = split_node(graph, node)
+            for node_copy in node_copies:
+                interior_node = graph.in_degree(node_copy) != 0 and graph.out_degree(node_copy) != 0
+
+                if interior_node:
+                    graph = split_node(graph, node_copy)
 
         for node in nx.lexicographical_topological_sort(graph):
             for key in ["split_by", "previous_names", "merged_from"]:

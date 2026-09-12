@@ -68,8 +68,8 @@ def test_node_name_mapping_three_level(three_level_expanded_graph):
     assert node_name_mapping(three_level_expanded_graph) == {
         ("schools", "shared"): ["schools, shared"],
         ("classrooms",): ["classrooms_1", "classrooms_2"],
-        ("students",): ["students_1", "students_2"],
-        ("scores",): ["scores_1", "scores_2"],
+        ("students",): ["students_11", "students_12", "students_21", "students_22"],
+        ("scores",): ["scores_11", "scores_12", "scores_21", "scores_22"],
     }
 
 
@@ -151,8 +151,8 @@ def test_select_factorization_three_level(three_level_expanded_graph):
     #        scores
     selected = select_factorization(enumerate_factorizations(three_level_expanded_graph))
 
-    assert selected.network_composition() == {0: ["schools", "shared"], 1: ["students"], 2: ["classrooms"]}
-    assert len(selected.summary_network_input_shapes()) == 5
+    assert selected.network_composition() == {0: ["schools", "shared"], 1: ["classrooms"], 2: ["students"]}
+    assert len(selected.summary_network_input_shapes()) == 6
 
 
 def test_select_factorization_crossed_design_irt(crossed_design_irt_simulator):

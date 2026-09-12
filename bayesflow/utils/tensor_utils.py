@@ -243,6 +243,22 @@ def linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
     return keras.ops.squeeze(x, axis=-1)
 
 
+def log_abs_det(x: Tensor) -> Tensor:
+    """Compute the log absolute determinant of a matrix or batch of matrices."""
+    if keras.backend.backend() == "torch":
+        import torch
+
+        if isinstance(x, torch.Tensor) and x.device.type == "mps":
+            # The MPS LU kernel used by Torch's determinant operations can fail
+            # while creating its Metal pipeline. Device copies remain part of
+            # the autograd graph, so calculate on CPU and return to MPS.
+            device = x.device
+            _, value = torch.linalg.slogdet(x.cpu())
+            return value.to(device)
+
+    return keras.ops.slogdet(x)[1]
+
+
 def size_of(x) -> int:
     """
     :param x: A nested structure of tensors.

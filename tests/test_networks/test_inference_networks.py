@@ -135,7 +135,7 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 def test_density_numerically(network_name, request):
     # The reference computation (numerical jacobian of the full integration) is expensive,
     # so this test runs on a single small input instead of the full shape grid
-    from bayesflow.utils import jacobian
+    from bayesflow.utils import jacobian, log_abs_det
 
     network = request.getfixturevalue(network_name)
 
@@ -161,7 +161,7 @@ def test_density_numerically(network_name, request):
     )
 
     # use change of variables to compute the numerical log density
-    numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
+    numerical_log_density = log_prob + log_abs_det(numerical_jacobian)
 
     # use a high tolerance because the numerical jacobian is not very accurate
     assert_allclose(

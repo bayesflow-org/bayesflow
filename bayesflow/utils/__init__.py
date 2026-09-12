@@ -105,6 +105,7 @@ from .tensor_utils import (
     repeat_and_flatten,
     searchsorted,
     linsolve_batched,
+    log_abs_det,
     size_of,
     stack_valid,
     tile_axis,

@@ -5,7 +5,7 @@ import keras
 from bayesflow._backend import jacrev
 from bayesflow.networks.inference import InferenceNetwork
 from bayesflow.types import Tensor
-from bayesflow.utils import filter_kwargs, issue_url
+from bayesflow.utils import filter_kwargs, issue_url, log_abs_det
 from bayesflow.utils.serialization import serializable, serialize
 from ..autoencoder import AutoEncoder
 
@@ -99,7 +99,7 @@ class LatentInferenceNetwork(InferenceNetwork):
         )
 
         # modified change of variables; p(x) = p(f(x)) / sqrt(|J^T J|)
-        log_density = log_density - 0.5 * keras.ops.logdet(keras.ops.matmul(keras.ops.transpose(jac), jac))
+        log_density = log_density - 0.5 * log_abs_det(keras.ops.matmul(keras.ops.transpose(jac), jac))
 
         return z, log_density
 

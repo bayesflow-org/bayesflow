@@ -47,6 +47,7 @@ def test_fixed_permutation_build_and_call():
     assert tuple(log_det_inv.shape) == input_shape[:-1]
 
 
+@pytest.mark.skip_on_mps
 def test_orthogonal_permutation_build_and_call(input_tensor):
     layer = OrthogonalPermutation()
     input_shape = keras.ops.shape(input_tensor)
@@ -73,6 +74,7 @@ def test_orthogonal_permutation_build_and_call(input_tensor):
     np.testing.assert_allclose(log_det_inv_np, -log_det_np, rtol=1e-5, atol=1e-5)
 
 
+@pytest.mark.skip_on_mps
 def test_orthogonal_permutation_broadcasts_log_det_for_non_vector_inputs():
     layer = OrthogonalPermutation()
     x = keras.random.normal((2, 4, 3))

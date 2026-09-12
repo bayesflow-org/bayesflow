@@ -1,5 +1,6 @@
 import keras
 import numpy as np
+import pytest
 
 from bayesflow.utils import log_abs_det
 from tests.utils import assert_allclose
@@ -59,6 +60,7 @@ def test_cycle_consistency(invertible_layer, random_samples, random_conditions):
     assert_allclose(forward_log_det, -inverse_log_det, atol=1e-6, msg="Log Determinants are not cycle consistent")
 
 
+@pytest.mark.skip_on_mps
 def test_jacobian_numerically(invertible_layer, random_samples, random_conditions):
     from bayesflow.utils import jacobian
 

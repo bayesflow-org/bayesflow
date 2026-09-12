@@ -1,9 +1,13 @@
 import keras
 import numpy as np
+import pytest
 
 from bayesflow._backend import grad
 from bayesflow.utils import log_abs_det
 from tests.utils import assert_allclose
+
+
+pytestmark = pytest.mark.skip_on_mps
 
 
 def test_log_abs_det():

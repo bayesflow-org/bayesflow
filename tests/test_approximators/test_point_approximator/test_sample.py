@@ -5,6 +5,7 @@ from bayesflow.scoring_rules import ParametricDistributionScore
 from tests.utils import check_combination_simulator_adapter
 
 
+@pytest.mark.skip_on_mps
 def test_sample(point_approximator, simulator, batch_size, num_samples, adapter):
     check_combination_simulator_adapter(simulator, adapter)
 

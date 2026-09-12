@@ -191,6 +191,7 @@ def test_transformation_type_identity():
     np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
 
 
+@pytest.mark.skip_on_mps
 def test_transformation_type_both_sides_scale():
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
@@ -220,6 +221,7 @@ def test_transformation_type_both_sides_scale():
 
 
 @pytest.mark.parametrize("transformation_type", ["left_side_scale", "right_side_scale_inverse"])
+@pytest.mark.skip_on_mps
 def test_transformation_type_one_side_scale(transformation_type):
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")

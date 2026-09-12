@@ -15,6 +15,8 @@ def maximum_mean_discrepancy():
     return MaximumMeanDiscrepancy(name="mmd", kernel="gaussian", unbiased=True, dtype="float32")
 
 
-@pytest.fixture(params=["root_mean_squared_error", "maximum_mean_discrepancy"])
+@pytest.fixture(
+    params=["root_mean_squared_error", pytest.param("maximum_mean_discrepancy", marks=pytest.mark.skip_on_mps)]
+)
 def metric(request):
     return request.getfixturevalue(request.param)

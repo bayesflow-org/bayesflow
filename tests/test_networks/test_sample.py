@@ -3,6 +3,7 @@ import numpy as np
 import pytest
 
 from bayesflow.experimental import LatentInferenceNetwork
+from tests.utils import skip_torch_linalg_on_mps
 
 
 def test_sample_seed_determinism(inference_network):
@@ -23,6 +24,7 @@ def test_sample_seed_determinism(inference_network):
         )
         if not has_distribution:
             pytest.skip("This ScoringRuleNetwork has no parametric distribution scores to sample from")
+        skip_torch_linalg_on_mps()
 
     from bayesflow.networks import ConsistencyModel, StableConsistencyModel, DiffusionModel, FlowMatching
 

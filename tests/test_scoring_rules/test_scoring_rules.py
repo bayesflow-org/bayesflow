@@ -71,12 +71,14 @@ def test_mean_score_optimality(mean_score, random_conditions):
     assert keras.ops.isclose(optimal_score, 0)
 
 
+@pytest.mark.skip_on_mps
 def test_unconditional_mvn(multivariate_normal_score):
     mean = keras.ops.convert_to_tensor([[0.0, 1.0]])
     covariance = keras.ops.convert_to_tensor([[[1.0, 0.0], [0.0, 1.0]]])
     multivariate_normal_score.sample((10,), mean, covariance)
 
 
+@pytest.mark.skip_on_mps
 def test_mvn_sample_scales_with_precision_factor(multivariate_normal_score):
     """Samples are scaled by the inverse of the precision Cholesky factor, not by the factor itself."""
     mean = keras.ops.zeros((3, 2))
@@ -90,6 +92,7 @@ def test_mvn_sample_scales_with_precision_factor(multivariate_normal_score):
     )
 
 
+@pytest.mark.skip_on_mps
 def test_mvn_sample_with_ill_conditioned_precision(multivariate_normal_score):
     """Untrained heads emit precision factors that a general matrix inverse rejects as singular."""
     num_factors, dim = 32, 4
@@ -116,6 +119,7 @@ def test_mixture_score_constructor_validation():
         MixtureScore(mvn1=MvNormalScore())
 
 
+@pytest.mark.skip_on_mps
 def test_mixture_score_sample_shape(mixture_of_multivariate_normal_scores):
     batch_size, dim = 4, 3
     mix = mixture_of_multivariate_normal_scores

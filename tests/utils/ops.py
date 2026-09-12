@@ -15,6 +15,14 @@ def on_torch_mps():
     return keras.ops.convert_to_tensor(0.0).device.type == "mps"
 
 
+def skip_torch_linalg_on_mps():
+    """Skip a test that exercises a ``torch.linalg``-backed Keras operation on MPS."""
+    if on_torch_mps():
+        import pytest
+
+        pytest.skip("torch.linalg operations fail to compile on MPS.")
+
+
 def cpu_if_torch_mps():
     """Context manager that runs the enclosed block on the CPU if keras would use torch's MPS device."""
     if on_torch_mps():

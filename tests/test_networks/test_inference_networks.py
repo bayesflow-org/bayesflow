@@ -4,7 +4,7 @@ import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
 
-from tests.utils import assert_allclose, assert_layers_equal, on_torch_mps
+from tests.utils import assert_allclose, assert_layers_equal, skip_torch_linalg_on_mps
 
 
 def _use_fast_integration(network, steps=8):
@@ -17,8 +17,8 @@ def _use_fast_integration(network, steps=8):
 def _skip_free_form_flow_density_on_mps(network, density=True):
     from bayesflow.experimental import FreeFormFlow
 
-    if density and isinstance(network, FreeFormFlow) and on_torch_mps():
-        pytest.skip("torch.linalg.slogdet fails to compile on MPS.")
+    if density and isinstance(network, FreeFormFlow):
+        skip_torch_linalg_on_mps()
 
 
 def test_build(inference_network, random_samples, random_conditions):
@@ -211,6 +211,12 @@ def test_save_and_load(tmp_path, inference_network, random_samples, random_condi
 
 
 def test_compute_metrics(inference_network, random_samples, random_conditions):
+    from bayesflow.experimental import FreeFormFlow
+    from bayesflow.networks import StableConsistencyModel
+
+    if isinstance(inference_network, (FreeFormFlow, StableConsistencyModel)):
+        skip_torch_linalg_on_mps()
+
     xz_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
 

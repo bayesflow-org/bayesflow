@@ -2,7 +2,7 @@ import keras
 import numpy as np
 
 from bayesflow.utils.serialization import serialize, deserialize
-from tests.utils import assert_allclose
+from tests.utils import assert_allclose, skip_torch_linalg_on_mps
 
 
 # ---- Configuration ---------------------------------------------------------
@@ -25,6 +25,9 @@ def test_build_with_custom_integrate_kwargs():
 
 
 def test_compute_metrics(flow_matching, random_samples, random_conditions):
+    if flow_matching.use_optimal_transport and random_conditions is not None:
+        skip_torch_linalg_on_mps()
+
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
     flow_matching.build(xz_shape, conditions_shape=cond_shape)

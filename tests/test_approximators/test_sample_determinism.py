@@ -108,7 +108,7 @@ def ensemble_approximator_for_determinism(determinism_adapter, coupling_flow_app
         "flow_matching_approximator",
         "diffusion_model_approximator",
         "consistency_model_approximator",
-        "scoring_rule_approximator_for_determinism",
+        pytest.param("scoring_rule_approximator_for_determinism", marks=pytest.mark.skip_on_mps),
         "ensemble_approximator_for_determinism",
     ]
 )
@@ -182,6 +182,7 @@ def test_seed_generator_is_shared_across_condition_batches(sampling_approximator
             np.testing.assert_allclose(value[0:2], value[2:4], err_msg=f"{key}: condition batches repeat samples")
 
 
+@pytest.mark.skip_on_mps
 def test_sample_separate_is_seeded(scoring_rule_approximator_for_determinism, determinism_adapter, determinism_data):
     """`merge_scores=False` bypasses the mixture logic, but must still honor `seed`."""
     approximator = scoring_rule_approximator_for_determinism

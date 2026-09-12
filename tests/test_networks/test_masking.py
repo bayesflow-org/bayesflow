@@ -22,11 +22,11 @@ def _network_class(name):
     params=[
         "flow_matching",
         "consistency_model",
-        "stable_consistency_model",
+        pytest.param("stable_consistency_model", marks=pytest.mark.skip_on_mps),
         "diffusion_model",
         "flow_matching_transformer",
         "consistency_model_transformer",
-        "stable_consistency_model_transformer",
+        pytest.param("stable_consistency_model_transformer", marks=pytest.mark.skip_on_mps),
         "diffusion_model_transformer",
     ],
     scope="function",

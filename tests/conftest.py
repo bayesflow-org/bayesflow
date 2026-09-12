@@ -3,7 +3,7 @@ import logging
 import matplotlib
 import pytest
 
-from tests.utils import cpu_if_torch_mps, on_torch_mps
+from tests.utils import cpu_if_torch_mps, skip_torch_linalg_on_mps
 
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
 
@@ -23,8 +23,8 @@ def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
     backend = keras.backend.backend()
 
-    if item.get_closest_marker("skip_on_mps") is not None and on_torch_mps():
-        pytest.skip("torch.linalg.slogdet fails to compile on MPS.")
+    if item.get_closest_marker("skip_on_mps") is not None:
+        skip_torch_linalg_on_mps()
 
     test_backends = [mark.name for mark in item.iter_markers() if mark.name in BACKENDS]
 

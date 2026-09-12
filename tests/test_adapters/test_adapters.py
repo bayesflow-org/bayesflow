@@ -7,6 +7,7 @@ import pytest
 
 import bayesflow as bf
 from bayesflow.utils.serialization import deserialize, serialize
+from tests.utils import assert_allclose
 
 
 def test_jit_compile_is_lazy_directional_and_picklable(monkeypatch):
@@ -30,22 +31,22 @@ def test_jit_compile_is_lazy_directional_and_picklable(monkeypatch):
     assert events == ["compile"]
     actual = adapter(data)
     assert events == ["compile", "execute"]
-    assert np.allclose(actual["x"], expected["x"])
+    assert_allclose(actual["x"], expected["x"])
 
     adapter(actual, inverse=True)
     assert events == ["compile", "execute", "compile"]
     restored = adapter(actual, inverse=True)
     assert events == ["compile", "execute", "compile", "execute"]
-    assert np.allclose(restored["x"], data["x"])
+    assert_allclose(restored["x"], data["x"])
 
     pickled = pickle.loads(pickle.dumps(adapter))
     assert pickled.jit_compile is True
     assert pickled._compiled_transforms == {}
-    assert np.allclose(pickled(data)["x"], expected["x"])
+    assert_allclose(pickled(data)["x"], expected["x"])
 
     deserialized = deserialize(serialize(adapter))
     assert deserialized.jit_compile is True
-    assert np.allclose(deserialized(data)["x"], expected["x"])
+    assert_allclose(deserialized(data)["x"], expected["x"])
 
 
 def test_jit_compile_falls_back_after_compiler_error(monkeypatch):
@@ -70,8 +71,8 @@ def test_jit_compile_falls_back_after_compiler_error(monkeypatch):
     retried = adapter(data)
 
     assert compile_attempts == 1
-    assert np.allclose(actual["x"], expected["x"])
-    assert np.allclose(retried["x"], expected["x"])
+    assert_allclose(actual["x"], expected["x"])
+    assert_allclose(retried["x"], expected["x"])
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -96,11 +97,11 @@ def test_jit_compile_differentiable_forward_and_inverse():
     gradient = grad(loss)(x)
 
     assert adapter._compile_failures == set()
-    assert np.allclose(restored["x"], x)
-    expected_ldj = np.sum(np.log(1.75 * x), axis=-1)
-    assert np.allclose(forward_ldj["x"], -expected_ldj)
-    assert np.allclose(inverse_ldj["x"], expected_ldj)
-    assert np.allclose(gradient, 1.0 / (1.75 * x))
+    assert_allclose(restored["x"], x)
+    expected_ldj = keras.ops.sum(keras.ops.log(1.75 * x), axis=-1)
+    assert_allclose(forward_ldj["x"], -expected_ldj)
+    assert_allclose(inverse_ldj["x"], expected_ldj)
+    assert_allclose(gradient, 1.0 / (1.75 * x))
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -157,13 +158,13 @@ def test_identity_adapter_handoff_and_differentiability(differentiable):
     assert isinstance(result, dict)
     assert isinstance(result["x"], bf.types.tensor.BackendTensor)
     assert keras.ops.dtype(result["x"]) == keras.config.floatx()
-    assert np.allclose(result["x"], x)
-    assert np.allclose(inverse_result["x"], x)
+    assert_allclose(result["x"], x)
+    assert_allclose(inverse_result["x"], x)
     assert log_det_jac == {}
     if differentiable:
-        assert np.allclose(gradient, 1.0)
+        assert_allclose(gradient, keras.ops.ones_like(gradient))
     else:
-        assert np.allclose(gradient, 0.0)
+        assert_allclose(gradient, keras.ops.zeros_like(gradient))
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -178,7 +179,7 @@ def test_identity_adapter_casts_and_does_not_mutate_input():
     assert data["x"].dtype == np.dtype("float64")
     assert isinstance(result["x"], bf.types.tensor.BackendTensor)
     assert keras.ops.dtype(result["x"]) == keras.config.floatx()
-    assert np.allclose(result["x"], data["x"])
+    assert_allclose(result["x"], data["x"])
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -191,8 +192,8 @@ def test_default_adapter_handles_scalar_integer_without_to_array():
     assert len(adapter) == 1
     assert isinstance(result["inference_variables"], bf.types.tensor.BackendTensor)
     assert keras.ops.dtype(result["inference_variables"]) == keras.config.floatx()
-    assert np.allclose(result["inference_variables"], 1.0)
-    assert np.allclose(restored["model_index"], 1.0)
+    assert_allclose(result["inference_variables"], 1.0)
+    assert_allclose(restored["model_index"], 1.0)
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -307,9 +308,10 @@ def test_standardize_broadcast_and_log_det_jac():
     transformed, log_det_jac = adapter(data, log_det_jac=True)
     restored = adapter(transformed, inverse=True)
 
-    assert np.allclose(transformed["x"], [[0.0, 0.0], [1.0, 1.0]])
-    assert np.allclose(restored["x"], data["x"])
-    assert np.allclose(log_det_jac["x"], -np.sum(np.log(std)))
+    assert_allclose(transformed["x"], [[0.0, 0.0], [1.0, 1.0]])
+    assert_allclose(restored["x"], data["x"])
+    expected_log_det_jac = np.full(data["x"].shape[0], -np.sum(np.log(std)))
+    assert_allclose(log_det_jac["x"], expected_log_det_jac)
 
 
 def test_custom_transform():

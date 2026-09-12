@@ -8,7 +8,6 @@ def three_level_approximator():
     simulator = three_level_simulator()
 
     adapter = Adapter()
-    adapter.convert_dtype("float64", "float32")
 
     summary_networks = [
         DeepSet(summary_dim=10),

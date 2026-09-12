@@ -160,15 +160,14 @@ def test_diffusion_compositional_guidance():
     )["parameters"]
 
     def constraint(z):
-        params = workflow.approximator.standardize_layers["inference_variables"](z, forward=False)
-        a1 = params[..., 0]
+        a1 = z[..., 0]
         return a1
 
     samples_guided = workflow.compositional_sample(
         num_samples=2,
         conditions=test_conditions,
         compute_prior_score=prior_score_fn,
-        guidance_constraints=dict(constraints=constraint),
+        guidance_kwargs=dict(constraints=constraint),
     )["parameters"]
     assert samples_guided.shape == samples.shape
     assert (samples_guided[..., 0] < 0).all()

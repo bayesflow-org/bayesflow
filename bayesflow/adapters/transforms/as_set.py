@@ -1,6 +1,7 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -25,12 +26,22 @@ class AsSet(ElementwiseTransform):
     >>> adapter = bf.Adapter().as_set(["x", "y"])
     """
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return np.atleast_3d(data)
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
+        dim = ops.ndim(data)
+        if dim == 0:
+            return ops.reshape(data, (1, 1, 1))
+        elif dim == 1:
+            shape = ops.shape(data)
+            return ops.reshape(data, (1,) + shape + (1,))
+        elif dim == 2:
+            shape = ops.shape(data)
+            return ops.reshape(data, shape + (1,))
+        else:
+            return data
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        if data.shape[2] == 1:
-            return np.squeeze(data, axis=2)
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
+        if ops.shape(data)[2] == 1:
+            return ops.squeeze(data, axis=2)
 
         return data
 

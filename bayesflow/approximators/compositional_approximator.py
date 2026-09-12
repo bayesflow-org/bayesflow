@@ -60,14 +60,15 @@ class CompositionalApproximator(ContinuousApproximator):
         *,
         num_samples: int,
         conditions: dict[str, np.ndarray] | None = None,
-        compute_prior_score: Callable[[dict[str, np.ndarray], np.ndarray | None], dict[str, np.ndarray]] | None = None,
+        compute_prior_score: Callable[[dict[str, Tensor], Tensor | None], dict[str, Tensor]] | None = None,
         split: bool = False,
         batch_size: int | None = None,
         sample_shape: Literal["infer"] | Tuple[int] | int = "infer",
         return_summaries: bool = False,
         summary_outputs: Tensor | np.ndarray | None = None,
+        to_numpy: bool = True,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, np.ndarray | Tensor]:
         """
         Generates compositional samples from the approximator given input conditions. The `conditions` dictionary is
          preprocessed using the `adapter`. Samples are converted to NumPy arrays after inference.
@@ -79,10 +80,12 @@ class CompositionalApproximator(ContinuousApproximator):
             Number of samples to generate.
         conditions : dict[str, np.ndarray], optional
             Dictionary of conditioning variables as NumPy arrays.
-        compute_prior_score : Callable[[dict[str, np.ndarray], np.ndarray | None], dict[str, np.ndarray]], optional
-            A function that computes the score of the log prior distribution. Optionally, the function can have a time
-            argument, otherwise the prior score is multiplied with (1-t), where t is diffusion time.
-            If none provided, the unconditional score is used.
+        compute_prior_score : Callable[[dict[str, Tensor], Tensor | None], dict[str, Tensor]], optional
+            A function that computes the score of the log prior distribution in the original parameter space, using
+            backend tensors. Optionally, the function can have a time argument, otherwise the prior score is
+            multiplied with (1-t), where t is diffusion time. If none provided, the unconditional score is used.
+            The score is mapped into the sampling space by a change of variables over the adapter, so adapters with
+            non-zero log determinant are supported, provided their transforms are differentiable.
         split : bool, default=False
             Whether to split the output arrays along the last axis and return one sample array per target variable.
         batch_size : int or None, optional
@@ -103,12 +106,15 @@ class CompositionalApproximator(ContinuousApproximator):
         summary_outputs : Tensor | np.ndarray | None, optional
             Precomputed summary outputs to be used as conditions for sampling. If provided, these will be used instead
             of the conditions. Should have shape (n_datasets, n_compositional_conditions, ...).
+        to_numpy: bool, optional
+            If True, the returned samples be converted to numpy arrays
+            (as opposed to returned as keras backend tensors).
         **kwargs : dict
             Additional keyword arguments for the sampling process.
 
         Returns
         -------
-        dict[str, np.ndarray]
+        dict[str, np.ndarray | Tensor]
             Dictionary containing generated samples with the same keys as `conditions`.
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_compositional_conditions(
@@ -148,9 +154,11 @@ class CompositionalApproximator(ContinuousApproximator):
             samples,
         )
         samples = keras.tree.map_structure(
-            lambda s: self.adapter({"inference_variables": keras.ops.convert_to_numpy(s)}, inverse=True, strict=False),
+            lambda s: self.adapter({"inference_variables": s}, inverse=True, strict=False),
             samples,
         )
+        if to_numpy:
+            samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
         if return_summaries and summary_outputs is not None:
             samples["_summaries"] = summary_outputs

@@ -1,7 +1,8 @@
 from collections.abc import Sequence
 
-import numpy as np
-
+import keras.ops as ops
+from numpy import cumsum
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serialize, serializable
 
 from .transform import Transform
@@ -72,13 +73,13 @@ class Concatenate(Transform):
 
         if self.indices is None:
             # remember the indices of the parts in the concatenated array
-            self.indices = np.cumsum([data[key].shape[self.axis] for key in self.keys]).tolist()
+            self.indices = cumsum([ops.shape(data[key])[self.axis] for key in self.keys]).tolist()
 
         # remove each part
         parts = [data.pop(key) for key in self.keys]
 
         # concatenate them all
-        result = np.concatenate(parts, axis=self.axis)
+        result = ops.concatenate(parts, axis=self.axis)
 
         # store the result
         data[self.into] = result
@@ -101,7 +102,7 @@ class Concatenate(Transform):
 
         # split the concatenated array and remove the concatenated key
         keys = self.keys
-        values = np.split(data.pop(self.into), self.indices, axis=self.axis)
+        values = ops.split(data.pop(self.into), self.indices, axis=self.axis)
 
         # restore the parts
         data |= dict(zip(keys, values))
@@ -118,13 +119,13 @@ class Concatenate(Transform):
 
     def log_det_jac(
         self,
-        data: dict[str, np.ndarray],
-        log_det_jac: dict[str, np.ndarray],
+        data: dict[str, Tensor],
+        log_det_jac: dict[str, Tensor],
         *,
         strict: bool = False,
         inverse: bool = False,
         **kwargs,
-    ) -> dict[str, np.ndarray]:
+    ) -> dict[str, Tensor]:
         # copy to avoid side effects
         log_det_jac = log_det_jac.copy()
 

@@ -228,7 +228,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         Returns
         -------
         Adapter
-            A configured Adapter instance that applies dtype conversion and concatenation.
+            A configured Adapter instance that applies concatenation.
         """
         return BasicWorkflow.default_adapter(
             inference_variables="model_indices",

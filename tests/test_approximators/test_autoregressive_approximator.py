@@ -322,6 +322,23 @@ def test_log_prob_with_each_decoder(autoregressive_approximator, autoregressive_
     assert np.all(np.isfinite(log_prob))
 
 
+def test_tensor_outputs_with_each_decoder(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    autoregressive_approximator.adapter = Adapter().scale("inference_variables", by=2.0)
+    conditions = {key: value for key, value in autoregressive_data.items() if key != "inference_variables"}
+
+    samples = autoregressive_approximator.sample(
+        num_samples=2,
+        conditions=conditions,
+        seed=123,
+        to_numpy=False,
+    )
+    log_prob = autoregressive_approximator.log_prob(autoregressive_data, to_numpy=False)
+
+    assert all(keras.ops.is_tensor(value) for value in samples.values())
+    assert keras.ops.is_tensor(log_prob)
+
+
 def test_log_prob_adds_adapter_log_det_after_summing_steps(autoregressive_approximator, autoregressive_data):
     build_approximator(autoregressive_approximator, autoregressive_data)
     data = {

@@ -62,6 +62,7 @@ test = [
   "pytest-cov>=7.0.0",
   "pytest-rerunfailures>=16.1",
   "pytest-xdist>=3.8.0",
+  "tensorflow-probability>=0.25.0"
 ]
 all = ["bayesflow[dev,docs,test]"]
 [tool.ruff]

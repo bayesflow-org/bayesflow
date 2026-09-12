@@ -1,13 +1,10 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
-from bayesflow.utils.numpy_utils import (
-    inverse_sigmoid,
+from bayesflow.types import Tensor
+from bayesflow.utils.keras_utils import (
     inverse_softplus,
-    sigmoid,
-    softplus,
 )
-
 from .elementwise_transform import ElementwiseTransform
 
 
@@ -21,9 +18,9 @@ class Constrain(ElementwiseTransform):
     * : str
         String containing the name of the data variable to be transformed e.g. "sigma". See examples below.
 
-    lower : int or float or np.darray, optional
+    lower : int or float or Tensor, optional
         Lower bound for named data variable.
-    upper : int or float or np.darray, optional
+    upper : int or float or Tensor, optional
         Upper bound for named data variable.
     method : str, optional
         Method by which to shrink the network predictions space to specified bounds. Choose from
@@ -38,7 +35,7 @@ class Constrain(ElementwiseTransform):
         - "none": Both lower and upper bounds are exclusive.
     epsilon : float, optional
         Small value to ensure inclusive bounds are not violated.
-        Current default is 1e-15 as this ensures finite outcomes
+        Current default is 1e-6 as this ensures finite outcomes
         with the default transformations applied to data exactly at the boundaries.
 
     Examples
@@ -63,11 +60,11 @@ class Constrain(ElementwiseTransform):
     def __init__(
         self,
         *,
-        lower: int | float | np.ndarray = None,
-        upper: int | float | np.ndarray = None,
+        lower: int | float | Tensor = None,
+        upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
-        epsilon: float = 1e-15,
+        epsilon: float = 1e-6,
     ):
         super().__init__()
 
@@ -76,21 +73,22 @@ class Constrain(ElementwiseTransform):
 
         if lower is not None and upper is not None:
             # double bounded case
-            if np.any(lower >= upper):
+            if ops.any(lower >= upper):
                 raise ValueError("The lower bound must be strictly less than the upper bound.")
 
             match method:
                 case "default" | "sigmoid" | "expit" | "logit":
 
                     def constrain(x):
-                        return (upper - lower) * sigmoid(x) + lower
+                        return (upper - lower) * ops.sigmoid(x) + lower
 
                     def unconstrain(x):
-                        return inverse_sigmoid((x - lower) / (upper - lower))
+                        z = (x - lower) / (upper - lower)
+                        return ops.log(z) - ops.log1p(-z)
 
                     def ldj(x):
-                        x = (x - lower) / (upper - lower)
-                        return -np.log(x) - np.log1p(-x) - np.log(upper - lower)
+                        z = (x - lower) / (upper - lower)
+                        return -ops.log(z) - ops.log1p(-z) - ops.cast(ops.log((upper - lower)), dtype=ops.dtype(z))
 
                 case str() as name:
                     raise ValueError(f"Unsupported method name for double bounded constraint: '{name}'.")
@@ -102,25 +100,25 @@ class Constrain(ElementwiseTransform):
                 case "default" | "softplus":
 
                     def constrain(x):
-                        return softplus(x) + lower
+                        return ops.softplus(x) + lower
 
                     def unconstrain(x):
                         return inverse_softplus(x - lower)
 
                     def ldj(x):
-                        x = x - lower
-                        return x - np.log(np.exp(x) - 1)
+                        y = x - lower
+                        return ops.subtract(y, ops.log(ops.expm1(y)))
 
                 case "exp" | "log":
 
                     def constrain(x):
-                        return np.exp(x) + lower
+                        return ops.exp(x) + lower
 
                     def unconstrain(x):
-                        return np.log(x - lower)
+                        return ops.log(x - lower)
 
                     def ldj(x):
-                        return -np.log(x - lower)
+                        return -ops.log(x - lower)
 
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
@@ -132,25 +130,26 @@ class Constrain(ElementwiseTransform):
                 case "default" | "softplus":
 
                     def constrain(x):
-                        return -softplus(-x) + upper
+                        return -ops.softplus(-x) + upper
 
                     def unconstrain(x):
                         return -inverse_softplus(-(x - upper))
 
                     def ldj(x):
-                        x = -(x - upper)
-                        return x - np.log(np.exp(x) - 1)
+                        y = upper - x
+                        return ops.subtract(y, ops.log(ops.expm1(y)))
 
                 case "exp" | "log":
 
                     def constrain(x):
-                        return -np.exp(-x) + upper
+                        return -ops.exp(-x) + upper
 
                     def unconstrain(x):
-                        return -np.log(-x + upper)
+                        return -ops.log(upper - x)
 
                     def ldj(x):
-                        return -np.log(-x + upper)
+                        return -ops.log(upper - x)
+
                 case str() as name:
                     raise ValueError(f"Unsupported method name for single bounded constraint: '{name}'.")
                 case other:
@@ -194,16 +193,16 @@ class Constrain(ElementwiseTransform):
         }
         return serialize(config)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         # forward means data space -> network space, so unconstrain the data
         return self.unconstrain(data)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         # inverse means network space -> data space, so constrain the data
         return self.constrain(data)
 
-    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         ldj = self.ldj(data)
         if inverse:
             ldj = -ldj
-        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+        return self._sum_except_batch(ldj)

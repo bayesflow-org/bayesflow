@@ -26,6 +26,15 @@ class ScoringRule:
     and covariance simultaneously.
     """
 
+    SKIP_INVERSE_ADAPTER: tuple[str] = tuple()
+    """
+    Names of prediction heads for which to skip adapter pass on their estimates in inverse direction.
+
+    Prediction heads can output other quantities than the ones associated with the target distribution.
+    Such quantities the adapter cannot be applied.
+    When subclassing :py:class:`ScoringRule`, add the names of such heads to skip inverse adapter pass.
+    """
+
     NOT_TRANSFORMING_LIKE_VECTOR_WARNING: tuple[str] = tuple()
 
     # Kernel initializer for the output Dense head.  Subclasses that produce

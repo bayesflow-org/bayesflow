@@ -101,6 +101,7 @@ def test_stable_serialize_deserialize(stable_consistency_model, random_samples, 
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
+@pytest.mark.skip_on_mps
 def test_stable_compute_metrics(stable_consistency_model, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
@@ -112,6 +113,7 @@ def test_stable_compute_metrics(stable_consistency_model, random_samples, random
     assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
+@pytest.mark.skip_on_mps
 def test_stable_compute_metrics_with_masking(stable_consistency_model_with_masking, random_samples, random_conditions):
     xz_shape = keras.ops.shape(random_samples)
     cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None

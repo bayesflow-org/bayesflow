@@ -104,7 +104,7 @@ def test_analytical_backward_integration(method, atol):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
-        ("euler_maruyama", True),
+        pytest.param("euler_maruyama", True, marks=pytest.mark.skip_on_mps),
         ("sea", False),
         ("shark", False),
         ("two_step_adaptive", False),
@@ -168,7 +168,7 @@ def test_forward_additive_ou_weak_means_and_vars(method, use_adapt):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
-        ("euler_maruyama", True),
+        pytest.param("euler_maruyama", True, marks=pytest.mark.skip_on_mps),
         ("sea", False),
         ("shark", False),
         ("two_step_adaptive", False),
@@ -233,7 +233,7 @@ def test_backward_additive_ou_weak_means_and_vars(method, use_adapt):
     "method,use_adapt",
     [
         ("euler_maruyama", False),
-        ("euler_maruyama", True),
+        pytest.param("euler_maruyama", True, marks=pytest.mark.skip_on_mps),
         ("sea", False),
         ("shark", False),
         ("two_step_adaptive", False),
@@ -300,6 +300,7 @@ def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time)
 
 
 @pytest.mark.parametrize("steps", [500])
+@pytest.mark.skip_on_mps
 def test_langevin_gaussian_sampling(steps):
     """
     Test annealed Langevin dynamics on a 1D Gaussian target.

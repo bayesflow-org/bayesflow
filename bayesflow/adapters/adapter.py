@@ -1,8 +1,11 @@
-from typing import Any
+import threading
+import warnings
 from collections.abc import Callable, MutableSequence, Sequence
+from typing import Any
 
-import numpy as np
+import keras
 
+from bayesflow._backend import jit
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
 
@@ -20,7 +23,7 @@ from .transforms import (
     Keep,
     Log,
     MapTransform,
-    NumpyTransform,
+    KerasTransform,
     OneHot,
     Rename,
     SerializableCustomTransform,
@@ -40,7 +43,9 @@ from .transforms.filter_transform import Predicate
 @serializable("bayesflow.adapters")
 class Adapter(MutableSequence[Transform]):
     """
-    Defines an adapter to apply various transforms to data.
+    Defines an adapter to apply various transforms to simulated / real
+    quantities in an amortized workflow. The role of the adapter is to
+    make simulation outputs / real data neural network-friendly.
 
     Where possible, the transforms also supply an inverse transform.
     An adapter can also have no transformers, in which case it simply
@@ -60,13 +65,33 @@ class Adapter(MutableSequence[Transform]):
     ----------
     transforms : Sequence[Transform], optional
         The sequence of transforms to execute.
+    device: str, optional
+        Passed to keras.device to specify on which device to apply the adapter.
+    differentiable: bool, optional
+        If False (default), adapter transforms run in a state detached from the computational graph.
+    jit_compile: bool, optional
+        If True, lazily compile the transform sequence. The first call for each
+        direction and set of keyword arguments runs eagerly to initialize
+        stateful transforms. Dtype normalization and the final device handoff
+        remain outside the compiled region. Default is False.
     """
 
-    def __init__(self, transforms: Sequence[Transform] | None = None):
+    def __init__(
+        self,
+        transforms: Sequence[Transform] | None = None,
+        device: str = "cpu",
+        differentiable: bool = False,
+        jit_compile: bool = False,
+    ):
         if transforms is None:
             transforms = []
 
         self.transforms = list(transforms)
+
+        self.device = device
+        self.differentiable = differentiable
+        self.jit_compile = jit_compile
+        self._reset_compile_cache()
 
     @staticmethod
     def create_default(inference_variables: Sequence[str]) -> "Adapter":
@@ -81,12 +106,7 @@ class Adapter(MutableSequence[Transform]):
         -------
         An initialized Adapter with a set of default transforms.
         """
-        return (
-            Adapter()
-            .to_array()
-            .convert_dtype("float64", "float32")
-            .concatenate(inference_variables, into="inference_variables")
-        )
+        return Adapter().concatenate(inference_variables, into="inference_variables")
 
     @classmethod
     def from_config(cls, config: dict, custom_objects=None) -> "Adapter":
@@ -95,6 +115,9 @@ class Adapter(MutableSequence[Transform]):
     def get_config(self) -> dict:
         config = {
             "transforms": self.transforms,
+            "device": self.device,
+            "differentiable": self.differentiable,
+            "jit_compile": self.jit_compile,
         }
 
         return serialize(config)
@@ -118,7 +141,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in self.transforms:
                 data = transform(data, **kwargs)
@@ -127,19 +150,19 @@ class Adapter(MutableSequence[Transform]):
         log_det_jac = {}
         for transform in self.transforms:
             transformed_data = transform(data, **kwargs)
-            log_det_jac = transform.log_det_jac(data, log_det_jac, **kwargs)
+            log_det_jac = transform.log_det_jac(data, log_det_jac=log_det_jac, **kwargs)
             data = transformed_data
 
         return data, log_det_jac
 
     def inverse(
-        self, data: dict[str, any], *, log_det_jac: bool = False, **kwargs
+        self, data: dict[str, Any], *, log_det_jac: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the inverse direction.
 
         Parameters
         ----------
-        data : dict[str, any]
+        data : dict[str, Any]
             The data to be transformed.
         log_det_jac: bool, optional
             Whether to return the log determinant of the Jacobian of the transforms.
@@ -151,7 +174,7 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        data = data.copy()
+
         if not log_det_jac:
             for transform in reversed(self.transforms):
                 data = transform(data, inverse=True, **kwargs)
@@ -165,13 +188,13 @@ class Adapter(MutableSequence[Transform]):
         return data, log_det_jac
 
     def __call__(
-        self, data: dict[str, any], *, inverse: bool = False, **kwargs
+        self, data: dict[str, Any] | tuple[dict[str, Tensor], dict[str, Tensor]], *, inverse: bool = False, **kwargs
     ) -> dict[str, Tensor] | tuple[dict[str, Tensor], dict[str, Tensor]]:
         """Apply the transforms in the given direction.
 
         Parameters
         ----------
-        data : Mapping[str, any]
+        data : Mapping[str, Any]
             The data to be transformed.
         inverse : bool, optional
             If False, apply the forward transform, else apply the inverse transform (default False).
@@ -183,10 +206,150 @@ class Adapter(MutableSequence[Transform]):
         dict | tuple[dict, dict]
             The transformed data or tuple of transformed data and log determinant of the Jacobian.
         """
-        if inverse:
-            return self.inverse(data, **kwargs)
 
-        return self.forward(data, **kwargs)
+        # An identity adapter has no work to perform on its configured device.
+        # Go straight to the final handoff, which still normalizes dtype and
+        # preserves the differentiability contract on the default device.
+        if not self.transforms:
+            if kwargs.get("log_det_jac", False):
+                data = (data, {})
+            if isinstance(data, tuple):
+                return tuple(self.device_handoff(value) for value in data)
+            return self.device_handoff(data)
+
+        with keras.device(self.device):
+            data = keras.tree.map_structure(
+                lambda x: keras.ops.convert_to_tensor(x) if keras.ops.is_tensor(x) else x,
+                data,
+            )
+
+            data = self._apply_transforms(data, inverse=inverse, **kwargs)
+
+        if isinstance(data, tuple):  # when log_det_jac=True,: (data, log_det_jac)
+            return tuple(self.device_handoff(value) for value in data)
+        return self.device_handoff(data)
+
+    def _apply_transforms(self, data, *, inverse: bool, **kwargs):
+        transform = self.inverse if inverse else self.forward
+
+        if not self.jit_compile:
+            return transform(data, **kwargs)
+
+        signature = (self.device, tuple(map(id, self.transforms)))
+        if signature != self._compiled_transform_signature:
+            self._reset_compile_cache(signature)
+
+        key = self._compile_key(inverse, kwargs)
+        if key is None or key in self._compile_failures:
+            return transform(data, **kwargs)
+
+        compiled = self._compiled_transforms.get(key)
+        if compiled is None:
+            # Several transforms initialize reversible metadata on their first
+            # eager call (e.g. Concatenate indices and ToArray input types).
+            # Warm that state before a compiler captures the transform graph.
+            result = transform(data, **kwargs)
+            try:
+                self._compiled_transforms[key] = jit(lambda value: transform(value, **kwargs))
+            except Exception as compile_error:
+                self._compile_failures.add(key)
+                self._warn_compile_failure(compile_error)
+            return result
+
+        if key not in self._compile_executed:
+            # Dataset workers can reach a newly-created lazy compiler at the
+            # same time. Serialize only this first compiler invocation; once
+            # built, steady-state calls remain parallel in the worker pool.
+            with self._compile_lock:
+                if key in self._compile_failures:
+                    return transform(data, **kwargs)
+                if key not in self._compile_executed:
+                    result = self._execute_compiled(compiled, transform, data, key, kwargs)
+                    if key not in self._compile_failures:
+                        self._compile_executed.add(key)
+                    return result
+
+        return self._execute_compiled(compiled, transform, data, key, kwargs)
+
+    def _execute_compiled(self, compiled, transform, data, key, kwargs):
+        try:
+            return compiled(data)
+        except Exception as compile_error:
+            # Do not hide an actual adapter error behind compiler fallback. If
+            # eager execution also fails, surface that original transform error.
+            try:
+                result = transform(data, **kwargs)
+            except Exception:
+                raise
+
+            self._compile_failures.add(key)
+            self._warn_compile_failure(compile_error)
+            return result
+
+    @staticmethod
+    def _warn_compile_failure(compile_error: Exception) -> None:
+        warnings.warn(
+            f"Adapter JIT compilation failed on the {keras.backend.backend()!r} backend; "
+            f"falling back to eager transforms for this call signature. Compiler error: {compile_error}",
+            RuntimeWarning,
+            stacklevel=3,
+        )
+
+    @staticmethod
+    def _compile_key(inverse: bool, kwargs: dict) -> tuple | None:
+        """Return a stable cache key for ordinary static transform kwargs."""
+
+        def freeze(value):
+            if value is None:
+                return ("none",)
+            if isinstance(value, bool):
+                return ("bool", value)
+            if isinstance(value, int):
+                return ("int", value)
+            if isinstance(value, float):
+                return ("float", value.hex())
+            if isinstance(value, str):
+                return ("str", value)
+            if isinstance(value, bytes):
+                return ("bytes", value)
+            if isinstance(value, tuple):
+                return ("tuple", tuple(freeze(item) for item in value))
+            if isinstance(value, list):
+                return ("list", tuple(freeze(item) for item in value))
+            if isinstance(value, dict):
+                return ("dict", tuple(sorted((name, freeze(item)) for name, item in value.items())))
+            raise TypeError
+
+        try:
+            return inverse, tuple(sorted((name, freeze(value)) for name, value in kwargs.items()))
+        except (TypeError, ValueError):
+            # Dynamic tensor/object kwargs should remain dynamic rather than be
+            # captured as constants in a compiled closure.
+            return None
+
+    def _reset_compile_cache(self, signature: tuple | None = None) -> None:
+        self._compiled_transforms = {}
+        self._compile_failures = set()
+        self._compile_executed = set()
+        self._compile_lock = threading.Lock()
+        self._compiled_transform_signature = (
+            (self.device, tuple(map(id, self.transforms))) if signature is None else signature
+        )
+
+    def __getstate__(self):
+        # Backend-compiled callables are process-local and generally not
+        # picklable. Dataset workers rebuild their own cache lazily.
+        state = self.__dict__.copy()
+        state.pop("_compiled_transforms", None)
+        state.pop("_compile_failures", None)
+        state.pop("_compile_executed", None)
+        state.pop("_compile_lock", None)
+        state.pop("_compiled_transform_signature", None)
+        return state
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._reset_compile_cache()
 
     def __repr__(self):
         result = ""
@@ -207,6 +370,27 @@ class Adapter(MutableSequence[Transform]):
         """
         self.transforms.append(value)
         return self
+
+    def device_handoff(self, data: tuple | dict[str, Any]) -> tuple | dict[str, Any]:
+        """Convert ``data`` to ``floatx`` tensors and hand them off on the default device."""
+        floatx = keras.config.floatx()
+
+        def convert(x):
+            if keras.ops.is_tensor(x):
+                # cast in place: converting *with* a dtype moves to the target device first,
+                # which fails for dtypes that device does not support (float64 on torch MPS)
+                if keras.ops.dtype(x) != floatx:
+                    x = keras.ops.cast(x, floatx)
+            else:
+                with keras.device(self.device):
+                    x = keras.ops.convert_to_tensor(x, floatx)
+
+            # we need to hand off tensors on the default device, not on the device the adapter ran
+            x = keras.ops.convert_to_tensor(x)
+
+            return x if self.differentiable else keras.ops.stop_gradient(x)
+
+        return keras.tree.map_structure(convert, data)
 
     def __delitem__(self, key: int | slice):
         del self.transforms[key]
@@ -230,7 +414,12 @@ class Adapter(MutableSequence[Transform]):
         if isinstance(item, int):
             return self.transforms[item]
 
-        return Adapter(self.transforms[item])
+        return Adapter(
+            self.transforms[item],
+            device=self.device,
+            differentiable=self.differentiable,
+            jit_compile=self.jit_compile,
+        )
 
     def insert(self, index: int, value: Transform | Sequence[Transform]) -> "Adapter":
         """Insert a transform at a given index.
@@ -270,29 +459,27 @@ class Adapter(MutableSequence[Transform]):
     def __len__(self):
         return len(self.transforms)
 
-    add_transform = append
-
     def apply(
         self,
         include: str | Sequence[str] = None,
         *,
-        forward: np.ufunc | str,
-        inverse: np.ufunc | str = None,
+        forward: str,
+        inverse: str = None,
         predicate: Predicate = None,
         exclude: str | Sequence[str] = None,
         **kwargs,
     ):
-        """Append a :py:class:`~transforms.NumpyTransform` to the adapter.
+        """Append a :py:class:`~transforms.KerasTransform` to the adapter.
 
         Parameters
         ----------
-        forward : str or np.ufunc
+        forward : str
             The name of the NumPy function to use for the forward transformation.
-        inverse : str or np.ufunc, optional
+        inverse : str, optional
             The name of the NumPy function to use for the inverse transformation.
             By default, the inverse is inferred from the forward argument for supported methods.
             You can find the supported methods in
-            :py:const:`~bayesflow.adapters.transforms.NumpyTransform.INVERSE_METHODS`.
+            :py:const:`~bayesflow.adapters.transforms.KerasTransform.INVERSE_METHODS`.
         predicate : Predicate, optional
             Function that indicates which variables should be transformed.
         include : str or Sequence of str, optional
@@ -303,7 +490,7 @@ class Adapter(MutableSequence[Transform]):
             Additional keyword arguments passed to the transform.
         """
         transform = FilterTransform(
-            transform_constructor=NumpyTransform,
+            transform_constructor=KerasTransform,
             predicate=predicate,
             include=include,
             exclude=exclude,
@@ -536,7 +723,7 @@ class Adapter(MutableSequence[Transform]):
         upper: int | float | Tensor = None,
         method: str = "default",
         inclusive: str = "both",
-        epsilon: float = 1e-15,
+        epsilon: float = 1e-6,
     ):
         """Append a :py:class:`~transforms.Constrain` transform to the adapter.
 
@@ -544,9 +731,9 @@ class Adapter(MutableSequence[Transform]):
         ----------
         keys : str or Sequence of str
             The names of the variables to constrain.
-        lower: int or float or np.darray, optional
+        lower: int or float or Tensor, optional
             Lower bound for named data variable.
-        upper : int or float or np.darray, optional
+        upper : int or float or Tensor, optional
             Upper bound for named data variable.
         method : str, optional
             Method by which to shrink the network predictions space to specified bounds. Choose from
@@ -561,7 +748,7 @@ class Adapter(MutableSequence[Transform]):
             - "none": Both lower and upper bounds are exclusive.
         epsilon : float, optional
             Small value to ensure inclusive bounds are not violated.
-            Current default is 1e-15 as this ensures finite outcomes
+            Current default is 1e-6 as this ensures finite outcomes
             with the default transformations applied to data exactly at the boundaries.
         """
         if isinstance(keys, str):

@@ -243,6 +243,11 @@ def linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
     return keras.ops.squeeze(x, axis=-1)
 
 
+def log_abs_det(x: Tensor) -> Tensor:
+    """Compute the log absolute determinant of a matrix or batch of matrices."""
+    return keras.ops.slogdet(x)[1]
+
+
 def size_of(x) -> int:
     """
     :param x: A nested structure of tensors.

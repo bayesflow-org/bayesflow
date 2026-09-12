@@ -49,6 +49,7 @@ def test_compositional_score_no_conditions_raises_error(simple_diffusion_model, 
         )
 
 
+@pytest.mark.skip_on_mps
 def test_inverse_compositional_basic(
     simple_diffusion_model, compositional_state, compositional_conditions, mock_prior_score
 ):

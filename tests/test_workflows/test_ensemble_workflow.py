@@ -88,6 +88,7 @@ def test_single_summary_network_is_broadcast_to_all_members():
     assert s0 is s1
 
 
+@pytest.mark.skip_on_mps
 def test_ensemble_workflow(tmp_path):
     workflow = bf.EnsembleWorkflow(
         inference_networks=dict(

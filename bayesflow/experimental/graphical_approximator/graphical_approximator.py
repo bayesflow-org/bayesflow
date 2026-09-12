@@ -131,11 +131,7 @@ class GraphicalApproximator(Approximator):
     ) -> Adapter:
         """Create an :py:class:`~bayesflow.adapters.Adapter` suited for the approximator."""
 
-        adapter = Adapter()
-        adapter.to_array()
-        adapter.convert_dtype("float64", "float32")
-
-        return adapter
+        return Adapter()
 
     def build_dataset(
         self,

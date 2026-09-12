@@ -7,7 +7,6 @@ import keras
 import numpy as np
 from typing import Literal, Union
 
-from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning, debug
@@ -471,21 +470,19 @@ def integrate_scipy(
     keys = list(state.keys())
     # convert to tensor before determining the shape in case a number was passed
     shapes = keras.tree.map_structure(lambda x: keras.ops.shape(keras.ops.convert_to_tensor(x)), state)
-    adapter = Adapter().concatenate(keys, into="x", axis=-1).convert_dtype(np.float32, np.float64)
+    split_indices = np.cumsum([int(np.prod(shapes[key])) for key in keys])[:-1]
 
     def state_to_vector(state):
-        state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
-        # flatten state, staying in numpy
-        state = keras.tree.map_structure(lambda x: np.reshape(x, (-1,)), state)
-        # apply concatenation
-        x = adapter.forward(state)["x"]
-        return x
+        flat = [np.reshape(keras.ops.convert_to_numpy(state[key]), (-1,)) for key in keys]
+        # scipy's error control needs float64
+        return np.concatenate(flat, axis=-1).astype(np.float64)
 
     def vector_to_state(x):
-        state = adapter.inverse({"x": x})
-        state = {key: keras.ops.reshape(value, shapes[key]) for key, value in state.items()}
-        state = keras.tree.map_structure(keras.ops.convert_to_tensor, state)
-        return state
+        parts = np.split(np.asarray(x), split_indices)
+        return {
+            key: keras.ops.convert_to_tensor(np.reshape(part, shapes[key]), dtype=keras.config.floatx())
+            for key, part in zip(keys, parts)
+        }
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
@@ -575,9 +572,6 @@ def integrate(
         return _compile_loop_integrator(run)()
     else:
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
-
-
-############ SDE Solvers #############
 
 
 def generate_noise(z: StateDict, seed: keras.random.SeedGenerator) -> StateDict:

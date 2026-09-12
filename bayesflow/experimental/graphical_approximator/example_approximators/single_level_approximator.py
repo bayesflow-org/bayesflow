@@ -8,7 +8,6 @@ def single_level_approximator():
     simulator = single_level_simulator()
 
     adapter = Adapter()
-    adapter.convert_dtype("float64", "float32")
 
     summary_networks = [DeepSet(summary_dim=10)]
     inference_networks = [CouplingFlow()]

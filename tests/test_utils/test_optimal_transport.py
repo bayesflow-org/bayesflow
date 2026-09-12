@@ -19,9 +19,9 @@ def test_jit_compile():
 @pytest.mark.parametrize(
     ["method", "partial_factor", "condition_ratio"],
     [
-        ("log_sinkhorn", 1.0, 0.01),
+        pytest.param("log_sinkhorn", 1.0, 0.01, marks=pytest.mark.skip_on_mps),
         ("log_sinkhorn", 0.8, 0.5),
-        ("sinkhorn", 1.0, 0.01),
+        pytest.param("sinkhorn", 1.0, 0.01, marks=pytest.mark.skip_on_mps),
         ("sinkhorn", 0.8, 0.5),
     ],
 )
@@ -60,6 +60,7 @@ def test_shapes(method, partial_factor, condition_ratio):
         ("sinkhorn", 0.8, 0.5),
     ],
 )
+@pytest.mark.skip_on_mps
 def test_transport_cost_improves(method, partial_factor, condition_ratio):
     x = keras.random.normal((128, 2), seed=0)
     y = keras.random.normal((128, 2), seed=1)
@@ -131,6 +132,7 @@ def test_no_nans_or_infs(method):
     assert keras.ops.all(keras.ops.isfinite(assignments))
 
 
+@pytest.mark.skip_on_mps
 def test_assignment_aligns_with_pot():
     try:
         from ot.bregman import sinkhorn_log

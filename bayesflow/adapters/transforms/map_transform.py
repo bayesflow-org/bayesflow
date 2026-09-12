@@ -1,5 +1,4 @@
-import numpy as np
-
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, serialize
 
 from .elementwise_transform import ElementwiseTransform
@@ -38,7 +37,7 @@ class MapTransform(Transform):
     def get_config(self) -> dict:
         return serialize({"transform_map": self.transform_map})
 
-    def forward(self, data: dict[str, np.ndarray], *, strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, Tensor], *, strict: bool = True, **kwargs) -> dict[str, Tensor]:
         data = data.copy()
 
         if strict:
@@ -50,7 +49,7 @@ class MapTransform(Transform):
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], *, strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], *, strict: bool = False, **kwargs) -> dict[str, Tensor]:
         data = data.copy()
 
         if strict:
@@ -63,8 +62,8 @@ class MapTransform(Transform):
         return data
 
     def log_det_jac(
-        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], *, strict: bool = True, **kwargs
-    ) -> dict[str, np.ndarray]:
+        self, data: dict[str, Tensor], log_det_jac: dict[str, Tensor], *, strict: bool = True, **kwargs
+    ) -> dict[str, Tensor]:
         data = data.copy()
 
         if strict:
@@ -83,7 +82,7 @@ class MapTransform(Transform):
 
         return log_det_jac
 
-    def _check_keys(self, data: dict[str, np.ndarray]):
+    def _check_keys(self, data: dict[str, Tensor]):
         required_keys = set(self.transform_map.keys())
         available_keys = set(data.keys())
         missing_keys = required_keys - available_keys

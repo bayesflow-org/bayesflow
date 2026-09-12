@@ -4,7 +4,7 @@ import pytest
 
 from bayesflow.utils.serialization import serialize, deserialize
 
-from tests.utils import assert_allclose, assert_layers_equal
+from tests.utils import assert_allclose, assert_layers_equal, skip_torch_linalg_on_mps
 
 
 def _use_fast_integration(network, steps=8):
@@ -12,6 +12,13 @@ def _use_fast_integration(network, steps=8):
     depend on solver accuracy (shapes, structure, batch sizes)."""
     if hasattr(network, "integrate_kwargs"):
         network.integrate_kwargs.update({"steps": steps})
+
+
+def _skip_free_form_flow_density_on_mps(network, density=True):
+    from bayesflow.experimental import FreeFormFlow
+
+    if density and isinstance(network, FreeFormFlow):
+        skip_torch_linalg_on_mps()
 
 
 def test_build(inference_network, random_samples, random_conditions):
@@ -64,6 +71,7 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):
+    _skip_free_form_flow_density_on_mps(generative_inference_network, density)
     _use_fast_integration(generative_inference_network)
     try:
         output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
@@ -84,6 +92,7 @@ def test_output_structure(density, generative_inference_network, random_samples,
 
 
 def test_output_shape(generative_inference_network, random_samples, random_conditions):
+    _skip_free_form_flow_density_on_mps(generative_inference_network)
     _use_fast_integration(generative_inference_network)
     try:
         forward_output, forward_log_density = generative_inference_network(
@@ -107,6 +116,8 @@ def test_output_shape(generative_inference_network, random_samples, random_condi
 def test_cycle_consistency(generative_inference_network, random_samples, random_conditions):
     # cycle-consistency means the forward and inverse methods are inverses of each other
     import bayesflow as bf
+
+    _skip_free_form_flow_density_on_mps(generative_inference_network)
 
     if isinstance(generative_inference_network, bf.networks.DiffusionModel):
         pytest.skip(reason="test unstable for untrained diffusion models")
@@ -132,10 +143,11 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
     # one representative per density implementation
     ["affine_coupling_flow", "spline_coupling_flow", "free_form_flow", "flow_matching", "diffusion_model"],
 )
+@pytest.mark.skip_on_mps
 def test_density_numerically(network_name, request):
     # The reference computation (numerical jacobian of the full integration) is expensive,
     # so this test runs on a single small input instead of the full shape grid
-    from bayesflow.utils import jacobian
+    from bayesflow.utils import jacobian, log_abs_det
 
     network = request.getfixturevalue(network_name)
 
@@ -161,7 +173,7 @@ def test_density_numerically(network_name, request):
     )
 
     # use change of variables to compute the numerical log density
-    numerical_log_density = log_prob + keras.ops.log(keras.ops.abs(keras.ops.det(numerical_jacobian)))
+    numerical_log_density = log_prob + log_abs_det(numerical_jacobian)
 
     # use a high tolerance because the numerical jacobian is not very accurate
     assert_allclose(
@@ -199,6 +211,12 @@ def test_save_and_load(tmp_path, inference_network, random_samples, random_condi
 
 
 def test_compute_metrics(inference_network, random_samples, random_conditions):
+    from bayesflow.experimental import FreeFormFlow
+    from bayesflow.networks import StableConsistencyModel
+
+    if isinstance(inference_network, (FreeFormFlow, StableConsistencyModel)):
+        skip_torch_linalg_on_mps()
+
     xz_shape = keras.ops.shape(random_samples)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
 

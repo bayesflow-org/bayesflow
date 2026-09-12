@@ -1,11 +1,106 @@
-import pytest
-import numpy as np
+import importlib
+import pickle
 
 import keras
-
-from bayesflow.utils.serialization import deserialize, serialize
+import numpy as np
+import pytest
 
 import bayesflow as bf
+from bayesflow.utils.serialization import deserialize, serialize
+
+
+def test_jit_compile_is_lazy_directional_and_picklable(monkeypatch):
+    adapter_module = importlib.import_module("bayesflow.adapters.adapter")
+    events = []
+
+    def fake_jit(fn):
+        events.append("compile")
+
+        def compiled(data):
+            events.append("execute")
+            return fn(data)
+
+        return compiled
+
+    monkeypatch.setattr(adapter_module, "jit", fake_jit)
+    adapter = bf.Adapter(differentiable=True, jit_compile=True).log("x")
+    data = {"x": np.array([[1.0, 2.0]], dtype="float32")}
+
+    expected = adapter(data)
+    assert events == ["compile"]
+    actual = adapter(data)
+    assert events == ["compile", "execute"]
+    assert np.allclose(actual["x"], expected["x"])
+
+    adapter(actual, inverse=True)
+    assert events == ["compile", "execute", "compile"]
+    restored = adapter(actual, inverse=True)
+    assert events == ["compile", "execute", "compile", "execute"]
+    assert np.allclose(restored["x"], data["x"])
+
+    pickled = pickle.loads(pickle.dumps(adapter))
+    assert pickled.jit_compile is True
+    assert pickled._compiled_transforms == {}
+    assert np.allclose(pickled(data)["x"], expected["x"])
+
+    deserialized = deserialize(serialize(adapter))
+    assert deserialized.jit_compile is True
+    assert np.allclose(deserialized(data)["x"], expected["x"])
+
+
+def test_jit_compile_falls_back_after_compiler_error(monkeypatch):
+    adapter_module = importlib.import_module("bayesflow.adapters.adapter")
+    compile_attempts = 0
+
+    def failing_jit(fn):
+        def compiled(data):
+            nonlocal compile_attempts
+            compile_attempts += 1
+            raise RuntimeError("compiler unavailable")
+
+        return compiled
+
+    monkeypatch.setattr(adapter_module, "jit", failing_jit)
+    adapter = bf.Adapter(jit_compile=True).log("x")
+    data = {"x": np.array([[1.0, 2.0]], dtype="float32")}
+
+    expected = adapter(data)
+    with pytest.warns(RuntimeWarning, match="falling back to eager"):
+        actual = adapter(data)
+    retried = adapter(data)
+
+    assert compile_attempts == 1
+    assert np.allclose(actual["x"], expected["x"])
+    assert np.allclose(retried["x"], expected["x"])
+
+
+@pytest.mark.cpu_fallback_on_mps
+@pytest.mark.skipif(
+    keras.backend.backend() == "torch", reason="Torch adapter compilation is covered by fallback tests."
+)
+def test_jit_compile_differentiable_forward_and_inverse():
+    from bayesflow._backend import grad
+
+    adapter = bf.Adapter(differentiable=True, jit_compile=True).log("x").standardize("x", mean=0.25, std=1.75)
+    x = keras.ops.convert_to_tensor(np.array([[1.0, 2.0], [3.0, 4.0]], dtype="float32"))
+
+    adapter({"x": x}, log_det_jac=True)  # eager state warmup
+    transformed, forward_ldj = adapter({"x": x}, log_det_jac=True)
+    adapter(transformed, inverse=True, log_det_jac=True)  # eager inverse warmup
+    restored, inverse_ldj = adapter(transformed, inverse=True, log_det_jac=True)
+
+    def loss(value):
+        transformed, _ = adapter({"x": value}, log_det_jac=True)
+        return keras.ops.sum(transformed["x"])
+
+    gradient = grad(loss)(x)
+
+    assert adapter._compile_failures == set()
+    assert np.allclose(restored["x"], x)
+    expected_ldj = np.sum(np.log(1.75 * x), axis=-1)
+    assert np.allclose(forward_ldj["x"], -expected_ldj)
+    assert np.allclose(inverse_ldj["x"], expected_ldj)
+    assert np.allclose(gradient, 1.0 / (1.75 * x))
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -42,6 +137,62 @@ def test_differentiable(differentiable):
         assert np.allclose(gradient, 2.0 / x)
     else:
         assert np.allclose(gradient, 0.0)
+
+
+@pytest.mark.cpu_fallback_on_mps
+@pytest.mark.parametrize("differentiable", [False, True])
+def test_identity_adapter_handoff_and_differentiability(differentiable):
+    from bayesflow._backend import grad
+
+    adapter = bf.Adapter(differentiable=differentiable)
+    x = keras.ops.convert_to_tensor(np.array([[1.0, 2.0], [3.0, 4.0]], dtype="float32"))
+
+    def loss(x):
+        return keras.ops.sum(adapter({"x": x})["x"])
+
+    result = adapter({"x": x})
+    inverse_result, log_det_jac = adapter({"x": x}, inverse=True, log_det_jac=True)
+    gradient = grad(loss)(x)
+
+    assert isinstance(result, dict)
+    assert isinstance(result["x"], bf.types.tensor.BackendTensor)
+    assert keras.ops.dtype(result["x"]) == keras.config.floatx()
+    assert np.allclose(result["x"], x)
+    assert np.allclose(inverse_result["x"], x)
+    assert log_det_jac == {}
+    if differentiable:
+        assert np.allclose(gradient, 1.0)
+    else:
+        assert np.allclose(gradient, 0.0)
+
+
+@pytest.mark.cpu_fallback_on_mps
+def test_identity_adapter_casts_and_does_not_mutate_input():
+    adapter = bf.Adapter()
+    data = {"x": np.array([[1.0, 2.0]], dtype="float64")}
+
+    result = adapter(data)
+
+    assert result is not data
+    assert isinstance(data["x"], np.ndarray)
+    assert data["x"].dtype == np.dtype("float64")
+    assert isinstance(result["x"], bf.types.tensor.BackendTensor)
+    assert keras.ops.dtype(result["x"]) == keras.config.floatx()
+    assert np.allclose(result["x"], data["x"])
+
+
+@pytest.mark.cpu_fallback_on_mps
+def test_default_adapter_handles_scalar_integer_without_to_array():
+    adapter = bf.Adapter.create_default("model_index")
+
+    result = adapter({"model_index": 1})
+    restored = adapter(result, inverse=True)
+
+    assert len(adapter) == 1
+    assert isinstance(result["inference_variables"], bf.types.tensor.BackendTensor)
+    assert keras.ops.dtype(result["inference_variables"]) == keras.config.floatx()
+    assert np.allclose(result["inference_variables"], 1.0)
+    assert np.allclose(restored["model_index"], 1.0)
 
 
 @pytest.mark.cpu_fallback_on_mps
@@ -144,6 +295,21 @@ def test_simple_transforms(random_data):
     assert np.allclose(inverse["t1"], random_data["t1"])
 
     assert np.allclose(inverse["p1"], random_data["p1"])
+
+
+@pytest.mark.cpu_fallback_on_mps
+def test_standardize_broadcast_and_log_det_jac():
+    data = {"x": np.array([[1.0, 2.0], [3.0, 6.0]], dtype="float32")}
+    mean = np.array([1.0, 2.0], dtype="float32")
+    std = np.array([2.0, 4.0], dtype="float32")
+    adapter = bf.Adapter().standardize("x", mean=mean, std=std)
+
+    transformed, log_det_jac = adapter(data, log_det_jac=True)
+    restored = adapter(transformed, inverse=True)
+
+    assert np.allclose(transformed["x"], [[0.0, 0.0], [1.0, 1.0]])
+    assert np.allclose(restored["x"], data["x"])
+    assert np.allclose(log_det_jac["x"], -np.sum(np.log(std)))
 
 
 def test_custom_transform():

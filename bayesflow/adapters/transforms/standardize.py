@@ -47,8 +47,8 @@ class Standardize(ElementwiseTransform):
         return serialize(config)
 
     def _mean_std(self, data: Tensor) -> tuple[Tensor, Tensor]:
-        mean = ops.broadcast_to(ops.convert_to_tensor(self.mean, dtype=ops.dtype(data)), ops.shape(data))
-        std = ops.broadcast_to(ops.convert_to_tensor(self.std, dtype=ops.dtype(data)), ops.shape(data))
+        mean = ops.convert_to_tensor(self.mean, dtype=ops.dtype(data))
+        std = ops.convert_to_tensor(self.std, dtype=ops.dtype(data))
         return mean, std
 
     def forward(self, data: Tensor, **kwargs) -> Tensor:
@@ -61,6 +61,9 @@ class Standardize(ElementwiseTransform):
 
     def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         _, std = self._mean_std(data)
+        # Unlike forward/inverse, the Jacobian reduction must account for
+        # every transformed element, so expand the broadcast here.
+        std = ops.broadcast_to(std, ops.shape(data))
         ldj = -ops.log(ops.abs(std))
         if inverse:
             ldj = -ldj

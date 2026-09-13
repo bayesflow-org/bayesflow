@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -15,6 +15,7 @@ def loss(
     train_key: str = "loss",
     val_key: str = "val_loss",
     show_components: bool = False,
+    component_names: Mapping[str, str] = None,
     smoothing_factor: float = 0.8,
     figsize: Sequence[float] = None,
     train_color: str = "#132a70",
@@ -44,6 +45,9 @@ def loss(
         If True, every other metric in the history (e.g., regularization losses) is
         plotted in its own panel below the total loss, with its validation counterpart
         (``"val_"`` prefix) overlaid if present.
+    component_names : dict, optional, default: None
+        Maps history keys to panel labels, e.g. ``{"layer_loss": "Regularization"}``.
+        Keys not in the mapping are labeled by their title-cased key.
     smoothing_factor : float, optional, default: 0.8
         If greater than zero, smooth the loss curves by applying an exponential moving average.
     figsize            : tuple or None, optional, default: None
@@ -77,8 +81,12 @@ def loss(
     """
 
     keys = [train_key]
+    ylabels = ["Loss"]
     if show_components:
-        keys += [k for k in history.history if k != train_key and not k.startswith("val_")]
+        component_names = component_names or {}
+        components = [k for k in history.history if k != train_key and not k.startswith("val_")]
+        keys += components
+        ylabels = ["Total Loss"] + [component_names.get(k, k.replace("_", " ").title()) for k in components]
 
     train_losses = []
     val_losses = []
@@ -94,7 +102,8 @@ def loss(
 
     fig, axes = make_figure(num_row=num_row, num_col=1, figsize=(16, int(4 * num_row)) if figsize is None else figsize)
 
-    for ax, train, val in zip(axes.flat, train_losses, val_losses):
+    for ax, train, val, ylabel in zip(axes.flat, train_losses, val_losses, ylabels):
+        ax.set_ylabel(ylabel, fontsize=label_fontsize)
         train_step_index = np.arange(1, len(train) + 1)
 
         if smoothing_factor > 0:
@@ -162,7 +171,6 @@ def loss(
         num_col=1,
         title=["Loss Trajectory"],
         xlabel="Training epoch #",
-        ylabel=["Total Loss" if show_components else "Loss"] + keys[1:],
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )

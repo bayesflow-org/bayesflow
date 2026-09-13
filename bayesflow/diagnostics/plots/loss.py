@@ -103,11 +103,11 @@ def loss(
         if smoothing_factor > 0:
             # plot unsmoothed train loss
             ax.plot(
-                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.3, label="Training"
+                train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.3, label="Training"
             )
 
             # plot smoothed train loss
-            smoothed_train_loss = train_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
+            smoothed_train_loss = train_losses.iloc[:, i].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
             ax.plot(
                 train_step_index,
                 smoothed_train_loss,
@@ -119,7 +119,7 @@ def loss(
         else:
             # Plot unsmoothed train loss
             ax.plot(
-                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.8, label="Training"
+                train_step_index, train_losses.iloc[:, i], color=train_color, lw=lw_train, alpha=0.8, label="Training"
             )
 
         # Only plot if we actually have validation losses and a color assigned
@@ -129,7 +129,7 @@ def loss(
             # Plot unsmoothed val loss
             ax.plot(
                 val_step_index,
-                val_losses.iloc[:, 0],
+                val_losses.iloc[:, i],
                 color=val_color,
                 lw=lw_val,
                 alpha=alpha_unsmoothed,
@@ -141,7 +141,7 @@ def loss(
 
             # if requested, plot a second, smoothed curve
             if smoothing_factor > 0:
-                smoothed_val_loss = val_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
+                smoothed_val_loss = val_losses.iloc[:, i].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
                 ax.plot(
                     val_step_index,
                     smoothed_val_loss,
@@ -166,7 +166,7 @@ def loss(
         axes=axes,
         num_row=num_row,
         num_col=1,
-        title=["Loss Trajectory"],
+        title=["Loss Trajectory"] if num_row == 1 else [f"Loss Trajectory {i + 1}" for i in range(num_row)],
         xlabel="Training epoch #",
         ylabel="Loss",
         title_fontsize=title_fontsize,

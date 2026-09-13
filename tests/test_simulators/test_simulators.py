@@ -192,3 +192,23 @@ def test_model_comparison_simulator_shared_simulator_callable(batch_size):
     samples = mc_sim.sample(batch_size)
     assert "shared" in samples
     assert "model_indices" in samples
+
+
+@pytest.mark.parametrize("as_mapping", [False, True])
+def test_make_simulator_distributes_obj_kwargs(as_mapping):
+    from bayesflow.simulators import make_simulator
+
+    def first(a=1):
+        return {"x": np.array(a)}
+
+    def second(batch_shape, b=1):
+        return {"y": np.full(batch_shape, b)}
+
+    objs = {"first": first, "second": second} if as_mapping else [first, second]
+    obj_kwargs = {"second": {"is_batched": True}}
+
+    simulator = make_simulator(objs, obj_kwargs=obj_kwargs)
+    samples = simulator.sample(3)
+
+    assert samples["x"].shape == (3, 1)
+    assert samples["y"].shape == (3, 1)

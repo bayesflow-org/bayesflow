@@ -103,16 +103,20 @@ def test_loss(history):
     assert out.axes[0].title._text == "Loss Trajectory"
 
 
-def test_loss_multiple_columns():
+def test_loss_components():
     h = keras.callbacks.History()
-    train = np.stack([np.linspace(1, 0, 10), np.linspace(5, 0, 10)], axis=-1)
-    h.history = {"loss": train.tolist(), "val_loss": (train + 0.1).tolist()}
+    total, reg = np.linspace(1, 0, 10), np.linspace(5, 0, 10)
+    h.history = {"loss": total.tolist(), "val_loss": (total + 0.1).tolist(), "layer_loss": reg.tolist()}
 
     out = bf.diagnostics.loss(h, smoothing_factor=0)
+    assert len(out.axes) == 1
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0, show_components=True)
     assert len(out.axes) == 2
-    for i, ax in enumerate(out.axes):
-        np.testing.assert_allclose(ax.lines[0].get_ydata(), train[:, i])
-        np.testing.assert_allclose(ax.lines[1].get_ydata(), train[:, i] + 0.1)
+    np.testing.assert_allclose(out.axes[0].lines[0].get_ydata(), total)
+    np.testing.assert_allclose(out.axes[0].lines[1].get_ydata(), total + 0.1)
+    np.testing.assert_allclose(out.axes[1].lines[0].get_ydata(), reg)
+    assert out.axes[1].get_ylabel() == "layer_loss"
 
 
 def test_recovery_bounds(random_estimates, random_targets):

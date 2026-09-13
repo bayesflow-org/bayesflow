@@ -223,6 +223,9 @@ def test_conditions_only_without_eos(sequence_conditions, eos_data):
     ].shape == (3, 2, inferred, 2)
 
 
+# This test has reported failed/ignored Metal commands on virtual MPS devices.
+# Use CPU fallback while the underlying GPU failure is unresolved.
+@pytest.mark.cpu_fallback_on_mps
 @pytest.mark.parametrize("eos_value", [None, -999.0, [-999.0, 0.0]])
 def test_default_transformer_encoder_and_recurrent_decoder(eos_data, eos_value):
     model = AutoregressiveApproximator(

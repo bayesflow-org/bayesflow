@@ -157,9 +157,18 @@ def loss(
         ax.grid(alpha=grid_alpha)
         ax.set_xlim(train_step_index[0], train_step_index[-1])
 
-        # legend only if there's at least one validation curve or smoothing was on
-        if val_losses is not None or smoothing_factor > 0:
-            ax.legend(fontsize=legend_fontsize)
+    # single legend below the figure, only if there's at least one validation curve or smoothing was on
+    show_legend = val_losses is not None or smoothing_factor > 0
+    if show_legend:
+        handles, labels = axes.flat[0].get_legend_handles_labels()
+        fig.legend(
+            handles,
+            labels,
+            loc="lower center",
+            ncol=min(len(labels), 2) if fig.get_figwidth() < 12 else len(labels),
+            frameon=False,
+            fontsize=legend_fontsize,
+        )
 
     # Add labels, titles, and set font sizes
     add_titles_and_labels(
@@ -173,5 +182,5 @@ def loss(
         label_fontsize=label_fontsize,
     )
 
-    fig.tight_layout()
+    fig.tight_layout(rect=(0, 0.1, 1, 1) if show_legend else None)
     return fig

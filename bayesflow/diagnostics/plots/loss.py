@@ -166,7 +166,7 @@ def loss(
             labels,
             loc="lower center",
             ncol=min(len(labels), 2) if fig.get_figwidth() < 12 else len(labels),
-            frameon=False,
+            frameon=True,
             fontsize=legend_fontsize,
         )
 
@@ -182,5 +182,5 @@ def loss(
         label_fontsize=label_fontsize,
     )
 
-    fig.tight_layout(rect=(0, 0.1, 1, 1) if show_legend else None)
+    fig.tight_layout(rect=(0, 0.13, 1, 1) if show_legend else None)
     return fig

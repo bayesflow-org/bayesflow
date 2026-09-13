@@ -64,3 +64,19 @@ def test_jacobian_trace():
 
     # this check is not reliable enough yet
     # assert_allclose(jt, jt_target, atol=0.01, rtol=0.01)
+
+
+def test_jacobian_trace_hutchinson_is_unbiased():
+    from bayesflow.utils import jacobian_trace
+
+    # exact trace is 2 * dims, independent of the number of steps
+    def linear(x):
+        return 2.0 * x
+
+    dims = 256
+    inputs = keras.random.normal((32, dims))
+
+    for steps in (1, 4, 16):
+        jt = jacobian_trace(linear, inputs, max_steps=steps, seed=0)
+        assert jt.shape == (32,)
+        assert_allclose(keras.ops.mean(jt), 2.0 * dims, rtol=0.1)

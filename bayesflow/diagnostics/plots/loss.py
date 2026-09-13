@@ -166,7 +166,7 @@ def loss(
         axes=axes,
         num_row=num_row,
         num_col=1,
-        title=["Loss Trajectory"] if num_row == 1 else [f"Loss Trajectory {i + 1}" for i in range(num_row)],
+        title=["Loss Trajectory"],
         xlabel="Training epoch #",
         ylabel="Loss",
         title_fontsize=title_fontsize,

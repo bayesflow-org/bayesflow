@@ -153,10 +153,10 @@ def loss(
         ax.set_xlim(train_step_index[0], train_step_index[-1])
 
     # single legend below the figure, only if there's at least one validation curve or smoothing was on
-    show_legend = has_val or smoothing_factor > 0
-    if show_legend:
+    legend = None
+    if has_val or smoothing_factor > 0:
         handles, labels = axes.flat[0].get_legend_handles_labels()
-        fig.legend(
+        legend = fig.legend(
             handles,
             labels,
             loc="lower center",
@@ -175,7 +175,13 @@ def loss(
         label_fontsize=label_fontsize,
     )
 
-    fig.tight_layout(rect=(0, 0.13, 1, 1) if show_legend else None)
+    if legend is None:
+        fig.tight_layout()
+    else:
+        # reserve exactly the legend's height (plus a small gap) below the panels
+        fig.canvas.draw()
+        legend_height = legend.get_window_extent().transformed(fig.transFigure.inverted()).height
+        fig.tight_layout(rect=(0, legend_height + 0.03, 1, 1))
     return fig
 
 

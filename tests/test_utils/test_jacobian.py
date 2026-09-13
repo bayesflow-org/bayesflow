@@ -79,4 +79,4 @@ def test_jacobian_trace_hutchinson_is_unbiased():
     for steps in (1, 4, 16):
         jt = jacobian_trace(linear, inputs, max_steps=steps, seed=0)
         assert jt.shape == (32,)
-        assert_allclose(keras.ops.mean(jt), 2.0 * dims, rtol=0.1)
+        assert_allclose(keras.ops.mean(jt), keras.ops.convert_to_tensor(2.0 * dims, dtype=jt.dtype), rtol=0.1)

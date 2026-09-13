@@ -52,7 +52,20 @@ def set_stop_logit(model, logit):
     model.eos_head.bias.assign(np.full(model.eos_head.bias.shape, logit, dtype="float32"))
 
 
-def test_joint_loss_equals_negative_log_prob(eos_approximator, eos_data):
+@pytest.mark.parametrize("squeeze_crossentropy", [False, True])
+def test_joint_loss_equals_negative_log_prob(eos_approximator, eos_data, monkeypatch, squeeze_crossentropy):
+    if squeeze_crossentropy:
+        binary_crossentropy = keras.ops.binary_crossentropy
+
+        def mps_binary_crossentropy(targets, logits, from_logits=False):
+            # Keras' Torch MPS backend squeezes singleton output dimensions.
+            if len(logits.shape) > 1 and logits.shape[-1] == 1:
+                targets = keras.ops.squeeze(targets, axis=-1)
+                logits = keras.ops.squeeze(logits, axis=-1)
+            return binary_crossentropy(targets, logits, from_logits=from_logits)
+
+        monkeypatch.setattr(keras.ops, "binary_crossentropy", mps_binary_crossentropy)
+
     loss = keras.ops.convert_to_numpy(metrics(eos_approximator, eos_data)["loss"])
     np.testing.assert_allclose(loss, -np.mean(eos_approximator.log_prob(eos_data)), rtol=1e-5)
 

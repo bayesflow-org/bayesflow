@@ -420,7 +420,9 @@ class AutoregressiveApproximator(ContinuousApproximator):
     def _eos_step_log_prob(self, conditions, inference_mask):
         logits = self.eos_head(conditions)
         targets = keras.ops.cast(keras.ops.logical_not(inference_mask)[..., None], logits.dtype)
-        return -keras.ops.binary_crossentropy(targets, logits, from_logits=True)[..., 0]
+        step_nll = keras.ops.binary_crossentropy(targets, logits, from_logits=True)
+        # Torch's MPS backend already squeezes the singleton output dimension.
+        return -keras.ops.reshape(step_nll, keras.ops.shape(inference_mask))
 
     def _validate_decoder_horizon(self, horizon, memory_length, sampling=False):
         aligned = isinstance(self.decoder_network, RecurrentDecoder) or getattr(

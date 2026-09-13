@@ -74,10 +74,6 @@ def loss(
     -------
     f : plt.Figure - the figure instance for optional saving
 
-    Raises
-    ------
-    ValueError
-        If the loss history is not one-dimensional.
     """
 
     keys = [train_key]
@@ -87,14 +83,11 @@ def loss(
     train_losses = []
     val_losses = []
     for key in keys:
-        train = np.asarray(history.history[key])
-        if train.ndim != 1:
-            raise ValueError(f"Expected a one-dimensional history for '{key}', got shape {train.shape}.")
-        train_losses.append(pd.Series(train))
+        train_losses.append(_first_column(history.history[key]))
 
         val_key_ = val_key if key == train_key else f"val_{key}"
         val = history.history.get(val_key_)
-        val_losses.append(pd.Series(np.asarray(val)) if val is not None else None)
+        val_losses.append(_first_column(val) if val is not None else None)
 
     has_val = any(v is not None for v in val_losses) and val_color is not None
     num_row = len(keys)
@@ -169,10 +162,15 @@ def loss(
         num_col=1,
         title=["Loss Trajectory"],
         xlabel="Training epoch #",
-        ylabel=["Loss"] + keys[1:],
+        ylabel=["Total Loss" if show_components else "Loss"] + keys[1:],
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
 
     fig.tight_layout(rect=(0, 0.13, 1, 1) if show_legend else None)
     return fig
+
+
+def _first_column(values) -> pd.Series:
+    values = np.asarray(values)
+    return pd.Series(values[:, 0] if values.ndim > 1 else values)

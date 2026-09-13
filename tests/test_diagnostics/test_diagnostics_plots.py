@@ -116,6 +116,7 @@ def test_loss_components():
     np.testing.assert_allclose(out.axes[0].lines[0].get_ydata(), total)
     np.testing.assert_allclose(out.axes[0].lines[1].get_ydata(), total + 0.1)
     np.testing.assert_allclose(out.axes[1].lines[0].get_ydata(), reg)
+    assert out.axes[0].get_ylabel() == "Total Loss"
     assert out.axes[1].get_ylabel() == "layer_loss"
 
 

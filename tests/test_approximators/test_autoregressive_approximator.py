@@ -369,6 +369,17 @@ def test_padding_masks_ignore_masked_values(autoregressive_approximator, autoreg
     np.testing.assert_allclose(actual, expected, rtol=1e-5, atol=1e-5)
 
 
+def test_padding_masks_ignore_masked_training_targets(autoregressive_approximator, autoregressive_data):
+    build_approximator(autoregressive_approximator, autoregressive_data)
+    data = keras.tree.map_structure(keras.ops.convert_to_tensor, autoregressive_data)
+    expected = autoregressive_approximator.compute_metrics(**data, stage="validation")["loss"]
+    perturbed = {key: value.copy() for key, value in autoregressive_data.items()}
+    perturbed["inference_variables"][~perturbed["inference_mask"]] = np.nan
+    perturbed = keras.tree.map_structure(keras.ops.convert_to_tensor, perturbed)
+    actual = autoregressive_approximator.compute_metrics(**perturbed, stage="validation")["loss"]
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(actual), keras.ops.convert_to_numpy(expected))
+
+
 def test_save_and_load_with_each_decoder(tmp_path, autoregressive_approximator, autoregressive_data):
     build_approximator(autoregressive_approximator, autoregressive_data)
     expected = autoregressive_approximator.log_prob(autoregressive_data)

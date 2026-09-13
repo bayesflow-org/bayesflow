@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Mapping, Sequence
 
 import numpy as np
 import pandas as pd
@@ -14,6 +14,8 @@ def loss(
     history: keras.callbacks.History,
     train_key: str = "loss",
     val_key: str = "val_loss",
+    show_components: bool = False,
+    component_names: Mapping[str, str] = None,
     smoothing_factor: float = 0.8,
     figsize: Sequence[float] = None,
     train_color: str = "#132a70",
@@ -28,7 +30,7 @@ def loss(
     title_fontsize: int = 16,
 ) -> plt.Figure:
     """
-    A generic helper function to plot the losses of a series of training epochs and runs.
+    Plot the training (and validation) loss of a series of training epochs and runs.
 
     Parameters
     ----------
@@ -39,6 +41,13 @@ def loss(
         The training loss key to look for in the history
     val_key     : str, optional, default: "val_loss"
         The validation loss key to look for in the history
+    show_components : bool, optional, default: False
+        If True, every other metric in the history (e.g., regularization losses) is
+        plotted in its own panel below the total loss, with its validation counterpart
+        (``"val_"`` prefix) overlaid if present.
+    component_names : dict, optional, default: None
+        Maps history keys to panel labels, e.g. ``{"layer_loss": "Regularization"}``.
+        Keys not in the mapping are labeled by their title-cased key.
     smoothing_factor : float, optional, default: 0.8
         If greater than zero, smooth the loss curves by applying an exponential moving average.
     figsize            : tuple or None, optional, default: None
@@ -69,82 +78,69 @@ def loss(
     -------
     f : plt.Figure - the figure instance for optional saving
 
-    Raises
-    ------
-    AssertionError
-        If the number of columns in ``train_losses`` does not match the
-        number of columns in ``val_losses``.
     """
 
-    train_losses = history.history.get(train_key)
-    val_losses = history.history.get(val_key)
+    keys = [train_key]
+    ylabels = ["Loss"]
+    if show_components:
+        component_names = component_names or {}
+        components = [k for k in history.history if k != train_key and not k.startswith("val_")]
+        keys += components
+        ylabels = ["Total Loss"] + [component_names.get(k, k.replace("_", " ").title()) for k in components]
 
-    train_losses = pd.DataFrame(np.array(train_losses))
-    val_losses = pd.DataFrame(np.array(val_losses)) if val_losses is not None else None
+    train_losses = []
+    val_losses = []
+    for key in keys:
+        train_losses.append(_first_column(history.history[key]))
 
-    # Determine the number of rows for plot
-    num_row = len(train_losses.columns)
+        val_key_ = val_key if key == train_key else f"val_{key}"
+        val = history.history.get(val_key_)
+        val_losses.append(_first_column(val) if val is not None else None)
 
-    # Initialize figure
+    has_val = any(v is not None for v in val_losses) and val_color is not None
+    num_row = len(keys)
+
     fig, axes = make_figure(num_row=num_row, num_col=1, figsize=(16, int(4 * num_row)) if figsize is None else figsize)
 
-    # Get the number of steps as an array
-    train_step_index = np.arange(1, len(train_losses) + 1)
-    if val_losses is not None:
-        val_step = int(np.floor(len(train_losses) / len(val_losses)))
-        val_step_index = train_step_index[(val_step - 1) :: val_step]
+    for ax, train, val, ylabel in zip(axes.flat, train_losses, val_losses, ylabels):
+        ax.set_ylabel(ylabel, fontsize=label_fontsize)
+        train_step_index = np.arange(1, len(train) + 1)
 
-        # If unequal length due to some reason, attempt a fix
-        if val_step_index.shape[0] > val_losses.shape[0]:
-            val_step_index = val_step_index[: val_losses.shape[0]]
-
-    # Loop through loss entries and populate plot
-    for i, ax in enumerate(axes.flat):
         if smoothing_factor > 0:
-            # plot unsmoothed train loss
-            ax.plot(
-                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.3, label="Training"
-            )
-
-            # plot smoothed train loss
-            smoothed_train_loss = train_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
+            ax.plot(train_step_index, train, color=train_color, lw=lw_train, alpha=0.3, label="Training")
+            smoothed_train = train.ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
             ax.plot(
                 train_step_index,
-                smoothed_train_loss,
+                smoothed_train,
                 color=train_color,
                 lw=lw_train,
                 alpha=0.8,
                 label="Training (Moving Average)",
             )
         else:
-            # Plot unsmoothed train loss
-            ax.plot(
-                train_step_index, train_losses.iloc[:, 0], color=train_color, lw=lw_train, alpha=0.8, label="Training"
-            )
+            ax.plot(train_step_index, train, color=train_color, lw=lw_train, alpha=0.8, label="Training")
 
-        # Only plot if we actually have validation losses and a color assigned
-        if val_losses is not None and val_color is not None:
-            alpha_unsmoothed = 0.3 if smoothing_factor > 0 else 0.8
+        if val is not None and val_color is not None:
+            val_step = int(np.floor(len(train) / len(val)))
+            val_step_index = train_step_index[(val_step - 1) :: val_step][: len(val)]
 
-            # Plot unsmoothed val loss
             ax.plot(
                 val_step_index,
-                val_losses.iloc[:, 0],
+                val,
                 color=val_color,
                 lw=lw_val,
-                alpha=alpha_unsmoothed,
+                alpha=0.3 if smoothing_factor > 0 else 0.8,
                 linestyle="--",
                 marker=val_marker,
                 markersize=val_marker_size,
                 label="Validation",
             )
 
-            # if requested, plot a second, smoothed curve
             if smoothing_factor > 0:
-                smoothed_val_loss = val_losses.iloc[:, 0].ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
+                smoothed_val = val.ewm(alpha=1.0 - smoothing_factor, adjust=True).mean()
                 ax.plot(
                     val_step_index,
-                    smoothed_val_loss,
+                    smoothed_val,
                     color=val_color,
                     linestyle="--",
                     lw=lw_val,
@@ -152,26 +148,43 @@ def loss(
                     label="Validation (Moving Average)",
                 )
 
-        # rest of the styling
         sns.despine(ax=ax)
         ax.grid(alpha=grid_alpha)
         ax.set_xlim(train_step_index[0], train_step_index[-1])
 
-        # legend only if there's at least one validation curve or smoothing was on
-        if val_losses is not None or smoothing_factor > 0:
-            ax.legend(fontsize=legend_fontsize)
+    # single legend below the figure, only if there's at least one validation curve or smoothing was on
+    legend = None
+    if has_val or smoothing_factor > 0:
+        handles, labels = axes.flat[0].get_legend_handles_labels()
+        legend = fig.legend(
+            handles,
+            labels,
+            loc="lower center",
+            ncol=min(len(labels), 2) if fig.get_figwidth() < 12 else len(labels),
+            frameon=True,
+            fontsize=legend_fontsize,
+        )
 
-    # Add labels, titles, and set font sizes
     add_titles_and_labels(
         axes=axes,
         num_row=num_row,
         num_col=1,
         title=["Loss Trajectory"],
         xlabel="Training epoch #",
-        ylabel="Loss",
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )
 
-    fig.tight_layout()
+    if legend is None:
+        fig.tight_layout()
+    else:
+        # reserve exactly the legend's height (plus a small gap) below the panels
+        fig.canvas.draw()
+        legend_height = legend.get_window_extent().transformed(fig.transFigure.inverted()).height
+        fig.tight_layout(rect=(0, legend_height + 0.03, 1, 1))
     return fig
+
+
+def _first_column(values) -> pd.Series:
+    values = np.asarray(values)
+    return pd.Series(values[:, 0] if values.ndim > 1 else values)

@@ -1,4 +1,5 @@
 import bayesflow as bf
+import keras
 import numpy as np
 import pytest
 
@@ -100,6 +101,27 @@ def test_loss(history):
     out = bf.diagnostics.loss(history)
     assert len(out.axes) == 1
     assert out.axes[0].title._text == "Loss Trajectory"
+
+
+def test_loss_components():
+    h = keras.callbacks.History()
+    total, reg = np.linspace(1, 0, 10), np.linspace(5, 0, 10)
+    h.history = {"loss": total.tolist(), "val_loss": (total + 0.1).tolist(), "layer_loss": reg.tolist()}
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0)
+    assert len(out.axes) == 1
+    assert out.axes[0].get_ylabel() == "Loss"
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0, show_components=True)
+    assert len(out.axes) == 2
+    np.testing.assert_allclose(out.axes[0].lines[0].get_ydata(), total)
+    np.testing.assert_allclose(out.axes[0].lines[1].get_ydata(), total + 0.1)
+    np.testing.assert_allclose(out.axes[1].lines[0].get_ydata(), reg)
+    assert out.axes[0].get_ylabel() == "Total Loss"
+    assert out.axes[1].get_ylabel() == "Layer Loss"
+
+    out = bf.diagnostics.loss(h, show_components=True, component_names={"layer_loss": "Regularization"})
+    assert out.axes[1].get_ylabel() == "Regularization"
 
 
 def test_recovery_bounds(random_estimates, random_targets):

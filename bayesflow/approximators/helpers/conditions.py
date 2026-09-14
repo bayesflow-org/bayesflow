@@ -247,7 +247,13 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
     """Resolve encoder inputs and causal decoder conditions for joint smoothing."""
 
     @staticmethod
-    def encoder_input_shape(summary_shape: tuple, conditions_shape: tuple | None) -> tuple:
+    def encoder_input_shape(summary_shape: tuple | None, conditions_shape: tuple | None) -> tuple:
+        if summary_shape is None:
+            if conditions_shape is None:
+                raise ValueError("Autoregressive inference requires summary_variables or inference_conditions.")
+            if len(conditions_shape) == 2:
+                return (conditions_shape[0], 1, conditions_shape[-1])
+            return tuple(conditions_shape)
         if conditions_shape is not None and len(conditions_shape) < len(summary_shape):
             conditions_shape = tuple(summary_shape[:-1]) + (conditions_shape[-1],)
         return concatenate_valid_shapes((summary_shape, conditions_shape), axis=-1)
@@ -256,7 +262,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
     def resolve_encoder_inputs(
         standardizer: keras.Layer,
         inference_conditions: Tensor | None,
-        summary_variables: Tensor,
+        summary_variables: Tensor | None,
         *,
         stage: str,
         summary_mask: Tensor | None = None,
@@ -272,6 +278,13 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             key="inference_conditions",
             stage=stage,
         )
+
+        if summary_variables is None:
+            if inference_conditions is None:
+                raise ValueError("Autoregressive inference requires summary_variables or inference_conditions.")
+            if len(inference_conditions.shape) == 2:
+                inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
+            return inference_conditions
 
         if inference_conditions is not None and len(inference_conditions.shape) < len(summary_variables.shape):
             inference_conditions = keras.ops.expand_dims(inference_conditions, axis=1)
@@ -296,8 +309,9 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
         standardizer: keras.Layer,
         encoder_network: keras.Layer,
         inference_conditions: Tensor | None,
-        summary_variables: Tensor,
+        summary_variables: Tensor | None,
         stage: str,
+        use_encoder_time: bool = True,
         summary_attention_mask: Tensor | None = None,
         summary_mask: Tensor | None = None,
     ) -> tuple[Tensor, Tensor | None]:
@@ -309,7 +323,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             stage=stage,
             summary_mask=summary_mask,
         )
-        decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
+        decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs) if use_encoder_time else None
         encoder_kwargs = filter_kwargs(
             {
                 "attention_mask": summary_attention_mask,
@@ -333,8 +347,9 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
         decoder_network: keras.Layer,
         inference_variables: Tensor,
         inference_conditions: Tensor | None,
-        summary_variables: Tensor,
+        summary_variables: Tensor | None,
         stage: str,
+        use_encoder_time: bool = True,
         summary_attention_mask: Tensor | None = None,
         summary_mask: Tensor | None = None,
         inference_attention_mask: Tensor | None = None,
@@ -346,6 +361,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
             inference_conditions=inference_conditions,
             summary_variables=summary_variables,
             stage=stage,
+            use_encoder_time=use_encoder_time,
             summary_attention_mask=summary_attention_mask,
             summary_mask=summary_mask,
         )

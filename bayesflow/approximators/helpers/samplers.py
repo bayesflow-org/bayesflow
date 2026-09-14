@@ -186,6 +186,7 @@ class AutoregressiveSampler(Sampler):
         encoder_mask: Tensor | None = None,
         target_mask: Tensor | None = None,
         target_attention_mask: Tensor | None = None,
+        eos_head: keras.Layer | None = None,
         masking_names: Sequence[str] = (),
         seed: keras.random.SeedGenerator | int | None = None,
         **kwargs,
@@ -203,6 +204,10 @@ class AutoregressiveSampler(Sampler):
                 f"for the sequence length, but got {sample_shape}."
             )
         num_steps = sample_shape[0]
+        if num_steps < 1:
+            raise ValueError("Autoregressive sampling requires a positive sequence horizon.")
+        if eos_head is not None and target_mask is not None:
+            raise ValueError("Do not supply inference_mask for EOS sampling; lengths are generated independently.")
 
         kwargs = {
             key: self.repeat_and_flatten_conditions(value, num_samples)
@@ -230,6 +235,9 @@ class AutoregressiveSampler(Sampler):
         decode_kwargs = {key: value for key, value in decode_kwargs.items() if value is not None}
         previous_target = None
         generated = []
+        if eos_head is not None:
+            generated_mask = []
+            active = keras.ops.ones((keras.ops.shape(encoder_outputs)[0],), dtype="bool")
 
         for step in range(num_steps):
             step_conditions, cache = decoder_network.decode_step(
@@ -252,7 +260,13 @@ class AutoregressiveSampler(Sampler):
                 **step_kwargs,
             )
 
-            if target_mask is not None:
+            if eos_head is not None:
+                stop_probability = keras.ops.sigmoid(eos_head(step_conditions))[:, 0]
+                stop = keras.random.uniform(keras.ops.shape(stop_probability), seed=seed) < stop_probability
+                active = keras.ops.logical_and(active, keras.ops.logical_not(stop))
+                current_target = keras.ops.where(active[:, None], current_target, keras.ops.zeros_like(current_target))
+                generated_mask.append(active)
+            elif target_mask is not None:
                 current_target = current_target * keras.ops.cast(
                     target_mask[:, step : step + 1],
                     current_target.dtype,
@@ -261,4 +275,17 @@ class AutoregressiveSampler(Sampler):
             generated.append(current_target)
             previous_target = current_target
 
-        return self.unflatten_samples(keras.ops.stack(generated, axis=1), num_samples)
+        values = keras.ops.stack(generated, axis=1)
+        if eos_head is None:
+            return self.unflatten_samples(values, num_samples)
+
+        mask = keras.ops.stack(generated_mask, axis=1)
+        return self.unflatten_samples(
+            {
+                "values": values,
+                "_mask": mask,
+                "_lengths": keras.ops.sum(keras.ops.cast(mask, "int32"), axis=1),
+                "_truncated": active,
+            },
+            num_samples,
+        )

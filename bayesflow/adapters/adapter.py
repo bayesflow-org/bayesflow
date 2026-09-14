@@ -1136,7 +1136,9 @@ class Adapter(MutableSequence[Transform]):
         default_value : float
             Value to substitute wherever data is NaN. Defaults to 0.0.
         return_mask : bool
-            If True, encode a binary missingness mask alongside the data. Defaults to False.
+            If True, encode a binary missingness mask alongside the data, which is also used to restore the
+            NaNs in the inverse transform. If False, the transform is not invertible and the inverse leaves
+            the data unchanged. Defaults to False.
         mask_prefix : str
             Prefix for the mask key in the output dictionary. Defaults to 'mask_'. If the mask key already exists,
             a ValueError is raised to avoid overwriting existing masks.

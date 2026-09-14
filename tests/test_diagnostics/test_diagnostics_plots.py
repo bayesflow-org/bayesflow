@@ -1,4 +1,5 @@
 import bayesflow as bf
+import keras
 import numpy as np
 import pytest
 
@@ -100,6 +101,18 @@ def test_loss(history):
     out = bf.diagnostics.loss(history)
     assert len(out.axes) == 1
     assert out.axes[0].title._text == "Loss Trajectory"
+
+
+def test_loss_multiple_columns():
+    h = keras.callbacks.History()
+    train = np.stack([np.linspace(1, 0, 10), np.linspace(5, 0, 10)], axis=-1)
+    h.history = {"loss": train.tolist(), "val_loss": (train + 0.1).tolist()}
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0)
+    assert len(out.axes) == 2
+    for i, ax in enumerate(out.axes):
+        np.testing.assert_allclose(ax.lines[0].get_ydata(), train[:, i])
+        np.testing.assert_allclose(ax.lines[1].get_ydata(), train[:, i] + 0.1)
 
 
 def test_recovery_bounds(random_estimates, random_targets):

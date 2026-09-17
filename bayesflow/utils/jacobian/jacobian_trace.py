@@ -91,6 +91,8 @@ def _hutchinson(
         projector = keras.random.normal(shape, seed=seed)
         trace += keras.ops.sum(vjp_fn(projector) * projector, axis=-1)
 
+    trace = trace / steps
+
     if return_output:
         return fx, trace
 

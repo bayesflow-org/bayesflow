@@ -238,12 +238,12 @@ class DiffusionModel(InferenceNetwork):
         match self._loss_type:
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                loss = weights_for_snr * ops.mean(loss_mask * (noise_pred - eps_t) ** 2, axis=-1)
+                error = loss_mask * (noise_pred - eps_t) ** 2
 
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
-                loss = weights_for_snr * ops.mean(loss_mask * (velocity_pred - v_t) ** 2, axis=-1)
+                error = loss_mask * (velocity_pred - v_t) ** 2
 
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
@@ -251,11 +251,13 @@ class DiffusionModel(InferenceNetwork):
                 x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
-                loss = weights_for_snr * ops.mean(loss_mask * (f_pred - f_t) ** 2, axis=-1)
+                error = loss_mask * (f_pred - f_t) ** 2
 
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")
 
+        weights_for_snr = ops.reshape(weights_for_snr, (ops.shape(x)[0],))
+        loss = weights_for_snr * ops.mean(error, axis=tuple(range(1, ops.ndim(error))))
         loss = weighted_mean(loss, sample_weight)
 
         return {"loss": loss}

@@ -33,12 +33,16 @@ def adapter():
         .standardize(exclude=["t1", "t2", "o1"], mean=0.0, std=1.0)
         .drop("d1")
         .one_hot("o1", 10)
-        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2"])
+        .keep(
+            ["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2", "props1", "props2"]
+        )
         .rename("o1", "o2")
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)
         .group(["p1", "p2"], into="ps", prefix="p")
         .ungroup("ps", prefix="p")
+        .simplex("props1")
+        .simplex("props2", method="stick")
     )
 
 
@@ -64,6 +68,8 @@ def random_data():
         "s3": np.random.standard_normal(size=(35, 2)),
         "u1": np.random.uniform(low=-1, high=2, size=(32, 1)),
         "key_to_split": np.random.standard_normal(size=(32, 10)),
+        "props1": np.random.dirichlet([1, 2, 1, 4], size=(32, 4, 4)),
+        "props2": np.random.dirichlet([2, 3, 1], size=(32, 3)),
     }
 
 

@@ -27,6 +27,7 @@ from .transforms import (
     OneHot,
     Rename,
     SerializableCustomTransform,
+    Simplex,
     Squeeze,
     Sqrt,
     Standardize,
@@ -959,6 +960,14 @@ class Adapter(MutableSequence[Transform]):
             keys = [keys]
 
         self.transforms.append(MapTransform({key: Shift(shift=by) for key in keys}))
+        return self
+
+    def simplex(self, keys: str | Sequence[str], axis: int | Tensor = -1, method: str = "default"):
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(transform_map={key: Simplex(axis=axis, method=method) for key in keys})
+        self.transforms.append(transform)
         return self
 
     def split(self, key: str, *, into: Sequence[str], indices_or_sections: int | Sequence[int] = None, axis: int = -1):

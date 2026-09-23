@@ -19,6 +19,7 @@ from .rename import Rename
 from .scale import Scale
 from .serializable_custom_transform import SerializableCustomTransform
 from .shift import Shift
+from .simplex import Simplex
 from .split import Split
 from .squeeze import Squeeze
 from .sqrt import Sqrt

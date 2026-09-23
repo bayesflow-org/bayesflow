@@ -16,6 +16,7 @@ from .transforms import (
     Concatenate,
     Constrain,
     ConvertDType,
+    CovarianceMatrix,
     Drop,
     ExpandDims,
     FilterTransform,
@@ -763,6 +764,47 @@ class Adapter(MutableSequence[Transform]):
         )
         self.transforms.append(transform)
         return self
+
+    def covariance_matrix(self, keys: str | Sequence[str], cholesky: bool = False, diag_kwargs: dict = None):
+        """Append a :py:class:`~transforms.CovarianceMatrix` transform to the adapter.
+
+        Constrains neural network predictions of a data variable to a valid (symmetric,
+        positive definite) covariance matrix, via the Cholesky factor `L` of `Sigma = L @ L.T`.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        cholesky : bool, optional
+            Whether the *constrained* side of the transform is the Cholesky factor `L`,
+            rather than the full covariance matrix `Sigma = L @ L.T`.
+            Default is False (use the full covariance matrix).
+        diag_kwargs : dict, optional
+            Keyword arguments forwarded to the :py:class:`~transforms.Constrain` transform
+            that constrains the diagonal of `L` to be positive (e.g. `method="exp"` to match
+            Stan's parameterization). The `lower` bound is always fixed to 0.0.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(
+            transform_map={key: CovarianceMatrix(cholesky=cholesky, diag_kwargs=diag_kwargs) for key in keys}
+        )
+        self.transforms.append(transform)
+        return self
+
+    def precision_matrix(self, **kwargs):
+        """Append a :py:class:`~transforms.CovarianceMatrix` transform to the adapter.
+
+        A precision matrix is the inverse of a covariance matrix, but is likewise symmetric
+        and positive definite, so the same Cholesky-based reparameterization applies unchanged.
+        This is an alias for :py:meth:`~Adapter.covariance_matrix` for code clarity;
+        see there for the accepted parameters.
+        Note that this transform does not itself invert a covariance matrix into a
+        precision matrix (or vice versa), it only constrains its input to *some* symmetric
+        positive definite matrix, whatever you intend that matrix to represent.
+        """
+        return self.covariance_matrix(**kwargs)
 
     def drop(self, keys: str | Sequence[str]):
         """Append a :py:class:`~transforms.Drop` transform to the adapter.

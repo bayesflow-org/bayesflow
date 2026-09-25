@@ -168,7 +168,8 @@ class Standardize(keras.Layer):
         else:
             mask = keras.ops.cast(keras.ops.broadcast_to(mask, keras.ops.shape(x)[:-1]), x.dtype)[..., None]
             batch_count = keras.ops.cast(keras.ops.sum(mask), self.count[index].dtype)
-            batch_mean = keras.ops.sum(x * mask, axis=reduce_axes) / batch_count
+            safe_batch_count = keras.ops.where(batch_count > 0, batch_count, 1)
+            batch_mean = keras.ops.sum(x * mask, axis=reduce_axes) / safe_batch_count
             batch_m2 = keras.ops.sum(mask * (x - expand_left_as(batch_mean, x)) ** 2, axis=reduce_axes)
 
         # Read current totals
@@ -179,8 +180,9 @@ class Standardize(keras.Layer):
         total_count = count + batch_count
         delta = batch_mean - mean
 
-        new_mean = mean + delta * (batch_count / total_count)
-        new_m2 = m2 + batch_m2 + (delta**2) * (count * batch_count / total_count)
+        safe_total_count = keras.ops.where(total_count > 0, total_count, 1)
+        new_mean = mean + delta * (batch_count / safe_total_count)
+        new_m2 = m2 + batch_m2 + (delta**2) * (count * batch_count / safe_total_count)
 
         self.moving_mean[index].assign(new_mean)
         self.moving_m2[index].assign(new_m2)

@@ -4,6 +4,7 @@ from .broadcast import Broadcast
 from .concatenate import Concatenate
 from .constrain import Constrain
 from .convert_dtype import ConvertDType
+from .correlation_matrix import CorrelationMatrix
 from .covariance_matrix import CovarianceMatrix
 from .drop import Drop
 from .elementwise_transform import ElementwiseTransform

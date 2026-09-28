@@ -95,7 +95,6 @@ class CovarianceMatrix(ElementwiseTransform):
         ldj = self.diag_transform.log_det_jac(diag, inverse=False)
 
         if not self.cholesky:
-            # additional term for the cholesky transform
             weight = ops.cast(K, diag.dtype) - ops.arange(K, dtype=diag.dtype)
             chol_to_matrix_ldj = K * ops.log(ops.cast(2.0, diag.dtype)) + ops.sum(weight * ops.log(diag), axis=-1)
             ldj = ldj - chol_to_matrix_ldj

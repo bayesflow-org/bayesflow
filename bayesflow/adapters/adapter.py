@@ -16,6 +16,7 @@ from .transforms import (
     Concatenate,
     Constrain,
     ConvertDType,
+    CorrelationMatrix,
     CovarianceMatrix,
     Drop,
     ExpandDims,
@@ -762,6 +763,36 @@ class Adapter(MutableSequence[Transform]):
                 for key in keys
             }
         )
+        self.transforms.append(transform)
+        return self
+
+    def correlation_matrix(self, keys: str | Sequence[str], cholesky: bool = False):
+        """Append a :py:class:`~transforms.CorrelationMatrix` transform to the adapter.
+
+        Constrains neural network predictions of a data variable to a valid (symmetric, positive definite,
+        unit diagonal) correlation matrix, using the transforms explained by [1].
+
+        The unconstrained representation is a flat vector `y` of K * (K - 1) / 2 entries.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        cholesky : bool, optional
+            Whether the *constrained* side of the transform is the lower Cholesky factor `x`,
+            rather than the full correlation matrix `x @ x.T`.
+            Default is False (use the full correlation matrix).
+
+        References
+        ----------
+        [1] Lewandowski, D., Kurowicka, D., & Joe, H. (2009).
+            Generating random correlation matrices based on vines and extended onion method.
+            Journal of Multivariate Analysis, 100(9), 1989-2001. https://doi.org/10.1016/j.jmva.2009.04.008
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(transform_map={key: CorrelationMatrix(cholesky=cholesky) for key in keys})
         self.transforms.append(transform)
         return self
 

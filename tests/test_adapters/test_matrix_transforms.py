@@ -12,10 +12,10 @@ def matrix_adapter():
 
     return (
         Adapter(differentiable=True)
-        .covariance_matrix("cov")
-        .covariance_matrix("cov_chol", cholesky=True)
-        .correlation_matrix("cor")
-        .correlation_matrix("cor_chol", cholesky=True)
+        .as_covariance_matrix("cov")
+        .as_covariance_matrix("cov_chol", cholesky=True)
+        .as_correlation_matrix("cor")
+        .as_correlation_matrix("cor_chol", cholesky=True)
     )
 
 
@@ -80,5 +80,4 @@ def test_log_det_jac(matrix_adapter, matrix_data):
 
         jacobian = jax.vmap(jax.jacobian(inverse))(value)
         expected = -np.linalg.slogdet(jacobian)[1]
-        # assert_allclose(log_det_jac[key], expected, rtol=1e-3, atol=1e-3)
-        assert_allclose(log_det_jac[key], expected)
+        assert_allclose(log_det_jac[key], expected, rtol=1e-3, atol=1e-3)

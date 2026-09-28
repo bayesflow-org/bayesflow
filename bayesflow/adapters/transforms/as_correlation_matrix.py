@@ -9,18 +9,18 @@ from .elementwise_transform import ElementwiseTransform
 
 
 @serializable("bayesflow.adapters")
-class CorrelationMatrix(ElementwiseTransform):
+class AsCorrelationMatrix(ElementwiseTransform):
     """
     Constrains neural network predictions of a variable to a valid (symmetric, positive definite,
-    unit diagonal) correlation matrix, using the transforms explained by [1].
+    unit diagonal) K x K correlation matrix, using the transforms explained by [1].
 
-    The unconstrained representation is a flat vector `y` of K * (K - 1) / 2 entries.
+    The unconstrained representation is a flat vector of K * (K - 1) / 2 entries.
 
     Parameters
     ----------
     cholesky : bool, optional
-        Whether the *constrained* side of the transform is the lower Cholesky factor `x`,
-        rather than the full correlation matrix `x @ x.T`.
+        Whether the *constrained* side of the transform is the lower Cholesky factor,
+        rather than the full correlation matrix.
         Default is False (use the full correlation matrix).
 
     References
@@ -31,7 +31,7 @@ class CorrelationMatrix(ElementwiseTransform):
 
     Examples
     --------
-    >>> adapter = bf.Adapter().correlation_matrix("corr_x")
+    >>> adapter = bf.Adapter().as_correlation_matrix("corr_x")
     """
 
     def __init__(self, *, cholesky: bool = False):

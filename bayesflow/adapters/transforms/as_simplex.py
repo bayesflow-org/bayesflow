@@ -6,7 +6,7 @@ from .elementwise_transform import ElementwiseTransform
 
 
 @serializable("bayesflow.adapters")
-class Simplex(ElementwiseTransform):
+class AsSimplex(ElementwiseTransform):
     """
     Constrains neural network predictions of a data variable to a unit simplex, so that the
     constrained representation is non-negative and sums to one along the given axis.

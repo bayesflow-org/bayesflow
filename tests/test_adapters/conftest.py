@@ -41,8 +41,8 @@ def adapter():
         .take("s3", indices=np.arange(0, 32), axis=0)
         .group(["p1", "p2"], into="ps", prefix="p")
         .ungroup("ps", prefix="p")
-        .simplex("props1")
-        .simplex("props2", method="stick")
+        .as_simplex("props1")
+        .as_simplex("props2", method="stick")
     )
 
 

@@ -1,38 +1,38 @@
-from bayesflow.adapters.transforms import Constrain
 import keras.ops as ops
 import numpy as np
 import math
 from bayesflow.utils.serialization import serializable, serialize
 from bayesflow.types import Tensor
 
+from .constrain import Constrain
 from .elementwise_transform import ElementwiseTransform
 
 
 @serializable("bayesflow.adapters")
-class CovarianceMatrix(ElementwiseTransform):
+class AsCovarianceMatrix(ElementwiseTransform):
     """
     Constrains neural network predictions of a variable to a valid (symmetric,
-    positive definite) covariance (or precision) matrix.
+    positive definite) K x K covariance (or precision) matrix.
 
-    The unconstrained representation is a flat vector holding the entries of the lower
-    Cholesky factor `L` of the covariance matrix `Sigma = L @ L.T`: first the K diagonal
-    entries of `L` (passed through a lower-bounded :py:class:`~transforms.Constrain`
-    transform to keep them positive), followed by the K * (K - 1) / 2 entries from the lower triangular.
+    The unconstrained representation is a flat vector of K * (K + 1) / 2 entries
+    of the lower Cholesky factor of the covariance matrix.
+    First, the K diagonal entries, passed through a lower-bounded :py:class:`~transforms.Constrain`
+    transform to keep them positive, followed by the K * (K - 1) / 2 entries from the lower triangular.
 
     Parameters
     ----------
     cholesky : bool, optional
-        Whether the *constrained* side of the transform is the Cholesky factor `L`,
-        rather than the full covariance matrix `Sigma = L @ L.T`.
+        Whether the *constrained* side of the transform is the Cholesky factor,
+        rather than the full covariance matrix.
         Default is False (use the full covariance matrix).
     diag_kwargs : dict, optional
         Keyword arguments forwarded to the :py:class:`~transforms.Constrain` transform
-        that constrains the diagonal of `L` to be positive.
+        that constrains the diagonal to be positive.
         The `lower` bound is always fixed to 0.0.
 
     Examples
     --------
-    >>> adapter = bf.Adapter().covariance_matrix("cov_x", diag_kwargs={"method": "exp"})
+    >>> adapter = bf.Adapter().as_covariance_matrix("cov_x", diag_kwargs={"method": "exp"})
     """
 
     def __init__(self, *, cholesky: bool = False, diag_kwargs: dict = None):

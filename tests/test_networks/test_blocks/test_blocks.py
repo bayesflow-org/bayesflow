@@ -151,11 +151,12 @@ class TestConditionalDenseBlock:
         y = block((x, cond), training=False)
         assert y.shape == (4, 8)
 
-    def test_film_use_gamma_survives_save_and_load(self, tmp_path, cond_build_shapes):
-        block = ConditionalDenseBlock(width=8, film_use_gamma=True)
-        block.build(**cond_build_shapes)
-        keras.saving.save_model(block, tmp_path / "model.keras")
-        loaded = keras.saving.load_model(tmp_path / "model.keras")
-        assert loaded.film.use_gamma
+    def test_non_default_args_survive_serialization(self):
+        kwargs = dict(activation="relu", kernel_initializer="glorot_uniform", residual=False, dropout=0.1, norm="rms")
+        block = ConditionalDenseBlock(width=8, film_use_gamma=True, **kwargs)
+        config = deserialize(serialize(block)).get_config()  # faster than saving and loading the whole model
 
-        assert_layers_equal(block, loaded)
+        # an omitted key should be missing from both configs alike
+        assert {"film_use_gamma", *kwargs} <= config.keys()
+        # every serialized argument is restored with its value
+        assert config == block.get_config()

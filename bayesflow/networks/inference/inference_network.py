@@ -77,8 +77,8 @@ class InferenceNetwork(keras.Layer):
         """Extract mask kwargs from source dict.
 
         Looks up each key in *keys* and includes it in the result if its value
-        is not ``None``. Raises a Value Error if *source* holds a mask outside
-        of *keys* (because the subnet would not receive it it).
+        is not ``None``. Raises a ValueError if *source* holds a mask outside
+        of *keys*, because the subnet would not receive it.
         """
         self._raise_on_unused_masks(keys, source)
         return {key: source[key] for key in keys if source.get(key) is not None}

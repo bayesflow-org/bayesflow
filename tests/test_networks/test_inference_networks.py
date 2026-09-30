@@ -224,3 +224,24 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
+
+
+@pytest.mark.parametrize(
+    "network_name",
+    ["affine_coupling_flow", "flow_matching", "consistency_model", "stable_consistency_model", "diffusion_model"],
+)
+@pytest.mark.parametrize("mask_type", ["mask", "attention_mask"])
+def test_unused_mask_raises(network_name, mask_type, request, random_samples, random_conditions):
+    """when a mask is not forwarded from the network to its subnet, it must raise an error."""
+    network = request.getfixturevalue(network_name)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    network.build(keras.ops.shape(random_samples), conditions_shape)
+
+    # build proper mask
+    batch_size, xz_dim = keras.ops.shape(random_samples)
+    mask_shapes = {"mask": (batch_size, xz_dim), "attention_mask": (batch_size, xz_dim, xz_dim)}
+    mask = keras.ops.ones(mask_shapes[mask_type])
+
+    # forward pass checks masks
+    with pytest.raises(ValueError, match=f"'{mask_type}'"):
+        network.compute_metrics(random_samples, conditions=random_conditions, **{mask_type: mask})

@@ -248,3 +248,15 @@ def test_unused_mask_raises(network_name, mask_type, request, random_samples, ra
     # sampling path checks masks
     with pytest.raises(ValueError, match=f"'{mask_type}'"):
         network.sample(batch_size, conditions=random_conditions, **{mask_type: mask})
+
+
+def test_accepted_attention_mask_does_not_raise(flow_matching_transformer, random_samples):
+    """a mask that the subnet accepts should not be rejected,
+    e.g. `DiffusionTransformer.call` accepts `attention_mask`."""
+    flow_matching_transformer.build(keras.ops.shape(random_samples))
+    batch_size, xz_dim = keras.ops.shape(random_samples)
+    attention_mask = keras.ops.ones((batch_size, xz_dim, xz_dim))  # (B, D, D), all tokens attend to each other
+
+    # this would raise a ValueError if the check raised a false alarm
+    flow_matching_transformer.compute_metrics(random_samples, attention_mask=attention_mask)
+    flow_matching_transformer.sample(batch_size, attention_mask=attention_mask)

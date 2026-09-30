@@ -104,9 +104,12 @@ class ContinuousApproximator(Approximator):
         summary_mask : Tensor, optional
             Padding / key mask forwarded to the summary network (default is None).
         inference_attention_mask : Tensor, optional
-            Attention mask forwarded to the inference network (default is None).
+            Attention mask forwarded to the inference network's subnet (default is None).
+            Coupling flows and free-form networks raise a ValueError if their subnet does not accept it.
         inference_mask : Tensor, optional
-            Padding / key mask forwarded to the inference network (default is None).
+            Padding / key mask forwarded as ``mask`` to the inference network (default is None).
+            It does not remove target dimensions from the loss or density;
+            coupling flows and free-form networks raise a ValueError when passed one.
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").

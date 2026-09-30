@@ -24,10 +24,19 @@ class Transform(InvertibleLayer):
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
         raise NotImplementedError
 
-    def call(self, xz: Tensor, parameters: dict[str, Tensor], inverse: bool = False) -> (Tensor, Tensor):
+    def call(
+        self,
+        xz: Tensor,
+        parameters: dict[str, Tensor],
+        inverse: bool = False,
+        fixed_target_mask: Tensor = None,
+    ) -> (Tensor, Tensor):
+        kwargs = {}
+        if fixed_target_mask is not None:
+            kwargs["fixed_target_mask"] = fixed_target_mask
         if inverse:
-            return self._inverse(xz, parameters)
-        return self._forward(xz, parameters)
+            return self._inverse(xz, parameters, **kwargs)
+        return self._forward(xz, parameters, **kwargs)
 
     def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
         raise NotImplementedError

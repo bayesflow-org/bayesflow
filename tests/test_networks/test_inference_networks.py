@@ -242,9 +242,9 @@ def test_unused_mask_raises(network_name, mask_type, request, random_samples, ra
     mask_shapes = {"mask": (batch_size, xz_dim), "attention_mask": (batch_size, xz_dim, xz_dim)}
     mask = keras.ops.ones(mask_shapes[mask_type])
 
-    # forward pass checks masks
+    # training path checks masks
     with pytest.raises(ValueError, match=f"'{mask_type}'"):
         network.compute_metrics(random_samples, conditions=random_conditions, **{mask_type: mask})
-    # backward pass check masks
+    # sampling path checks masks
     with pytest.raises(ValueError, match=f"'{mask_type}'"):
         network.sample(batch_size, conditions=random_conditions, **{mask_type: mask})

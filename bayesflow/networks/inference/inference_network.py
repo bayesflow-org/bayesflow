@@ -73,14 +73,24 @@ class InferenceNetwork(keras.Layer):
         self.base_distribution = find_distribution(base_distribution)
         self.seed_generator = keras.random.SeedGenerator()
 
-    @staticmethod
-    def _collect_mask_kwargs(keys: Sequence[str], source: dict) -> dict:
+    def _collect_mask_kwargs(self, keys: Sequence[str], source: dict) -> dict:
         """Extract mask kwargs from source dict.
 
         Looks up each key in *keys* and includes it in the result if its value
-        is not ``None``.
+        is not ``None``. Raises a Value Error if *source* holds a mask outside
+        of *keys* (because the subnet would not receive it it).
         """
+        self._raise_on_unused_masks(keys, source)
         return {key: source[key] for key in keys if source.get(key) is not None}
+
+    def _raise_on_unused_masks(self, keys: Sequence[str], source: dict) -> None:
+        unused = []
+        for key in ("mask", "attention_mask"):
+            if source.get(key) is not None and key not in keys:
+                unused.append(key)
+        if unused:
+            names = ", ".join([repr(u) for u in unused])
+            raise ValueError(f"{type(self).__name__} was passed {names}, but does not forward it to its subnets.")
 
     def call(
         self,

@@ -245,3 +245,6 @@ def test_unused_mask_raises(network_name, mask_type, request, random_samples, ra
     # forward pass checks masks
     with pytest.raises(ValueError, match=f"'{mask_type}'"):
         network.compute_metrics(random_samples, conditions=random_conditions, **{mask_type: mask})
+    # backward pass check masks
+    with pytest.raises(ValueError, match=f"'{mask_type}'"):
+        network.sample(batch_size, conditions=random_conditions, **{mask_type: mask})

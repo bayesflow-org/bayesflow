@@ -1,5 +1,6 @@
 import keras
 
+from bayesflow.types import Tensor
 from bayesflow.utils import layer_kwargs
 
 from bayesflow.utils.serialization import deserialize
@@ -31,3 +32,14 @@ class InvertibleLayer(keras.Layer):
 
     def _inverse(self, *args, **kwargs):
         raise NotImplementedError
+
+    @staticmethod
+    def _skip_fixed_dims(
+        inputs: Tensor, outputs: Tensor, log_jac: Tensor, fixed_target_mask: Tensor | None
+    ) -> tuple[Tensor, Tensor]:
+        """Return outputs and the log-det and honor the ``fixed_target_mask``:
+        Fixed dims are unchanged and don't affect the log-det."""
+        if fixed_target_mask is not None:
+            outputs = keras.ops.where(fixed_target_mask, outputs, inputs)
+            log_jac = keras.ops.where(fixed_target_mask, log_jac, 0.0)
+        return outputs, keras.ops.sum(log_jac, axis=-1)

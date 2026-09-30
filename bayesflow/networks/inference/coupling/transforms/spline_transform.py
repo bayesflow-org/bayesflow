@@ -174,7 +174,9 @@ class SplineTransform(Transform):
 
         return constrained_parameters
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
+    def _forward(
+        self, x: Tensor, parameters: dict[str, Tensor], fixed_target_mask: Tensor = None
+    ) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -223,11 +225,15 @@ class SplineTransform(Transform):
         z = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
 
+        z, log_jac = self._skip_fixed_dims(x, z, log_jac, fixed_target_mask)
+
         log_det = keras.ops.sum(log_jac, axis=-1)
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
+    def _inverse(
+        self, z: Tensor, parameters: dict[str, Tensor], fixed_target_mask: Tensor = None
+    ) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -275,6 +281,8 @@ class SplineTransform(Transform):
 
         x = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
+
+        x, log_jac = self._skip_fixed_dims(z, x, log_jac, fixed_target_mask)
 
         log_det = keras.ops.sum(log_jac, axis=-1)
 

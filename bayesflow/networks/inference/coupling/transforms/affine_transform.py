@@ -53,14 +53,22 @@ class AffineTransform(Transform):
         parameters["scale"] = scale
         return parameters
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
+    def _forward(
+        self, x: Tensor, parameters: dict[str, Tensor] = None, fixed_target_mask: Tensor = None
+    ) -> tuple[Tensor, Tensor]:
         z = parameters["scale"] * x + parameters["shift"]
-        log_det = ops.sum(ops.log(parameters["scale"]), axis=-1)
+        log_jac = ops.log(parameters["scale"])
+        z, log_jac = self._skip_fixed_dims(x, z, log_jac, fixed_target_mask)
+        log_det = ops.sum(log_jac, axis=-1)
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
+    def _inverse(
+        self, z: Tensor, parameters: dict[str, Tensor] = None, fixed_target_mask: Tensor = None
+    ) -> tuple[Tensor, Tensor]:
         x = (z - parameters["shift"]) / parameters["scale"]
-        log_det = -ops.sum(ops.log(parameters["scale"]), axis=-1)
+        log_jac = -ops.log(parameters["scale"])
+        x, log_jac = self._skip_fixed_dims(z, x, log_jac, fixed_target_mask)
+        log_det = ops.sum(log_jac, axis=-1)
 
         return x, log_det

@@ -74,6 +74,7 @@ class ConditionalDenseBlock(keras.Layer):
         self.residual = residual
         self.dropout = dropout
         self.norm = norm
+        self.film_use_gamma = film_use_gamma
 
         # Internal dense layer
         self.dense = keras.layers.Dense(self.width, kernel_initializer=kernel_initializer, name="dense")
@@ -174,5 +175,6 @@ class ConditionalDenseBlock(keras.Layer):
             "residual": self.residual,
             "dropout": self.dropout,
             "norm": self.norm,
+            "film_use_gamma": self.film_use_gamma,
         }
         return base | serialize(config)

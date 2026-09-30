@@ -150,3 +150,13 @@ class TestConditionalDenseBlock:
         cond = keras.random.normal((4, 3))
         y = block((x, cond), training=False)
         assert y.shape == (4, 8)
+
+    def test_non_default_args_survive_serialization(self):
+        kwargs = dict(activation="relu", kernel_initializer="glorot_uniform", residual=False, dropout=0.1, norm="rms")
+        block = ConditionalDenseBlock(width=8, film_use_gamma=True, **kwargs)
+        config = deserialize(serialize(block)).get_config()  # faster than saving and loading the whole model
+
+        # an omitted key should be missing from both configs alike
+        assert {"film_use_gamma", *kwargs} <= config.keys()
+        # every serialized argument is restored with its value
+        assert config == block.get_config()

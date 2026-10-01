@@ -26,3 +26,7 @@ def trace_permutations(layers: list[keras.Layer], xz: Tensor | None) -> list[Ten
             xz = keras.ops.take(xz, layer.forward_indices, axis=-1)
         trace.append(xz)
     return trace
+
+
+def permute_like(layers: list[keras.Layer], xz: Tensor) -> Tensor:
+    return trace_permutations(layers, xz)[-1]

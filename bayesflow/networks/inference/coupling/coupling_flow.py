@@ -46,8 +46,9 @@ class CouplingFlow(InferenceNetwork):
 
     A ``fixed_target_mask`` (1 = inferred, 0 = fixed) lets the flow train on targets
     with a varying number of dimensions. Fixed dimensions are passed without being
-    changed and are excluded from density computation. During sampling, they are
-    filled with ``fixed_target_value``. This mask is currently not supported with
+    changed and are excluded from density computation, but still condition the
+    inferred dimensions, so padded dimensions should hold a constant value. During
+    sampling, they are filled with ``fixed_target_value``. This mask is currently not supported with
     ``permutation="orthogonal"`` or a Student-t base distribution.
 
     Parameters
@@ -197,8 +198,10 @@ class CouplingFlow(InferenceNetwork):
 
         # latent values for fixed dims must be accounted for
         if latent_mask is not None:
-            fixed_values = kwargs[MaskName.FIXED_TARGET_VALUE]
-            fixed_values = permute_like(self.invertible_layers, fixed_values)
+            fixed_target_value = kwargs.get(MaskName.FIXED_TARGET_VALUE)
+            if fixed_target_value is None:
+                raise ValueError("`fixed_target_mask` requires `fixed_target_value` to fill the fixed dimensions.")
+            fixed_values = permute_like(self.invertible_layers, fixed_target_value)
             z = keras.ops.where(latent_mask, z, fixed_values)
 
         x = z

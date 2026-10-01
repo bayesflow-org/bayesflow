@@ -1,5 +1,8 @@
+import keras
+
 from bayesflow.types import Tensor
 from ..invertible_layer import InvertibleLayer
+from ..masks import skip_fixed_dims
 
 
 class Transform(InvertibleLayer):
@@ -11,7 +14,9 @@ class Transform(InvertibleLayer):
     bijection.
 
     Subclasses implement ``params_per_dim``, ``split_parameters``,
-    ``constrain_parameters``, ``_forward`` and ``_inverse``.
+    ``constrain_parameters``, ``_forward`` and ``_inverse``. The latter two return
+    the transformed values and their elementwise log-Jacobian;
+    ``call`` reduces it to the log-determinant.
     """
 
     @property
@@ -24,10 +29,19 @@ class Transform(InvertibleLayer):
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
         raise NotImplementedError
 
-    def call(self, xz: Tensor, parameters: dict[str, Tensor], inverse: bool = False) -> (Tensor, Tensor):
+    def call(
+        self,
+        xz: Tensor,
+        parameters: dict[str, Tensor],
+        inverse: bool = False,
+        fixed_target_mask: Tensor = None,
+    ) -> (Tensor, Tensor):
         if inverse:
-            return self._inverse(xz, parameters)
-        return self._forward(xz, parameters)
+            out, log_jac = self._inverse(xz, parameters)
+        else:
+            out, log_jac = self._forward(xz, parameters)
+        out, log_jac = skip_fixed_dims(xz, out, log_jac, fixed_target_mask)
+        return out, keras.ops.sum(log_jac, axis=-1)
 
     def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
         raise NotImplementedError

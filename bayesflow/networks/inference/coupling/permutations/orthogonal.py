@@ -24,6 +24,8 @@ class OrthogonalPermutation(InvertibleLayer):
         self.weight = self.add_weight(shape=(xz_shape[-1], xz_shape[-1]), initializer="orthogonal", trainable=True)
 
     def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
+        if kwargs.get("fixed_target_mask") is not None:
+            raise NotImplementedError(f"{type(self).__name__} does not support a `fixed_target_mask`.")
         if inverse:
             return self._inverse(xz)
         return self._forward(xz)

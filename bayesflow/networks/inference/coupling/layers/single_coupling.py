@@ -94,22 +94,34 @@ class SingleCoupling(InvertibleLayer):
         return self._forward(x1, x2, conditions=conditions, training=training, **kwargs)
 
     def _forward(
-        self, x1: Tensor, x2: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
+        self,
+        x1: Tensor,
+        x2: Tensor,
+        conditions: Tensor = None,
+        training: bool = False,
+        fixed_target_mask: Tensor = None,
+        **kwargs,
     ) -> tuple[tuple[Tensor, Tensor], Tensor]:
-        """Transform (x1, x2) -> (x1, f(x2; x1))"""
+        """Transform (x1, x2) -> (x1, f(x2; x1)); ``fixed_target_mask`` masks x2"""
         z1 = x1
         parameters = self.get_parameters(x1, conditions=conditions, training=training)
-        z2, log_det = self.transform(x2, parameters=parameters)
+        z2, log_det = self.transform(x2, parameters=parameters, fixed_target_mask=fixed_target_mask)
 
         return (z1, z2), log_det
 
     def _inverse(
-        self, z1: Tensor, z2: Tensor, conditions: Tensor = None, training: bool = False, **kwargs
+        self,
+        z1: Tensor,
+        z2: Tensor,
+        conditions: Tensor = None,
+        training: bool = False,
+        fixed_target_mask: Tensor = None,
+        **kwargs,
     ) -> tuple[tuple[Tensor, Tensor], Tensor]:
-        """Transform (x1, f(x2; x1)) -> (x1, x2)"""
+        """Transform (x1, f(x2; x1)) -> (x1, x2); ``fixed_target_mask`` masks x2"""
         x1 = z1
         parameters = self.get_parameters(x1, conditions=conditions, training=training, **kwargs)
-        x2, log_det = self.transform(z2, parameters=parameters, inverse=True)
+        x2, log_det = self.transform(z2, parameters=parameters, inverse=True, fixed_target_mask=fixed_target_mask)
 
         return (x1, x2), log_det
 

@@ -76,6 +76,7 @@ class ContinuousApproximator(Approximator):
         summary_mask: Tensor | None = None,
         inference_attention_mask: Tensor | None = None,
         inference_mask: Tensor | None = None,
+        inference_fixed_target_mask: Tensor | None = None,
         stage: str = "training",
     ) -> dict[str, Tensor]:
         """
@@ -107,6 +108,9 @@ class ContinuousApproximator(Approximator):
             Attention mask forwarded to the inference network (default is None).
         inference_mask : Tensor, optional
             Padding / key mask forwarded to the inference network (default is None).
+        inference_fixed_target_mask : Tensor, optional
+            Mask of the inference variables (1 = inferred, 0 = fixed) forwarded to the
+            inference network (default is None).
         stage : str, optional
             Current training stage (e.g., "training", "validation", "inference"). Controls
             the behavior of standardization and some metric computations (default is "training").
@@ -128,6 +132,7 @@ class ContinuousApproximator(Approximator):
             summary_mask=summary_mask,
             inference_attention_mask=inference_attention_mask,
             inference_mask=inference_mask,
+            inference_fixed_target_mask=inference_fixed_target_mask,
         )
         summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
         inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
@@ -328,6 +333,10 @@ class ContinuousApproximator(Approximator):
         -------
         np.ndarray
             Log-probabilities of the distribution `p(inference_variables | inference_conditions, h(summary_conditions))`
+
+        Notes
+        -----
+        With an ``inference_fixed_target_mask`` in the data, the log-density ignores the fixed variables.
         """
 
         # NOTE: We cannot use _prepare_conditions here because we need

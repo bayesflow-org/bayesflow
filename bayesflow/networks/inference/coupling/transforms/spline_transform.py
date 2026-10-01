@@ -223,9 +223,7 @@ class SplineTransform(Transform):
         z = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
 
-        log_det = keras.ops.sum(log_jac, axis=-1)
-
-        return z, log_det
+        return z, log_jac
 
     def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
@@ -276,6 +274,4 @@ class SplineTransform(Transform):
         x = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
 
-        log_det = keras.ops.sum(log_jac, axis=-1)
-
-        return x, log_det
+        return x, log_jac

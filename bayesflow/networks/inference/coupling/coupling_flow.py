@@ -4,6 +4,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.utils import (
+    MaskName,
     find_permutation,
     layer_kwargs,
     weighted_mean,
@@ -12,6 +13,7 @@ from bayesflow.utils.serialization import serializable, serialize
 
 from .actnorm import ActNorm
 from .layers import DualCoupling
+from .masks import permute_like, trace_permutations
 
 from ...inference import InferenceNetwork
 
@@ -41,6 +43,13 @@ class CouplingFlow(InferenceNetwork):
     if you see numerical instabilities (e.g., ``nan`` loss) like so:
 
     ``CouplingFlow(transform_kwargs={"default_domain": (-5., 5., -5., 5.)})``
+
+    A ``fixed_target_mask`` (1 = inferred, 0 = fixed) lets the flow train on targets
+    with a varying number of dimensions. Fixed dimensions are passed without being
+    changed and are excluded from density computation, but still condition the
+    inferred dimensions, so padded dimensions should hold a constant value. During
+    sampling, they are filled with ``fixed_target_value``. This mask is currently not supported with
+    ``permutation="orthogonal"`` or a Student-t base distribution.
 
     Parameters
     ----------
@@ -165,14 +174,17 @@ class CouplingFlow(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET)
+        *layer_masks, latent_mask = trace_permutations(self.invertible_layers, fixed_target_mask)
+
         z = x
         log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
-        for layer in self.invertible_layers:
-            z, det = layer(z, conditions=conditions, inverse=False, training=training)
+        for layer, mask in zip(self.invertible_layers, layer_masks):
+            z, det = layer(z, conditions=conditions, inverse=False, training=training, fixed_target_mask=mask)
             log_det += det
 
         if density:
-            log_density_latent = self.base_distribution.log_prob(z)
+            log_density_latent = self.base_distribution.log_prob(z, mask=latent_mask)
             log_density = log_density_latent + log_det
             return z, log_density
 
@@ -181,14 +193,25 @@ class CouplingFlow(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET)
+        *layer_masks, latent_mask = trace_permutations(self.invertible_layers, fixed_target_mask)
+
+        # latent values for fixed dims must be accounted for
+        if latent_mask is not None:
+            fixed_target_value = kwargs.get(MaskName.FIXED_TARGET_VALUE)
+            if fixed_target_value is None:
+                raise ValueError("`fixed_target_mask` requires `fixed_target_value` to fill the fixed dimensions.")
+            fixed_values = permute_like(self.invertible_layers, fixed_target_value)
+            z = keras.ops.where(latent_mask, z, fixed_values)
+
         x = z
         log_det = keras.ops.zeros(keras.ops.shape(z)[:-1])
-        for layer in reversed(self.invertible_layers):
-            x, det = layer(x, conditions=conditions, inverse=True, training=training)
+        for layer, mask in reversed(list(zip(self.invertible_layers, layer_masks))):
+            x, det = layer(x, conditions=conditions, inverse=True, training=training, fixed_target_mask=mask)
             log_det += det
 
         if density:
-            log_prob = self.base_distribution.log_prob(z)
+            log_prob = self.base_distribution.log_prob(z, mask=latent_mask)
             log_density = log_prob - log_det
             return x, log_density
 

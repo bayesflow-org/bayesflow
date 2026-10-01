@@ -4,6 +4,7 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils.serialization import serializable
 
 from .invertible_layer import InvertibleLayer
+from .masks import skip_fixed_dims
 
 
 @serializable("bayesflow.networks")
@@ -38,14 +39,18 @@ class ActNorm(InvertibleLayer):
             return self._inverse(xz, **kwargs)
         return self._forward(xz, **kwargs)
 
-    def _forward(self, x: Tensor, **kwargs) -> tuple[Tensor, Tensor]:
+    def _forward(self, x: Tensor, fixed_target_mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
         z = self.scale * x + self.bias
-        log_det = ops.sum(ops.log(ops.abs(self.scale)), axis=-1)
+        log_jac = ops.log(ops.abs(self.scale))
+        z, log_jac = skip_fixed_dims(x, z, log_jac, fixed_target_mask)
+        log_det = ops.sum(log_jac, axis=-1)
         log_det = ops.broadcast_to(log_det, ops.shape(x)[:-1])
         return z, log_det
 
-    def _inverse(self, z: Tensor, **kwargs) -> tuple[Tensor, Tensor]:
+    def _inverse(self, z: Tensor, fixed_target_mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
         x = (z - self.bias) / self.scale
-        log_det = -ops.sum(ops.log(ops.abs(self.scale)), axis=-1)
+        log_jac = -ops.log(ops.abs(self.scale))
+        x, log_jac = skip_fixed_dims(z, x, log_jac, fixed_target_mask)
+        log_det = ops.sum(log_jac, axis=-1)
         log_det = ops.broadcast_to(log_det, ops.shape(z)[:-1])
         return x, log_det

@@ -36,9 +36,18 @@ def permute_like_flow(flow, xz):
     return xz
 
 
-@pytest.fixture()
-def flow(coupling_flow, random_samples, random_conditions):
-    return build_with_random_weights(coupling_flow, random_samples, random_conditions)
+@pytest.fixture(
+    params=[
+        {"transform": "affine"},
+        {"transform": "spline", "transform_kwargs": {"bins": 8}},
+        {"transform": "affine", "permutation": "swap"},
+        {"transform": "affine", "permutation": None, "use_actnorm": False},
+    ],
+    ids=["affine", "spline", "swap", "no_permutation_no_actnorm"],
+)
+def flow(request, random_samples, random_conditions):
+    flow = CouplingFlow(depth=2, subnet="mlp", subnet_kwargs={"widths": (8, 8)}, **request.param)
+    return build_with_random_weights(flow, random_samples, random_conditions)
 
 
 def test_mask_of_ones_is_moot(flow, random_samples, random_conditions):

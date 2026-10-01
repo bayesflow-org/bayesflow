@@ -42,6 +42,12 @@ class CouplingFlow(InferenceNetwork):
 
     ``CouplingFlow(transform_kwargs={"default_domain": (-5., 5., -5., 5.)})``
 
+    A ``fixed_target_mask`` (1 = inferred, 0 = fixed) lets the flow train on targets
+    with a varying number of dimensions. Fixed dimensions are passed without being
+    unchanged and are excluded from density computation. During sampling, they are
+    filled with ``fixed_target_value``. This mask is currently not supported with
+    ``permutation="orthogonal"`` or a Student-t base distribution.
+
     Parameters
     ----------
     subnet : str or type, optional

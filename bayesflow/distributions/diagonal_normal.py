@@ -85,14 +85,16 @@ class DiagonalNormal(Distribution):
             self._mean = self.mean
             self._std = self.std
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
-        result = -0.5 * ops.sum((samples - self._mean) ** 2 / self._std**2, axis=-1)
+    def log_prob(self, samples: Tensor, *, normalize: bool = True, mask: Tensor | None = None) -> Tensor:
+        log_prob = -0.5 * (samples - self._mean) ** 2 / self._std**2
 
         if normalize:
-            log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - ops.sum(ops.log(self._std))
-            result += log_normalization_constant
+            log_prob += -0.5 * math.log(2.0 * math.pi) - ops.log(self._std)
 
-        return result
+        if mask is not None:
+            log_prob = ops.where(mask, log_prob, 0.0)
+
+        return ops.sum(log_prob, axis=-1)
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:

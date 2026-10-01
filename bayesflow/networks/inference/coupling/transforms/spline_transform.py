@@ -7,7 +7,6 @@ from bayesflow.utils import pad, searchsorted
 from bayesflow.utils.keras_utils import shifted_softplus
 from bayesflow.utils.serialization import serializable
 
-from ..masks import skip_fixed_dims
 from ._rational_quadratic import _rational_quadratic_spline
 from .transform import Transform
 
@@ -175,9 +174,7 @@ class SplineTransform(Transform):
 
         return constrained_parameters
 
-    def _forward(
-        self, x: Tensor, parameters: dict[str, Tensor], fixed_target_mask: Tensor = None
-    ) -> tuple[Tensor, Tensor]:
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -226,15 +223,9 @@ class SplineTransform(Transform):
         z = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
 
-        z, log_jac = skip_fixed_dims(x, z, log_jac, fixed_target_mask)
+        return z, log_jac
 
-        log_det = keras.ops.sum(log_jac, axis=-1)
-
-        return z, log_det
-
-    def _inverse(
-        self, z: Tensor, parameters: dict[str, Tensor], fixed_target_mask: Tensor = None
-    ) -> tuple[Tensor, Tensor]:
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         # avoid side effects for mutable args
         parameters = parameters.copy()
 
@@ -283,8 +274,4 @@ class SplineTransform(Transform):
         x = keras.ops.where(inside, spline, affine)
         log_jac = keras.ops.where(inside, spline_log_jac, affine_log_jac)
 
-        x, log_jac = skip_fixed_dims(z, x, log_jac, fixed_target_mask)
-
-        log_det = keras.ops.sum(log_jac, axis=-1)
-
-        return x, log_det
+        return x, log_jac

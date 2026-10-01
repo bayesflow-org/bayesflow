@@ -115,6 +115,13 @@ def test_samples_keep_fixed_values(flow, random_samples, random_conditions):
     np.testing.assert_array_equal(inputs_fixed, outputs_fixed)
 
 
+def test_sample_without_fixed_value_raises(flow, random_samples, random_conditions):
+    batch_size, xz_dim = keras.ops.shape(random_samples)
+
+    with pytest.raises(ValueError, match="fixed_target_value"):
+        flow.sample(batch_size, conditions=random_conditions, fixed_target_mask=make_mask(batch_size, xz_dim))
+
+
 def test_orthogonal_permutation_raises(random_samples, random_conditions):
     """Submatrices of the learned orthogonal matrix can be singular, so masking is unsafe here."""
     flow = CouplingFlow(depth=1, permutation="orthogonal", subnet_kwargs={"widths": [8]})

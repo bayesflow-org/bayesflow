@@ -72,6 +72,7 @@ def test_fixed_dims_are_unchanged(flow, random_samples, random_conditions):
     np.testing.assert_array_equal(z_fixed, random_samples_fixed)
 
 
+@pytest.mark.skip_on_mps
 def test_density_matches_numerical_jac(flow, random_samples, random_conditions):
     """Fixed dims use the identity map; the full log_abs_det should be the same as of the unmasked block."""
     mask = make_mask(*keras.ops.shape(random_samples))

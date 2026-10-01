@@ -4,6 +4,7 @@ from bayesflow.types import Tensor
 from bayesflow.utils.keras_utils import shifted_softplus
 from bayesflow.utils.serialization import serializable
 
+from ..masks import skip_fixed_dims
 from .transform import Transform
 
 
@@ -58,7 +59,7 @@ class AffineTransform(Transform):
     ) -> tuple[Tensor, Tensor]:
         z = parameters["scale"] * x + parameters["shift"]
         log_jac = ops.log(parameters["scale"])
-        z, log_jac = self._skip_fixed_dims(x, z, log_jac, fixed_target_mask)
+        z, log_jac = skip_fixed_dims(x, z, log_jac, fixed_target_mask)
         log_det = ops.sum(log_jac, axis=-1)
 
         return z, log_det
@@ -68,7 +69,7 @@ class AffineTransform(Transform):
     ) -> tuple[Tensor, Tensor]:
         x = (z - parameters["shift"]) / parameters["scale"]
         log_jac = -ops.log(parameters["scale"])
-        x, log_jac = self._skip_fixed_dims(z, x, log_jac, fixed_target_mask)
+        x, log_jac = skip_fixed_dims(z, x, log_jac, fixed_target_mask)
         log_det = ops.sum(log_jac, axis=-1)
 
         return x, log_det

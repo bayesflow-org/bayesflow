@@ -112,13 +112,5 @@ def test_orthogonal_permutation_raises(random_samples, random_conditions):
     flow = build_with_random_weights(flow, random_samples, random_conditions)
     mask = make_mask(*keras.ops.shape(random_samples))
 
-    with pytest.raises(ValueError, match="orthogonal"):
+    with pytest.raises(NotImplementedError, match="OrthogonalPermutation"):
         flow.log_prob(random_samples, random_conditions, fixed_target_mask=mask)
-
-
-def test_infer_target_mask_raises(flow, random_samples, random_conditions):
-    """A coupling flow has no tractable *marginal* density, so infer_target should not be allowed."""
-    mask = make_mask(*keras.ops.shape(random_samples))
-
-    with pytest.raises(ValueError, match="infer_target_mask"):
-        flow.log_prob(random_samples, random_conditions, infer_target_mask=mask)

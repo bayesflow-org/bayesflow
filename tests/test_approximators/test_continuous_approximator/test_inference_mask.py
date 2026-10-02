@@ -5,7 +5,7 @@ import bayesflow as bf
 
 
 def test_inference_mask_raises_for_coupling_flow():
-    """``inference_mask`` is a subnet padding mask but coupling flows forward no masks."""
+    """coupling flows use no masks, so `inference_mask` must raise."""
     approximator = bf.ContinuousApproximator(inference_network=bf.networks.CouplingFlow(), standardize=None)
     approximator.build({"inference_variables": (8, 4), "inference_conditions": (8, 3)})
 

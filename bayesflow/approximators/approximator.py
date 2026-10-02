@@ -371,13 +371,12 @@ class Approximator(BackendApproximator):
             Forwarded as ``mask`` to the summary network.
         inference_attention_mask : str, optional
             Name of the attention mask for the inference network.
-            Forwarded as ``attention_mask`` to the inference network, which passes it on to its subnet.
-            Coupling flows and free-form networks raise a ValueError if their subnet does not accept it.
+            Forwarded as ``attention_mask`` to the inference network's subnet.
+            Raises a ValueError if the subnet does not accept it.
         inference_mask : str, optional
             Name of the padding/key mask for the inference network.
-            Forwarded as ``mask`` to the inference network, for custom networks that consume it.
-            It currently does not mask out target dimensions from the loss or density;
-            coupling flows and free-form networks raise a ValueError when passed one.
+            Forwarded as ``mask`` to the inference network. No built-in network currently uses it,
+            it does not remove target dimensions from the loss. Raises a ValueError if ignored.
         """
 
         adapter = Adapter()

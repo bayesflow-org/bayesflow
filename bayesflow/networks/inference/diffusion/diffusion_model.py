@@ -9,7 +9,6 @@ from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
-    filter_kwargs,
     integrate,
     integrate_stochastic,
     jacobian_trace,
@@ -101,12 +100,7 @@ class DiffusionModel(InferenceNetwork):
         https://dl.acm.org/doi/proceedings/10.5555/3692070
     """
 
-    _SUBNET_MASK_KEYS = {
-        "attention_mask",
-        MaskName.FIXED_TARGET,
-        MaskName.INFER_TARGET,
-        MaskName.OBSERVED_CONDITION,
-    }
+    _NETWORK_MASK_KEYS = frozenset({MaskName.FIXED_TARGET, MaskName.FIXED_TARGET_VALUE})
 
     def __init__(
         self,
@@ -151,7 +145,6 @@ class DiffusionModel(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
         self.fixed_target_prob = fixed_target_prob
@@ -169,7 +162,7 @@ class DiffusionModel(InferenceNetwork):
         stage: str = "training",
         **kwargs,
     ) -> dict[str, Tensor]:
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
 
         training = stage == "training"
         noise_schedule_training_stage = stage == "training" or stage == "validation"
@@ -480,7 +473,7 @@ class DiffusionModel(InferenceNetwork):
             The velocity tensor of the same shape as `xz`, representing the right-hand
             side of the probability-flow SDE or ODE at the given `time`.
         """
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
 
         if log_snr_t is None:
             log_snr_t = self.noise_schedule.get_log_snr(t=time, training=training)
@@ -1307,7 +1300,7 @@ class DiffusionModel(InferenceNetwork):
         if not kwargs:
             return kwargs
         repeated = dict(kwargs)
-        for key in self._SUBNET_MASK_KEYS:
+        for key in self._MASK_KEYS:
             value = repeated.get(key)
             if value is None or not hasattr(value, "shape"):
                 continue

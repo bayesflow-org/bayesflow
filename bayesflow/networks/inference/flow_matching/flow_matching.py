@@ -7,7 +7,6 @@ from bayesflow.types import Shape, Tensor
 from bayesflow.utils import (
     expand_right_as,
     find_network,
-    filter_kwargs,
     integrate,
     integrate_stochastic,
     jacobian_trace,
@@ -104,12 +103,7 @@ class FlowMatching(InferenceNetwork):
         Inference.
     """
 
-    _SUBNET_MASK_KEYS = {
-        "attention_mask",
-        MaskName.FIXED_TARGET,
-        MaskName.INFER_TARGET,
-        MaskName.OBSERVED_CONDITION,
-    }
+    _NETWORK_MASK_KEYS = frozenset({MaskName.FIXED_TARGET, MaskName.FIXED_TARGET_VALUE})
 
     def __init__(
         self,
@@ -145,8 +139,6 @@ class FlowMatching(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
         self.fixed_target_prob = fixed_target_prob
@@ -189,7 +181,7 @@ class FlowMatching(InferenceNetwork):
             target_velocity = x1 - x0
 
         # Generate target / condition / missingness masks
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
         mask_x, loss_mask, subnet_kwargs = sample_input_masks(
             self.subnet,
             x,
@@ -257,7 +249,7 @@ class FlowMatching(InferenceNetwork):
     def velocity(
         self, xz: Tensor, time: float | Tensor, conditions: Tensor = None, training: bool = False, **kwargs
     ) -> Tensor:
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
 
         time = keras.ops.convert_to_tensor(time, dtype=keras.ops.dtype(xz))
         time = expand_right_as(time, xz)

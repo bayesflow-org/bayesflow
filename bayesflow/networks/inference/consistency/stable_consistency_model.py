@@ -9,7 +9,6 @@ from bayesflow.utils import (
     expand_right_as,
     expand_right_to,
     find_network,
-    filter_kwargs,
     jvp,
     layer_kwargs,
     logging,
@@ -85,12 +84,7 @@ class StableConsistencyModel(InferenceNetwork):
     """
 
     EPS_WARN = 0.1
-    _SUBNET_MASK_KEYS = {
-        "attention_mask",
-        MaskName.FIXED_TARGET,
-        MaskName.INFER_TARGET,
-        MaskName.OBSERVED_CONDITION,
-    }
+    _NETWORK_MASK_KEYS = frozenset({MaskName.FIXED_TARGET, MaskName.FIXED_TARGET_VALUE})
 
     def __init__(
         self,
@@ -114,7 +108,6 @@ class StableConsistencyModel(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.subnet_projector = None
 
@@ -222,7 +215,7 @@ class StableConsistencyModel(InferenceNetwork):
             The approximate samples
         """
         seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
 
         steps = kwargs.get("steps", self.steps)
         rho = kwargs.get("rho", self.rho)
@@ -281,7 +274,7 @@ class StableConsistencyModel(InferenceNetwork):
     ) -> dict[str, Tensor]:
         training = stage == "training"
 
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
 
         # generate noise vector
         z = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator) * self.sigma

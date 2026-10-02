@@ -8,7 +8,6 @@ from bayesflow.types import Tensor
 from bayesflow.utils import (
     expand_right_as,
     find_network,
-    filter_kwargs,
     layer_kwargs,
     logging,
     MaskName,
@@ -81,12 +80,7 @@ class ConsistencyModel(InferenceNetwork):
         inference. arXiv:2312.05440.
     """
 
-    _SUBNET_MASK_KEYS = {
-        "attention_mask",
-        MaskName.FIXED_TARGET,
-        MaskName.INFER_TARGET,
-        MaskName.OBSERVED_CONDITION,
-    }
+    _NETWORK_MASK_KEYS = frozenset({MaskName.FIXED_TARGET, MaskName.FIXED_TARGET_VALUE})
 
     def __init__(
         self,
@@ -113,7 +107,6 @@ class ConsistencyModel(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
         self.sigma2 = ops.convert_to_tensor(sigma2)
@@ -294,7 +287,7 @@ class ConsistencyModel(InferenceNetwork):
         """
         seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
         # Extract subnet masks from kwargs
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
         steps = int(kwargs.get("steps", self.s0 + 1))
 
         if steps not in self._unique_n:
@@ -399,7 +392,7 @@ class ConsistencyModel(InferenceNetwork):
         noise = keras.random.normal(keras.ops.shape(x), dtype=keras.ops.dtype(x), seed=self.seed_generator)
 
         # Generate target / condition / missingness masks
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        subnet_kwargs = self._collect_mask_kwargs(kwargs, self.subnet)
         mask_x, loss_mask, subnet_kwargs = sample_input_masks(
             self.subnet,
             x,

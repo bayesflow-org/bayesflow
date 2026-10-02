@@ -232,7 +232,7 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 )
 @pytest.mark.parametrize("mask_type", ["mask", "attention_mask"])
 def test_unused_mask_raises(network_name, mask_type, request, random_samples, random_conditions):
-    """when a mask is not forwarded from the network to its subnet, it must raise an error."""
+    """a mask that neither the network nor its subnet uses must raise a ValueError."""
     network = request.getfixturevalue(network_name)
     conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
     network.build(keras.ops.shape(random_samples), conditions_shape)
@@ -251,12 +251,13 @@ def test_unused_mask_raises(network_name, mask_type, request, random_samples, ra
 
 
 def test_accepted_attention_mask_does_not_raise(flow_matching_transformer, random_samples):
-    """a mask that the subnet accepts should not be rejected,
-    e.g. `DiffusionTransformer.call` accepts `attention_mask`."""
+    """a mask the subnet accepts should pass through (e.g. `attention_mask` for diffusion transformers)."""
     flow_matching_transformer.build(keras.ops.shape(random_samples))
     batch_size, xz_dim = keras.ops.shape(random_samples)
     attention_mask = keras.ops.ones((batch_size, xz_dim, xz_dim))  # (B, D, D), all tokens attend to each other
 
-    # this would raise a ValueError if the check raised a false alarm
     flow_matching_transformer.compute_metrics(random_samples, attention_mask=attention_mask)
     flow_matching_transformer.sample(batch_size, attention_mask=attention_mask)
+
+    with pytest.raises(ValueError, match="'mask'"):
+        flow_matching_transformer.compute_metrics(random_samples, mask=keras.ops.ones((batch_size, xz_dim)))

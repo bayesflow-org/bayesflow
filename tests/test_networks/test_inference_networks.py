@@ -224,3 +224,40 @@ def test_compute_metrics(inference_network, random_samples, random_conditions):
 
     metrics = inference_network.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
+
+
+@pytest.mark.parametrize(
+    "network_name",
+    ["affine_coupling_flow", "flow_matching", "consistency_model", "stable_consistency_model", "diffusion_model"],
+)
+@pytest.mark.parametrize("mask_type", ["mask", "attention_mask"])
+def test_unused_mask_raises(network_name, mask_type, request, random_samples, random_conditions):
+    """a mask that neither the network nor its subnet uses must raise a ValueError."""
+    network = request.getfixturevalue(network_name)
+    conditions_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    network.build(keras.ops.shape(random_samples), conditions_shape)
+
+    # build proper mask
+    batch_size, xz_dim = keras.ops.shape(random_samples)
+    mask_shapes = {"mask": (batch_size, xz_dim), "attention_mask": (batch_size, xz_dim, xz_dim)}
+    mask = keras.ops.ones(mask_shapes[mask_type])
+
+    # training path checks masks
+    with pytest.raises(ValueError, match=f"'{mask_type}'"):
+        network.compute_metrics(random_samples, conditions=random_conditions, **{mask_type: mask})
+    # sampling path checks masks
+    with pytest.raises(ValueError, match=f"'{mask_type}'"):
+        network.sample(batch_size, conditions=random_conditions, **{mask_type: mask})
+
+
+def test_accepted_attention_mask_does_not_raise(flow_matching_transformer, random_samples):
+    """a mask the subnet accepts should pass through (e.g. `attention_mask` for diffusion transformers)."""
+    flow_matching_transformer.build(keras.ops.shape(random_samples))
+    batch_size, xz_dim = keras.ops.shape(random_samples)
+    attention_mask = keras.ops.ones((batch_size, xz_dim, xz_dim))  # (B, D, D), all tokens attend to each other
+
+    flow_matching_transformer.compute_metrics(random_samples, attention_mask=attention_mask)
+    flow_matching_transformer.sample(batch_size, attention_mask=attention_mask)
+
+    with pytest.raises(ValueError, match="'mask'"):
+        flow_matching_transformer.compute_metrics(random_samples, mask=keras.ops.ones((batch_size, xz_dim)))

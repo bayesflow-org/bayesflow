@@ -4,6 +4,7 @@ import keras
 import numpy as np
 import pytest
 
+from bayesflow.networks import DiffusionTransformer
 from bayesflow.utils import filter_kwargs
 
 
@@ -121,12 +122,14 @@ def test_masking(diffusion_type_inference_network):
         )
     )
     infer_target_mask = np.broadcast_to(infer_target_mask, (5, 2))
-    marginalized_samples = workflow.sample(
-        conditions=test_conditions,
-        num_samples=num_samples,
-        infer_target_mask=infer_target_mask,
-    )["parameters"]
-    assert samples.shape == marginalized_samples.shape
+    sample_kwargs = {"conditions": test_conditions, "num_samples": num_samples, "infer_target_mask": infer_target_mask}
+    if isinstance(workflow.approximator.inference_network.subnet, DiffusionTransformer):
+        marginalized_samples = workflow.sample(**sample_kwargs)["parameters"]
+        assert samples.shape == marginalized_samples.shape
+    else:
+        # other subnets cannot marginalize and must refuse
+        with pytest.raises(ValueError, match="infer_target_mask"):
+            workflow.sample(**sample_kwargs)
 
 
 def test_masking_unconditional(diffusion_type_inference_network):

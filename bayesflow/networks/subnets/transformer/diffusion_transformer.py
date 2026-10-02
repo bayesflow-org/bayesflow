@@ -28,8 +28,8 @@ class DiffusionTransformer(keras.Layer):
     ``observed_condition_mask`` (``1`` = present, ``0`` = missing).
     From them a directed dependency mask is built so observed inputs (present clean targets + present conditions)
     form a set that inferred targets attend to, while missing targets and conditions are excluded.
-    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` may be
-    supplied via kwargs to override the derived one.
+    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` can be
+    passed to override the derived attention mask.
 
     [1] Peebles, William, and Saining Xie. "Scalable diffusion models with transformers." 2023.
 
@@ -216,6 +216,7 @@ class DiffusionTransformer(keras.Layer):
         fixed_target_mask: Tensor | None = None,
         observed_condition_mask: Tensor | None = None,
         infer_target_mask: Tensor | None = None,
+        attention_mask: Tensor | None = None,
         **kwargs,
     ) -> Tensor:
         x, t, conditions = inputs
@@ -245,7 +246,6 @@ class DiffusionTransformer(keras.Layer):
         # Shared adaLN-single modulation, computed once and reused by every block.
         base_mod = self.ada_shared(t_emb)
 
-        attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = fixed_target_mask is None and observed_condition_mask is None and infer_target_mask is None
         if attention_mask is None and not no_mask_inputs:
             attention_mask = self.conditioning_attention_mask(

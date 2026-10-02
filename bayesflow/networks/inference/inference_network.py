@@ -1,9 +1,10 @@
-from collections.abc import Sequence, Callable
+import inspect
+from collections.abc import Callable
 
 import keras
 
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import layer_kwargs, find_distribution
+from bayesflow.utils import MaskName, layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
 from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize
@@ -41,6 +42,9 @@ class InferenceNetwork(keras.Layer):
     an omitted ``seed`` against ``self.seed_generator``, so that they never fall back to Keras'
     global generator (which cannot be traced under ``jax.jit``).
 
+    Masks are passed as kwargs. :meth:`_collect_mask_kwargs` keeps the ones the subnet accepts, raises on unused ones.
+    If the network uses a mask on its own, please list it in ``_NETWORK_MASK_KEYS``.
+
     Optionally override:
 
     ``sample(batch_shape, conditions, **kwargs)``
@@ -65,32 +69,29 @@ class InferenceNetwork(keras.Layer):
         :func:`~bayesflow.utils.layer_kwargs`.
     """
 
-    # Valid mask keys to pass to subnet
-    _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
+    # all mask kwargs a network can receive
+    _MASK_KEYS = frozenset({"mask", "attention_mask", *MaskName})
+    # masks the network uses itself
+    _NETWORK_MASK_KEYS = frozenset()
 
     def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
         self.seed_generator = keras.random.SeedGenerator()
 
-    def _collect_mask_kwargs(self, keys: Sequence[str], source: dict) -> dict:
-        """Extract mask kwargs from source dict.
+    def _collect_mask_kwargs(self, kwargs: dict, subnet: keras.Layer | None = None) -> dict:
+        """Return the masks in *kwargs* that *subnet* accepts.
 
-        Looks up each key in *keys* and includes it in the result if its value
-        is not ``None``. Raises a ValueError if *source* holds a mask outside
-        of *keys*, because the subnet would not receive it.
+        Raises a ValueError if a mask would be ignored.
         """
-        self._raise_on_unused_masks(keys, source)
-        return {key: source[key] for key in keys if source.get(key) is not None}
-
-    def _raise_on_unused_masks(self, keys: Sequence[str], source: dict) -> None:
-        unused = []
-        for key in ("mask", "attention_mask"):
-            if source.get(key) is not None and key not in keys:
-                unused.append(key)
+        masks = {k: v for k, v in kwargs.items() if k in self._MASK_KEYS and v is not None}
+        subnet_keys = set()
+        if subnet is not None:
+            subnet_keys = inspect.signature(subnet.call).parameters.keys()
+        unused = masks.keys() - subnet_keys - self._NETWORK_MASK_KEYS
         if unused:
-            names = ", ".join([repr(u) for u in unused])
-            raise ValueError(f"{type(self).__name__} was passed {names}, but does not forward it to its subnets.")
+            raise ValueError(f"Neither {type(self).__name__} nor its subnet uses the masks {sorted(unused)}.")
+        return {k: masks[k] for k in (masks.keys() & subnet_keys)}
 
     def call(
         self,

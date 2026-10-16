@@ -37,6 +37,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
         use_bias: bool = True,
         layer_norm: bool = True,
         flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         """
@@ -70,6 +71,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
         flash_attention : bool or None, optional (default - None)
             Whether to use flash attention for the internal attention computation. See
             `MultiHeadAttentionBlock` for details.
+        attention_dtype : {"float16", "bfloat16"} or None, optional (default - None)
+            Dtype used for fused attention computation. See `MultiHeadAttentionBlock` for details.
         **kwargs
             Additional keyword arguments passed to the Keras Layer base class.
         """
@@ -87,6 +90,7 @@ class PoolingByMultiHeadAttention(keras.Layer):
             use_bias=use_bias,
             layer_norm=layer_norm,
             flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
 
         self.seed_vector = self.add_weight(

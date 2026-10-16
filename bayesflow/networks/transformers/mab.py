@@ -39,6 +39,7 @@ class MultiHeadAttentionBlock(keras.Layer):
         use_bias: bool = True,
         layer_norm: bool = True,
         flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         """Creates a multi-head attention block which will typically be used as part of a
@@ -71,6 +72,10 @@ class MultiHeadAttentionBlock(keras.Layer):
             attention path whenever `dropout > 0`. If `None`, flash attention is attempted
             opportunistically whenever the backend/hardware supports it. If `True`, flash attention
             is required and unsupported inputs raise an error. If `False`, flash attention is disabled.
+        attention_dtype : {"float16", "bfloat16"} or None, optional (default - None)
+            Dtype used for the query, key, and value tensors on the fused attention path. The result
+            is cast back to the layer's compute dtype. This can make FlashAttention available while
+            leaving the rest of the model in `float32`. If `None`, no internal cast is performed.
         **kwargs : dict
             Additional keyword arguments passed to the Keras Layer base class.
         """
@@ -85,6 +90,7 @@ class MultiHeadAttentionBlock(keras.Layer):
             use_bias=use_bias,
             output_shape=embed_dim,
             flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
             name="attention",
         )
         self.ln_pre = layers.LayerNormalization(name="layer_norm_pre") if layer_norm else None

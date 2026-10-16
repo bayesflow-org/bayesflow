@@ -30,6 +30,7 @@ class InducedSetAttentionBlock(keras.Layer):
         use_bias: bool = True,
         layer_norm: bool = True,
         flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         """Creates a self-attention attention block with inducing points (ISAB) which will typically
@@ -60,6 +61,8 @@ class InducedSetAttentionBlock(keras.Layer):
         flash_attention : bool or None, optional (default - None)
             Whether to use flash attention for the internal attention computation. See
             `MultiHeadAttentionBlock` for details.
+        attention_dtype : {"float16", "bfloat16"} or None, optional (default - None)
+            Dtype used for fused attention computation. See `MultiHeadAttentionBlock` for details.
         **kwargs : dict
             Additional keyword arguments passed to the Keras Layer base class.
         """
@@ -83,6 +86,7 @@ class InducedSetAttentionBlock(keras.Layer):
             use_bias=use_bias,
             layer_norm=layer_norm,
             flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
         self.mab0 = MultiHeadAttentionBlock(**mab_kwargs)
         self.mab1 = MultiHeadAttentionBlock(**mab_kwargs)

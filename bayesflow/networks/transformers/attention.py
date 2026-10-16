@@ -35,7 +35,14 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
     both forms.
     """
 
-    def __init__(self, *args, dropout: float = 0.0, flash_attention: bool | None = None, **kwargs):
+    def __init__(
+        self,
+        *args,
+        dropout: float = 0.0,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
+        **kwargs,
+    ):
         """Create a multi-head attention layer with an inference-time fused path.
 
         Parameters
@@ -48,6 +55,11 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
             or executed; ``True`` requires it; ``False`` disables it while retaining fused
             dot-product attention. This setting does not affect training calls with nonzero dropout
             or calls that request attention scores.
+        attention_dtype : {"float16", "bfloat16"} or None, optional (default - None)
+            Dtype used for query, key, and value on the fused attention path. The attention output
+            is cast back to the layer's compute dtype before it is returned. ``None`` preserves the
+            layer's compute dtype. This makes reduced-precision attention available without changing
+            the dtype policy of the rest of the model.
         *args, **kwargs
             Additional arguments forwarded to :class:`keras.layers.MultiHeadAttention`.
         """
@@ -58,6 +70,12 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
         self._dropout = dropout
         self._flash_attention = False
         self._fast_path_flash_attention = flash_attention
+        if attention_dtype not in (None, "float16", "bfloat16"):
+            raise ValueError(
+                "`attention_dtype` must be one of None, 'float16', or 'bfloat16'. "
+                f"Received: attention_dtype={attention_dtype!r}."
+            )
+        self._attention_dtype = attention_dtype
 
     def _compute_attention(
         self,
@@ -93,6 +111,12 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
             # itself, so resolve it here instead of leaving `flash_attention=None`.
             flash_attention = keras.config.is_flash_attention_enabled()
 
+        output_dtype = query.dtype
+        if self._attention_dtype is not None:
+            query = ops.cast(query, self._attention_dtype)
+            key = ops.cast(key, self._attention_dtype)
+            value = ops.cast(value, self._attention_dtype)
+
         attention_output = ops.dot_product_attention(
             query=query,
             key=key,
@@ -103,8 +127,13 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
             is_causal=use_causal_mask,
             flash_attention=flash_attention,
         )
+        if self._attention_dtype is not None:
+            attention_output = ops.cast(attention_output, output_dtype)
         return attention_output, None
 
     def get_config(self):
-        config = {"flash_attention": self._fast_path_flash_attention}
+        config = {
+            "flash_attention": self._fast_path_flash_attention,
+            "attention_dtype": self._attention_dtype,
+        }
         return {**super().get_config(), **config}

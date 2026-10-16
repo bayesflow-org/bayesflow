@@ -40,6 +40,7 @@ class SetTransformer(SummaryNetwork):
         num_inducing_points: int = None,
         seed_dim: int = None,
         flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         """
@@ -79,6 +80,11 @@ class SetTransformer(SummaryNetwork):
         flash_attention : bool or None, optional (default - None)
             Whether to use flash attention for the internal attention computation. See
             `MultiHeadAttentionBlock` for details.
+        attention_dtype : {"float16", "bfloat16"} or None, optional (default - None)
+            Dtype used for query, key, and value on the fused attention path. The result is cast
+            back to the model's compute dtype, leaving the rest of the model in `float32` by default.
+            Set this to `"float16"` or `"bfloat16"` to make FlashAttention available on compatible
+            backends and hardware. If `None`, no internal cast is performed.
         **kwargs : dict
             Additional keyword arguments passed to the base layer.
         """
@@ -99,6 +105,7 @@ class SetTransformer(SummaryNetwork):
             use_bias=use_bias,
             layer_norm=layer_norm,
             flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
 
         for i in range(num_attention_layers):

@@ -92,7 +92,13 @@ class DiagonalStudentT(Distribution):
             self._loc = self.loc
             self._scale = self.scale
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
+    def log_prob(self, samples: Tensor, *, normalize: bool = True, mask: Tensor | None = None) -> Tensor:
+        if mask is not None:
+            # this multivariate t is not a product of univariate t's, so we cannot simply drop dims
+            raise NotImplementedError(
+                f"{type(self).__name__} is a multivariate t with dependent dims, masking is currently not supported."
+            )
+
         mahalanobis_term = ops.sum((samples - self._loc) ** 2 / self._scale**2, axis=-1)
         result = -0.5 * (self.df + self.dim) * ops.log1p(mahalanobis_term / self.df)
 

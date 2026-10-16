@@ -106,6 +106,7 @@ def sample_input_masks(
     missing_target_prob: float,
     missing_conditions_prob: float,
     seed_generator: keras.random.SeedGenerator = None,
+    fixed_target_mask: Tensor | None = None,
 ) -> tuple[Tensor | float, Tensor | float, dict]:
     """Generate the target and condition masks and populate ``subnet_kwargs``.
 
@@ -115,17 +116,23 @@ def sample_input_masks(
     randomly marks fixed targets as missing, and ``missing_conditions_prob`` randomly marks
     conditions as missing, so the network learns to handle missing fields. The masks are
     forwarded to subnets that accept them (e.g. ``diffusion_transformer``).
+    A ``fixed_target_mask`` given by the caller (e.g. for padded targets) replaces the
+    random draws at the fixed indices.
 
     Returns
     -------
     mask_x : Tensor or float
-        The per-target inference mask (``1`` = inferred/noised, ``0`` = fixed).
+        The per-target inference mask (1 = inferred/noised, 0 = fixed).
     loss_mask : Tensor or float
         The mask the caller applies to the loss.
     subnet_kwargs : dict
         The keyword arguments, with mask entries added for subnets that accept them.
     """
-    mask_x = random_mask(keras.ops.shape(x), fixed_target_prob, keep_one=True, seed_generator=seed_generator)
+    if fixed_target_mask is None:
+        mask_x = random_mask(keras.ops.shape(x), fixed_target_prob, keep_one=True, seed_generator=seed_generator)
+    else:
+        mask_x = keras.ops.cast(fixed_target_mask, keras.ops.dtype(x))
+        mask_x = keras.ops.broadcast_to(mask_x, keras.ops.shape(x))
     if (
         not isinstance(mask_x, float)
         and MaskName.FIXED_TARGET not in subnet_kwargs

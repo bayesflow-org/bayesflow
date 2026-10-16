@@ -28,6 +28,7 @@ class Approximator(BackendApproximator):
     _INFERENCE_MASK_KEYS: dict[str, str] = {
         "inference_attention_mask": "attention_mask",
         "inference_mask": "mask",
+        "inference_fixed_target_mask": "fixed_target_mask",
     }
 
     @staticmethod
@@ -345,6 +346,7 @@ class Approximator(BackendApproximator):
         summary_mask: str | None = None,
         inference_attention_mask: str | None = None,
         inference_mask: str | None = None,
+        inference_fixed_target_mask: str | None = None,
     ) -> Adapter:
         """Create a default :py:class:`~bayesflow.adapters.Adapter` for the approximator.
 
@@ -375,6 +377,9 @@ class Approximator(BackendApproximator):
         inference_mask : str, optional
             Name of the padding/key mask for the inference network.
             Forwarded as ``mask`` to the inference network.
+        inference_fixed_target_mask : str, optional
+            Name of the mask of the inference variables (1 = inferred, 0 = fixed).
+            Forwarded as ``fixed_target_mask`` to the inference network.
         """
 
         adapter = Adapter()
@@ -397,6 +402,7 @@ class Approximator(BackendApproximator):
             "summary_mask": summary_mask,
             "inference_attention_mask": inference_attention_mask,
             "inference_mask": inference_mask,
+            "inference_fixed_target_mask": inference_fixed_target_mask,
         }.items():
             if user_name is not None:
                 adapter.rename(user_name, canonical_name)

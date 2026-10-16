@@ -13,7 +13,25 @@ class Distribution(keras.Layer):
     def call(self, samples: Tensor) -> Tensor:
         return keras.ops.exp(self.log_prob(samples))
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
+    def log_prob(self, samples: Tensor, *, normalize: bool = True, mask: Tensor | None = None) -> Tensor:
+        """Log-density of the samples.
+
+        Parameters
+        ----------
+        samples : Tensor
+            Samples with shape ``batch_shape + (event_dim,)``.
+        normalize : bool, optional
+            Whether to include the normalization constant. Default is True.
+        mask : Tensor, optional
+            Binary mask broadcastable to ``samples`` (1 = keep, 0 = drop).
+            Returns the log-density of the marginal over the kept dimensions.
+            Default is None (keeps all dimensions).
+
+        Returns
+        -------
+        Tensor
+            Log-densities with shape ``batch_shape``.
+        """
         raise NotImplementedError
 
     def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:

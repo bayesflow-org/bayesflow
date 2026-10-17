@@ -61,6 +61,7 @@ class Standardize(keras.Layer):
         log_det_jac: bool = False,
         transformation_type: str = "location_scale",
         mask: Tensor | None = None,
+        log_det_jac_mask: Tensor | dict[str, Tensor] | None = None,
     ) -> Tensor | Sequence[Tensor]:
         """
         Apply standardization or its inverse to the input tensor. Optionally compute the log determinant
@@ -82,6 +83,9 @@ class Standardize(keras.Layer):
         mask: Tensor, optional
             A mask restricting what to take into account when computing moments during training for standardization.
             The shape needs to be broadcastable to all sample/batch axes of the input, i.e. `x.shape[:-1]`.
+        log_det_jac_mask : Tensor or nested Tensor, optional
+            Binary feature mask used only for the Jacobian correction. Coordinates
+            equal to zero do not contribute to the returned log determinant.
 
         Returns
         -------
@@ -95,9 +99,14 @@ class Standardize(keras.Layer):
             )
 
         flattened = keras.tree.flatten(x)
+        flattened_log_det_masks = (
+            [None] * len(flattened) if log_det_jac_mask is None else keras.tree.flatten(log_det_jac_mask)
+        )
+        if len(flattened_log_det_masks) != len(flattened):
+            raise ValueError("'log_det_jac_mask' must have the same tree structure as the standardized value.")
         outputs, log_det_jacs = [], []
 
-        for idx, val in enumerate(flattened):
+        for idx, (val, density_mask) in enumerate(zip(flattened, flattened_log_det_masks)):
             if stage == "training":
                 self._update_moments(val, idx, mask)
 
@@ -131,8 +140,14 @@ class Standardize(keras.Layer):
             outputs.append(out)
 
             if log_det_jac:
-                ldj = keras.ops.sum(keras.ops.log(keras.ops.abs(std)), axis=-1)
-                ldj = keras.ops.tile(ldj, keras.ops.shape(val)[:-1])
+                ldj = keras.ops.broadcast_to(keras.ops.log(keras.ops.abs(std)), keras.ops.shape(val))
+                if density_mask is not None:
+                    density_mask = keras.ops.cast(
+                        keras.ops.broadcast_to(density_mask, keras.ops.shape(val)),
+                        "bool",
+                    )
+                    ldj = keras.ops.where(density_mask, ldj, keras.ops.zeros_like(ldj))
+                ldj = keras.ops.sum(ldj, axis=-1)
                 log_det_jacs.append(-ldj if forward else ldj)
 
         outputs = keras.tree.pack_sequence_as(x, outputs)

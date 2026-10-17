@@ -8,6 +8,7 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.datasets import OnlineDataset
+from bayesflow.masking import MaskHandler, MaskName
 from bayesflow.simulators import Simulator
 from bayesflow.types import Tensor
 from bayesflow.utils import find_batch_size, filter_kwargs, concatenate_valid_shapes, logging
@@ -18,26 +19,6 @@ from .backend_approximators import BackendApproximator
 
 class Approximator(BackendApproximator):
     """Base class for all BayesFlow approximators."""
-
-    # Mask routing: {data_key -> network_kwarg_name}.
-    # Subclasses can narrow these to the masks they actually support.
-    _SUMMARY_MASK_KEYS: dict[str, str] = {
-        "summary_attention_mask": "attention_mask",
-        "summary_mask": "mask",
-    }
-    _INFERENCE_MASK_KEYS: dict[str, str] = {
-        "inference_attention_mask": "attention_mask",
-        "inference_mask": "mask",
-    }
-
-    @staticmethod
-    def _collect_mask_kwargs(mapping: dict[str, str], source: Mapping) -> dict:
-        """Build a kwargs dict from a ``{source_key: target_kwarg_name}`` mapping.
-
-        Looks up each *source_key* in *source*; when the value is not ``None``,
-        it is added to the result under *target_kwarg_name*.
-        """
-        return {target: source[key] for key, target in mapping.items() if source.get(key) is not None}
 
     def _with_layer_losses(self, loss: Tensor) -> dict[str, Tensor]:
         """Combine loss with the losses registered by the sublayers."""
@@ -180,7 +161,7 @@ class Approximator(BackendApproximator):
         """
         if data is not None:
             adapted = self.adapter(data, strict=False, **kwargs)
-            summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted)
+            summary_kwargs = MaskHandler.collect_summary_masks(adapted)
         elif summary_outputs is not None:
             adapted = {}
             summary_kwargs = {}
@@ -223,7 +204,7 @@ class Approximator(BackendApproximator):
             adapted_child = self.adapter(flattened_conditions, strict=False, **kwargs)
             adapted_child = keras.tree.map_structure(keras.ops.convert_to_tensor, adapted_child)
 
-            summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, adapted_child)
+            summary_kwargs = MaskHandler.collect_summary_masks(adapted_child)
             child_summary_variables = self.standardizer.maybe_standardize(
                 adapted_child.get("summary_variables"), key="summary_variables", stage="inference"
             )
@@ -320,7 +301,7 @@ class Approximator(BackendApproximator):
             inference_conditions, key="inference_conditions", stage=stage
         )
         summary_variables = self.standardizer.maybe_standardize(
-            summary_variables, key="summary_variables", stage=stage, mask=summary_kwargs.get("mask")
+            summary_variables, key="summary_variables", stage=stage, mask=summary_kwargs.get(MaskName.MASK)
         )
         resolved_conditions, summary_outputs = self.condition_builder.resolve(
             summary_network=self.summary_network,
@@ -390,13 +371,19 @@ class Approximator(BackendApproximator):
         if sample_weight is not None:
             adapter.rename(sample_weight, "sample_weight")
 
-        keep = ["inference_variables", "inference_conditions", "summary_variables", "sample_weight"]
+        keep = [
+            "inference_variables",
+            "inference_conditions",
+            "summary_variables",
+            "sample_weight",
+            *MaskName.semantic(),
+        ]
 
         for canonical_name, user_name in {
-            "summary_attention_mask": summary_attention_mask,
-            "summary_mask": summary_mask,
-            "inference_attention_mask": inference_attention_mask,
-            "inference_mask": inference_mask,
+            MaskName.SUMMARY_ATTENTION: summary_attention_mask,
+            MaskName.SUMMARY: summary_mask,
+            MaskName.INFERENCE_ATTENTION: inference_attention_mask,
+            MaskName.INFERENCE: inference_mask,
         }.items():
             if user_name is not None:
                 adapter.rename(user_name, canonical_name)

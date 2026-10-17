@@ -8,7 +8,8 @@ from bayesflow.networks import CouplingFlow, DeepSet
 @pytest.fixture
 def built_approximator(crossed_design_irt_simulator, crossed_design_irt_approximator):
     data = crossed_design_irt_simulator.sample(2)
-    adapted = crossed_design_irt_approximator.adapter(data)
+    # Keras treats the SimulationOutput dict subclass as a tree leaf.
+    adapted = crossed_design_irt_approximator.adapter(dict(data))
     data_shapes = crossed_design_irt_approximator._data_shapes(adapted)
     crossed_design_irt_approximator.build(data_shapes)
     crossed_design_irt_approximator.compile()

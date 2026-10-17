@@ -1,19 +1,50 @@
 import warnings
 
 import keras
+from bayesflow.masking import InferenceMasks, MaskName
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
 from bayesflow.types import Shape, Tensor
-from bayesflow.utils import layer_kwargs, weighted_mean
+from bayesflow.utils import weighted_mean
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 
 @serializable("bayesflow.experimental")  # type: ignore[missing-argument]
 class NonExchangeableWrapper(InferenceNetwork):
+    """Apply an inference network autoregressively over a non-exchangeable axis.
+
+    Fixed-target and observed-condition masks are routed step-wise to the inner
+    inference network. Infer-target masks are rejected because marginalized
+    previous targets cannot be removed from an arbitrary summary network
+    without an explicit feature-mask protocol.
+    """
+
     def __init__(self, inference_network: InferenceNetwork, summary_network: SummaryNetwork, **kwargs):
-        super().__init__(**layer_kwargs(kwargs))
+        super().__init__(**kwargs)
         self.inference_network = inference_network
         self.summary_network = summary_network
+
+    def _resolve_masks(
+        self,
+        targets: Tensor,
+        conditions: Tensor | None,
+        kwargs: dict,
+        *,
+        stage: str = "inference",
+    ) -> InferenceMasks:
+        provided = self.mask_handler.collect_semantic_masks(kwargs)
+        if self.missing_target_prob > 0.0 or provided.get(MaskName.INFER_TARGET) is not None:
+            raise NotImplementedError(
+                "NonExchangeableWrapper cannot marginalize target features without an explicit "
+                "feature-mask protocol on the summary network."
+            )
+        return self.mask_handler.resolve(
+            kwargs,
+            targets=targets,
+            conditions=conditions,
+            stage=stage,
+        )
 
     def get_config(self):
         base_config = super().get_config()
@@ -33,6 +64,7 @@ class NonExchangeableWrapper(InferenceNetwork):
             self.summary_network.build(xz_shape)
 
         summary_output_shape = self.summary_network.compute_output_shape(xz_shape)
+        self._summary_dim = summary_output_shape[-1]
 
         # internal xz_shape for non-exchangeable dimension is 1 internally
         if conditions_shape is None:
@@ -45,7 +77,40 @@ class NonExchangeableWrapper(InferenceNetwork):
             self.inference_network.build((*xz_shape[:-2], 1, xz_shape[-1]), conditions_shape=conditions_shape)
         self.built = True
 
-    def call(self, xz, conditions=None, inverse=False, density=False, training=False, **kwargs):
+    def call(
+        self,
+        xz,
+        conditions=None,
+        inverse=False,
+        density=False,
+        training=False,
+        seed: int | keras.random.SeedGenerator | None = None,
+        **kwargs,
+    ):
+        if seed is not None:
+            kwargs["seed"] = seed
+        masks = self._resolve_masks(xz, conditions, kwargs)
+        kwargs = self.mask_handler.without_semantic_kwargs(kwargs)
+        return self._call_resolved(
+            xz,
+            conditions=conditions,
+            inverse=inverse,
+            density=density,
+            training=training,
+            masks=masks,
+            kwargs=kwargs,
+        )
+
+    def _call_resolved(
+        self,
+        xz: Tensor,
+        conditions: Tensor | None,
+        inverse: bool,
+        density: bool,
+        training: bool,
+        masks: InferenceMasks,
+        kwargs: dict,
+    ):
         if inverse:
             generated = []
             values = []
@@ -55,12 +120,14 @@ class NonExchangeableWrapper(InferenceNetwork):
             for i in range(self._seq_len):
                 prev = keras.ops.concatenate(generated, axis=-2) if generated else None
                 conds = self._prepare_inference_conditions(xz, i, conditions, generated_samples=prev)
-                result = self.inference_network._inverse(
+                step_kwargs = kwargs | self._step_mask_kwargs(masks, i, conds, conditions)
+                result = self.inference_network(
                     xz[..., i : i + 1, :],
                     conditions=conds,
+                    inverse=True,
                     density=density,
                     training=training,
-                    **kwargs,
+                    **step_kwargs,
                 )
 
                 if density:
@@ -87,9 +154,15 @@ class NonExchangeableWrapper(InferenceNetwork):
         cond_dim = keras.ops.shape(all_conds)[-1]
         xz_flat = keras.ops.reshape(xz, (-1, 1, n_params))
         conds_flat = keras.ops.reshape(all_conds, (-1, 1, cond_dim))
+        mask_kwargs = self._flat_mask_kwargs(masks, all_conds, conditions)
 
-        result = self.inference_network._forward(
-            xz_flat, conditions=conds_flat, density=density, training=training, **kwargs
+        result = self.inference_network(
+            xz_flat,
+            conditions=conds_flat,
+            inverse=False,
+            density=density,
+            training=training,
+            **(kwargs | mask_kwargs),
         )
 
         xz_shape = keras.ops.shape(xz)
@@ -102,8 +175,9 @@ class NonExchangeableWrapper(InferenceNetwork):
 
     @allow_batch_size
     def sample(self, batch_shape: Shape, conditions: Tensor = None, **kwargs) -> Tensor:
-        samples = self.inference_network.base_distribution.sample(batch_shape)
-        samples = self(samples, conditions=conditions, inverse=True, density=False, **kwargs)
+        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
+        samples = self.inference_network.base_distribution.sample(batch_shape, seed=seed)
+        samples = self(samples, conditions=conditions, inverse=True, density=False, seed=seed, **kwargs)
 
         return samples
 
@@ -120,22 +194,114 @@ class NonExchangeableWrapper(InferenceNetwork):
         stage: str = "training",
         **kwargs,
     ) -> dict[str, Tensor]:
-        z, log_density = self(
+        # GraphicalApproximator invokes compute_metrics directly, bypassing
+        # keras.Layer.__call__ and its automatic build step.
+        if not self.built:
+            conditions_shape = None if conditions is None else conditions.shape
+            self.build(x.shape, conditions_shape=conditions_shape)
+
+        masks = self._resolve_masks(
+            x,
+            conditions,
+            kwargs,
+            stage=stage,
+        )
+        z, log_density = self._call_resolved(
             x,
             conditions=conditions,
             inverse=False,
             density=True,
             training=stage == "training",
+            masks=masks,
+            kwargs=self.mask_handler.without_semantic_kwargs(kwargs),
         )
         sum_axes = tuple(range(1, log_density.ndim))
         loss = weighted_mean(keras.ops.mean(-log_density, axis=sum_axes), sample_weight)
 
         return {"loss": loss}
 
+    def _target_mask_kwargs(self, masks: InferenceMasks, index: int | None = None) -> dict:
+        result = {}
+        for name, value in masks.semantic_kwargs().items():
+            if name == MaskName.OBSERVED_CONDITION:
+                continue
+            if index is None:
+                result[name] = keras.ops.reshape(
+                    value,
+                    (-1, 1, keras.ops.shape(value)[-1]),
+                )
+            else:
+                result[name] = value[..., index : index + 1, :]
+        return result
+
+    def _condition_mask(
+        self,
+        observed_condition_mask: Tensor | None,
+        prepared_conditions: Tensor,
+        source_conditions: Tensor | None,
+        index: int | None,
+    ) -> Tensor | None:
+        if observed_condition_mask is None or source_conditions is None:
+            return None
+
+        summary_shape = keras.ops.shape(prepared_conditions)[:-1] + (self._summary_dim,)
+        summary_mask = keras.ops.ones(summary_shape, dtype=observed_condition_mask.dtype)
+
+        if source_conditions.shape[-2] == 1:
+            condition_mask = observed_condition_mask
+        elif index is None:
+            condition_mask = observed_condition_mask
+        else:
+            condition_mask = observed_condition_mask[..., index : index + 1, :]
+
+        condition_mask = keras.ops.broadcast_to(
+            condition_mask,
+            keras.ops.shape(prepared_conditions)[:-1] + (keras.ops.shape(condition_mask)[-1],),
+        )
+
+        return keras.ops.concatenate([summary_mask, condition_mask], axis=-1)
+
+    def _step_mask_kwargs(
+        self,
+        masks: InferenceMasks,
+        index: int,
+        prepared_conditions: Tensor,
+        source_conditions: Tensor | None,
+    ) -> dict:
+        kwargs = self._target_mask_kwargs(masks, index=index)
+        condition_mask = self._condition_mask(
+            masks.observed_condition_mask,
+            prepared_conditions,
+            source_conditions,
+            index,
+        )
+        if condition_mask is not None:
+            kwargs[MaskName.OBSERVED_CONDITION] = condition_mask
+        return kwargs
+
+    def _flat_mask_kwargs(
+        self,
+        masks: InferenceMasks,
+        prepared_conditions: Tensor,
+        source_conditions: Tensor | None,
+    ) -> dict:
+        kwargs = self._target_mask_kwargs(masks)
+        condition_mask = self._condition_mask(
+            masks.observed_condition_mask,
+            prepared_conditions,
+            source_conditions,
+            None,
+        )
+        if condition_mask is not None:
+            kwargs[MaskName.OBSERVED_CONDITION] = keras.ops.reshape(
+                condition_mask,
+                (-1, 1, keras.ops.shape(condition_mask)[-1]),
+            )
+        return kwargs
+
     def _prepare_inference_conditions(
         self, xz: Tensor, i: int, conditions: Tensor | None = None, generated_samples: Tensor | None = None
     ):
-
         # this suppresses a warning that occurs because at index i=1, the context only has a single element,
         # which is then summarized.
         with warnings.catch_warnings():

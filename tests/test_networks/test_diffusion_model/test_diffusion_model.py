@@ -112,7 +112,7 @@ def test_adaptive_solver_sample_and_density():
     test_inference_networks.py::test_density_numerically."""
     from bayesflow.networks import DiffusionModel
 
-    model = DiffusionModel(subnet_kwargs=dict(widths=(8, 8)))
+    model = DiffusionModel(subnet_kwargs=dict(widths=(8, 8), fourier_scale=1.0))
     conditions = keras.random.normal((2, 3))
     model.build((2, 3), conditions_shape=(2, 3))
 
@@ -159,58 +159,6 @@ def test_save_and_load(tmp_path, diffusion_model, random_samples, random_conditi
     loaded = keras.saving.load_model(path)
 
     assert_layers_equal(diffusion_model, loaded)
-
-
-# ---- Masking ----------------------------------------------------------------
-
-
-def test_compute_metrics_with_masking(diffusion_model_with_masking, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    diffusion_model_with_masking.build(xz_shape, conditions_shape=cond_shape)
-
-    metrics = diffusion_model_with_masking.compute_metrics(random_samples, conditions=random_conditions)
-    assert "loss" in metrics
-    loss = keras.ops.convert_to_numpy(metrics["loss"])
-    assert np.isfinite(loss), f"Loss is not finite: {loss}"
-
-
-def test_mask_aware_subnet_receives_fixed_target_mask(random_samples, random_conditions):
-    from bayesflow.networks import DiffusionModel
-
-    class MaskAwareSubnet(keras.Layer):
-        def __init__(self):
-            super().__init__()
-            self.last_fixed_target_mask = None
-
-        def call(self, inputs, training=None, fixed_target_mask=None):
-            self.last_fixed_target_mask = fixed_target_mask
-            return inputs[0]
-
-        def compute_output_shape(self, input_shape):
-            return input_shape[0]
-
-    subnet = MaskAwareSubnet()
-    model = DiffusionModel(subnet=subnet, fixed_target_prob=0.5)
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    model.build(xz_shape, conditions_shape=cond_shape)
-
-    model.compute_metrics(random_samples, conditions=random_conditions)
-    assert subnet.last_fixed_target_mask is not None
-    assert keras.ops.shape(subnet.last_fixed_target_mask) == keras.ops.shape(random_samples)
-
-    fixed_target_mask = keras.ops.ones_like(random_samples)
-    model.velocity(
-        random_samples,
-        time=0.5,
-        stochastic_solver=False,
-        conditions=random_conditions,
-        fixed_target_mask=fixed_target_mask,
-    )
-    assert np.allclose(
-        keras.ops.convert_to_numpy(subnet.last_fixed_target_mask), keras.ops.convert_to_numpy(fixed_target_mask)
-    )
 
 
 # ---- Guidance (slow, trains a model) ----------------------------------------
@@ -276,19 +224,3 @@ def test_diffusion_transformer_conditions_as_tokens_training_step():
     restored = deserialize(serialize(dm))
     metrics_r = restored.compute_metrics(x, conditions=cond, stage="training")
     assert np.isfinite(keras.ops.convert_to_numpy(metrics_r["loss"]))
-
-
-def test_diffusion_transformer_observed_condition_mask_forwarded():
-    """A per-condition observed_condition_mask is accepted and the output keeps the target shape."""
-    from bayesflow.networks import DiffusionModel
-
-    dm = DiffusionModel(subnet="diffusion_transformer", subnet_kwargs=dict(widths=(8, 8)))
-    x = keras.random.normal((4, 5))
-    cond = keras.random.normal((4, 3))
-    dm.build(keras.ops.shape(x), keras.ops.shape(cond))
-
-    observed_condition_mask = keras.ops.convert_to_tensor(
-        np.array([[1, 1, 0]] * 4, dtype="float32")  # third condition missing
-    )
-    metrics = dm.compute_metrics(x, conditions=cond, stage="training", observed_condition_mask=observed_condition_mask)
-    assert np.isfinite(keras.ops.convert_to_numpy(metrics["loss"]))

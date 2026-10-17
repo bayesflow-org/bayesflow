@@ -3,7 +3,7 @@ from collections.abc import Sequence
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import feature_mask, layer_kwargs
+from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from ...helpers import FourierEmbedding, DiffusionTransformerBlock
@@ -28,8 +28,9 @@ class DiffusionTransformer(keras.Layer):
     ``observed_condition_mask`` (``1`` = present, ``0`` = missing).
     From them a directed dependency mask is built so observed inputs (present clean targets + present conditions)
     form a set that inferred targets attend to, while missing targets and conditions are excluded.
-    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets +num_conditions)`` may be
-    supplied via kwargs to override the derived one.
+    An explicit ``attention_mask`` of shape ``(batch, num_targets, num_targets + num_conditions)`` may be
+    supplied. When semantic masks are also provided, the explicit and derived attention masks are
+    intersected so explicit attention cannot make missing inputs visible again.
 
     [1] Peebles, William, and Saining Xie. "Scalable diffusion models with transformers." 2023.
 
@@ -213,6 +214,7 @@ class DiffusionTransformer(keras.Layer):
         self,
         inputs: tuple[Tensor, Tensor, Tensor | None],
         training: bool | None = None,
+        attention_mask: Tensor | None = None,
         fixed_target_mask: Tensor | None = None,
         observed_condition_mask: Tensor | None = None,
         infer_target_mask: Tensor | None = None,
@@ -221,6 +223,13 @@ class DiffusionTransformer(keras.Layer):
         x, t, conditions = inputs
         num_targets = keras.ops.shape(x)[-1]
         batch_size = keras.ops.shape(x)[0]
+
+        if infer_target_mask is not None:
+            x = keras.ops.where(
+                keras.ops.cast(infer_target_mask, "bool"),
+                x,
+                keras.ops.zeros_like(x),
+            )
 
         # Tokenize targets per-dimension; they form the residual stream.
         h = self.value_proj(keras.ops.expand_dims(x, axis=-1))
@@ -231,6 +240,12 @@ class DiffusionTransformer(keras.Layer):
         cond_h = None
         num_conditions = 0
         if conditions is not None and self.condition_proj is not None:
+            if observed_condition_mask is not None:
+                conditions = keras.ops.where(
+                    keras.ops.cast(observed_condition_mask, "bool"),
+                    conditions,
+                    keras.ops.zeros_like(conditions),
+                )
             num_conditions = keras.ops.shape(conditions)[-1]
             cond_h = self.condition_proj(keras.ops.expand_dims(conditions, axis=-1))
             cond_h = cond_h + self.condition_id[None]
@@ -245,10 +260,9 @@ class DiffusionTransformer(keras.Layer):
         # Shared adaLN-single modulation, computed once and reused by every block.
         base_mod = self.ada_shared(t_emb)
 
-        attention_mask = kwargs.get("attention_mask", None)
         no_mask_inputs = fixed_target_mask is None and observed_condition_mask is None and infer_target_mask is None
-        if attention_mask is None and not no_mask_inputs:
-            attention_mask = self.conditioning_attention_mask(
+        if not no_mask_inputs:
+            semantic_attention_mask = self.conditioning_attention_mask(
                 fixed_target_mask=fixed_target_mask,
                 observed_condition_mask=observed_condition_mask,
                 infer_target_mask=infer_target_mask,
@@ -256,8 +270,12 @@ class DiffusionTransformer(keras.Layer):
                 num_conditions=num_conditions,
                 batch_size=batch_size,
             )
+            if attention_mask is None:
+                attention_mask = semantic_attention_mask
+            else:
+                attention_mask = keras.ops.logical_and(keras.ops.cast(attention_mask, "bool"), semantic_attention_mask)
 
-        update_mask = feature_mask(fixed_target_mask, x)
+        update_mask = self._feature_mask(fixed_target_mask, x)
 
         for block in self.blocks:
             h = block(
@@ -277,6 +295,28 @@ class DiffusionTransformer(keras.Layer):
         out = keras.ops.squeeze(out, axis=-1)
 
         return out
+
+    @staticmethod
+    def _feature_mask(mask: Tensor | None, reference: Tensor) -> Tensor | None:
+        """Shape a target-feature mask for transformer residual updates.
+
+        Transformer blocks operate on a ``(batch, target, width)`` residual
+        stream, so this target mask needs a trailing singleton dimension for
+        broadcasting over ``width``.
+        """
+        if mask is None:
+            return None
+
+        mask = keras.ops.cast(mask, reference.dtype)
+        if len(mask.shape) == len(reference.shape) and mask.shape[-1] == 1:
+            mask = keras.ops.squeeze(mask, axis=-1)
+        elif len(mask.shape) == len(reference.shape) and len(mask.shape) > 2:
+            mask = keras.ops.max(mask, axis=-1)
+
+        if len(mask.shape) == 1:
+            mask = keras.ops.expand_dims(mask, axis=0)
+
+        return keras.ops.expand_dims(mask, axis=-1)
 
     def state_embedding(
         self,

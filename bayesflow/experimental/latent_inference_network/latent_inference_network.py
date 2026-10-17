@@ -3,6 +3,7 @@ from functools import lru_cache
 import keras
 
 from bayesflow._backend import jacrev
+from bayesflow.masking import InferenceMasks, MaskName
 from bayesflow.networks.inference import InferenceNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs, issue_url, log_abs_det
@@ -17,6 +18,12 @@ class LatentInferenceNetwork(InferenceNetwork):
     This class wraps an autoencoder as a feature extractor, projecting input data into a lower-dimensional
     latent space before passing it to the internal inference network. This approach can significantly
     reduce computational costs, especially for high-dimensional or image data where redundancy is present.
+
+    Condition masks are safe to delegate because conditions keep their feature
+    space. Target masks are rejected: an arbitrary dimension-reducing
+    autoencoder provides no well-defined map from input-feature masks to latent
+    masks, so silently forwarding or clamping them would not represent the
+    requested conditional density.
 
     The latent inference paradigm was originally introduced in [1] and is also known as "Stable Diffusion".
     To closely match this architecture, configure the network as follows:
@@ -51,6 +58,40 @@ class LatentInferenceNetwork(InferenceNetwork):
         self.autoencoder = autoencoder
         self.inference_network = inference_network
 
+    def _resolve_condition_masks(
+        self,
+        targets: Tensor,
+        conditions: Tensor | None,
+        kwargs: dict,
+        *,
+        stage: str = "inference",
+    ) -> tuple[InferenceMasks, dict]:
+        """Resolve only condition masks, whose feature space is unchanged."""
+        provided = self.mask_handler.collect_semantic_masks(kwargs)
+        target_mask = (
+            self.fixed_target_prob > 0.0
+            or self.missing_target_prob > 0.0
+            or any(provided.get(name) is not None for name in (MaskName.FIXED_TARGET, MaskName.INFER_TARGET))
+        )
+        if target_mask or provided.get(MaskName.FIXED_TARGET_VALUE) is not None:
+            raise NotImplementedError(
+                "LatentInferenceNetwork cannot project target masks because an arbitrary "
+                "autoencoder has no well-defined mapping from input features to latent features."
+            )
+
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=targets,
+            conditions=conditions,
+            stage=stage,
+        )
+        clean_kwargs = self.mask_handler.without_semantic_kwargs(kwargs)
+        return masks, clean_kwargs
+
+    @staticmethod
+    def _inner_kwargs(masks: InferenceMasks, kwargs: dict) -> dict:
+        return kwargs | masks.semantic_kwargs()
+
     def build(self, xz_shape, conditions_shape=None):
         if self.built:
             return
@@ -75,10 +116,16 @@ class LatentInferenceNetwork(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor | None = None, density: bool = False, training: bool = False, **kwargs
     ):
+        masks, kwargs = self._resolve_condition_masks(x, conditions, kwargs)
+        inner_kwargs = self._inner_kwargs(masks, kwargs)
+
         if not density:
             y = self.autoencoder(x, training=training, **filter_kwargs(kwargs, self.autoencoder.call))
             z = self.inference_network(
-                y, conditions=conditions, training=training, **filter_kwargs(kwargs, self.inference_network.call)
+                y,
+                conditions=conditions,
+                training=training,
+                **filter_kwargs(inner_kwargs, self.inference_network.call),
             )
             return z
 
@@ -95,7 +142,11 @@ class LatentInferenceNetwork(InferenceNetwork):
         jac = jac_fn(x)
 
         z, log_density = self.inference_network(
-            y, inverse=False, density=True, training=training, **filter_kwargs(kwargs, self.inference_network.call)
+            y,
+            inverse=False,
+            density=True,
+            training=training,
+            **filter_kwargs(inner_kwargs, self.inference_network.call),
         )
 
         # modified change of variables; p(x) = p(f(x)) / sqrt(|J^T J|)
@@ -115,12 +166,15 @@ class LatentInferenceNetwork(InferenceNetwork):
                 f"If you need this feature, please open an issue at {issue_url}."
             )
 
+        masks, kwargs = self._resolve_condition_masks(z, conditions, kwargs)
+        inner_kwargs = self._inner_kwargs(masks, kwargs)
+
         y = self.inference_network(
             z,
             conditions=conditions,
             inverse=True,
             training=training,
-            **filter_kwargs(kwargs, self.inference_network.call),
+            **filter_kwargs(inner_kwargs, self.inference_network.call),
         )
         x = self.autoencoder(y, training=training, inverse=True, **filter_kwargs(kwargs, self.autoencoder.call))
         return x
@@ -128,6 +182,12 @@ class LatentInferenceNetwork(InferenceNetwork):
     def compute_metrics(
         self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training", **kwargs
     ) -> dict[str, Tensor]:
+        masks, kwargs = self._resolve_condition_masks(
+            x,
+            conditions,
+            kwargs,
+            stage=stage,
+        )
         autoencoder_metrics = self.autoencoder.compute_metrics(x, sample_weight=sample_weight, stage=stage, **kwargs)
 
         try:
@@ -147,7 +207,11 @@ class LatentInferenceNetwork(InferenceNetwork):
         y = keras.ops.stop_gradient(y)
 
         inference_metrics = self.inference_network.compute_metrics(
-            y, conditions=conditions, sample_weight=sample_weight, stage=stage, **kwargs
+            y,
+            conditions=conditions,
+            sample_weight=sample_weight,
+            stage=stage,
+            **self._inner_kwargs(masks, kwargs),
         )
 
         metrics = {"loss": inference_metrics["loss"] + autoencoder_metrics["loss"]}

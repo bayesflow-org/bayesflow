@@ -2,6 +2,8 @@ import keras
 from keras import ops
 
 from bayesflow.distributions import Distribution
+from bayesflow.masking import InferenceMasks, MaskName
+from bayesflow.networks import InferenceNetwork
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     concatenate_valid,
@@ -10,13 +12,10 @@ from bayesflow.utils import (
     jacobian,
     jvp,
     log_abs_det,
-    model_kwargs,
     vjp,
     weighted_mean,
 )
 from bayesflow.utils.serialization import deserialize, serializable, serialize
-
-from bayesflow.networks import InferenceNetwork
 
 
 # disable module check, use potential module after moving from experimental
@@ -24,6 +23,11 @@ from bayesflow.networks import InferenceNetwork
 class FreeFormFlow(InferenceNetwork):
     """(IN) Implements a dimensionality-preserving Free-form Flow.
     Incorporates ideas from [1-2].
+
+    Semantic target masks are resolved once per operation. Fixed coordinates
+    remain identity coordinates of the flow and are excluded from its base
+    density and training objective. Mask-aware subnets receive the resolved
+    semantic masks through explicit ``call`` parameters.
 
     [1] Draxler, F., Sorrenson, P., Zimmermann, L., Rousselot, A., & Köthe, U. (2024).F
     ree-form flows: Make Any Architecture a Normalizing Flow.
@@ -139,55 +143,156 @@ class FreeFormFlow(InferenceNetwork):
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         kwargs.pop("seed", None)  # forward pass is deterministic; seed only used for base distribution
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+        )
+        replacement = masks.fixed_target_value if masks.fixed_target_value is not None else x
+        x = self.mask_handler.maybe_apply(x, masks.fixed_target_mask, replacement)
+        subnet_kwargs = self._subnet_kwargs(self.encoder_subnet, masks, kwargs)
+
         if density:
             z, jac = jacobian(
-                lambda inp: self.encode(inp, conditions=conditions, training=training, **kwargs), x, return_output=True
+                lambda inp: self._encode(
+                    inp,
+                    conditions=conditions,
+                    training=training,
+                    masks=masks,
+                    subnet_kwargs=subnet_kwargs,
+                ),
+                x,
+                return_output=True,
             )
             log_det = log_abs_det(jac)
 
-            log_density = self.base_distribution.log_prob(z) + log_det
+            log_density = self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) + log_det
             return z, log_density
 
-        z = self.encode(x, conditions, training=training, **kwargs)
+        z = self._encode(
+            x,
+            conditions=conditions,
+            training=training,
+            masks=masks,
+            subnet_kwargs=subnet_kwargs,
+        )
         return z
 
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         kwargs.pop("seed", None)  # inverse pass is deterministic; seed only used for base distribution
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=z,
+            conditions=conditions,
+        )
+        subnet_kwargs = self._subnet_kwargs(self.decoder_subnet, masks, kwargs)
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+
         if density:
             x, jac = jacobian(
-                lambda inp: self.decode(inp, conditions=conditions, training=training, **kwargs), z, return_output=True
+                lambda inp: self._decode(
+                    inp,
+                    conditions=conditions,
+                    training=training,
+                    masks=masks,
+                    subnet_kwargs=subnet_kwargs,
+                ),
+                z,
+                return_output=True,
             )
             log_det = log_abs_det(jac)
 
-            log_density = self.base_distribution.log_prob(z) - log_det
+            log_density = self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) - log_det
             return x, log_density
 
-        x = self.decode(z, conditions, training=training, **kwargs)
+        x = self._decode(
+            z,
+            conditions=conditions,
+            training=training,
+            masks=masks,
+            subnet_kwargs=subnet_kwargs,
+        )
         return x
 
     def encode(self, x: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> Tensor:
+        """Encode targets while honoring any explicitly provided semantic masks."""
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+        )
+        replacement = masks.fixed_target_value if masks.fixed_target_value is not None else x
+        x = self.mask_handler.maybe_apply(x, masks.fixed_target_mask, replacement)
+        return self._encode(
+            x,
+            conditions=conditions,
+            training=training,
+            masks=masks,
+            subnet_kwargs=self._subnet_kwargs(self.encoder_subnet, masks, kwargs),
+        )
+
+    def _encode(
+        self,
+        x: Tensor,
+        conditions: Tensor,
+        training: bool,
+        masks: InferenceMasks,
+        subnet_kwargs: dict,
+    ) -> Tensor:
         if conditions is None:
             inp = x
         else:
             inp = concatenate_valid([x, conditions], axis=-1)
-        network_out = self.encoder_projector(
-            self.encoder_subnet(inp, training=training, **filter_kwargs(kwargs, self.encoder_subnet.call)),
-            training=training,
-        )
-        return network_out + x
+        network_out = self.encoder_projector(self.encoder_subnet(inp, training=training, **subnet_kwargs))
+        return self.mask_handler.maybe_apply(network_out + x, masks.fixed_target_mask, x)
 
     def decode(self, z: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> Tensor:
+        """Decode latents while honoring any explicitly provided semantic masks."""
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=z,
+            conditions=conditions,
+        )
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+        return self._decode(
+            z,
+            conditions=conditions,
+            training=training,
+            masks=masks,
+            subnet_kwargs=self._subnet_kwargs(self.decoder_subnet, masks, kwargs),
+        )
+
+    def _decode(
+        self,
+        z: Tensor,
+        conditions: Tensor,
+        training: bool,
+        masks: InferenceMasks,
+        subnet_kwargs: dict,
+    ) -> Tensor:
         if conditions is None:
             inp = z
         else:
             inp = concatenate_valid([z, conditions], axis=-1)
-        network_out = self.decoder_projector(
-            self.decoder_subnet(inp, training=training, **filter_kwargs(kwargs, self.decoder_subnet.call)),
-            training=training,
-        )
-        return network_out + z
+        network_out = self.decoder_projector(self.decoder_subnet(inp, training=training, **subnet_kwargs))
+        return self.mask_handler.maybe_apply(network_out + z, masks.fixed_target_mask, z)
+
+    def _subnet_kwargs(
+        self,
+        subnet: keras.Layer,
+        masks: InferenceMasks,
+        source: dict,
+    ) -> dict:
+        """Route ordinary and semantic masks only to subnets declaring them."""
+        mask_kwargs = self.mask_handler.collect_subnet_masks(subnet, source, masks.semantic_kwargs())
+        passthrough = {
+            key: value
+            for key, value in self.mask_handler.without_semantic_kwargs(source).items()
+            if key not in (MaskName.ATTENTION_MASK, MaskName.MASK)
+        }
+        return filter_kwargs(passthrough, subnet.call) | mask_kwargs
 
     def _sample_v(self, x):
         batch_size = ops.shape(x)[0]
@@ -207,28 +312,62 @@ class FreeFormFlow(InferenceNetwork):
         return v
 
     def compute_metrics(
-        self, x: Tensor, conditions: Tensor = None, sample_weight: Tensor = None, stage: str = "training"
+        self,
+        x: Tensor,
+        conditions: Tensor = None,
+        sample_weight: Tensor = None,
+        stage: str = "training",
+        **kwargs,
     ) -> dict[str, Tensor]:
+        training = stage == "training"
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+            stage=stage,
+            subnet=self.encoder_subnet,
+        )
+        replacement = masks.fixed_target_value if masks.fixed_target_value is not None else x
+        x = self.mask_handler.maybe_apply(x, masks.fixed_target_mask, replacement)
+        encoder_kwargs = self._subnet_kwargs(self.encoder_subnet, masks, kwargs)
+        decoder_kwargs = self._subnet_kwargs(self.decoder_subnet, masks, kwargs)
+
         # sample random vector
-        v = self._sample_v(x)
+        v = self.mask_handler.maybe_apply(self._sample_v(x), masks.fixed_target_mask)
 
         def encode(x):
-            return self.encode(x, conditions, training=stage == "training")
+            return self._encode(
+                x,
+                conditions=conditions,
+                training=training,
+                masks=masks,
+                subnet_kwargs=encoder_kwargs,
+            )
 
         def decode(z):
-            return self.decode(z, conditions, training=stage == "training")
+            return self._decode(
+                z,
+                conditions=conditions,
+                training=training,
+                masks=masks,
+                subnet_kwargs=decoder_kwargs,
+            )
 
         # VJP computation
         z, vjp_fn = vjp(encode, x, return_output=True)
-        v1 = vjp_fn(v)
+        v1 = self.mask_handler.maybe_apply(vjp_fn(v), masks.fixed_target_mask)
         # JVP computation
         x_pred, v2 = jvp(decode, (z,), (v,), return_output=True)
+        v2 = self.mask_handler.maybe_apply(v2, masks.fixed_target_mask)
 
         # equivalent: surrogate = ops.matmul(ops.stop_gradient(v2[:, None]), v1[:, :, None])[:, 0, 0]
         surrogate = ops.sum((ops.stop_gradient(v2) * v1), axis=-1)
-        nll = -self.base_distribution.log_prob(z)
+        nll = -self.base_distribution.log_prob(z, mask=masks.fixed_target_mask)
         maximum_likelihood_loss = nll - surrogate
-        reconstruction_loss = ops.sum((x - x_pred) ** 2, axis=-1)
+        reconstruction_loss = ops.sum(
+            self.mask_handler.maybe_apply((x - x_pred) ** 2, masks.fixed_target_mask),
+            axis=-1,
+        )
 
         losses = maximum_likelihood_loss + self.beta * reconstruction_loss
         loss = weighted_mean(losses, sample_weight)
@@ -241,8 +380,6 @@ class FreeFormFlow(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = model_kwargs(base_config)
-
         config = {
             "beta": self.beta,
             "encoder_subnet": self.encoder_subnet,

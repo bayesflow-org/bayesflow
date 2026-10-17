@@ -1,7 +1,9 @@
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Mapping
+from typing import Any
 
 import keras
 
+from bayesflow.masking import MaskHandler
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
@@ -41,6 +43,13 @@ class InferenceNetwork(keras.Layer):
     an omitted ``seed`` against ``self.seed_generator``, so that they never fall back to Keras'
     global generator (which cannot be traced under ``jax.jit``).
 
+    Every inference network also owns a :class:`~bayesflow.masking.MaskHandler`. Implementations resolve masks once
+    at the boundary of each top-level operation and reuse the returned immutable
+    :class:`~bayesflow.masking.InferenceMasks` throughout solver steps or derivative
+    closures. Ordinary padding and attention masks are routed separately to subnets which declare
+    them explicitly. Custom implementations should follow the same boundary so mask sampling is
+    neither repeated nor inserted into the backpropagation loop.
+
     Optionally override:
 
     ``sample(batch_shape, conditions, **kwargs)``
@@ -60,27 +69,71 @@ class InferenceNetwork(keras.Layer):
         ``"student_t"`` (:class:`~bayesflow.distributions.DiagonalStudentT`),
         or an explicit :class:`~bayesflow.distributions.Distribution` instance
         for full control.  Default is ``"normal"``.
+    fixed_target_prob : float, optional
+        Probability of fixing each target during mask-augmented training.
+    missing_target_prob : float, optional
+        Probability of hiding an already-fixed target during training.
+    missing_conditions_prob : float, optional
+        Probability of hiding each condition during training.
+    seed : int, optional
+        Initial seed for the network's local random generator.
     **kwargs
         Forwarded to ``keras.Layer`` after filtering with
         :func:`~bayesflow.utils.layer_kwargs`.
     """
 
-    # Valid mask keys to pass to subnet
-    _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
-
-    def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
+    def __init__(
+        self,
+        base_distribution: str | keras.Layer = "normal",
+        *,
+        fixed_target_prob: float = 0.0,
+        missing_target_prob: float = 0.0,
+        missing_conditions_prob: float = 0.0,
+        seed: int | None = None,
+        **kwargs,
+    ):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
-        self.seed_generator = keras.random.SeedGenerator()
+        self.seed = seed
+        self.seed_generator = keras.random.SeedGenerator(seed)
+        self.mask_handler = MaskHandler(
+            fixed_target_prob=fixed_target_prob,
+            missing_target_prob=missing_target_prob,
+            missing_conditions_prob=missing_conditions_prob,
+            seed_generator=self.seed_generator,
+        )
 
-    @staticmethod
-    def _collect_mask_kwargs(keys: Sequence[str], source: dict) -> dict:
-        """Extract mask kwargs from source dict.
+    @property
+    def fixed_target_prob(self) -> float:
+        return self.mask_handler.fixed_target_prob
 
-        Looks up each key in *keys* and includes it in the result if its value
-        is not ``None``.
-        """
-        return {key: source[key] for key in keys if source.get(key) is not None}
+    @fixed_target_prob.setter
+    def fixed_target_prob(self, value: float) -> None:
+        self.mask_handler.fixed_target_prob = value
+
+    @property
+    def missing_target_prob(self) -> float:
+        return self.mask_handler.missing_target_prob
+
+    @missing_target_prob.setter
+    def missing_target_prob(self, value: float) -> None:
+        self.mask_handler.missing_target_prob = value
+
+    @property
+    def missing_conditions_prob(self) -> float:
+        return self.mask_handler.missing_conditions_prob
+
+    @missing_conditions_prob.setter
+    def missing_conditions_prob(self, value: float) -> None:
+        self.mask_handler.missing_conditions_prob = value
+
+    def get_config(self):
+        return super().get_config() | {
+            "fixed_target_prob": self.fixed_target_prob,
+            "missing_target_prob": self.missing_target_prob,
+            "missing_conditions_prob": self.missing_conditions_prob,
+            "seed": self.seed,
+        }
 
     def call(
         self,
@@ -90,8 +143,15 @@ class InferenceNetwork(keras.Layer):
         density: bool = False,
         training: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
+        hutchinson_steps: int | None = None,
+        guidance_kwargs: Mapping[str, Any] | None = None,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
+        if hutchinson_steps is not None:
+            kwargs["hutchinson_steps"] = hutchinson_steps
+        if guidance_kwargs is not None:
+            kwargs["guidance_kwargs"] = guidance_kwargs
+
         if inverse:
             return self._inverse(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
         return self._forward(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)

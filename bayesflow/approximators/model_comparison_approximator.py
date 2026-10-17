@@ -7,6 +7,7 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
+from bayesflow.masking import MaskHandler
 from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.types import Tensor
@@ -263,7 +264,7 @@ class ModelComparisonApproximator(ScoringRuleApproximator):
             ``"_summaries"`` (if present) is at the top level in both cases.
         """
         resolved_conditions, adapted, summary_outputs = self._prepare_conditions(conditions, **kwargs)
-        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+        inference_kwargs = MaskHandler.collect_inference_masks(adapted)
 
         raw = self.inference_network(xz=None, conditions=resolved_conditions, **inference_kwargs)
 

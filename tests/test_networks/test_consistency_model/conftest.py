@@ -53,19 +53,6 @@ def consistency_model(request):
     return ConsistencyModel(subnet_kwargs=dict(widths=(8, 8)), **request.param)
 
 
-@pytest.fixture()
-def consistency_model_with_masking():
-    from bayesflow.networks import ConsistencyModel
-
-    return ConsistencyModel(
-        total_steps=100,
-        subnet_kwargs=dict(widths=(8, 8)),
-        fixed_target_prob=0.3,
-        missing_target_prob=0.3,
-        missing_conditions_prob=0.3,
-    )
-
-
 # ---------------------------------------------------------------------------
 # StableConsistencyModel variants
 # ---------------------------------------------------------------------------
@@ -82,15 +69,3 @@ def stable_consistency_model(request):
     from bayesflow.networks import StableConsistencyModel
 
     return StableConsistencyModel(subnet_kwargs=dict(widths=(8, 8)), **request.param)
-
-
-@pytest.fixture()
-def stable_consistency_model_with_masking():
-    from bayesflow.networks import StableConsistencyModel
-
-    return StableConsistencyModel(
-        subnet_kwargs=dict(widths=(8, 8)),
-        fixed_target_prob=0.3,
-        missing_target_prob=0.3,
-        missing_conditions_prob=0.3,
-    )

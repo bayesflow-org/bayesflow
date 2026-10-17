@@ -27,6 +27,7 @@ please refer to the :doc:`Examples <../examples>` section.
     distributions
     experimental
     links
+    masking
     metrics
     networks
     scoring_rules

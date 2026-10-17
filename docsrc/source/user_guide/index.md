@@ -13,6 +13,7 @@ data_processing.ipynb
 approximators.ipynb
 summary_networks.ipynb
 inference_networks.ipynb
+masking.ipynb
 workflows.ipynb
 saving_loading.ipynb
 diagnostics.ipynb

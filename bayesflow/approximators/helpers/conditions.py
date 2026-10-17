@@ -5,6 +5,7 @@ from tqdm.auto import tqdm
 import numpy as np
 import keras
 
+from bayesflow.masking import MaskHandler, MaskName
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.utils import (
@@ -114,12 +115,13 @@ class ConditionBuilder:
                     if batch_size is None:
                         batch_size = num_conditions
 
+                    batched_keys = MaskHandler.batched_keys(summary_kwargs, num_conditions)
                     batches = []
                     for i in tqdm(range(0, num_conditions, batch_size), desc="Summarizing", unit="batch"):
                         batch_variables = slice_maybe_nested(summary_variables, i, i + batch_size)
                         batch_kwargs = {
-                            k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
-                            for k, v in summary_kwargs.items()
+                            key: slice_maybe_nested(value, i, i + batch_size) if key in batched_keys else value
+                            for key, value in summary_kwargs.items()
                         }
 
                         batch_outputs = summary_network(
@@ -207,12 +209,13 @@ class ConditionBuilder:
             batch_size = total_datasets
 
         if summary_outputs is None:
+            batched_keys = MaskHandler.batched_keys(summary_kwargs, total_datasets)
             batches = []
             for i in tqdm(range(0, total_datasets, batch_size), desc="Summarizing", unit="batch"):
                 batch_variables = slice_maybe_nested(child_summary_variables, i, i + batch_size)
                 batch_kwargs = {
-                    k: slice_maybe_nested(v, i, i + batch_size) if hasattr(v, "shape") else v
-                    for k, v in summary_kwargs.items()
+                    key: slice_maybe_nested(value, i, i + batch_size) if key in batched_keys else value
+                    for key, value in summary_kwargs.items()
                 }
                 batch_outputs = summary_network(batch_variables, **filter_kwargs(batch_kwargs, summary_network.call))
                 batches.append(batch_outputs)
@@ -312,8 +315,8 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
         decoder_time = self.resolve_decoder_time(encoder_network, encoder_inputs)
         encoder_kwargs = filter_kwargs(
             {
-                "attention_mask": summary_attention_mask,
-                "mask": summary_mask,
+                MaskName.ATTENTION_MASK: summary_attention_mask,
+                MaskName.MASK: summary_mask,
             },
             encoder_network.call,
         )
@@ -357,7 +360,7 @@ class AutoregressiveConditionBuilder(ConditionBuilder):
                     "time": decoder_time,
                     "target_mask": inference_mask,
                     "encoder_mask": summary_mask,
-                    "attention_mask": inference_attention_mask,
+                    MaskName.ATTENTION_MASK: inference_attention_mask,
                     "training": stage == "training",
                 },
                 decoder_network.call,

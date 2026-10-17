@@ -92,17 +92,47 @@ class DiagonalStudentT(Distribution):
             self._loc = self.loc
             self._scale = self.scale
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
-        mahalanobis_term = ops.sum((samples - self._loc) ** 2 / self._scale**2, axis=-1)
-        result = -0.5 * (self.df + self.dim) * ops.log1p(mahalanobis_term / self.df)
+    def log_prob(
+        self,
+        samples: Tensor,
+        *,
+        normalize: bool = True,
+        mask: Tensor | None = None,
+    ) -> Tensor:
+        if mask is None:
+            event_dim = self.dim
+            mahalanobis_term = ops.sum((samples - self._loc) ** 2 / self._scale**2, axis=-1)
+            log_scale = ops.sum(ops.log(self._scale))
+        else:
+            mask = ops.cast(ops.broadcast_to(mask, ops.shape(samples)), "bool")
+            event_dim = ops.sum(ops.cast(mask, ops.dtype(samples)), axis=-1)
+            squared_distance = (samples - self._loc) ** 2 / self._scale**2
+            mahalanobis_term = ops.sum(
+                ops.where(mask, squared_distance, ops.zeros_like(squared_distance)),
+                axis=-1,
+            )
+            log_scale_terms = ops.broadcast_to(ops.log(self._scale), ops.shape(samples))
+            log_scale = ops.sum(
+                ops.where(mask, log_scale_terms, ops.zeros_like(log_scale_terms)),
+                axis=-1,
+            )
+
+        result = -0.5 * (self.df + event_dim) * ops.log1p(mahalanobis_term / self.df)
 
         if normalize:
+            if mask is None:
+                log_gamma_ratio = math.lgamma(0.5 * (self.df + self.dim)) - math.lgamma(0.5 * self.df)
+            else:
+                # Keras has no cross-backend lgamma op. The active dimension is
+                # an integer in [0, self.dim], so select from exact constants.
+                gamma_ratios = ops.convert_to_tensor(
+                    [math.lgamma(0.5 * (self.df + dim)) - math.lgamma(0.5 * self.df) for dim in range(self.dim + 1)],
+                    dtype=ops.dtype(samples),
+                )
+                log_gamma_ratio = ops.take(gamma_ratios, ops.cast(event_dim, "int32"))
+
             log_normalization_constant = (
-                -0.5 * self.dim * math.log(self.df)
-                - 0.5 * self.dim * math.log(math.pi)
-                - math.lgamma(0.5 * self.df)
-                + math.lgamma(0.5 * (self.df + self.dim))
-                - ops.sum(keras.ops.log(self._scale))
+                -0.5 * event_dim * math.log(self.df) - 0.5 * event_dim * math.log(math.pi) + log_gamma_ratio - log_scale
             )
             result += log_normalization_constant
 

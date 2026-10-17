@@ -53,17 +53,6 @@ def test_compute_metrics(consistency_model, random_samples, random_conditions):
     assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
-def test_compute_metrics_with_masking(consistency_model_with_masking, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    consistency_model_with_masking.build(xz_shape, conditions_shape=cond_shape)
-
-    metrics = consistency_model_with_masking.compute_metrics(random_samples, conditions=random_conditions)
-    assert "loss" in metrics
-    loss = keras.ops.convert_to_numpy(metrics["loss"])
-    assert np.isfinite(loss), f"Loss is not finite: {loss}"
-
-
 # ===========================================================================
 # StableConsistencyModel
 # ===========================================================================
@@ -108,18 +97,6 @@ def test_stable_compute_metrics(stable_consistency_model, random_samples, random
     stable_consistency_model.build(xz_shape, conditions_shape=cond_shape)
 
     metrics = stable_consistency_model.compute_metrics(random_samples, conditions=random_conditions)
-    assert "loss" in metrics
-    loss = keras.ops.convert_to_numpy(metrics["loss"])
-    assert np.isfinite(loss), f"Loss is not finite: {loss}"
-
-
-@pytest.mark.skip_on_mps
-def test_stable_compute_metrics_with_masking(stable_consistency_model_with_masking, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    stable_consistency_model_with_masking.build(xz_shape, conditions_shape=cond_shape)
-
-    metrics = stable_consistency_model_with_masking.compute_metrics(random_samples, conditions=random_conditions)
     assert "loss" in metrics
     loss = keras.ops.convert_to_numpy(metrics["loss"])
     assert np.isfinite(loss), f"Loss is not finite: {loss}"

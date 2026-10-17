@@ -1,4 +1,3 @@
-import inspect
 from collections.abc import Mapping
 
 import keras
@@ -48,31 +47,6 @@ def multinomial_allocation(weights: Mapping[str, float], num_samples: int, seed=
     counts = keras.ops.sum(one_hot, axis=0)
 
     return {name: int(count) for name, count in zip(names, counts)}
-
-
-def call_accepts_kwarg(call, key: str) -> bool:
-    """Return whether a callable accepts a keyword argument.
-
-    Parameters
-    ----------
-    call : Callable
-        Callable to inspect.
-    key : str
-        Keyword argument name.
-
-    Returns
-    -------
-    bool
-        ``True`` if *call* explicitly accepts *key* or has ``**kwargs``.
-    """
-    try:
-        parameters = inspect.signature(call).parameters
-    except (TypeError, ValueError):
-        return False
-
-    return key in parameters or any(
-        parameter.kind == inspect.Parameter.VAR_KEYWORD for parameter in parameters.values()
-    )
 
 
 def inverse_shifted_softplus(x: Tensor, shift: float = np.log(np.e - 1), beta: float = 1.0, threshold: float = 20.0):

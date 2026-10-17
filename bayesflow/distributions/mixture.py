@@ -97,7 +97,13 @@ class Mixture(Distribution):
 
         return keras.ops.reshape(selected, batch_shape + (self.dim,))
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
+    def log_prob(
+        self,
+        samples: Tensor,
+        *,
+        normalize: bool = True,
+        mask: Tensor | None = None,
+    ) -> Tensor:
         """
         Compute the log probability of given samples under the mixture.
 
@@ -109,8 +115,11 @@ class Mixture(Distribution):
         samples : Tensor
             A tensor of samples with shape `batch_shape + (dim,)`.
         normalize : bool, optional
-            If `True`, returns normalized log‑probabilities (i.e., includes the
+            If `True`, returns normalized log-probabilities (i.e., includes the
             log normalization constant). Default is `True`.
+        mask : Tensor, optional
+            Binary event mask broadcastable to ``samples``. The marginal of a
+            mixture is obtained by marginalizing each component before mixing.
 
         Returns
         -------
@@ -119,7 +128,9 @@ class Mixture(Distribution):
             each sample under the mixture distribution.
         """
 
-        log_prob = [distribution.log_prob(samples, normalize=normalize) for distribution in self.distributions]
+        log_prob = [
+            distribution.log_prob(samples, normalize=normalize, mask=mask) for distribution in self.distributions
+        ]
         log_prob = ops.stack(log_prob, axis=-1)
         log_prob = ops.logsumexp(log_prob + ops.log_softmax(self._mixture_logits), axis=-1)
         return log_prob

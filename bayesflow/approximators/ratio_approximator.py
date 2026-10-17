@@ -5,6 +5,7 @@ import keras
 
 from bayesflow.types import Tensor
 from bayesflow.adapters import Adapter
+from bayesflow.masking import MaskHandler
 from bayesflow.utils import expand_tile, concatenate_valid_shapes, weighted_mean
 from bayesflow.utils.serialization import serialize, serializable
 
@@ -129,8 +130,8 @@ class RatioApproximator(Approximator):
             inference_attention_mask=inference_attention_mask,
             inference_mask=inference_mask,
         )
-        summary_kwargs = self._collect_mask_kwargs(self._SUMMARY_MASK_KEYS, masks)
-        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, masks)
+        summary_kwargs = MaskHandler.collect_summary_masks(masks)
+        inference_kwargs = MaskHandler.collect_inference_masks(masks)
 
         resolved_conditions, summary_metrics = self._standardize_and_resolve(
             inference_conditions, summary_variables, stage=stage, purpose="metrics", **summary_kwargs
@@ -247,7 +248,7 @@ class RatioApproximator(Approximator):
             adapted.get("inference_variables"), key="inference_variables", stage="inference"
         )
 
-        inference_kwargs = self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+        inference_kwargs = MaskHandler.collect_inference_masks(adapted)
 
         log_ratio = self.logits(inference_variables, resolved_conditions, stage="inference", **inference_kwargs)
         return log_ratio

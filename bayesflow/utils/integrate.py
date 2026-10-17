@@ -1003,6 +1003,16 @@ def shark_step(
     return new_state, t + h, h
 
 
+def _apply_state_projection(
+    state: StateDict,
+    state_projection_fn: Optional[Callable],
+) -> StateDict:
+    """Apply an optional invariant-preserving projection to an integrator state."""
+    if state_projection_fn is None:
+        return state
+    return state_projection_fn(state)
+
+
 def _apply_corrector(
     new_state: StateDict,
     new_time: ArrayLike,
@@ -1013,6 +1023,8 @@ def _apply_corrector(
     seed: keras.random.SeedGenerator,
     step_size_factor: ArrayLike = 0.01,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """Helper function to apply corrector steps [1].
 
@@ -1024,6 +1036,8 @@ def _apply_corrector(
             _z_corr = generate_noise(new_state, seed=seed)
         else:
             _z_corr = {k: val[i, j] for k, val in corrector_noise_history.items()}
+        score = _apply_state_projection(score, state_update_projection_fn)
+        _z_corr = _apply_state_projection(_z_corr, state_update_projection_fn)
 
         log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
         alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
@@ -1040,6 +1054,7 @@ def _apply_corrector(
 
                 # Annealed Langevin Dynamics update
                 new_state[k] = new_state[k] + e * score[k] + keras.ops.sqrt(2.0 * e) * _z_corr[k]
+        new_state = _apply_state_projection(new_state, state_projection_fn)
     return new_state
 
 
@@ -1059,6 +1074,8 @@ def integrate_stochastic_fixed(
     seed: keras.random.SeedGenerator,
     corrector_steps: int = 0,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Performs fixed-step SDE integration.
@@ -1082,12 +1099,14 @@ def integrate_stochastic_fixed(
             _noise_i = generate_noise(_current_state, seed=seed)
         else:
             _noise_i = {k: val[_i] for k, val in z_history.items()}
+        _noise_i = _apply_state_projection(_noise_i, state_update_projection_fn)
         _noise_extra_i = None
         if z_extra_history is not None:
             if len(z_extra_history) == 0:
                 _noise_extra_i = generate_noise(_current_state, seed=seed)
             else:
-                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
+                _noise_extra_i = {k: val[_i] for k, val in z_extra_history.items()}
+            _noise_extra_i = _apply_state_projection(_noise_extra_i, state_update_projection_fn)
 
         step_fn_additional_args = dict(
             noise_aux=_noise_extra_i,
@@ -1102,6 +1121,7 @@ def integrate_stochastic_fixed(
             noise=_noise_i,
             **filter_kwargs(step_fn_additional_args, step_fn),
         )
+        new_state = _apply_state_projection(new_state, state_projection_fn)
 
         if corrector_steps > 0:
             new_state = _apply_corrector(
@@ -1114,6 +1134,8 @@ def integrate_stochastic_fixed(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
         return _i + 1, new_state, new_time, initial_step
 
@@ -1146,6 +1168,8 @@ def integrate_stochastic_adaptive(
     corrector_noise_history: StateDict | None,
     corrector_steps: int = 0,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Performs adaptive-step SDE integration.
@@ -1171,13 +1195,15 @@ def integrate_stochastic_adaptive(
             _noise_i = generate_noise(_current_state, seed=seed_body)
         else:
             _noise_i = {k: val[_i] for k, val in z_history.items()}
+        _noise_i = _apply_state_projection(_noise_i, state_update_projection_fn)
 
         _noise_extra_i = None
         if z_extra_history is not None:
             if len(z_extra_history) == 0:
                 _noise_extra_i = generate_noise(_current_state, seed=seed_body)
             else:
-                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
+                _noise_extra_i = {k: val[_i] for k, val in z_extra_history.items()}
+            _noise_extra_i = _apply_state_projection(_noise_extra_i, state_update_projection_fn)
 
         step_fn_additional_args = dict(
             last_state=_last_state,
@@ -1193,6 +1219,8 @@ def integrate_stochastic_adaptive(
             use_adaptive_step_size=True,
             **filter_kwargs(step_fn_additional_args, step_fn),
         )
+        new_state = _apply_state_projection(new_state, state_projection_fn)
+        _new_current_state = _apply_state_projection(_new_current_state, state_projection_fn)
 
         if corrector_steps > 0:
             new_state = _apply_corrector(
@@ -1205,6 +1233,8 @@ def integrate_stochastic_adaptive(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed_body,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
 
         return _i + 1, new_state, new_time, new_step, _new_current_state
@@ -1222,9 +1252,11 @@ def integrate_stochastic_adaptive(
 
     def take_final_step():
         noise_final = generate_noise(final_state, seed=seed)
+        noise_final = _apply_state_projection(noise_final, state_update_projection_fn)
         noise_extra_final = None
         if z_extra_history is not None and len(z_extra_history) > 0:
             noise_extra_final = generate_noise(final_state, seed=seed)
+            noise_extra_final = _apply_state_projection(noise_extra_final, state_update_projection_fn)
 
         step_fn_additional_args_final = dict(
             noise_aux=noise_extra_final,
@@ -1240,6 +1272,7 @@ def integrate_stochastic_adaptive(
             use_adaptive_step_size=False,
             **filter_kwargs(step_fn_additional_args_final, step_fn),
         )
+        stepped_state = _apply_state_projection(stepped_state, state_projection_fn)
         return stepped_state, final_counter + 1
 
     take_final = _as_concrete_bool(keras.ops.all(time_remaining > 0))
@@ -1269,6 +1302,8 @@ def integrate_langevin(
     corrector_noise_history: StateDict | None,
     step_size_factor: ArrayLike = 0.01,
     corrector_steps: int = 0,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Annealed Langevin dynamics using the given score_fn and noise_schedule [1].
@@ -1298,6 +1333,7 @@ def integrate_langevin(
     def body(_i, _loop_state, _loop_time):
         # score at current time
         score = score_fn(_loop_time, **filter_kwargs(_loop_state, score_fn))
+        score = _apply_state_projection(score, state_update_projection_fn)
 
         # noise schedule
         log_snr_t = noise_schedule.get_log_snr(t=_loop_time, training=False)
@@ -1308,6 +1344,7 @@ def integrate_langevin(
             z_history_i = generate_noise(_loop_state, seed=seed)
         else:
             z_history_i = {k: val[_i] for k, val in z_history.items()}
+        z_history_i = _apply_state_projection(z_history_i, state_update_projection_fn)
         for k in _loop_state.keys():
             s_k = score.get(k, None)
             if s_k is None:
@@ -1316,6 +1353,7 @@ def integrate_langevin(
 
             e = effective_factor * sigma_t**2
             new_state[k] = _loop_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history_i[k]
+        new_state = _apply_state_projection(new_state, state_projection_fn)
 
         new_time = _loop_time + dt
 
@@ -1330,6 +1368,8 @@ def integrate_langevin(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
 
         return _i + 1, new_state, new_time
@@ -1455,6 +1495,7 @@ def glass_step(
     sigma_bar,
     gamma_bar,
     sigma_bar_0: float,
+    state_projection_fn: Optional[Callable] = None,
 ) -> Tuple[StateDict, ArrayLike]:
     """
     Single Euler step of the GLASS inner ODE at inner time s in [0, 1).
@@ -1485,6 +1526,7 @@ def glass_step(
     denom = dot_alpha_t_star * sigma_t_star - alpha_t_star * dot_sigma_t_star
 
     z_in = {key: alpha_t_star * suf_stat for key, suf_stat in suf_stats.items()}
+    z_in = _apply_state_projection(z_in, state_projection_fn)
     fn_out = fn(t_star, **filter_kwargs(z_in, fn))
     missing_keys = set(state) - set(fn_out)
     if missing_keys:
@@ -1511,6 +1553,8 @@ def integrate_glass(
     inner_steps: int = 1,
     rho: float = 0.4,
     sigma_bar_0: float = 1.0,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
     **kwargs,
 ) -> StateDict:
     """
@@ -1565,6 +1609,7 @@ def integrate_glass(
         raise ValueError(f"sigma_bar_0 must be > 0, got {sigma_bar_0}.")
 
     x_t = {key: keras.ops.convert_to_tensor(value) for key, value in state.items()}
+    x_t = _apply_state_projection(x_t, state_projection_fn)
     dtype = keras.ops.dtype(next(iter(x_t.values())))
     t_val = keras.ops.cast(start_time, dtype)
     t_prime_val = keras.ops.cast(stop_time, dtype)
@@ -1597,9 +1642,12 @@ def integrate_glass(
         alpha_bar_i = alpha_next - gamma_bar_i * alpha_curr
         sigma_bar_i = keras.ops.sqrt(sigma_next**2 * (1.0 - rho_val**2))
 
+        noise_i = {key: value[i] for key, value in noise_per_step.items()}
+        noise_i = _apply_state_projection(noise_i, state_update_projection_fn)
         inner_state_i = {
-            key: gamma_bar_i * current_state[key] + sigma_bar_0_val * noise_per_step[key][i] for key in current_state
+            key: gamma_bar_i * current_state[key] + sigma_bar_0_val * noise_i[key] for key in current_state
         }
+        inner_state_i = _apply_state_projection(inner_state_i, state_projection_fn)
 
         def inner_body(_j, _inner_loop_state):
             _state, _time = _inner_loop_state
@@ -1616,7 +1664,9 @@ def integrate_glass(
                 sigma_bar=sigma_bar_i,
                 gamma_bar=gamma_bar_i,
                 sigma_bar_0=sigma_bar_0_val,
+                state_projection_fn=state_projection_fn,
             )
+            _state = _apply_state_projection(_state, state_projection_fn)
             return _state, _time
 
         inner_state_i, _ = keras.ops.fori_loop(0, inner_steps, inner_body, (inner_state_i, keras.ops.cast(0.0, dtype)))
@@ -1640,6 +1690,8 @@ def integrate_stochastic(
     corrector_steps: int = 0,
     noise_schedule=None,
     step_size_factor: ArrayLike = 0.01,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
     **kwargs,
 ) -> StateDict:
     """
@@ -1687,6 +1739,13 @@ def integrate_stochastic(
         Required if ``corrector_steps > 0``.
     step_size_factor : array-like, optional
         Scaling factor applied to the corrector step size. Default is ``0.01``.
+    state_projection_fn : Callable, optional
+        Function mapping a state dictionary to a projected state dictionary.
+        It is applied after every stochastic predictor and corrector update,
+        including GLASS inner steps, to preserve hard state invariants.
+    state_update_projection_fn : Callable, optional
+        Function mapping noise, score, or tangent state dictionaries to their
+        admissible components before stochastic norms and updates are computed.
     **kwargs
         Additional keyword arguments passed to the underlying step function.
 
@@ -1715,6 +1774,8 @@ def integrate_stochastic(
                 steps=steps,
                 noise_schedule=noise_schedule or "flow_matching",
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
                 **kwargs,
             )
 
@@ -1790,6 +1851,8 @@ def integrate_stochastic(
                     corrector_steps=corrector_steps,
                     corrector_noise_history=corrector_noise_history,
                     seed=seed,
+                    state_projection_fn=state_projection_fn,
+                    state_update_projection_fn=state_update_projection_fn,
                 )
 
             result = _compile_loop_integrator(run_langevin)()
@@ -1834,6 +1897,8 @@ def integrate_stochastic(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
         else:
             return integrate_stochastic_fixed(
@@ -1852,6 +1917,8 @@ def integrate_stochastic(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
 
     result = _compile_loop_integrator(run)()

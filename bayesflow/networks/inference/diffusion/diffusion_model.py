@@ -9,18 +9,13 @@ from bayesflow.types import Tensor, Shape
 from bayesflow.utils import (
     expand_right_as,
     find_network,
-    filter_kwargs,
     integrate,
     integrate_stochastic,
     jacobian_trace,
-    layer_kwargs,
     logging,
     linsolve_batched,
-    MaskName,
-    maybe_mask_tensor,
     repeat_and_flatten,
     resolve_seed,
-    sample_input_masks,
     vjp,
     weighted_mean,
     DETERMINISTIC_METHODS,
@@ -33,6 +28,7 @@ from .schedules.noise_schedule import NoiseSchedule
 from .dispatch import find_noise_schedule
 
 from ...inference import InferenceNetwork
+from bayesflow.masking import InferenceMasks
 from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
 
 
@@ -83,7 +79,7 @@ class DiffusionModel(InferenceNetwork):
     missing_conditions_prob : float
         Probability of marking each condition as missing during training, so the network learns
         to handle missing conditions. Only takes effect when the subnet accepts
-        ``infer_target_mask`` (e.g. ``diffusion_transformer``). Default is 0.0.
+        ``observed_condition_mask`` (e.g. ``diffusion_transformer``). Default is 0.0.
     **kwargs
         Additional keyword arguments passed to the base ``InferenceNetwork``.
 
@@ -102,13 +98,6 @@ class DiffusionModel(InferenceNetwork):
         https://dl.acm.org/doi/proceedings/10.5555/3692070
     """
 
-    _SUBNET_MASK_KEYS = {
-        "attention_mask",
-        MaskName.FIXED_TARGET,
-        MaskName.INFER_TARGET,
-        MaskName.OBSERVED_CONDITION,
-    }
-
     def __init__(
         self,
         *,
@@ -124,7 +113,13 @@ class DiffusionModel(InferenceNetwork):
         missing_conditions_prob: float = 0.0,
         **kwargs,
     ):
-        super().__init__(base_distribution="normal", **kwargs)
+        super().__init__(
+            base_distribution="normal",
+            fixed_target_prob=fixed_target_prob,
+            missing_target_prob=missing_target_prob,
+            missing_conditions_prob=missing_conditions_prob,
+            **kwargs,
+        )
 
         if prediction_type not in ["noise", "velocity", "F", "x", "score", "potential"]:
             raise ValueError(f"Unknown prediction type: {prediction_type}")
@@ -152,12 +147,8 @@ class DiffusionModel(InferenceNetwork):
         if subnet == "diffusion_transformer":
             subnet_kwargs = DIFFUSION_TRANSFORMER_DEFAULTS | subnet_kwargs
         self.subnet = find_network(subnet, **subnet_kwargs)
-        self._subnet_mask_keys = set(filter_kwargs({k: None for k in self._SUBNET_MASK_KEYS}, self.subnet.call).keys())
 
         self.output_projector = None
-        self.fixed_target_prob = fixed_target_prob
-        self.missing_target_prob = missing_target_prob
-        self.missing_conditions_prob = missing_conditions_prob
 
         self.compositional_bridge_d0 = 1.0
         self.compositional_bridge_d1 = 1.0
@@ -170,8 +161,6 @@ class DiffusionModel(InferenceNetwork):
         stage: str = "training",
         **kwargs,
     ) -> dict[str, Tensor]:
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
-
         training = stage == "training"
         noise_schedule_training_stage = stage == "training" or stage == "validation"
 
@@ -193,25 +182,26 @@ class DiffusionModel(InferenceNetwork):
         # Diffuse x to get noisy input to the network
         diffused_x = alpha_t * x + sigma_t * eps_t
 
-        # Generate target / condition / missingness masks.
-        mask_x, loss_mask, subnet_kwargs = sample_input_masks(
-            self.subnet,
-            x,
-            conditions,
-            subnet_kwargs,
-            training,
-            fixed_target_prob=self.fixed_target_prob,
-            missing_target_prob=self.missing_target_prob,
-            missing_conditions_prob=self.missing_conditions_prob,
-            seed_generator=self.seed_generator,
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+            stage=stage,
+            subnet=self.subnet,
         )
-        diffused_x = maybe_mask_tensor(diffused_x, mask=mask_x, replacement=x)
+
+        # Fixed targets remain clean while inferred targets are diffused.
+        diffused_x = self.mask_handler.maybe_apply(diffused_x, masks.fixed_target_mask, replacement=x)
 
         # Obtain output of the network and transform to prediction of the clean signal x
         norm_log_snr_t = self._transform_log_snr(log_snr_t)
         if self._prediction_type == "potential":
             pred = self._compute_grad_of_potential(
-                xz=diffused_x, norm_log_snr=norm_log_snr_t, conditions=conditions, training=training, **subnet_kwargs
+                xz=diffused_x,
+                norm_log_snr=norm_log_snr_t,
+                conditions=conditions,
+                training=training,
+                **masks.subnet_kwargs,
             )
             x_pred = self.convert_prediction_to_x(
                 pred=pred,
@@ -222,7 +212,11 @@ class DiffusionModel(InferenceNetwork):
                 prediction_type="velocity",
             )
         else:
-            subnet_out = self.subnet((diffused_x, norm_log_snr_t, conditions), training=training, **subnet_kwargs)
+            subnet_out = self.subnet(
+                (diffused_x, norm_log_snr_t, conditions),
+                training=training,
+                **masks.subnet_kwargs,
+            )
             pred = self.output_projector(subnet_out)
             x_pred = self.convert_prediction_to_x(
                 pred=pred,
@@ -239,12 +233,12 @@ class DiffusionModel(InferenceNetwork):
         match self._loss_type:
             case "noise":
                 noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
-                error = loss_mask * (noise_pred - eps_t) ** 2
+                error = (noise_pred - eps_t) ** 2
 
             case "velocity":
                 velocity_pred = (alpha_t * diffused_x - x_pred) / sigma_t
                 v_t = alpha_t * eps_t - sigma_t * x
-                error = loss_mask * (velocity_pred - v_t) ** 2
+                error = (velocity_pred - v_t) ** 2
 
             case "F":
                 sigma_data = self.noise_schedule.sigma_data if hasattr(self.noise_schedule, "sigma_data") else 1.0
@@ -252,11 +246,12 @@ class DiffusionModel(InferenceNetwork):
                 x2 = (sigma_data * alpha_t) / (ops.exp(-log_snr_t / 2) * ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2))
                 f_pred = x1 * x_pred - x2 * diffused_x
                 f_t = x1 * x - x2 * diffused_x
-                error = loss_mask * (f_pred - f_t) ** 2
+                error = (f_pred - f_t) ** 2
 
             case _:
                 raise ValueError(f"Unknown loss type: {self._loss_type}")
 
+        error = self.mask_handler.maybe_apply(error, masks.fixed_target_mask)
         weights_for_snr = ops.reshape(weights_for_snr, (ops.shape(x)[0],))
         loss = weights_for_snr * ops.mean(error, axis=tuple(range(1, ops.ndim(error))))
         loss = weighted_mean(loss, sample_weight)
@@ -287,7 +282,6 @@ class DiffusionModel(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
 
         config = {
             "subnet": self.subnet,
@@ -295,9 +289,6 @@ class DiffusionModel(InferenceNetwork):
             "prediction_type": self._prediction_type,
             "loss_type": self._loss_type,
             "integrate_kwargs": self.integrate_kwargs,
-            "fixed_target_prob": self.fixed_target_prob,
-            "missing_target_prob": self.missing_target_prob,
-            "missing_conditions_prob": self.missing_conditions_prob,
         }
         return base_config | serialize(config)
 
@@ -481,8 +472,33 @@ class DiffusionModel(InferenceNetwork):
             The velocity tensor of the same shape as `xz`, representing the right-hand
             side of the probability-flow SDE or ODE at the given `time`.
         """
-        subnet_kwargs = self._collect_mask_kwargs(self._subnet_mask_keys, kwargs)
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+        return self._score(
+            xz,
+            time=time,
+            log_snr_t=log_snr_t,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+        )
 
+    def _score(
+        self,
+        xz: Tensor,
+        *,
+        masks: InferenceMasks,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+    ) -> Tensor:
         if log_snr_t is None:
             log_snr_t = self.noise_schedule.get_log_snr(t=time, training=training)
             log_snr_t = expand_right_as(log_snr_t, xz)
@@ -497,13 +513,17 @@ class DiffusionModel(InferenceNetwork):
 
         if self._prediction_type == "potential":
             pred = self._compute_grad_of_potential(
-                xz=xz, norm_log_snr=norm_log_snr, conditions=conditions, training=training, **subnet_kwargs
+                xz=xz,
+                norm_log_snr=norm_log_snr,
+                conditions=conditions,
+                training=training,
+                **masks.subnet_kwargs,
             )
             x_pred = self.convert_prediction_to_x(
                 pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, prediction_type="velocity"
             )
         else:
-            subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
+            subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **masks.subnet_kwargs)
             pred = self.output_projector(subnet_out)
 
             x_pred = self.convert_prediction_to_x(
@@ -517,6 +537,8 @@ class DiffusionModel(InferenceNetwork):
         score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
 
         score = self.guidance_function(x_pred=x_pred, time=time, score=score, **(guidance_kwargs or {}))
+        if not training:
+            score = self.mask_handler.maybe_apply(score, masks.fixed_target_mask)
         return score
 
     def velocity(
@@ -557,10 +579,44 @@ class DiffusionModel(InferenceNetwork):
             side of the SDE or ODE at the given `time`.
         """
 
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+        return self._velocity(
+            xz,
+            time=time,
+            stochastic_solver=stochastic_solver,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=kwargs.get("guidance_kwargs"),
+            masks=masks,
+        )
+
+    def _velocity(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        masks: InferenceMasks,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+    ) -> Tensor:
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
 
-        score = self.score(xz, log_snr_t=log_snr_t, conditions=conditions, training=training, **kwargs)
+        score = self._score(
+            xz,
+            log_snr_t=log_snr_t,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+        )
 
         # compute velocity f, g of the SDE or ODE
         f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
@@ -574,8 +630,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out velocity where target is fixed (during inference only)
         if not training:
-            fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-            out = maybe_mask_tensor(out, mask=fixed_target_mask)
+            out = self.mask_handler.maybe_apply(out, masks.fixed_target_mask)
 
         return out
 
@@ -603,6 +658,17 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             The diffusion term tensor with shape matching `xz` except for the last dimension, which is set to 1.
         """
+        masks = self.mask_handler.resolve(kwargs, targets=xz)
+        return self._diffusion_term(xz, time=time, training=training, masks=masks)
+
+    def _diffusion_term(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        masks: InferenceMasks,
+        training: bool = False,
+    ) -> Tensor:
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
@@ -610,8 +676,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out diffusion where target is fixed (during inference only)
         if not training:
-            fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-            g = maybe_mask_tensor(g, mask=fixed_target_mask)
+            g = self.mask_handler.maybe_apply(g, masks.fixed_target_mask)
 
         return g
 
@@ -619,14 +684,21 @@ class DiffusionModel(InferenceNetwork):
         self,
         xz: Tensor,
         time: Tensor,
+        masks: InferenceMasks,
         conditions: Tensor = None,
         projectors: Tensor = None,
         training: bool = False,
-        **kwargs,
+        guidance_kwargs: Mapping[str, Any] = None,
     ) -> tuple[Tensor, Tensor]:
         def f(x):
-            return self.velocity(
-                x, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+            return self._velocity(
+                x,
+                time=time,
+                stochastic_solver=False,
+                conditions=conditions,
+                training=training,
+                guidance_kwargs=guidance_kwargs,
+                masks=masks,
             )
 
         v, trace = jacobian_trace(f, xz, projectors=projectors, return_output=True)
@@ -693,14 +765,22 @@ class DiffusionModel(InferenceNetwork):
         training: bool = False,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
-        hutchinson_steps = kwargs.pop("hutchinson_steps", None)
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
 
-        # Note: integrators will cherry-pick necessary kwargs, so
-        # we can be general (i.e., sloppy) here
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        guidance_kwargs = runtime_kwargs.pop("guidance_kwargs", None)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
+        hutchinson_steps = runtime_kwargs.pop("hutchinson_steps", None)
+
+        # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
         integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0}
         integrate_kwargs |= self.integrate_kwargs
-        integrate_kwargs |= kwargs
+        integrate_kwargs |= runtime_kwargs
 
         if integrate_kwargs["method"] in STOCHASTIC_METHODS:
             logging.warning(
@@ -710,13 +790,9 @@ class DiffusionModel(InferenceNetwork):
             )
             integrate_kwargs["method"] = "tsit5"
 
-        # Apply user-provided target mask if available
-        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
-        if fixed_target_mask is not None:
-            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(x))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(x))
-            x = maybe_mask_tensor(x, fixed_target_mask, replacement=targets_fixed)
+        # In a forward pass, fixed coordinates are already present in ``x``.
+        replacement = masks.fixed_target_value if masks.fixed_target_value is not None else x
+        x = self.mask_handler.maybe_apply(x, masks.fixed_target_mask, replacement=replacement)
 
         if density:
             # one probe per solve, fixed over time, keeps the augmented ODE deterministic
@@ -724,7 +800,13 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(
-                    xz, time=time, conditions=conditions, projectors=projectors, training=training, **kwargs
+                    xz,
+                    time=time,
+                    masks=masks,
+                    projectors=projectors,
+                    conditions=conditions,
+                    training=training,
+                    guidance_kwargs=guidance_kwargs,
                 )
                 return {"xz": v, "trace": trace}
 
@@ -735,14 +817,22 @@ class DiffusionModel(InferenceNetwork):
             state = integrate(deltas, state, **integrate_kwargs)
 
             z = state["xz"]
-            log_density = self.base_distribution.log_prob(z) + ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) + ops.squeeze(
+                state["trace"], axis=-1
+            )
 
             return z, log_density
 
         def deltas(time, xz):
             return {
-                "xz": self.velocity(
-                    xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                "xz": self._velocity(
+                    xz,
+                    time=time,
+                    stochastic_solver=False,
+                    masks=masks,
+                    conditions=conditions,
+                    training=training,
+                    guidance_kwargs=guidance_kwargs,
                 )
             }
 
@@ -754,21 +844,25 @@ class DiffusionModel(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
-        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
-        hutchinson_steps = kwargs.pop("hutchinson_steps", None)
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=z,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        guidance_kwargs = runtime_kwargs.pop("guidance_kwargs", None)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
+        hutchinson_steps = runtime_kwargs.pop("hutchinson_steps", None)
 
         # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
-        integrate_kwargs |= kwargs
+        integrate_kwargs |= runtime_kwargs
 
-        # Apply user-provided target mask if available
-        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
-        if fixed_target_mask is not None:
-            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(z))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = maybe_mask_tensor(z, fixed_target_mask, replacement=targets_fixed)
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+        state_projection_fn, state_update_projection_fn = self.mask_handler.integrator_callbacks(masks)
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -784,7 +878,13 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 v, trace = self._velocity_trace(
-                    xz, time=time, conditions=conditions, projectors=projectors, training=training, **kwargs
+                    xz,
+                    time=time,
+                    masks=masks,
+                    conditions=conditions,
+                    projectors=projectors,
+                    training=training,
+                    guidance_kwargs=guidance_kwargs,
                 )
                 return {"xz": v, "trace": trace}
 
@@ -795,7 +895,8 @@ class DiffusionModel(InferenceNetwork):
             state = integrate(deltas, state, **integrate_kwargs)
 
             x = state["xz"]
-            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z, mask=masks.fixed_target_mask)
+            log_density -= ops.squeeze(state["trace"], axis=-1)
 
             return x, log_density
 
@@ -805,24 +906,41 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 return {
-                    "xz": self.velocity(
+                    "xz": self._velocity(
                         xz,
                         time=time,
                         stochastic_solver=integrate_kwargs["method"] != "glass",
+                        masks=masks,
                         conditions=conditions,
                         training=training,
-                        **kwargs,
+                        guidance_kwargs=guidance_kwargs,
                     )
                 }
 
             def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
+                return {
+                    "xz": self._diffusion_term(
+                        xz,
+                        time=time,
+                        masks=masks,
+                        training=training,
+                    )
+                }
 
             score_fn = None
             if "corrector_steps" in integrate_kwargs or integrate_kwargs["method"] == "langevin":
 
                 def score_fn(time, xz):
-                    return {"xz": self.score(xz, time=time, conditions=conditions, training=training, **kwargs)}
+                    return {
+                        "xz": self._score(
+                            xz,
+                            time=time,
+                            masks=masks,
+                            conditions=conditions,
+                            training=training,
+                            guidance_kwargs=guidance_kwargs,
+                        )
+                    }
 
             state = integrate_stochastic(
                 drift_fn=deltas,
@@ -831,14 +949,22 @@ class DiffusionModel(InferenceNetwork):
                 noise_schedule=self.noise_schedule,
                 state=state,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
                 **integrate_kwargs,
             )
         else:
 
             def deltas(time, xz):
                 return {
-                    "xz": self.velocity(
-                        xz, time=time, stochastic_solver=False, conditions=conditions, training=training, **kwargs
+                    "xz": self._velocity(
+                        xz,
+                        time=time,
+                        stochastic_solver=False,
+                        masks=masks,
+                        conditions=conditions,
+                        training=training,
+                        guidance_kwargs=guidance_kwargs,
                     )
                 }
 
@@ -910,7 +1036,55 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Compositional velocity of same shape as input xz
         """
-        compositional_score = self.compositional_score(
+        if conditions is None:
+            raise ValueError("Conditions are required for compositional sampling")
+        num_items = ops.shape(conditions)[1]
+        if mini_batch_size is None or mini_batch_size >= num_items:
+            mini_batch_size = num_items
+        num_total = mini_batch_size + int(kwargs.get("use_jac", False) or compute_prior_score is None)
+        masks = self.mask_handler.resolve_compositional(
+            self.subnet,
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+        )
+        repeated_masks = self.mask_handler.repeat_compositional(masks, num_total)
+        return self._compositional_velocity(
+            xz=xz,
+            time=time,
+            stochastic_solver=stochastic_solver,
+            conditions=conditions,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+            seed=seed,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            clip=kwargs.get("clip", (-3, 3)),
+            use_jac=kwargs.get("use_jac", False),
+            guidance_kwargs=kwargs.get("guidance_kwargs"),
+            regularize_precision=kwargs.get("regularize_precision", 1e-6),
+        )
+
+    def _compositional_velocity(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int | None = None,
+        training: bool = False,
+        clip: tuple[float, float] | None = (-3, 3),
+        use_jac: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        regularize_precision: float = 1e-6,
+    ) -> Tensor:
+        compositional_score = self._compositional_score(
             xz=xz,
             time=time,
             conditions=conditions,
@@ -918,7 +1092,12 @@ class DiffusionModel(InferenceNetwork):
             mini_batch_size=mini_batch_size,
             training=training,
             seed=seed,
-            **kwargs,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            clip=clip,
+            use_jac=use_jac,
+            guidance_kwargs=guidance_kwargs,
+            regularize_precision=regularize_precision,
         )
 
         # Calculate standard noise schedule components
@@ -937,8 +1116,7 @@ class DiffusionModel(InferenceNetwork):
 
         # Zero out velocity where target is fixed (during inference only)
         if not training:
-            fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-            out = maybe_mask_tensor(out, mask=fixed_target_mask)
+            out = self.mask_handler.maybe_apply(out, masks.fixed_target_mask)
 
         return out
 
@@ -994,6 +1172,52 @@ class DiffusionModel(InferenceNetwork):
         if conditions is None:
             raise ValueError("Conditions are required for compositional sampling")
 
+        num_items = ops.shape(conditions)[1]
+        if mini_batch_size is None or mini_batch_size >= num_items:
+            mini_batch_size = num_items
+        num_total = mini_batch_size + int(use_jac or compute_prior_score is None)
+
+        masks = self.mask_handler.resolve_compositional(
+            self.subnet,
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+        )
+        repeated_masks = self.mask_handler.repeat_compositional(masks, num_total)
+
+        return self._compositional_score(
+            xz=xz,
+            time=time,
+            conditions=conditions,
+            seed=seed,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+            clip=clip,
+            use_jac=use_jac,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            regularize_precision=kwargs.get("regularize_precision", 1e-6),
+        )
+
+    def _compositional_score(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator | None,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
+        training: bool = False,
+        clip: tuple[float, float] | None = (-3, 3),
+        use_jac: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        regularize_precision: float = 1e-6,
+    ) -> Tensor:
         log_snr_t = expand_right_as(self.noise_schedule.get_log_snr(t=time, training=training), xz)
         log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
         alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
@@ -1009,7 +1233,8 @@ class DiffusionModel(InferenceNetwork):
                 mini_batch_size=mini_batch_size,
                 training=training,
                 seed=seed,
-                **kwargs,
+                masks=masks,
+                repeated_masks=repeated_masks,
             )
         else:
             # uses a Gaussian approximation, can be very slow
@@ -1023,7 +1248,9 @@ class DiffusionModel(InferenceNetwork):
                 mini_batch_size=mini_batch_size,
                 training=training,
                 seed=seed,
-                **kwargs,
+                masks=masks,
+                repeated_masks=repeated_masks,
+                regularize_precision=regularize_precision,
             )
 
         compositional_score = self.compositional_bridge(time) * compositional_score
@@ -1034,7 +1261,7 @@ class DiffusionModel(InferenceNetwork):
         )
 
         compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
-        return compositional_score
+        return self.mask_handler.maybe_apply(compositional_score, masks.fixed_target_mask)
 
     def _compositional_score_direct(
         self,
@@ -1042,11 +1269,13 @@ class DiffusionModel(InferenceNetwork):
         time: float | Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
+        *,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
         seed: keras.random.SeedGenerator = None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int = None,
         training: bool = False,
-        **kwargs,
     ) -> Tensor:
         """
         Computes the compositional score for multiple datasets using the formula:
@@ -1079,14 +1308,16 @@ class DiffusionModel(InferenceNetwork):
         Tensor
             Compositional score of same shape as input xz
         """
-
         batch_size, num_items = ops.shape(conditions)[:2]
 
         # Sample item indices for mini-batching or keep all items
+        observed_condition_mask = masks.observed_condition_mask
         if mini_batch_size is not None and mini_batch_size < num_items:
             ranks = keras.random.uniform((batch_size, num_items), seed=seed)
-            per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
+            _, per_row_idx = ops.top_k(-ranks, mini_batch_size)
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
+            if observed_condition_mask is not None:
+                observed_condition_mask = ops.take_along_axis(observed_condition_mask, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
             mini_batch_size = num_items
@@ -1096,6 +1327,11 @@ class DiffusionModel(InferenceNetwork):
         if needs_network_prior:
             zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))
             cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)
+            if observed_condition_mask is not None:
+                missing_prior = ops.zeros_like(ops.take(observed_condition_mask, 0, axis=1))
+                observed_condition_mask = ops.concatenate(
+                    [observed_condition_mask, ops.expand_dims(missing_prior, 1)], axis=1
+                )
             num_total = mini_batch_size + 1
         else:
             cond_with_prior = conditions_batch
@@ -1108,13 +1344,16 @@ class DiffusionModel(InferenceNetwork):
         xz_reshaped = repeat_and_flatten(xz, num_total)
         log_snr_reshaped = repeat_and_flatten(log_snr_t, num_total)
         conditions_flat = ops.reshape(cond_with_prior, (batch_size * num_total,) + conditions_dims)
-        kwargs = self._repeat_mask_kwargs_over_items(kwargs, num_total)
-        scores_flat = self.score(
+        score_masks = self.mask_handler.with_flattened_condition_mask(
+            repeated_masks,
+            observed_condition_mask,
+        )
+        scores_flat = self._score(
             xz_reshaped,
             log_snr_t=log_snr_reshaped,
             conditions=conditions_flat,
             training=training,
-            **kwargs,
+            masks=score_masks,
         )
         all_scores = ops.reshape(scores_flat, (batch_size, num_total) + dims)
         individual_scores = all_scores[:, :mini_batch_size]
@@ -1139,12 +1378,14 @@ class DiffusionModel(InferenceNetwork):
         log_snr_t: Tensor,
         sigma_t: Tensor,
         conditions: Tensor,
+        *,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
         seed: keras.random.SeedGenerator = None,
         compute_prior_score: Callable[[Tensor], Tensor] = None,
         mini_batch_size: int = None,
         training: bool = False,
         regularize_precision: float = 1e-6,
-        **kwargs,
     ) -> Tensor:
         """Stabilized version of JAC compositional score (Linhart et al. 2026) with mini-batching from
         (Arruda et al. 2026).
@@ -1186,10 +1427,13 @@ class DiffusionModel(InferenceNetwork):
         m = ops.shape(xz)[-1]
         upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
 
+        observed_condition_mask = masks.observed_condition_mask
         if mini_batch_size is not None and mini_batch_size < num_items:
             ranks = keras.random.uniform((batch_size, num_items), seed=seed)
-            per_row_idx = ops.top_k(-ranks, mini_batch_size).indices
+            _, per_row_idx = ops.top_k(-ranks, mini_batch_size)
             conditions_batch = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
+            if observed_condition_mask is not None:
+                observed_condition_mask = ops.take_along_axis(observed_condition_mask, per_row_idx[..., None], axis=1)
         else:
             conditions_batch = conditions
             mini_batch_size = num_items
@@ -1197,6 +1441,11 @@ class DiffusionModel(InferenceNetwork):
         # Append prior as extra observation (zero-conditioned)
         zero_cond = ops.zeros_like(ops.take(conditions, 0, axis=1))
         cond_with_prior = ops.concatenate([conditions_batch, ops.expand_dims(zero_cond, 1)], axis=1)
+        if observed_condition_mask is not None:
+            missing_prior = ops.zeros_like(ops.take(observed_condition_mask, 0, axis=1))
+            observed_condition_mask = ops.concatenate(
+                [observed_condition_mask, ops.expand_dims(missing_prior, 1)], axis=1
+            )
 
         num_total = mini_batch_size + 1
 
@@ -1210,13 +1459,16 @@ class DiffusionModel(InferenceNetwork):
             (batch_size * num_total,) + cond_dims,
         )
 
-        kwargs = self._repeat_mask_kwargs_over_items(kwargs, num_total)
+        score_masks = self.mask_handler.with_flattened_condition_mask(
+            repeated_masks,
+            observed_condition_mask,
+        )
         all_scores, all_jacs = self._compute_score_and_jacobian(
             xz=xz_rep,
             log_snr_t=lsnr_rep,
             conditions=cond_flat,
             training=training,
-            **kwargs,
+            masks=score_masks,
         )
 
         # Reshape: (B, num_total, m) and (B, num_total, m, m)
@@ -1273,8 +1525,8 @@ class DiffusionModel(InferenceNetwork):
         xz: Tensor,
         log_snr_t: Tensor,
         conditions: Tensor,
+        masks: InferenceMasks,
         training: bool = False,
-        **kwargs,
     ) -> tuple[Tensor, Tensor]:
         """Compute score and JAC precision Σ̂⁻¹ for one conditioning input using full Jacobian J = ∇_{θ_t} s(θ_t).
 
@@ -1287,12 +1539,12 @@ class DiffusionModel(InferenceNetwork):
         m = ops.shape(xz)[-1]
 
         def score_fn(x):
-            return self.score(
+            return self._score(
                 xz=x,
                 log_snr_t=log_snr_t,
                 conditions=conditions,
                 training=training,
-                **kwargs,
+                masks=masks,
             )
 
         score, vjp_fn = vjp(score_fn, xz, return_output=True)
@@ -1308,25 +1560,6 @@ class DiffusionModel(InferenceNetwork):
 
         jacobian = ops.concatenate(rows, axis=1)
         return score, jacobian
-
-    def _repeat_mask_kwargs_over_items(self, kwargs: dict, num_total: int) -> dict:
-        """Repeat per-batch mask kwargs along the compositional-item axis.
-
-        In the compositional score, ``xz``, ``log_snr_t`` and ``conditions`` are repeated
-        ``num_total`` times along a new item axis and flattened to ``(batch_size * num_total, ...)``
-        before being passed to the score network. Any subnet mask (e.g. ``fixed_target_mask``)
-        carries a leading ``batch_size`` dimension and must be expanded the same way, otherwise the
-        subnet sees inputs and masks with mismatched batch dimensions.
-        """
-        if not kwargs:
-            return kwargs
-        repeated = dict(kwargs)
-        for key in self._SUBNET_MASK_KEYS:
-            value = repeated.get(key)
-            if value is None or not hasattr(value, "shape"):
-                continue
-            repeated[key] = repeat_and_flatten(value, num_total)
-        return repeated
 
     @staticmethod
     def _maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz):
@@ -1349,23 +1582,37 @@ class DiffusionModel(InferenceNetwork):
         """
         Inverse pass for compositional diffusion sampling.
         """
-        seed = resolve_seed(kwargs.pop("seed", None), self.seed_generator)
+        masks = self.mask_handler.resolve_compositional(
+            self.subnet,
+            kwargs,
+            targets=z,
+            conditions=conditions,
+        )
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
         integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0}
         integrate_kwargs |= self.integrate_kwargs
-        integrate_kwargs |= kwargs
+        integrate_kwargs |= runtime_kwargs
 
         num_items = ops.shape(conditions)[1]
         mini_batch_size = int(integrate_kwargs.pop("mini_batch_size", max(num_items * 0.1, 2)))
 
-        if "mini_batch_size" in kwargs:
-            kwargs.pop("mini_batch_size")
         if mini_batch_size is None:
             mini_batch_size = num_items
-        mini_batch_size = max(mini_batch_size, 1)
+        mini_batch_size = min(max(mini_batch_size, 1), num_items)
 
         if keras.backend.backend() == "jax" and mini_batch_size != num_items:
             mini_batch_size = num_items
             logging.warning("Setting mini_batch_size to num_items as jax does not support mini-batching.")
+
+        score_kwargs = {
+            "clip": integrate_kwargs.pop("clip", (-3, 3)),
+            "use_jac": integrate_kwargs.pop("use_jac", False),
+            "guidance_kwargs": integrate_kwargs.pop("guidance_kwargs", None),
+            "regularize_precision": integrate_kwargs.pop("regularize_precision", 1e-6),
+        }
+        num_total = mini_batch_size + int(score_kwargs["use_jac"] or compute_prior_score is None)
+        repeated_masks = self.mask_handler.repeat_compositional(masks, num_total)
 
         self.compositional_bridge_d0 = float(
             integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)
@@ -1378,13 +1625,8 @@ class DiffusionModel(InferenceNetwork):
             z_scaling = num_items * self.compositional_bridge_d1
             z = z / ops.sqrt(ops.cast(z_scaling, dtype=ops.dtype(z)))
 
-        # Apply user-provided target mask if available
-        fixed_target_mask = kwargs.get(MaskName.FIXED_TARGET, None)
-        targets_fixed = kwargs.get(MaskName.FIXED_TARGET_VALUE, None)
-        if fixed_target_mask is not None:
-            fixed_target_mask = keras.ops.broadcast_to(fixed_target_mask, keras.ops.shape(z))
-            targets_fixed = keras.ops.broadcast_to(targets_fixed, keras.ops.shape(z))
-            z = maybe_mask_tensor(z, fixed_target_mask, replacement=targets_fixed)
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+        state_projection_fn, state_update_projection_fn = self.mask_handler.integrator_callbacks(masks)
 
         if density:
             if integrate_kwargs["method"] in STOCHASTIC_METHODS:
@@ -1396,7 +1638,7 @@ class DiffusionModel(InferenceNetwork):
                 integrate_kwargs["method"] = "tsit5"
 
             def deltas(time, xz):
-                v = self.compositional_velocity(
+                v = self._compositional_velocity(
                     xz,
                     time=time,
                     stochastic_solver=False,
@@ -1405,7 +1647,9 @@ class DiffusionModel(InferenceNetwork):
                     mini_batch_size=mini_batch_size,
                     training=training,
                     seed=seed,
-                    **kwargs,
+                    masks=masks,
+                    repeated_masks=repeated_masks,
+                    **score_kwargs,
                 )
                 trace = ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))
                 return {"xz": v, "trace": trace}
@@ -1417,7 +1661,9 @@ class DiffusionModel(InferenceNetwork):
             state = integrate(deltas, state, **integrate_kwargs)
 
             x = state["xz"]
-            log_density = self.base_distribution.log_prob(z) - ops.squeeze(state["trace"], axis=-1)
+            log_density = self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) - ops.squeeze(
+                state["trace"], axis=-1
+            )
             return x, log_density
 
         state = {"xz": z}
@@ -1427,7 +1673,7 @@ class DiffusionModel(InferenceNetwork):
 
             def deltas(time, xz):
                 return {
-                    "xz": self.compositional_velocity(
+                    "xz": self._compositional_velocity(
                         xz,
                         time=time,
                         stochastic_solver=stochastic_solver,
@@ -1436,19 +1682,28 @@ class DiffusionModel(InferenceNetwork):
                         mini_batch_size=mini_batch_size,
                         training=training,
                         seed=seed,
-                        **kwargs,
+                        masks=masks,
+                        repeated_masks=repeated_masks,
+                        **score_kwargs,
                     )
                 }
 
             def diffusion(time, xz):
-                return {"xz": self.diffusion_term(xz, time=time, training=training, **kwargs)}
+                return {
+                    "xz": self._diffusion_term(
+                        xz,
+                        time=time,
+                        masks=masks,
+                        training=training,
+                    )
+                }
 
             score_fn = None
             if "corrector_steps" in integrate_kwargs or integrate_kwargs["method"] == "langevin":
 
                 def score_fn(time, xz):
                     return {
-                        "xz": self.compositional_score(
+                        "xz": self._compositional_score(
                             xz=xz,
                             time=time,
                             conditions=conditions,
@@ -1456,7 +1711,9 @@ class DiffusionModel(InferenceNetwork):
                             mini_batch_size=mini_batch_size,
                             training=training,
                             seed=seed,
-                            **kwargs,
+                            masks=masks,
+                            repeated_masks=repeated_masks,
+                            **score_kwargs,
                         )
                     }
 
@@ -1467,13 +1724,15 @@ class DiffusionModel(InferenceNetwork):
                 noise_schedule=self.noise_schedule,
                 state=state,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
                 **integrate_kwargs,
             )
         else:
 
             def deltas(time, xz):
                 return {
-                    "xz": self.compositional_velocity(
+                    "xz": self._compositional_velocity(
                         xz,
                         time=time,
                         stochastic_solver=False,
@@ -1482,7 +1741,9 @@ class DiffusionModel(InferenceNetwork):
                         mini_batch_size=mini_batch_size,
                         training=training,
                         seed=seed,
-                        **kwargs,
+                        masks=masks,
+                        repeated_masks=repeated_masks,
+                        **score_kwargs,
                     )
                 }
 

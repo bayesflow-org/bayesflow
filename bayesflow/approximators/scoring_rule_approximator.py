@@ -6,6 +6,7 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
+from bayesflow.masking import MaskHandler
 from bayesflow.types import Tensor
 from bayesflow.utils import (
     logging,
@@ -123,7 +124,7 @@ class ScoringRuleApproximator(ContinuousApproximator):
     ) -> dict[str, dict[str, dict[str, np.ndarray]]]:
         resolved_conditions, adapted, _ = self._prepare_conditions(conditions)
 
-        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+        inference_kwargs = kwargs | MaskHandler.collect_inference_masks(adapted)
 
         estimates = self.inference_network(
             conditions=resolved_conditions,

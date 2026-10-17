@@ -107,6 +107,7 @@ from . import (
     diagnostics,
     distributions,
     experimental,
+    masking,
     networks,
     simulators,
     utils,

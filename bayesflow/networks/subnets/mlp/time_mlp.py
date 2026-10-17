@@ -127,11 +127,8 @@ class TimeMLP(keras.Layer):
             for width in self.widths
         ]
 
-    def call(
-        self,
-        inputs: tuple[Tensor, Tensor, Tensor | None],
-        training: bool = None,
-    ) -> Tensor:
+    def embed(self, inputs: tuple[Tensor, Tensor, Tensor | None], training: bool = None) -> tuple[Tensor, Tensor]:
+        """The forward pass before the first block, as ``(h, block_condition)``."""
         x, t, conditions = inputs
         h = self.x_proj(x)
         t_emb = self.time_emb(t)
@@ -147,6 +144,15 @@ class TimeMLP(keras.Layer):
             if self.persistent_conditioning:
                 block_condition = keras.ops.concatenate([t_emb, hc], axis=-1)
         h = self.activation(h)
+
+        return h, block_condition
+
+    def call(
+        self,
+        inputs: tuple[Tensor, Tensor, Tensor | None],
+        training: bool = None,
+    ) -> Tensor:
+        h, block_condition = self.embed(inputs, training=training)
 
         for block in self.blocks:
             h = block((h, block_condition), training=training)
@@ -194,18 +200,20 @@ class TimeMLP(keras.Layer):
             block.build((h_shape, block_condition_shape))
             h_shape = block.compute_output_shape((h_shape, block_condition_shape))
 
-    def compute_output_shape(self, input_shape):
+    def compute_embed_output_shape(self, input_shape):
+        """The shapes of ``(h, block_condition)`` returned by :meth:`embed`."""
         x_shape, t_shape, conditions_shape = input_shape
+        # the condition merge projects back to widths[0], the width of x_proj
         h_shape = self.x_proj.compute_output_shape(x_shape)
-        t_emb_shape = self.time_emb.compute_output_shape(t_shape)
-        block_condition_shape = t_emb_shape
+        block_condition_shape = self.time_emb.compute_output_shape(t_shape)
 
-        if conditions_shape is not None:
-            if self.merge == "concat":
-                h_shape = tuple(h_shape[:-1]) + (h_shape[-1] + self.widths[0],)
-            h_shape = tuple(h_shape[:-1]) + (self.widths[0],)
-            if self.persistent_conditioning:
-                block_condition_shape = tuple(t_emb_shape[:-1]) + (t_emb_shape[-1] + self.widths[0],)
+        if conditions_shape is not None and self.persistent_conditioning:
+            block_condition_shape = tuple(block_condition_shape[:-1]) + (block_condition_shape[-1] + self.widths[0],)
+
+        return h_shape, block_condition_shape
+
+    def compute_output_shape(self, input_shape):
+        h_shape, block_condition_shape = self.compute_embed_output_shape(input_shape)
 
         for block in self.blocks:
             h_shape = block.compute_output_shape((h_shape, block_condition_shape))

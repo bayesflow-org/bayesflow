@@ -6,6 +6,7 @@ import numpy as np
 
 from bayesflow.adapters import Adapter
 from bayesflow.networks import InferenceNetwork, SummaryNetwork
+from bayesflow.masking import MaskName
 from bayesflow.types import Tensor
 from bayesflow.utils import split_arrays
 from bayesflow.utils.serialization import serializable
@@ -128,9 +129,8 @@ class CompositionalApproximator(ContinuousApproximator):
                 compute_prior_score, adapter=self.adapter, standardizer=self.standardizer
             )
 
-        kwargs = self._maybe_standardize_fixed_target_value(kwargs)
         kwargs = self._maybe_inject_guidance_unstandardize(kwargs)
-        inference_kwargs = kwargs | self._collect_mask_kwargs(self._INFERENCE_MASK_KEYS, adapted)
+        inference_kwargs = self._prepare_inference_kwargs(kwargs, adapted=adapted)
         inference_kwargs["compute_prior_score"] = compute_prior_score_pre
 
         # NOTE: infer option of sample cannot handle the compositional dimensions
@@ -185,13 +185,23 @@ class CompositionalApproximator(ContinuousApproximator):
         elif conditions is not None:
             original_shapes = {}
             flattened_conditions = {}
+            target_mask_names = {
+                MaskName.FIXED_TARGET,
+                MaskName.INFER_TARGET,
+                MaskName.FIXED_TARGET_VALUE,
+            }
 
             for key, value in conditions.items():
                 original_shapes[key] = value.shape
+                if key in target_mask_names:
+                    flattened_conditions[key] = value
+                    continue
                 num_datasets, num_items = value.shape[:2]
                 flattened_shape = (num_datasets * num_items,) + value.shape[2:]
                 flattened_conditions[key] = value.reshape(flattened_shape)
-            num_datasets, num_items = original_shapes[next(iter(original_shapes))][:2]
+
+            first_compositional_key = next(key for key in original_shapes if key not in target_mask_names)
+            num_datasets, num_items = original_shapes[first_compositional_key][:2]
 
         else:
             raise ValueError(
@@ -218,5 +228,13 @@ class CompositionalApproximator(ContinuousApproximator):
 
         if summary_outputs is not None:
             summary_outputs = keras.ops.reshape(summary_outputs, restored_shape)
+
+        observed_condition_mask = adapted.get(MaskName.OBSERVED_CONDITION)
+        if observed_condition_mask is not None:
+            adapted = dict(adapted)
+            adapted[MaskName.OBSERVED_CONDITION] = keras.ops.reshape(
+                observed_condition_mask,
+                (num_datasets, num_items) + tuple(keras.ops.shape(observed_condition_mask)[1:]),
+            )
 
         return resolved_conditions, adapted, summary_outputs

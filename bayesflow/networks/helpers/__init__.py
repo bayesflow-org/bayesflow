@@ -1,4 +1,4 @@
-from .blocks import DenseBlock, ConditionalDenseBlock, FFN, DiffusionTransformerBlock
+from .blocks import DenseBlock, ConditionalDenseBlock, FFN, DiffusionTransformerBlock, DiffusionTransformerReadout
 from .embeddings import FourierEmbedding, Time2Vec, RecurrentEmbedding, FiLM
 from .sequential import Sequential
 from .standardization import Standardization

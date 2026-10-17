@@ -1,10 +1,12 @@
 import keras
 import numpy as np
+import pytest
 
-from bayesflow.networks.subnets.transformer.diffusion_transformer import DiffusionTransformer, DiffusionTransformerBlock
+from bayesflow.networks import DiffusionTransformer
+from bayesflow.networks.helpers import DiffusionTransformerReadout
 from bayesflow.utils.serialization import deserialize, serialize
 
-from ...utils import assert_layers_equal
+from ...utils import assert_allclose, assert_layers_equal
 
 
 def test_diffusion_transformer_serialize_deserialize(diffusion_transformer, build_shapes_time):
@@ -26,56 +28,88 @@ def test_save_and_load_diffusion_transformer(tmp_path, diffusion_transformer, bu
     assert_layers_equal(diffusion_transformer, loaded)
 
 
-def test_diffusion_transformer_output_shape(diffusion_transformer):
-    x = keras.ops.ones((4, 3))
-    t = keras.ops.ones((4, 1))
-    conditions = keras.ops.ones((4, 5))
-
-    out = diffusion_transformer((x, t, conditions), fixed_target_mask=keras.ops.array([[1, 0, 1]] * 4))
-
-    assert tuple(out.shape) == (4, 3)
-
-
-def test_diffusion_transformer_block_zero_update_mask_keeps_tokens():
-    block = DiffusionTransformerBlock(width=8, num_heads=2)
-    x = keras.random.normal((2, 3, 8))
-    base_mod = keras.random.normal((2, 6 * 8))
-    update_mask = keras.ops.zeros((2, 3, 1))
-
-    out = block((x, base_mod), update_mask=update_mask)
-
-    assert keras.ops.all(keras.ops.isclose(out, x))
-
-
-def test_diffusion_transformer_identity_mask_processes_tokens_independently(num_features=5):
-    """An identity dependency mask must make each output token a function of only
-    its own input token (i.e. the model estimates one-dimensional marginals)."""
-
-    tt = DiffusionTransformer(widths=(16, 16, 16), num_heads=2, dropout=0.0)
-    cond_shape = None
-    tt.build(((1, num_features), (1, 1), cond_shape))
+def _random_diffusion_transformer(input_shape):
+    """A built transformer whose zero-initialized output layers are randomized, so its output is not zero."""
+    transformer = DiffusionTransformer(widths=[16, 16], num_heads=4, dropout=0.0)
+    transformer.build(input_shape)
     rng = np.random.default_rng(0)
+    for weight in transformer.weights:
+        values = 0.1 * rng.standard_normal(tuple(weight.shape)).astype(np.float32)
+        weight.assign(keras.ops.convert_to_tensor(values))
+    return transformer
 
-    # Make the adaLN modulation time-dependent so the masking behaviour is exercised
-    # beyond the small constant residual gate used at initialization.
-    for block in tt.blocks:
-        block.ada_ln_table.assign(
-            keras.ops.convert_to_tensor(0.1 * rng.standard_normal(block.ada_ln_table.shape).astype("float32"))
-        )
 
+def _transformer_inputs(input_shape):
     rng = np.random.default_rng(1)
-    x = rng.standard_normal((1, 5)).astype("float32")
-    t = keras.ops.convert_to_tensor(rng.random((1, 1)).astype("float32"))
-    identity = keras.ops.convert_to_tensor(np.eye(5, dtype="float32")[None])
+    return tuple(keras.ops.convert_to_tensor(rng.random(shape).astype(np.float32)) for shape in input_shape)
 
-    def run(arr):
-        out = tt((keras.ops.convert_to_tensor(arr), t, None), attention_mask=identity)
-        return keras.ops.convert_to_numpy(out)
 
-    base = run(x)
-    for j in range(5):
-        perturbed = x.copy()
-        perturbed[:, j] += 5.0
-        diff = np.abs(run(perturbed) - base)[0]
-        off_token = np.delete(diff, j)
-        assert off_token.max() < 1e-5, f"identity mask leaked from token {j} to others"
+@pytest.mark.parametrize("use_masks", [False, True])
+def test_diffusion_transformer_embed_blocks_and_readout_reproduce_call(use_masks):
+    input_shape = ((2, 3), (2, 1), (2, 2))
+    transformer = _random_diffusion_transformer(input_shape)
+    inputs = _transformer_inputs(input_shape)
+
+    masks = {}
+    if use_masks:
+        attention_mask = np.ones((2, 3, 5), dtype=bool)
+        attention_mask[:, 0, -1] = False
+        masks = {
+            "attention_mask": keras.ops.convert_to_tensor(attention_mask),
+            "fixed_target_mask": keras.ops.convert_to_tensor(np.float32([[1, 0, 1], [1, 1, 0]])),
+            "infer_target_mask": keras.ops.convert_to_tensor(np.float32([[1, 1, 1], [1, 1, 0]])),
+            "observed_condition_mask": keras.ops.convert_to_tensor(np.float32([[1, 0], [1, 1]])),
+        }
+
+    h, context = transformer.embed(inputs, training=False, **masks)
+
+    h_shape, context_shape = transformer.compute_embed_output_shape(input_shape)
+    assert tuple(h.shape) == h_shape
+    for tensor, shape in zip(context, context_shape):
+        # the masks are None without mask inputs
+        if tensor is not None:
+            assert tuple(tensor.shape) == tuple(shape)
+
+    for block in transformer.blocks:
+        h = block((h, context), training=False)
+    out = DiffusionTransformerReadout.final_layer(
+        h, context, transformer.out_norm, transformer.final_ada_ln, transformer.token_out, training=False
+    )
+
+    assert_allclose(out, transformer(inputs, training=False, **masks))
+
+
+def test_diffusion_transformer_make_readout():
+    input_shape = ((2, 3), (2, 1), (2, 2))
+    transformer = _random_diffusion_transformer(input_shape)
+    inputs = _transformer_inputs(input_shape)
+
+    readout = transformer.make_readout()
+    assert isinstance(readout, DiffusionTransformerReadout)
+    assert not readout.built
+    assert readout.width == transformer.width
+
+    h_shape, context_shape = transformer.compute_embed_output_shape(input_shape)
+    readout.build((h_shape, context_shape))
+    readout.final_ada_ln.set_weights(transformer.final_ada_ln.get_weights())
+    readout.token_out.set_weights(transformer.token_out.get_weights())
+
+    h, context = transformer.embed(inputs, training=False)
+    for block in transformer.blocks:
+        h = block((h, context), training=False)
+    out = readout((h, context), training=False)
+
+    assert tuple(out.shape) == readout.compute_output_shape((h_shape, context_shape))
+    assert_allclose(out, transformer(inputs, training=False))
+
+
+def test_diffusion_transformer_reads_every_time_channel():
+    input_shape = ((2, 3), (2, 2), (2, 2))
+    transformer = _random_diffusion_transformer(input_shape)
+    x, t, conditions = _transformer_inputs(input_shape)
+    t_shifted = keras.ops.concatenate([t[:, :1], t[:, 1:] + 0.5], axis=-1)
+
+    out = transformer((x, t, conditions), training=False)
+    out_shifted = transformer((x, t_shifted, conditions), training=False)
+
+    assert not np.allclose(keras.ops.convert_to_numpy(out), keras.ops.convert_to_numpy(out_shifted))

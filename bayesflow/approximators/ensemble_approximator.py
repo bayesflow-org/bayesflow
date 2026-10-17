@@ -193,25 +193,22 @@ class EnsembleApproximator(Approximator):
         inference_attention_mask: dict[str, Tensor] | Tensor | None = None,
         inference_mask: dict[str, Tensor] | Tensor | None = None,
         stage: str = "training",
+        **kwargs,
     ) -> dict[str, dict[str, Tensor]]:
         metrics = {}
 
-        def select(value, name):
-            if value is None:
-                return None
-            return value[name] if stage == "training" else value
-
         for name, approximator in self.approximators.items():
             metrics[name] = approximator.compute_metrics(
-                inference_variables=select(inference_variables, name),
-                inference_conditions=select(inference_conditions, name),
-                summary_variables=select(summary_variables, name),
-                sample_weight=select(sample_weight, name),
-                summary_attention_mask=select(summary_attention_mask, name),
-                summary_mask=select(summary_mask, name),
-                inference_attention_mask=select(inference_attention_mask, name),
-                inference_mask=select(inference_mask, name),
+                inference_variables=self._select_member(inference_variables, name),
+                inference_conditions=self._select_member(inference_conditions, name),
+                summary_variables=self._select_member(summary_variables, name),
+                sample_weight=self._select_member(sample_weight, name),
+                summary_attention_mask=self._select_member(summary_attention_mask, name),
+                summary_mask=self._select_member(summary_mask, name),
+                inference_attention_mask=self._select_member(inference_attention_mask, name),
+                inference_mask=self._select_member(inference_mask, name),
                 stage=stage,
+                **{key: self._select_member(value, name) for key, value in kwargs.items()},
             )
 
         loss = keras.ops.sum([approx_metrics["loss"] for approx_metrics in metrics.values()])
@@ -276,7 +273,11 @@ class EnsembleApproximator(Approximator):
                 None,
                 capability="distribution",
                 fn=lambda name, a: a.sample(
-                    num_samples=num_samples, conditions=conditions, split=split, seed=seed, **kwargs
+                    num_samples=num_samples,
+                    conditions=conditions,
+                    split=split,
+                    seed=seed,
+                    **{key: self._select_member(value, name) for key, value in kwargs.items()},
                 ),
             )
 
@@ -288,7 +289,11 @@ class EnsembleApproximator(Approximator):
             list(alloc.keys()),
             capability="distribution",
             fn=lambda name, a: a.sample(
-                num_samples=alloc[name], conditions=conditions, split=split, seed=seed, **kwargs
+                num_samples=alloc[name],
+                conditions=conditions,
+                split=split,
+                seed=seed,
+                **{key: self._select_member(value, name) for key, value in kwargs.items()},
             ),
         )
 
@@ -333,7 +338,10 @@ class EnsembleApproximator(Approximator):
             return self._map_members(
                 None,
                 capability="distribution",
-                fn=lambda name, a: a.log_prob(data=data, **kwargs),
+                fn=lambda name, a: a.log_prob(
+                    data=data,
+                    **{key: self._select_member(value, name) for key, value in kwargs.items()},
+                ),
             )
 
         weights = self._resolve_member_weights(member_weights)
@@ -342,7 +350,10 @@ class EnsembleApproximator(Approximator):
         log_probs = self._map_members(
             members,
             capability="distribution",
-            fn=lambda name, a: a.log_prob(data=data, **kwargs),
+            fn=lambda name, a: a.log_prob(
+                data=data,
+                **{key: self._select_member(value, name) for key, value in kwargs.items()},
+            ),
         )
 
         stacked = np.stack([log_probs[m] for m in members], axis=-1)
@@ -440,6 +451,11 @@ class EnsembleApproximator(Approximator):
     ) -> dict[str, Any]:
         resolved = self._resolve_members(members, capability=capability)
         return {name: fn(name, self.approximators[name]) for name in resolved}
+
+    def _select_member(self, value, name: str):
+        if isinstance(value, Mapping) and any(member in value for member in self.members):
+            return value[name]
+        return value
 
     def _resolve_members(self, members: Sequence[str] | None, *, capability: str) -> tuple[str, ...]:
         if capability == "any":

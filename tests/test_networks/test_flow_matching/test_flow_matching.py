@@ -38,17 +38,6 @@ def test_compute_metrics(flow_matching, random_samples, random_conditions):
     assert np.isfinite(loss), f"Loss is not finite: {loss}"
 
 
-def test_compute_metrics_with_masking(flow_matching_with_masking, random_samples, random_conditions):
-    xz_shape = keras.ops.shape(random_samples)
-    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
-    flow_matching_with_masking.build(xz_shape, conditions_shape=cond_shape)
-
-    metrics = flow_matching_with_masking.compute_metrics(random_samples, conditions=random_conditions)
-    assert "loss" in metrics
-    loss = keras.ops.convert_to_numpy(metrics["loss"])
-    assert np.isfinite(loss), f"Loss is not finite: {loss}"
-
-
 def test_adaptive_solver_sample_and_density():
     """The instance default is an adaptive tsit5 solver for sampling and density.
     The adaptive density must match a high-accuracy fixed-step reference, which

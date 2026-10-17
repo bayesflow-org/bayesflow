@@ -3,11 +3,7 @@ from typing import Any
 import keras
 
 from bayesflow.types import Tensor
-from bayesflow.utils import (
-    find_permutation,
-    layer_kwargs,
-    weighted_mean,
-)
+from bayesflow.utils import find_permutation, weighted_mean
 from bayesflow.utils.serialization import serializable, serialize
 
 from .actnorm import ActNorm
@@ -147,7 +143,6 @@ class CouplingFlow(InferenceNetwork):
 
     def get_config(self):
         base_config = super().get_config()
-        base_config = layer_kwargs(base_config)
 
         config = {
             "subnet": self.subnet,
@@ -165,6 +160,8 @@ class CouplingFlow(InferenceNetwork):
     def _forward(
         self, x: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        self.mask_handler.reject_structural_masks(kwargs, reason="coupling layers pass no masks to their subnets")
+
         z = x
         log_det = keras.ops.zeros(keras.ops.shape(x)[:-1])
         for layer in self.invertible_layers:
@@ -181,6 +178,8 @@ class CouplingFlow(InferenceNetwork):
     def _inverse(
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
+        self.mask_handler.reject_structural_masks(kwargs, reason="coupling layers pass no masks to their subnets")
+
         x = z
         log_det = keras.ops.zeros(keras.ops.shape(z)[:-1])
         for layer in reversed(self.invertible_layers):

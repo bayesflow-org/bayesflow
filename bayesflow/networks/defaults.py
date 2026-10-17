@@ -35,6 +35,8 @@ CONSISTENCY_MODEL_DEFAULTS = MappingProxyType(
     }
 )
 
+MEAN_FLOW_MODEL_DEFAULTS = MappingProxyType(dict(TIME_MLP_DEFAULTS) | {"fourier_scale": 0.3})
+
 DIFFUSION_TRANSFORMER_DEFAULTS = MappingProxyType(
     {
         "widths": (128, 128, 128, 128, 128),

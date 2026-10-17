@@ -41,6 +41,29 @@ def test_fourier_embedding_raises_for_odd_embed_dim():
         FourierEmbedding(embed_dim=7)
 
 
+def _fourier_features(t, w, scale):
+    proj = t * w * 2 * np.pi * scale
+    return np.concatenate([np.sin(proj), np.cos(proj)], axis=-1)
+
+
+def test_fourier_embedding_embeds_each_time_channel():
+    emb_layer = FourierEmbedding(embed_dim=8)
+    t = keras.random.uniform((4, 2))
+    emb = keras.ops.convert_to_numpy(emb_layer(t))
+
+    assert tuple(emb_layer.w.shape) == (2, 4)
+    assert emb.shape == emb_layer.compute_output_shape((4, 2)) == (4, 18)
+
+    # identity first, then the features of each channel with its own frequencies
+    t = keras.ops.convert_to_numpy(t)
+    w = keras.ops.convert_to_numpy(emb_layer.w)
+    expected = np.concatenate(
+        [t, _fourier_features(t[:, :1], w[0], emb_layer.scale), _fourier_features(t[:, 1:], w[1], emb_layer.scale)],
+        axis=-1,
+    )
+    np.testing.assert_allclose(emb, expected, rtol=1e-5, atol=1e-5)
+
+
 def test_recurrent_embedding_lstm_and_gru_shapes():
     batch_size = 2
     seq_len = 5

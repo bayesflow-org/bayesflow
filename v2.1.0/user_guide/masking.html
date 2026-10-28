@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>7. Masking &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=18bd87630a240e9c25be" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=95c83b7e" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=18bd87630a240e9c25be"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be" />
+
+    <script src="../_static/documentation_options.js?v=47f53cd5"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/design-tabs.js?v=f930bc37"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"01d47ae1b2cb4bf89a23ff032aca5ec9": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "049e9f02bafa42c2bf5015110c9006d5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "058e62348a9c4b57a7a99fb5795f2cec": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_0a2c09ac1b4f4497aeca713cf7578be1", "placeholder": "\u200b", "style": "IPY_MODEL_7ed99d6931bc416f8a558dcc5a2e9cab", "tabbable": null, "tooltip": null, "value": "\u20071/1\u2007[00:12&lt;00:00,\u200712.34s/batch]"}}, "0a2c09ac1b4f4497aeca713cf7578be1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "0aa558854b704af9a2d39fe2734b4d82": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "0c543617ed904b4d83618aa77315a6f4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "0df6881a86ea48e9903bb4fc21e937c5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "17767b9a36604007b1bb599ccd3c019a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_549d137ccf89451fa6f71d19ebfd4e4d", "max": 1.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_0aa558854b704af9a2d39fe2734b4d82", "tabbable": null, "tooltip": null, "value": 1.0}}, "1b8e93f36bf04d968c265d70a9f35357": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_bcb9a19b45294068a780d0a70dbe8c05", "placeholder": "\u200b", "style": "IPY_MODEL_807bbdf728644d49a93fbd69e25a4383", "tabbable": null, "tooltip": null, "value": "Sampling:\u2007100%"}}, "23849c3cb356496a8ec90a42fdc06836": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "2679a4816a954be19427d72bfe890fae": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_cc0c92b087224e8488b9efd4802da7d9", "max": 1.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_c049f58b757948a69871885ebfd7799a", "tabbable": null, "tooltip": null, "value": 1.0}}, "2be0ba0253364387968a917a676a700a": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "2df056e1c4b14789b95b1e9bd6596ee0": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_2be0ba0253364387968a917a676a700a", "placeholder": "\u200b", "style": "IPY_MODEL_01d47ae1b2cb4bf89a23ff032aca5ec9", "tabbable": null, "tooltip": null, "value": "Sampling:\u2007100%"}}, "2eadbed14d3f46668c80b8ff70d2f1b4": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "3ede8be348c94f00b1ba9db65c4bd8ed": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "40ac6f84eb924127886cec766ac849e3": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "42224b1f33b54b0ab28cb774f359fdcc": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "42542ea7129d4cb78d82ef5c5673e800": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "4473ec2c383e4a3690ac35e642281948": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_d63e90b8666a4ace853b02b6bd4a0a50", "IPY_MODEL_17767b9a36604007b1bb599ccd3c019a", "IPY_MODEL_db847cdb72a1485699823014b18c19bd"], "layout": "IPY_MODEL_5f001b4a694540f5a84b1f220e90a6fb", "tabbable": null, "tooltip": null}}, "48118792e6bd44d8b2f6e5a835815f62": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_4f0f6d3ea6be4d41bfdcd156a75ede33", "placeholder": "\u200b", "style": "IPY_MODEL_0c543617ed904b4d83618aa77315a6f4", "tabbable": null, "tooltip": null, "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.54s/batch]"}}, "4f0f6d3ea6be4d41bfdcd156a75ede33": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "549d137ccf89451fa6f71d19ebfd4e4d": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "5f001b4a694540f5a84b1f220e90a6fb": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "652239495d4049f28b70d628a6c7d759": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_68284d28d5ce46b89f7604280755b1e9", "placeholder": "\u200b", "style": "IPY_MODEL_049e9f02bafa42c2bf5015110c9006d5", "tabbable": null, "tooltip": null, "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.30s/batch]"}}, "68284d28d5ce46b89f7604280755b1e9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "693f01c61b2848f8bcedcd33244dd610": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "6b019b99b75b49629fa604cdb2a17877": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "74b0ff70e354421f8f73ad326c6516cf": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_a2a3fbb0af304a5da575a2115b8765e6", "max": 1.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_42542ea7129d4cb78d82ef5c5673e800", "tabbable": null, "tooltip": null, "value": 1.0}}, "74e0ac6272814fd58d03d9624bb728b5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_1b8e93f36bf04d968c265d70a9f35357", "IPY_MODEL_7c5531c47d904b19bc45321d702f277b", "IPY_MODEL_652239495d4049f28b70d628a6c7d759"], "layout": "IPY_MODEL_2eadbed14d3f46668c80b8ff70d2f1b4", "tabbable": null, "tooltip": null}}, "758c71ead4134271a8891158c5fb5d6f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "78e558e60868453ab603a6a154d4da50": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "7c5531c47d904b19bc45321d702f277b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_6b019b99b75b49629fa604cdb2a17877", "max": 1.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_ec7f156f8fe04a49a15033f73c139132", "tabbable": null, "tooltip": null, "value": 1.0}}, "7ed99d6931bc416f8a558dcc5a2e9cab": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "807bbdf728644d49a93fbd69e25a4383": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "887f2f42bdbc4b21a4f31b78bba29a8b": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_9b82aa64be114f16a1dd319e235ee948", "IPY_MODEL_74b0ff70e354421f8f73ad326c6516cf", "IPY_MODEL_48118792e6bd44d8b2f6e5a835815f62"], "layout": "IPY_MODEL_b623248b401a4c819537b1c91ba767a1", "tabbable": null, "tooltip": null}}, "9b82aa64be114f16a1dd319e235ee948": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_cba3a956ef2f47e589fca5fc905bd1a3", "placeholder": "\u200b", "style": "IPY_MODEL_0df6881a86ea48e9903bb4fc21e937c5", "tabbable": null, "tooltip": null, "value": "Sampling:\u2007100%"}}, "9fe40d35ea5c4b5a97748670dc0ef9cf": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "a05487979d3c4d22b921baa584e9c3c1": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_d8d08a75f1c745c085473f2fca7f65dc", "placeholder": "\u200b", "style": "IPY_MODEL_758c71ead4134271a8891158c5fb5d6f", "tabbable": null, "tooltip": null, "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.33s/batch]"}}, "a2a3fbb0af304a5da575a2115b8765e6": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "b5d5f9b199de450eab155d1dc7b71303": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "b623248b401a4c819537b1c91ba767a1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "bab25f2457df4f8ea945a2653860d38c": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "bcb9a19b45294068a780d0a70dbe8c05": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "c049f58b757948a69871885ebfd7799a": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "cba3a956ef2f47e589fca5fc905bd1a3": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "cc0c92b087224e8488b9efd4802da7d9": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "ce823b46bc5d4ed099421b086321f450": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_2df056e1c4b14789b95b1e9bd6596ee0", "IPY_MODEL_fd952c0d92dc442aba9524f05bcd8ca8", "IPY_MODEL_058e62348a9c4b57a7a99fb5795f2cec"], "layout": "IPY_MODEL_40ac6f84eb924127886cec766ac849e3", "tabbable": null, "tooltip": null}}, "d01f51e54dd1417e846ddd61720f5274": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_dd313d1372584c82b1d114307a404fc5", "IPY_MODEL_2679a4816a954be19427d72bfe890fae", "IPY_MODEL_a05487979d3c4d22b921baa584e9c3c1"], "layout": "IPY_MODEL_9fe40d35ea5c4b5a97748670dc0ef9cf", "tabbable": null, "tooltip": null}}, "d5e3402d66c54180b6d00b7682900ff4": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "d63e90b8666a4ace853b02b6bd4a0a50": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_42224b1f33b54b0ab28cb774f359fdcc", "placeholder": "\u200b", "style": "IPY_MODEL_d5e3402d66c54180b6d00b7682900ff4", "tabbable": null, "tooltip": null, "value": "Sampling:\u2007100%"}}, "d8d08a75f1c745c085473f2fca7f65dc": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "db847cdb72a1485699823014b18c19bd": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_bab25f2457df4f8ea945a2653860d38c", "placeholder": "\u200b", "style": "IPY_MODEL_693f01c61b2848f8bcedcd33244dd610", "tabbable": null, "tooltip": null, "value": "\u20071/1\u2007[00:02&lt;00:00,\u2007\u20072.70s/batch]"}}, "dd313d1372584c82b1d114307a404fc5": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_3ede8be348c94f00b1ba9db65c4bd8ed", "placeholder": "\u200b", "style": "IPY_MODEL_b5d5f9b199de450eab155d1dc7b71303", "tabbable": null, "tooltip": null, "value": "Sampling:\u2007100%"}}, "ec7f156f8fe04a49a15033f73c139132": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "fd952c0d92dc442aba9524f05bcd8ca8": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_23849c3cb356496a8ec90a42fdc06836", "max": 1.0, "min": 0.0, "orientation": "horizontal", "style": "IPY_MODEL_78e558e60868453ab603a6a154d4da50", "tabbable": null, "tooltip": null, "value": 1.0}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = 'user_guide/masking';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.23.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.0';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/user_guide/masking.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="8. Workflows" href="workflows.html" />
+    <link rel="prev" title="6. Inference Networks" href="inference_networks.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.0" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg fa-fw" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg fa-fw" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg fa-fw" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg fa-fw me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg fa-fw me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg fa-fw me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="introduction.html">1. Introduction</a></li>
+<li class="toctree-l1"><a class="reference internal" href="simulators.html">2. Simulators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_processing.html">3. Data Processing: Adapters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="estimators.html">4. Estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="summary_networks.html">5. Summary Networks</a></li>
+<li class="toctree-l1"><a class="reference internal" href="inference_networks.html">6. Inference Networks</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">7. Masking</a></li>
+<li class="toctree-l1"><a class="reference internal" href="workflows.html">8. Workflows</a></li>
+<li class="toctree-l1"><a class="reference internal" href="saving_loading.html">9. Saving &amp; Loading Models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="diagnostics.html">10. Diagnostics and Visualizations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="datasets.html">11. Using Datasets in BayesFlow</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-home"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="index.html" class="nav-link">User Guide</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">7. </span>Masking</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="masking">
+<h1><span class="section-number">7. </span>Masking<a class="headerlink" href="#masking" title="Link to this heading">#</a></h1>
+<p>Masks let one trained inference network answer several related questions. For example, the same model can infer a full posterior, work with an observation whose second coordinate is missing, return a parameter marginal, or condition on a parameter whose value is already known.</p>
+<p>This guide develops those cases with the inverse-kinematics benchmark and then covers padding and attention masks. The examples use a <code class="xref py py-class docutils literal notranslate"><span class="pre">DiffusionModel</span></code> with a <code class="xref py py-class docutils literal notranslate"><span class="pre">DiffusionTransformer</span></code>, but the same explicit <a class="reference internal" href="../api/bayesflow.masking.MaskHandler.html#bayesflow.masking.MaskHandler" title="bayesflow.masking.MaskHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskHandler</span></code></a> interface is available to <code class="xref py py-class docutils literal notranslate"><span class="pre">FlowMatching</span></code> and <code class="xref py py-class docutils literal notranslate"><span class="pre">ConsistencyModel</span></code>.</p>
+<div class="admonition important">
+<p class="admonition-title">Important</p>
+<p>A mask does not give an ordinarily trained network a new skill after the fact. The masking patterns are included during training, and need to be validated for every kind of query you plan to use.</p>
+</div>
+<section id="two-kinds-of-masks">
+<h2><span class="section-number">7.1. </span>Two kinds of masks<a class="headerlink" href="#two-kinds-of-masks" title="Link to this heading">#</a></h2>
+<p>BayesFlow distinguishes two mask families:</p>
+<ul class="simple">
+<li><p><strong>Semantic masks</strong> change the probabilistic question. They say which target coordinates are inferred, fixed, or marginalized and which condition coordinates were observed.</p></li>
+<li><p><strong>Structural masks</strong> describe tensor structure, such as padding or a custom attention pattern. They route to a summary network or inference subnet but do not, by themselves, redefine the posterior. Masks passed to summary network can, however, also be used to ignore missing values.</p></li>
+</ul>
+<p>Most of this guide concerns semantic masks.</p>
+</section>
+<section id="semantic-masks-at-a-glance">
+<h2><span class="section-number">7.2. </span>Semantic masks at a glance<a class="headerlink" href="#semantic-masks-at-a-glance" title="Link to this heading">#</a></h2>
+<p>All semantic masks follow a <strong>keep-mask convention</strong>: <code class="docutils literal notranslate"><span class="pre">1</span></code> means that a coordinate is active or present, while <code class="docutils literal notranslate"><span class="pre">0</span></code> removes it from its usual role. For a distribution <span class="math notranslate nohighlight">\(p(\boldsymbol\theta \mid \mathbf{x})\)</span>:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Argument</p></th>
+<th class="head"><p>Applies to</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">1</span></code> means</p></th>
+<th class="head"><p><code class="docutils literal notranslate"><span class="pre">0</span></code> means</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">observed_condition_mask</span></code></p></td>
+<td><p>conditions <span class="math notranslate nohighlight">\(\mathbf{x}\)</span></p></td>
+<td><p>observed and usable</p></td>
+<td><p>missing; ignore this condition</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">infer_target_mask</span></code></p></td>
+<td><p>targets <span class="math notranslate nohighlight">\(\boldsymbol\theta\)</span></p></td>
+<td><p>present in the requested target</p></td>
+<td><p>absent; marginalize this target</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code></p></td>
+<td><p>targets <span class="math notranslate nohighlight">\(\boldsymbol\theta\)</span></p></td>
+<td><p>infer and update</p></td>
+<td><p>hold fixed at <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code></p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> is not a mask. It is the complete target-shaped value array used wherever <code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> is <code class="docutils literal notranslate"><span class="pre">0</span></code>.</p>
+<p>For ordinary vector data, use shape <code class="docutils literal notranslate"><span class="pre">(num_datasets,</span> <span class="pre">num_dimensions)</span></code>. There is no posterior-sample axis: BayesFlow broadcasts each row over <code class="docutils literal notranslate"><span class="pre">num_samples</span></code> or the corresponding structural dimensions. A shared one-dimensional mask is also accepted in many low-level calls, but keeping the data-batch axis makes examples and batched inference unambiguous.</p>
+<p>When no semantic mask is supplied, all conditions are observed and all targets are inferred.</p>
+<section id="what-changes-statistically">
+<h3><span class="section-number">7.2.1. </span>What changes statistically?<a class="headerlink" href="#what-changes-statistically" title="Link to this heading">#</a></h3>
+<p>Suppose <span class="math notranslate nohighlight">\(A\)</span> and <span class="math notranslate nohighlight">\(B\)</span> partition the targets and <span class="math notranslate nohighlight">\(O\)</span> and <span class="math notranslate nohighlight">\(M\)</span> partition the observation:</p>
+<ul class="simple">
+<li><p><strong>Missing observation:</strong> <code class="docutils literal notranslate"><span class="pre">observed_condition_mask</span></code> requests <span class="math notranslate nohighlight">\(p(\boldsymbol\theta\mid\mathbf{x}_O)\)</span>. The unavailable <span class="math notranslate nohighlight">\(\mathbf{x}_M\)</span> is not treated as an observation equal to zero; it is excluded as evidence.</p></li>
+<li><p><strong>Target marginal:</strong> <code class="docutils literal notranslate"><span class="pre">infer_target_mask</span></code> requests <span class="math notranslate nohighlight">\(p(\boldsymbol\theta_A\mid\mathbf{x})=\int p(\boldsymbol\theta_A,\boldsymbol\theta_B\mid\mathbf{x})\,d\boldsymbol\theta_B\)</span>.</p></li>
+<li><p><strong>Arbitrary conditional:</strong> <code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> together with <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> requests <span class="math notranslate nohighlight">\(p(\boldsymbol\theta_A\mid\boldsymbol\theta_B=\mathbf{b},\mathbf{x})\)</span>.</p></li>
+</ul>
+<p>These cases are easy to mix up.</p>
+<ul class="simple">
+<li><p>A missing observation removes information on the <strong>conditioning side</strong>.</p></li>
+<li><p>A target marginal removes a variable from the <strong>quantity being inferred</strong>.</p></li>
+<li><p>A fixed target instead adds its known value to the conditioning information.</p></li>
+</ul>
+<p>They can be used in tandem.</p>
+</section>
+</section>
+<section id="the-diffusion-transformer">
+<h2><span class="section-number">7.3. </span>The Diffusion Transformer<a class="headerlink" href="#the-diffusion-transformer" title="Link to this heading">#</a></h2>
+<p>The <code class="docutils literal notranslate"><span class="pre">DiffusionTransformer</span></code> subnet turns every target and condition dimension into its own token. Each token receives an identity embedding and one of three learned state embeddings:</p>
+<ol class="arabic simple">
+<li><p><strong>latent</strong> - a target currently being inferred,</p></li>
+<li><p><strong>observed</strong> - a fixed target or an available condition,</p></li>
+<li><p><strong>missing</strong> - a marginalized target or unavailable condition.</p></li>
+</ol>
+<p>The transformer derives a directed attention mask from those states. Inferred target tokens can use all present information; fixed target tokens act as context and receive no updates; missing tokens cannot become evidence.</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code>, <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code>, or <code class="docutils literal notranslate"><span class="pre">ConsistencyModel</span></code> passes clean targets and projects sampling states and updates. Diffusion time modulates every block through adaptive layer normalization. If an explicit attention mask is also supplied, it is intersected with the semantic mask, so custom attention cannot make a missing token visible again.</p>
+<p>Despite its name, this is a <strong>subnet architecture</strong>, not a separate inference algorithm, and it is not the only component that consumes masks. The outer inference network uses <code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> to clamp fixed coordinates and exclude their updates, losses, or density terms, while a mask-aware subnet uses <code class="docutils literal notranslate"><span class="pre">infer_target_mask</span></code> to learn target marginals.</p>
+<p>Summary networks and other mask-aware subnets can consume structural masks as described below. What the <code class="docutils literal notranslate"><span class="pre">DiffusionTransformer</span></code> adds is learned, per-dimension token handling of observed, latent, and missing states. Use <code class="docutils literal notranslate"><span class="pre">subnet=&quot;diffusion_transformer&quot;</span></code> with <code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code>, <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code>, or <code class="docutils literal notranslate"><span class="pre">ConsistencyModel</span></code> when you need that separation. A plain MLP receives a flat vector and cannot enforce the same token-level visibility.</p>
+</section>
+<section id="running-example-inverse-kinematics">
+<h2><span class="section-number">7.4. </span>Running example: inverse kinematics<a class="headerlink" href="#running-example-inverse-kinematics" title="Link to this heading">#</a></h2>
+<p>The benchmark describes a planar robot arm with target vector</p>
+<div class="math notranslate nohighlight">
+\[\boldsymbol\theta=(h,\alpha_1,\alpha_2,\alpha_3)\]</div>
+<p>and observed endpoint <span class="math notranslate nohighlight">\(\mathbf{x}=(x_1,x_2)\)</span>. It is a useful example because we can ask intuitive variants of the same inverse problem: infer all four arm parameters, ignore a broken position sensor, marginalize the final joint angle, or fix the height to a measured value.</p>
+<p>The scenarios mirror the <a class="reference external" href="https://github.com/bayesflow-org/diffusion-experiments/blob/main/intro_example/plot_transformer_conditionals.py">inverse-kinematics masking example</a> from the diffusion experiments.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+
+<span class="n">seed</span> <span class="o">=</span> <span class="mi">2026</span>
+<span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">simulators</span><span class="o">.</span><span class="n">InverseKinematics</span><span class="p">(</span><span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+
+<span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"parameters"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"observables"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="c1"># One observed arm endpoint; the leading axis indexes datasets.</span>
+<span class="n">observation</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"observables"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="train-one-model-for-all-cases">
+<h2><span class="section-number">7.5. </span>Train one model for all cases<a class="headerlink" href="#train-one-model-for-all-cases" title="Link to this heading">#</a></h2>
+<p>A <a class="reference internal" href="../api/bayesflow.masking.MaskHandler.html#bayesflow.masking.MaskHandler" title="bayesflow.masking.MaskHandler"><code class="xref py py-class docutils literal notranslate"><span class="pre">MaskHandler</span></code></a> owns mask generation and routing. Its three probabilities augment each training batch with random masking patterns:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">fixed_target_prob</span></code> moves some target coordinates from the inferred set to the clean conditioning set. This teaches arbitrary target conditionals. The automatic generator keeps at least one eligible target inferred in each row.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">missing_target_prob</span></code> hides some coordinates that would otherwise be fixed. This teaches target marginals. For automatic mask generation, set <code class="docutils literal notranslate"><span class="pre">fixed_target_prob</span> <span class="pre">&gt;</span> <span class="pre">0</span></code> when using it; an explicit training-time <code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> can provide the candidates instead.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">missing_conditions_prob</span></code> hides condition coordinates. This teaches inference from incomplete observations.</p></li>
+</ul>
+<p>The values below are a reasonable illustration.</p>
+<ul class="simple">
+<li><p>Increasing <code class="docutils literal notranslate"><span class="pre">fixed_target_prob</span></code> reduces ordinary full-posterior rows.</p></li>
+<li><p>Increasing <code class="docutils literal notranslate"><span class="pre">missing_conditions_prob</span></code> reduces complete-observation rows.</p></li>
+<li><p>Finally, <code class="docutils literal notranslate"><span class="pre">missing_target_prob</span></code> changes the mix of fixed versus marginalized coordinates only within target queries that already contain fixed coordinates.</p></li>
+</ul>
+<p><code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code>, <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code>, and <code class="docutils literal notranslate"><span class="pre">ConsistencyModel</span></code> accept <code class="docutils literal notranslate"><span class="pre">mask_handler=None</span></code>, which creates a default <code class="docutils literal notranslate"><span class="pre">MaskHandler()</span></code> with all three probabilities set to zero. You can pass an explicit configured handler, as below, whenever training should generate random semantic masks. This keeps masking policy separate from the diffusion, flow-matching, or consistency-model configuration. <code class="docutils literal notranslate"><span class="pre">MaskHandler(seed=...)</span></code> initializes its own local random generator and serializes its seed and masking configuration. It can use the same seed integer as the inference network while retaining separate random state.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">DiffusionModel</span><span class="p">(</span>
+    <span class="n">subnet</span><span class="o">=</span><span class="s2">"diffusion_transformer"</span><span class="p">,</span>
+    <span class="n">mask_handler</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">masking</span><span class="o">.</span><span class="n">MaskHandler</span><span class="p">(</span>
+        <span class="n">fixed_target_prob</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">missing_target_prob</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">missing_conditions_prob</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span>
+        <span class="n">seed</span><span class="o">=</span><span class="n">seed</span>
+    <span class="p">),</span>
+    <span class="n">seed</span><span class="o">=</span><span class="n">seed</span>
+<span class="p">)</span>
+
+<span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">inference_network</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"inference_conditions"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>To use flow matching, replace <code class="docutils literal notranslate"><span class="pre">DiffusionModel</span></code> with <code class="docutils literal notranslate"><span class="pre">FlowMatching</span></code> and pass the same kind of configured handler. <code class="docutils literal notranslate"><span class="pre">ConsistencyModel</span></code> and <code class="docutils literal notranslate"><span class="pre">StableConsistencyModel</span></code> expose the same argument (and <code class="docutils literal notranslate"><span class="pre">ConsistencyModel</span></code> additionally requires <code class="docutils literal notranslate"><span class="pre">total_steps</span></code>). Every inference-time mask keeps the same meaning.</p>
+</div>
+<p>We will train exactly as for an unmasked amortized posterior. Random semantic masks are sampled only during training; the explicit masks in later sections select a query at inference time.</p>
+<p>The following is the only expensive cell. The simulation count and epochs are deliberately visible so they can be adjusted for an experiment.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">50_000</span><span class="p">)</span>
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">training_data</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1024</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="reference-the-full-posterior">
+<h2><span class="section-number">7.6. </span>Reference: the full posterior<a class="headerlink" href="#reference-the-full-posterior" title="Link to this heading">#</a></h2>
+<p>With no masks, both endpoint coordinates are observed and all four arm parameters are inferred. The returned array has shape <code class="docutils literal notranslate"><span class="pre">(1,</span> <span class="pre">1000,</span> <span class="pre">4)</span></code>: one dataset, 1000 posterior draws, and four targets.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">posterior_full</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+<span class="p">)[</span><span class="s2">"parameters"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="missing-observations">
+<h2><span class="section-number">7.7. </span>Missing observations<a class="headerlink" href="#missing-observations" title="Link to this heading">#</a></h2>
+<p>Suppose <span class="math notranslate nohighlight">\(x_2\)</span> was not recorded. Keep <span class="math notranslate nohighlight">\(x_1\)</span> with a <code class="docutils literal notranslate"><span class="pre">1</span></code> and mark <span class="math notranslate nohighlight">\(x_2\)</span> missing with a <code class="docutils literal notranslate"><span class="pre">0</span></code>. The value stored in the masked position is ignored by the transformer, but it should still be a finite placeholder rather than <code class="docutils literal notranslate"><span class="pre">NaN</span></code> so preprocessing remains well behaved.</p>
+<p>This query approximates <span class="math notranslate nohighlight">\(p(h,\alpha_1,\alpha_2,\alpha_3\mid x_1)\)</span>, which will usually be broader than the full posterior because it contains less evidence.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">condition_observed</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+<span class="n">posterior_missing_x2</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+    <span class="n">observed_condition_mask</span><span class="o">=</span><span class="n">condition_observed</span><span class="p">,</span>
+<span class="p">)[</span><span class="s2">"parameters"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="target-marginals">
+<h2><span class="section-number">7.8. </span>Target marginals<a class="headerlink" href="#target-marginals" title="Link to this heading">#</a></h2>
+<p>Now keep the complete endpoint but request only <span class="math notranslate nohighlight">\((h, \alpha_1, \alpha_2)\)</span>. Setting the <span class="math notranslate nohighlight">\(\alpha_3\)</span> entry of <code class="docutils literal notranslate"><span class="pre">infer_target_mask</span></code> to <code class="docutils literal notranslate"><span class="pre">0</span></code> tells the model to integrate out the final joint angle. The retained values still define the first two arm segments, so this marginal has a direct visualization.</p>
+<p>The returned tensor keeps the original four-coordinate layout. The value in a marginalized coordinate is only an implementation placeholder; it is <strong>not</strong> a draw from that coordinate’s prior or marginal posterior. Discard masked coordinates explicitly, as the final line does below.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target_present</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+<span class="n">posterior_without_alpha3</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+    <span class="n">infer_target_mask</span><span class="o">=</span><span class="n">target_present</span><span class="p">,</span>
+<span class="p">)[</span><span class="s2">"parameters"</span><span class="p">]</span>
+
+<span class="n">two_segment_samples</span> <span class="o">=</span> <span class="n">posterior_without_alpha3</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="p">:</span><span class="mi">3</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="fixed-targets-and-arbitrary-conditionals">
+<h2><span class="section-number">7.9. </span>Fixed targets and arbitrary conditionals<a class="headerlink" href="#fixed-targets-and-arbitrary-conditionals" title="Link to this heading">#</a></h2>
+<p>A fixed target is different from a marginalized target. Here we know that <span class="math notranslate nohighlight">\(h=0\)</span> and want <span class="math notranslate nohighlight">\(p(\alpha_1,\alpha_2,\alpha_3\mid h=0,\mathbf{x})\)</span>.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> uses <code class="docutils literal notranslate"><span class="pre">0</span></code> for the fixed coordinate and <code class="docutils literal notranslate"><span class="pre">1</span></code> for coordinates that remain free. <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> must have the complete target shape; entries selected by <code class="docutils literal notranslate"><span class="pre">1</span></code> are ignored. At the workflow boundary, supply <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> in the adapted target coordinates, before workflow standardization.</p>
+<p>Our simple adapter only renames, so those are the original parameter units; BayesFlow applies configured workflow standardization internally. During sampling, BayesFlow zeros learned updates for fixed coordinates; stochastic solvers also project their states and noise updates so those coordinates cannot drift.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">target_free</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+<span class="n">target_value</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+
+<span class="n">posterior_given_zero_height</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+    <span class="n">fixed_target_mask</span><span class="o">=</span><span class="n">target_free</span><span class="p">,</span>
+    <span class="n">fixed_target_value</span><span class="o">=</span><span class="n">target_value</span><span class="p">,</span>
+<span class="p">)[</span><span class="s2">"parameters"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="compare-the-masked-samples-visually">
+<h2><span class="section-number">7.10. </span>Compare the masked samples visually<a class="headerlink" href="#compare-the-masked-samples-visually" title="Link to this heading">#</a></h2>
+<p>The arm geometry makes the four probabilistic questions tangible. Each translucent arm is one posterior draw and the solid arm is a representative draw.</p>
+<p>A complete endpoint is drawn as a cross, with one reference line per observed coordinate. The missing-condition panel therefore shows only the line for <span class="math notranslate nohighlight">\(x_1\)</span>. The target-marginal panel draws only the first two arm segments because <span class="math notranslate nohighlight">\(\alpha_3\)</span> was integrated out.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">importlib</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+
+<span class="n">example_root</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span>
+    <span class="n">parent</span>
+    <span class="k">for</span> <span class="n">parent</span> <span class="ow">in</span> <span class="p">(</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">(),</span> <span class="o">*</span><span class="n">Path</span><span class="o">.</span><span class="n">cwd</span><span class="p">()</span><span class="o">.</span><span class="n">parents</span><span class="p">)</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">parent</span> <span class="o">/</span> <span class="s2">"examples/misc/diffusion/kinematics_helper.py"</span><span class="p">)</span><span class="o">.</span><span class="n">is_file</span><span class="p">()</span>
+<span class="p">)</span>
+<span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">example_root</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">str</span><span class="p">(</span><span class="n">example_root</span><span class="p">))</span>
+
+<span class="n">InverseKinematicsModel</span> <span class="o">=</span> <span class="n">importlib</span><span class="o">.</span><span class="n">import_module</span><span class="p">(</span>
+    <span class="s2">"examples.misc.diffusion.kinematics_helper"</span>
+<span class="p">)</span><span class="o">.</span><span class="n">InverseKinematicsModel</span>
+
+<span class="n">sample_views</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">"Full posterior</span><span class="se">\n</span><span class="s2">all targets inferred"</span><span class="p">,</span> <span class="n">posterior_full</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"Missing condition</span><span class="se">\n</span><span class="s2">"</span> <span class="sa">r</span><span class="s2">"$x_2 = \varnothing$"</span><span class="p">,</span> <span class="n">posterior_missing_x2</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">condition_observed</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+    <span class="p">(</span><span class="s2">"Marginalized target</span><span class="se">\n</span><span class="s2">"</span> <span class="sa">r</span><span class="s2">"$\alpha_3 = \varnothing$"</span><span class="p">,</span> <span class="n">two_segment_samples</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">),</span>
+    <span class="p">(</span><span class="s2">"Fixed target</span><span class="se">\n</span><span class="s2">$h = 0$"</span><span class="p">,</span> <span class="n">posterior_given_zero_height</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="kc">None</span><span class="p">),</span>
+<span class="p">]</span>
+
+<span class="n">arm_plotter</span> <span class="o">=</span> <span class="n">InverseKinematicsModel</span><span class="p">(</span><span class="n">linecolors</span><span class="o">=</span><span class="p">[</span><span class="s2">"#F768A1"</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">)</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span>
+    <span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.4</span><span class="p">),</span> <span class="n">subplot_kw</span><span class="o">=</span><span class="p">{</span><span class="s2">"box_aspect"</span><span class="p">:</span> <span class="mi">1</span><span class="p">},</span> <span class="n">layout</span><span class="o">=</span><span class="s2">"constrained"</span>
+<span class="p">)</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">samples</span><span class="p">,</span> <span class="n">observed_mask</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="n">sample_views</span><span class="p">,</span> <span class="n">strict</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+    <span class="n">plotted</span> <span class="o">=</span> <span class="n">samples</span><span class="p">[::</span><span class="mi">2</span><span class="p">]</span>
+    <span class="n">center</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">median</span><span class="p">(</span><span class="n">plotted</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">exemplar</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argmin</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">((</span><span class="n">plotted</span> <span class="o">-</span> <span class="n">center</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">))</span>
+    <span class="n">arm_plotter</span><span class="o">.</span><span class="n">update_plot_ax</span><span class="p">(</span>
+        <span class="n">ax</span><span class="p">,</span>
+        <span class="n">plotted</span><span class="p">,</span>
+        <span class="n">observation</span><span class="p">[</span><span class="s2">"observables"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="p">::</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span>
+        <span class="n">exemplar</span><span class="o">=</span><span class="n">exemplar</span><span class="p">,</span>
+        <span class="n">exemplar_color</span><span class="o">=</span><span class="s2">"#F4F5F8"</span><span class="p">,</span>
+        <span class="n">observed_condition_mask</span><span class="o">=</span><span class="n">observed_mask</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">11</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_facecolor</span><span class="p">(</span><span class="s2">"#FFF0E1"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">spine</span> <span class="ow">in</span> <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+        <span class="n">spine</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">fig</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s2">"One amortized model, four masking queries"</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">14</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/c0d60176c4d75ec677c74db6153e9d3727d28e2dab1859b836eef959d42716e2.png" src="../_images/c0d60176c4d75ec677c74db6153e9d3727d28e2dab1859b836eef959d42716e2.png" />
+</div>
+</div>
+</section>
+<section id="an-all-in-one-query">
+<h2><span class="section-number">7.11. </span>An all-in-one query<a class="headerlink" href="#an-all-in-one-query" title="Link to this heading">#</a></h2>
+<p>The masks can be combined when they refer to distinct roles. In the next query:</p>
+<ul class="simple">
+<li><p><span class="math notranslate nohighlight">\(h\)</span> is present but fixed to zero,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha_1\)</span> and <span class="math notranslate nohighlight">\(\alpha_2\)</span> are inferred,</p></li>
+<li><p><span class="math notranslate nohighlight">\(\alpha_3\)</span> is marginalized,</p></li>
+<li><p><span class="math notranslate nohighlight">\(x_1\)</span> is observed and <span class="math notranslate nohighlight">\(x_2\)</span> is missing.</p></li>
+</ul>
+<p>In probability notation, the useful output approximates <span class="math notranslate nohighlight">\(p(\alpha_1,\alpha_2\mid h=0,x_1)\)</span> with <span class="math notranslate nohighlight">\(\alpha_3\)</span> integrated out.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">combined</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+    <span class="n">observed_condition_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+    <span class="n">infer_target_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+    <span class="n">fixed_target_mask</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+    <span class="n">fixed_target_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">),</span>
+<span class="p">)[</span><span class="s2">"parameters"</span><span class="p">]</span>
+
+<span class="n">alpha_1_and_2</span> <span class="o">=</span> <span class="n">combined</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span>  <span class="c1"># discard the marginalized alpha_3 slot</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="the-same-masks-apply-to-densities">
+<h2><span class="section-number">7.12. </span>The same masks apply to densities<a class="headerlink" href="#the-same-masks-apply-to-densities" title="Link to this heading">#</a></h2>
+<p>For inference networks that implement <code class="docutils literal notranslate"><span class="pre">log_prob</span></code>, semantic masks have the same meaning during density evaluation. For example, the call below evaluates the learned marginal density of <span class="math notranslate nohighlight">\((h, \alpha_1, \alpha_2)\)</span> at eight simulated points, using one Hutchinson probe for the divergence estimate. Fixed target coordinates are similarly excluded from the reported conditional density.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">evaluation_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">8</span><span class="p">)</span>
+<span class="n">partial_arm_log_prob</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span>
+    <span class="n">evaluation_data</span><span class="p">,</span>
+    <span class="n">infer_target_mask</span><span class="o">=</span><span class="n">target_present</span><span class="p">,</span>
+    <span class="n">hutchinson_steps</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="structural-masks-padding-and-attention">
+<h2><span class="section-number">7.13. </span>Structural masks: padding and attention<a class="headerlink" href="#structural-masks-padding-and-attention" title="Link to this heading">#</a></h2>
+<p>Structural masks solve a different problem. They describe which positions in a padded set or sequence are valid, or which tokens may attend to one another. They use the same keep convention: <code class="docutils literal notranslate"><span class="pre">True</span></code>/<code class="docutils literal notranslate"><span class="pre">1</span></code> means valid or allowed and <code class="docutils literal notranslate"><span class="pre">False</span></code>/<code class="docutils literal notranslate"><span class="pre">0</span></code> means padded or forbidden.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Workflow/adapted-data key</p></th>
+<th class="head"><p>Routed to</p></th>
+<th class="head"><p>Typical use</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">summary_mask</span></code></p></td>
+<td><p>summary network’s <code class="docutils literal notranslate"><span class="pre">mask</span></code></p></td>
+<td><p>mark valid entries in padded summary data</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">summary_attention_mask</span></code></p></td>
+<td><p>summary network’s <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code></p></td>
+<td><p>control attention among summary tokens</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">inference_mask</span></code></p></td>
+<td><p>inference subnet’s <code class="docutils literal notranslate"><span class="pre">mask</span></code></p></td>
+<td><p>mark valid entries in structured inference data</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">inference_attention_mask</span></code></p></td>
+<td><p>inference subnet’s <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code></p></td>
+<td><p>control inference-subnet attention</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The four names in the table are <strong>workflow-boundary names</strong>. BayesFlow renames them to the canonical <code class="docutils literal notranslate"><span class="pre">mask</span></code> or <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code> argument before calling the receiving network. A receiver must explicitly declare the corresponding argument in its <code class="docutils literal notranslate"><span class="pre">call</span></code> signature; BayesFlow raises when a structural mask would otherwise be silently ignored. Coupling layers, for example, do not pass structural masks to their internal subnets.</p>
+<p>A padding mask normally has shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">sequence_length)</span></code>. An attention mask describes allowed query-key pairs; its exact broadcastable shape depends on the receiver. For example, <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> and <code class="docutils literal notranslate"><span class="pre">FusionTransformer</span></code> accept attention patterns broadcastable to multi-head attention, while <code class="docutils literal notranslate"><span class="pre">TimeSeriesTransformer</span></code> accepts a <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">sequence_length)</span></code> key mask. Check the selected network’s <code class="docutils literal notranslate"><span class="pre">call</span></code> documentation before constructing a custom pattern.</p>
+<section id="masks-for-a-summary-network">
+<h3><span class="section-number">7.13.1. </span>Masks for a summary network<a class="headerlink" href="#masks-for-a-summary-network" title="Link to this heading">#</a></h3>
+<p>Have the adapter preserve or rename the mask alongside <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code>. Summary masks should travel in the <code class="docutils literal notranslate"><span class="pre">conditions</span></code> dictionary because the summary network runs before the inference sampler. A <code class="docutils literal notranslate"><span class="pre">summary_mask</span></code> also prevents padded values from affecting summary-variable standardization. The following schematic assumes the three data arrays and a <code class="docutils literal notranslate"><span class="pre">padded_workflow</span></code> with a mask-aware summary network already exist.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">padding_adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">adapters</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"parameters"</span><span class="p">,</span> <span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"padded_trials"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"valid_trials"</span><span class="p">,</span> <span class="s2">"summary_mask"</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">conditions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"padded_trials"</span><span class="p">:</span> <span class="n">padded_trials</span><span class="p">,</span>
+    <span class="s2">"valid_trials"</span><span class="p">:</span> <span class="n">valid_trials</span><span class="p">,</span>
+<span class="p">}</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">padded_workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Use <code class="docutils literal notranslate"><span class="pre">summary_attention_mask</span></code> when you need a custom attention pattern rather than only ordinary padding. It can accompany <code class="docutils literal notranslate"><span class="pre">summary_mask</span></code> when the receiving network supports both; both are routed only to the summary network.</p>
+</section>
+<section id="masks-for-an-inference-subnet">
+<h3><span class="section-number">7.13.2. </span>Masks for an inference subnet<a class="headerlink" href="#masks-for-an-inference-subnet" title="Link to this heading">#</a></h3>
+<p><code class="docutils literal notranslate"><span class="pre">inference_mask</span></code> and <code class="docutils literal notranslate"><span class="pre">inference_attention_mask</span></code> are routed past the summary network to the inference subnet. They may be present in adapted data or supplied directly to an inference call. The <code class="docutils literal notranslate"><span class="pre">DiffusionTransformer</span></code>, for example, accepts a direct attention mask with shape <code class="docutils literal notranslate"><span class="pre">(batch,</span> <span class="pre">num_targets,</span> <span class="pre">num_targets</span> <span class="pre">+</span> <span class="pre">num_conditions)</span></code>:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">attention_pattern</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">4</span> <span class="o">+</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">bool</span><span class="p">)</span>
+<span class="n">attention_pattern</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>  <span class="c1"># h may not attend to x_2</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">1_000</span><span class="p">,</span>
+    <span class="n">inference_attention_mask</span><span class="o">=</span><span class="n">attention_pattern</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+<p>This custom pattern controls attention edges; it does not mean that <span class="math notranslate nohighlight">\(x_2\)</span> is statistically unobserved. Use <code class="docutils literal notranslate"><span class="pre">observed_condition_mask</span></code> for that semantic question. When both are provided, the transformer intersects the explicit attention pattern with semantic visibility, so a custom mask cannot make a missing token visible again. Other custom inference subnets can consume these boundary keys by declaring <code class="docutils literal notranslate"><span class="pre">mask</span></code> or <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code> in <code class="docutils literal notranslate"><span class="pre">call</span></code>.</p>
+</section>
+</section>
+<section id="practical-checklist">
+<h2><span class="section-number">7.14. </span>Practical checklist<a class="headerlink" href="#practical-checklist" title="Link to this heading">#</a></h2>
+<ul class="simple">
+<li><p>Configure training-time mask probabilities on <code class="docutils literal notranslate"><span class="pre">MaskHandler</span></code>, then pass it through the inference network’s <code class="docutils literal notranslate"><span class="pre">mask_handler=</span></code> argument.</p></li>
+<li><p>Train on every kind of masking pattern you intend to query and validate each one separately.</p></li>
+<li><p>Keep a leading dataset axis on masks and align dimensions with the <strong>adapted</strong> target or condition order.</p></li>
+<li><p>Use finite placeholders for missing observations; the mask, not a sentinel value, communicates missingness.</p></li>
+<li><p>Discard output coordinates where <code class="docutils literal notranslate"><span class="pre">infer_target_mask</span> <span class="pre">==</span> <span class="pre">0</span></code>.</p></li>
+<li><p>Supply a full target-shaped <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> and remember that <code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span> <span class="pre">==</span> <span class="pre">0</span></code> means fixed.</p></li>
+<li><p>Keep summary masks with the <code class="docutils literal notranslate"><span class="pre">conditions</span></code>; summary computation happens before inference sampling. Semantic masks may instead be provided as call-time keywords, which override matching masks found in adapted data.</p></li>
+<li><p>Use <code class="docutils literal notranslate"><span class="pre">summary_*</span></code> and <code class="docutils literal notranslate"><span class="pre">inference_*</span></code> names at workflow boundaries; subnets receive the canonical <code class="docutils literal notranslate"><span class="pre">mask</span></code> and <code class="docutils literal notranslate"><span class="pre">attention_mask</span></code> names.</p></li>
+</ul>
+</section>
+<section id="summary">
+<h2><span class="section-number">7.15. </span>Summary<a class="headerlink" href="#summary" title="Link to this heading">#</a></h2>
+<p>The shortest reliable mental model is:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">observed_condition_mask</span></code> says what evidence exists,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">infer_target_mask</span></code> says which random variables appear in the requested output distribution,</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">fixed_target_mask</span></code> and <code class="docutils literal notranslate"><span class="pre">fixed_target_value</span></code> say which present targets are known,</p></li>
+<li><p>structural masks describe valid tensor positions and attention edges.</p></li>
+</ul>
+<p>Happy masking!</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="inference_networks.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">6. </span>Inference Networks</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="workflows.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">8. </span>Workflows</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#two-kinds-of-masks">7.1. Two kinds of masks</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#semantic-masks-at-a-glance">7.2. Semantic masks at a glance</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#what-changes-statistically">7.2.1. What changes statistically?</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-diffusion-transformer">7.3. The Diffusion Transformer</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#running-example-inverse-kinematics">7.4. Running example: inverse kinematics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#train-one-model-for-all-cases">7.5. Train one model for all cases</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reference-the-full-posterior">7.6. Reference: the full posterior</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#missing-observations">7.7. Missing observations</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#target-marginals">7.8. Target marginals</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#fixed-targets-and-arbitrary-conditionals">7.9. Fixed targets and arbitrary conditionals</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#compare-the-masked-samples-visually">7.10. Compare the masked samples visually</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#an-all-in-one-query">7.11. An all-in-one query</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-same-masks-apply-to-densities">7.12. The same masks apply to densities</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#structural-masks-padding-and-attention">7.13. Structural masks: padding and attention</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masks-for-a-summary-network">7.13.1. Masks for a summary network</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#masks-for-an-inference-subnet">7.13.2. Masks for an inference subnet</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#practical-checklist">7.14. Practical checklist</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#summary">7.15. Summary</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.0/docsrc/source/user_guide/masking.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=18bd87630a240e9c25be"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=18bd87630a240e9c25be"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.1.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.23.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

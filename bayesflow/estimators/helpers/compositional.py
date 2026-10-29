@@ -5,6 +5,7 @@ import keras
 
 from bayesflow._backend import vjp
 from bayesflow.adapters import Adapter
+from bayesflow.adapters.transforms import Concatenate, ConvertDType, FilterTransform, Rename, ToArray
 from bayesflow.types import Tensor
 
 
@@ -53,28 +54,36 @@ def build_prior_score_fn(
 
     if "inference_variables" in standardizer.standardize:
         standardize_layer = standardizer.standardize_layers["inference_variables"]
-        std_components = [standardize_layer.moving_std(idx) for idx in range(len(standardize_layer.moving_mean))]
-        std = std_components[0] if len(std_components) == 1 else keras.ops.concatenate(std_components, axis=-1)
-        std_expanded = keras.ops.expand_dims(std, 0)
+        num_components = len(standardize_layer.moving_mean)
+        std = keras.ops.concatenate([standardize_layer.moving_std(idx) for idx in range(num_components)], axis=-1)
+        mean = keras.ops.concatenate([standardize_layer.moving_mean[idx] for idx in range(num_components)], axis=-1)
     else:
-        std_expanded = None
+        std = mean = None
+
+    # adapters that only move values around have a permutation Jacobian (J^T = J^-1, log |det J| = 0),
+    permutation_adapter = all(_is_permutation(transform) for transform in adapter.transforms)
+
+    def _prior_score(adapted_samples: dict[str, Tensor], time: Tensor) -> dict[str, Tensor]:
+        if prior_has_time:
+            prior_score = compute_prior_score(adapted_samples, time=time)
+        else:
+            prior_score = compute_prior_score(adapted_samples)
+        return {key: keras.ops.cast(prior_score[key], keras.config.floatx()) for key in adapted_samples}
 
     def _adapter_prior_score(samples: Tensor, time: Tensor) -> Tensor:
         """Adapter inverse, change of variables, and the user-provided prior score."""
+        if permutation_adapter:
+            adapted_samples = differentiable_adapter({"inference_variables": samples}, inverse=True, strict=False)
+            prior_score = _prior_score(adapted_samples, time)
+            return differentiable_adapter(prior_score, strict=False)["inference_variables"]
 
         def inverse_with_log_det_jac(z: Tensor):
             return differentiable_adapter({"inference_variables": z}, inverse=True, strict=False, log_det_jac=True)
 
         (adapted_samples, log_det_jac), vjp_fn = vjp(inverse_with_log_det_jac, samples)
 
-        if prior_has_time:
-            prior_score = compute_prior_score(adapted_samples, time=time)
-        else:
-            prior_score = compute_prior_score(adapted_samples)
-
-        floatx = keras.config.floatx()
         cotangent = (
-            {key: keras.ops.cast(prior_score[key], floatx) for key in adapted_samples},
+            _prior_score(adapted_samples, time),
             # log |det J| enters log p_Z with unit weight
             {key: keras.ops.ones_like(value) for key, value in log_det_jac.items()},
         )
@@ -82,10 +91,9 @@ def build_prior_score_fn(
         return vjp_fn(cotangent)[0]
 
     def _step(samples: Tensor, time: Tensor) -> Tensor:
-        samples = keras.tree.map_structure(
-            lambda s: standardizer.maybe_standardize(s, key="inference_variables", stage="inference", forward=False),
-            samples,
-        )
+        # unstandardize with the moments captured above
+        if std is not None:
+            samples = samples * std + mean
 
         out = _adapter_prior_score(samples, time)
 
@@ -94,9 +102,16 @@ def build_prior_score_fn(
 
         # Apply Jacobian correction from standardization:
         # For T^{-1}(z) = z * std + mean the score transforms as score_z = score_x * std
-        if std_expanded is not None:
-            out = out * std_expanded
+        if std is not None:
+            out = out * std
 
         return out
 
     return _step
+
+
+def _is_permutation(transform) -> bool:
+    """Whether ``transform`` only renames, concatenates, or casts values, i.e., has a permutation Jacobian."""
+    if isinstance(transform, FilterTransform):
+        return issubclass(transform.transform_constructor, (ToArray, ConvertDType))
+    return isinstance(transform, (Rename, Concatenate))

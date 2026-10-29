@@ -126,6 +126,7 @@ Several video tutorials are available as part of the [Learning Bayesian Statisti
 14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
 15. [Time-varying parameters](examples/Bivariate_Smoothing.ipynb) - Estimate latent trajectories with autoregressive estimators.
 16. [Self-consistency with real data](examples/Self_Consistency.ipynb) - Refine posterior estimates using unlabeled observations.
+17. [HNN integration](examples/HNN_Integration.ipynb) - Compare neural posterior and likelihood estimation for positive-support cortical-circuit parameters.
 
 ### Tutorial papers
 

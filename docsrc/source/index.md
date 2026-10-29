@@ -113,9 +113,10 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 7. {doc}`SIR <_examples/SIR_Posterior_Estimation>` - Model infectuous diseases through an end-to-end Bayesian workflow.
 8. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
 9. {doc}`Estimating likelihoods <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions.
-10. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
-11. {doc}`Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine inferences.
-12. {doc}`Ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling.
+10. {doc}`HNN integration <_examples/HNN_Integration>` - Compare neural posterior and likelihood estimation for positive-support cortical-circuit parameters.
+11. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
+12. {doc}`Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine inferences.
+13. {doc}`Ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling.
 
 ### Tutorial papers
 

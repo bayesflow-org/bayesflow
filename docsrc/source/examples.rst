@@ -19,6 +19,7 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    _examples/SIR_Posterior_Estimation
    _examples/Bayesian_Experimental_Design
    _examples/Likelihood_Estimation
+   _examples/HNN_Integration
    _examples/Multimodal_Data
    _examples/Ensembles
    _examples/Ratio_Estimation

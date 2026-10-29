@@ -53,6 +53,12 @@ docs = [
   "sphinx-polyversion>=2.0.0",
   "sphinxcontrib-bibtex>=2.6.5",
 ]
+hnn = [
+  "arviz>=0.23.4,<1.0",
+  "hnn-core[parallel]==0.6.1",
+  "pymc>=5.28.5,<6.0",
+  "scikit-learn>=1.8.0,<2.0",
+]
 test = [
   "ipykernel>=7.1.0",
   "ipython>=8.38.0",
@@ -64,7 +70,7 @@ test = [
   "pytest-xdist>=3.8.0",
   "tensorflow-probability>=0.25.0"
 ]
-all = ["bayesflow[dev,docs,test]"]
+all = ["bayesflow[dev,docs,hnn,test]"]
 [tool.ruff]
 # We use ruff to lint and auto-format code
 

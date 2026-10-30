@@ -314,7 +314,12 @@ def test_compositional_minibatch_slices_condition_masks_and_repeats_attention(ta
         clip=None,
     )
 
-    ranks = keras.random.uniform((2, 3), seed=keras.random.SeedGenerator(seed))
+    if keras.backend.backend() == "jax":
+        from bayesflow._backend._jax.random import time_folded_uniform
+
+        ranks = time_folded_uniform((2, 3), keras.random.SeedGenerator(seed), 0.5)
+    else:
+        ranks = keras.random.uniform((2, 3), seed=keras.random.SeedGenerator(seed))
     _, indices = keras.ops.top_k(-ranks, 2)
     expected_observed = keras.ops.take_along_axis(observed, indices[..., None], axis=1)
     expected_observed = keras.ops.reshape(expected_observed, (4, 2))

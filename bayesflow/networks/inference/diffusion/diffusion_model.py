@@ -1189,7 +1189,7 @@ class DiffusionModel(InferenceNetwork):
         num_total = mini_batch_size + int(needs_network_prior)
 
         xz_flat, log_snr_flat, conditions_flat, score_masks = self._flatten_compositional_items(
-            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, with_prior=needs_network_prior
+            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, needs_network_prior, time
         )
         scores_flat = self._score(
             xz_flat,
@@ -1275,7 +1275,7 @@ class DiffusionModel(InferenceNetwork):
 
         # the prior is appended as an extra, zero-conditioned observation
         xz_rep, lsnr_rep, cond_flat, score_masks = self._flatten_compositional_items(
-            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, with_prior=True
+            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, with_prior=True, time=time
         )
         all_scores, all_jacs = self._compute_score_and_jacobian(
             xz=xz_rep,
@@ -1342,8 +1342,9 @@ class DiffusionModel(InferenceNetwork):
         masks: InferenceMasks,
         repeated_masks: InferenceMasks,
         mini_batch_size: int,
-        seed: keras.random.SeedGenerator | None,
+        seed: keras.random.SeedGenerator | Tensor | None,
         with_prior: bool,
+        time: Tensor,
     ) -> tuple[Tensor, Tensor, Tensor, InferenceMasks]:
         """Flatten a random mini-batch of the items of each dataset into the batch axis for one score evaluation.
 
@@ -1352,7 +1353,12 @@ class DiffusionModel(InferenceNetwork):
         batch_size, num_items = ops.shape(conditions)[:2]
         observed_condition_mask = masks.observed_condition_mask
         if mini_batch_size < num_items:
-            ranks = keras.random.uniform((batch_size, num_items), seed=seed)
+            if keras.backend.backend() == "jax":
+                from bayesflow._backend._jax.random import time_folded_uniform
+
+                ranks = time_folded_uniform((batch_size, num_items), seed, time)
+            else:
+                ranks = keras.random.uniform((batch_size, num_items), seed=seed)
             _, per_row_idx = ops.top_k(-ranks, mini_batch_size)
             conditions = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
             if observed_condition_mask is not None:
@@ -1446,9 +1452,8 @@ class DiffusionModel(InferenceNetwork):
         num_items = ops.shape(conditions)[1]
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", max(num_items * 0.1, 2))
         mini_batch_size = num_items if mini_batch_size is None else min(max(int(mini_batch_size), 1), num_items)
-        if keras.backend.backend() == "jax" and mini_batch_size != num_items:
-            mini_batch_size = num_items
-            logging.warning("Setting mini_batch_size to num_items as jax does not support mini-batching.")
+        # jax cannot advance a SeedGenerator inside the solver loop
+        item_seed = seed.next() if keras.backend.backend() == "jax" else seed
 
         score_kwargs = {
             "clip": integrate_kwargs.pop("clip", (-3, 3)),
@@ -1480,7 +1485,7 @@ class DiffusionModel(InferenceNetwork):
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
                 training=training,
-                seed=seed,
+                seed=item_seed,
                 masks=masks,
                 repeated_masks=repeated_masks,
                 **score_kwargs,
@@ -1494,7 +1499,7 @@ class DiffusionModel(InferenceNetwork):
                 compute_prior_score=compute_prior_score,
                 mini_batch_size=mini_batch_size,
                 training=training,
-                seed=seed,
+                seed=item_seed,
                 masks=masks,
                 repeated_masks=repeated_masks,
                 **score_kwargs,

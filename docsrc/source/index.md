@@ -109,7 +109,7 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 3. {doc}`Time-varying parameters <_examples/Bivariate_Smoothing>` - Estimate latent trajectories with autoregressive estimators.
 4. {doc}`Image or other spatial data <_examples/Spatial_Data_and_Parameters>` - Learn parameters from or generate image data.
 5. {doc}`Generalized linear models <_examples/Bayesian_GLM>` - Infer a Bayesian regression with multiple predictors, interactions, and varying sample size.
-6. {doc}`Foundation models as backbones <_examples/Foundation_Model_Backbones>` - Easily turn TabPFN or other foundation models into Bayesian estimators.
+6. {doc}`Foundation models as backbones <_examples/Foundation_Models>` - Easily turn TabPFN or other foundation models into Bayesian estimators.
 7. {doc}`Neural likelihood estimation <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions and plug them into the PyMC ecosystem.
 8. {doc}`Neural ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling using the classifier trick.
 9. {doc}`Compositional estimation <_examples/Compositional_Diffusion>` - Estimate hierarchical Bayesian models via composition.

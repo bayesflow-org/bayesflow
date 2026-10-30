@@ -15,7 +15,7 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    Time-varying parameters <_examples/Bivariate_Smoothing>
    Image or other spatial data <_examples/Spatial_Data_and_Parameters>
    Generalized linear models <_examples/Bayesian_GLM>
-   Foundation models as backbones <_examples/Foundation_Model_Backbones>
+   Foundation models as backbones <_examples/Foundation_Models>
    Neural likelihood estimation <_examples/Likelihood_Estimation>
    Neural ratio estimation <_examples/Ratio_Estimation>
    Compositional estimation <_examples/Compositional_Diffusion>

@@ -105,17 +105,22 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 ### Tutorial notebooks
 
 1. {doc}`Diffusion starter <_examples/Diffusion_Models>` - A small tutorial on the power of diffusion models for SBI.
-2. {doc}`Linear regression <_examples/Linear_Regression_Starter>` - Fit your first Bayesian regression with varying sample size.
-3. {doc}`Image data <_examples/Spatial_Data_and_Parameters>` - Learn parameters from or generate image data.
-4. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
-5. {doc}`Model comparison <_examples/One_Sample_TTest>` - Learn Bayes factors using probabilistic classification.
-6. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
-7. {doc}`SIR <_examples/SIR_Posterior_Estimation>` - Model infectuous diseases through an end-to-end Bayesian workflow.
-8. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
-9. {doc}`Estimating likelihoods <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions.
-10. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
-11. {doc}`Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine inferences.
-12. {doc}`Ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling.
+2. {doc}`Minimal amortized workflow <_examples/SIR_Posterior_Estimation>` - Build an amortized inference workflow with an SIR simulator.
+3. {doc}`Time-varying parameters <_examples/Bivariate_Smoothing>` - Estimate latent trajectories with autoregressive estimators.
+4. {doc}`Image or other spatial data <_examples/Spatial_Data_and_Parameters>` - Learn parameters from or generate image data.
+5. {doc}`Generalized linear models <_examples/Bayesian_GLM>` - Infer a Bayesian regression with multiple predictors, interactions, and varying sample size.
+6. {doc}`Foundation models as backbones <_examples/Foundation_Models>` - Easily turn TabPFN or other foundation models into Bayesian estimators.
+7. {doc}`Neural likelihood estimation <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions and plug them into the PyMC ecosystem.
+8. {doc}`Neural ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling using the classifier trick.
+9. {doc}`Compositional estimation <_examples/Compositional_Diffusion>` - Estimate hierarchical Bayesian models via composition.
+10. {doc}`Deep Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine their inferences.
+11. {doc}`Self-consistency <_examples/Self_Consistency>` - Refine posterior estimates using unlabeled observations.
+12. {doc}`Model comparisons <_examples/One_Sample_TTest>` - Learn the basic workflow of Bayesian model comparison.
+13. {doc}`Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>` - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+14. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
+15. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
+16. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
+17. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
 
 ### Tutorial papers
 

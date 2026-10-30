@@ -111,21 +111,22 @@ Several video tutorials are available as part of the [Learning Bayesian Statisti
 ### Tutorial notebooks
 
 1. [Diffusion starter](examples/Diffusion_Models.ipynb) - A small tutorial on the power of diffusion models for SBI.
-2. [Linear regression](examples/Linear_Regression_Starter.ipynb) - Fit your first Bayesian regression with varying sample size.
-3. [Image data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
-4. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
-5. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
-6. [SIR](examples/SIR_Posterior_Estimation.ipynb) - Model infectious diseases through an end-to-end Bayesian workflow.
-7. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
-8. [Likelihood estimation and MCMC](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions and plug them into the PyMC ecosystem.
-9. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
-10. [Deep ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine their inferences.
-11. [Ratio estimation and MCMC](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling using the classifier trick.
-12. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
-13. [T-Test and model comparison](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
-14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
-15. [Time-varying parameters](examples/Bivariate_Smoothing.ipynb) - Estimate latent trajectories with autoregressive estimators.
-16. [Self-consistency with real data](examples/Self_Consistency.ipynb) - Refine posterior estimates using unlabeled observations.
+2. [Minimal amortized workflow](examples/SIR_Posterior_Estimation.ipynb) - Build an amortized inference workflow with an SIR simulator.
+3. [Time-varying parameters](examples/Bivariate_Smoothing.ipynb) - Estimate latent trajectories with autoregressive estimators.
+4. [Image or other spatial data](examples/Spatial_Data_and_Parameters.ipynb) - Learn parameters from or generate image data.
+5. [Generalized linear models](examples/Bayesian_GLM.ipynb) - Estimate Bayesian GLMs with multiple predictors, interactions, and varying rows.
+6. [Foundation models as backbones](examples/Foundation_Models.ipynb) - Easily turn TabPFN or other foundation models into Bayesian estimators.
+7. [Neural likelihood estimation](examples/Likelihood_Estimation.ipynb) - Learn synthetic likelihood functions and plug them into the PyMC ecosystem.
+8. [Neural ratio estimation](examples/Ratio_Estimation.ipynb) - Learn neural ratios for downstream MCMC sampling using the classifier trick.
+9. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
+10. [Deep Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine their inferences.
+11. [Self-consistency](examples/Self_Consistency.ipynb) - Refine posterior estimates using unlabeled observations.
+12. [Model comparisons](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
+13. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+14. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+15. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
+16. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+17. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
 
 ### Tutorial papers
 

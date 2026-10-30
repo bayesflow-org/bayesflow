@@ -27,3 +27,4 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>
    From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>
    Bayesian experimental design <_examples/Bayesian_Experimental_Design>
+   Model predictive control <_examples/Model_Predictive_Control>

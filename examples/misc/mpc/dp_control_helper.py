@@ -1,15 +1,17 @@
 """Model predictive control for the inverted double pendulum on a cart.
 
-Helper module for ``Robust_Control_Double_Pendulum.ipynb``.
+Helper module for ``Model_Predictive_Control.ipynb``.
 
 The Euler-Lagrange equations are formulated as an implicit index-1 DAE by
 introducing the accelerations ``[ddpos, ddtheta1, ddtheta2]`` as algebraic
 states. The MPC objective is energy-based: minimise kinetic energy while
 maximising potential energy, which drives swing-up and then stabilisation.
 
-Requires ``do-mpc`` (which pulls in CasADi), not a BayesFlow dependency:
+Requires the optional ``do-mpc`` package (which pulls in CasADi) and
+``scikit-learn``. They are not BayesFlow dependencies; install them into the
+active environment with uv:
 
-    pip install do-mpc
+    uv pip install do-mpc scikit-learn
 
 Adapted from the do-mpc example gallery:
 https://www.do-mpc.com/en/latest/example_gallery/DIP.html

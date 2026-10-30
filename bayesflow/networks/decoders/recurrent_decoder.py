@@ -12,7 +12,7 @@ class RecurrentDecoder(keras.Layer):
     """Recurrent decoder for autoregressive target sequences.
 
     Stacks GRU/LSTM-gated recurrent layers over shifted targets and encoded
-    summaries. In ``AutoregressiveApproximator``, it creates one condition per
+    summaries. In ``AutoregressiveEstimator``, it creates one condition per
     target time step for teacher forcing and cached autoregressive sampling.
 
     Parameters

@@ -14,8 +14,8 @@ class EnsembleDataset(keras.utils.PyDataset):
     Wrap a BayesFlow dataset to provide per-ensemble-member batches.
 
     This dataset class is the recommended entry point for training ensembles.
-    The wrapped dataset should meet the requirements of any single approximator in
-    the :class:`~bayesflow.approximators.EnsembleApproximator`. `EnsembleDataset` supports
+    The wrapped dataset should meet the requirements of any single estimator in
+    the :class:`~bayesflow.estimators.EnsembleEstimator`. `EnsembleDataset` supports
     :class:`~bayesflow.datasets.OnlineDataset`, :class:`~bayesflow.datasets.OfflineDataset`,
     and :class:`~bayesflow.datasets.DiskDataset` and returns a key-value pair for each
     ensemble member, containing output of the same structure as the wrapped dataset.

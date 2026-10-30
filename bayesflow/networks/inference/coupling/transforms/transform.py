@@ -1,3 +1,6 @@
+import keras
+
+from bayesflow.masking import MaskHandler
 from bayesflow.types import Tensor
 from ..invertible_layer import InvertibleLayer
 
@@ -11,7 +14,9 @@ class Transform(InvertibleLayer):
     bijection.
 
     Subclasses implement ``params_per_dim``, ``split_parameters``,
-    ``constrain_parameters``, ``_forward`` and ``_inverse``.
+    ``constrain_parameters``, ``_forward`` and ``_inverse``. The latter two return
+    the transformed values and their elementwise log-Jacobian;
+    ``call`` reduces it to the log-determinant.
     """
 
     @property
@@ -24,13 +29,26 @@ class Transform(InvertibleLayer):
     def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
         raise NotImplementedError
 
-    def call(self, xz: Tensor, parameters: dict[str, Tensor], inverse: bool = False) -> (Tensor, Tensor):
+    def call(
+        self,
+        xz: Tensor,
+        parameters: dict[str, Tensor],
+        inverse: bool = False,
+        target_mask: Tensor = None,
+    ) -> tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, parameters)
-        return self._forward(xz, parameters)
+            out, log_jac = self._inverse(xz, parameters)
+        else:
+            out, log_jac = self._forward(xz, parameters)
 
-    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+        mask = target_mask
+        out = MaskHandler.maybe_apply(out, mask, xz)
+        log_jac = MaskHandler.maybe_apply(log_jac, mask)
+
+        return out, keras.ops.sum(log_jac, axis=-1)
+
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         raise NotImplementedError
 
-    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> (Tensor, Tensor):
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor]) -> tuple[Tensor, Tensor]:
         raise NotImplementedError

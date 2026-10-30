@@ -6,7 +6,7 @@ import keras
 
 from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
-from bayesflow.approximators import Approximator
+from bayesflow.estimators import Estimator
 from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 
@@ -24,8 +24,8 @@ class SelfConsistencyLoss:
     pushing the components toward mutual consistency.
 
     By default, theta is sampled from the current posterior (with ``stop_gradient``);
-    approximators are therefore trained only through `.log_prob` evaluation rather than
-    sampling. Only approximators listed in ``gradient`` receive gradients. By default only the
+    estimators are therefore trained only through `.log_prob` evaluation rather than
+    sampling. Only estimators listed in ``gradient`` receive gradients. By default only the
     posterior is trained through the SC loss.
 
     Schmitt, M., Ivanova, D. R., Habermann, D., Köthe, U., Bürkner, P. C., & Radev, S. T. (2023).
@@ -48,22 +48,22 @@ class SelfConsistencyLoss:
     adapted : bool, optional
         Determines the space in which the SC loss is computed. Analytic distributions
         (prior, likelihood) are always assumed to be defined in the original data space;
-        Approximators are always in the adapted (network) space. This flag controls
+        Estimators are always in the adapted (network) space. This flag controls
         which space all components are converted into before summing:
 
-        - ``False`` (default): compute the loss in original (simulator) space. Approximators have their
+        - ``False`` (default): compute the loss in original (simulator) space. Estimators have their
           log-probs adjusted by ``-log|det J|`` to convert from adapted to data space;
           analytic distributions need no adjustment.
         - ``True``: compute the loss in adapted space. Analytic distributions have their
           log-probs adjusted by ``+log|det J|`` to convert from data to adapted space;
-          Approximators need no adjustment.
+          Estimators need no adjustment.
     parameter_keys : sequence of str, optional
         Keys in the data dict that correspond to model parameters (theta). If None,
         inferred from the keys of the posterior's sample output on the first call.
     data_keys : sequence of str, optional
         Keys in the data dict that correspond to observed data (y). Required when
         ``adapted=True`` and the likelihood is analytic. If None and the likelihood is
-        an Approximator, inferred from its sample output.
+        an Estimator, inferred from its sample output.
         Otherwise defaults to an empty list (no Jacobian correction for data).
     """
 
@@ -114,7 +114,7 @@ class SelfConsistencyLoss:
 
     def _sample_proposal(self, data: Mapping[str, Tensor]) -> Mapping[str, Tensor]:
         """Sample parameters from a proposal distribution - in this case, the
-        posterior approximator.
+        posterior estimator.
         The log marginal likelihood is evaluated at these parameter samples.
         The SC loss is computed over the log marginal likelihoods over these samples.
         """
@@ -199,11 +199,11 @@ class SelfConsistencyLoss:
             self.parameter_keys = list(parameter_samples.keys())
 
         if self.data_keys is None:
-            if isinstance(self.likelihood, Approximator) and self.adapted:
+            if isinstance(self.likelihood, Estimator) and self.adapted:
                 # Approximate likelihood, loss in adapted space
-                # Approximator likelihood already lives in adapted space —> no Jacobian correction needed
+                # Estimator likelihood already lives in adapted space —> no Jacobian correction needed
                 self.data_keys = []
-            elif isinstance(self.likelihood, Approximator) and not self.adapted:
+            elif isinstance(self.likelihood, Estimator) and not self.adapted:
                 # Approximate likelihood, loss in data space
                 # Infer data_keys from a likelihood sample
                 data_samples = self.likelihood.sample(num_samples=1, conditions=data, to_numpy=False)
@@ -229,11 +229,11 @@ class SelfConsistencyLoss:
         """
         log_det_jac_pars = keras.ops.zeros(())
         for key in self.parameter_keys:
-            log_det_jac_pars += log_det_jac.get(key, keras.ops.zeros(()))
+            log_det_jac_pars = log_det_jac_pars + log_det_jac.get(key, keras.ops.zeros(()))
 
         log_det_jac_data = keras.ops.zeros(())
         for key in self.data_keys:
-            log_det_jac_data += log_det_jac.get(key, keras.ops.zeros(()))
+            log_det_jac_data = log_det_jac_data + log_det_jac.get(key, keras.ops.zeros(()))
 
         return log_det_jac_pars, log_det_jac_data
 
@@ -248,11 +248,11 @@ class SelfConsistencyLoss:
     ) -> Tensor:
         """Evaluate the log probability for one component (prior, likelihood, or posterior).
 
-        Analytic distributions are always assumed to be defined in data space; Approximators
+        Analytic distributions are always assumed to be defined in data space; Estimators
         are always in adapted space. The ``adapted`` flag on the parent object controls the
         target space — both components are converted into it via Jacobian corrections:
 
-        - **Approximator**: receives ``adapted_data``.
+        - **Estimator**: receives ``adapted_data``.
           When ``adapted=False`` (loss in data space): corrected by ``-log_det_jac``.
           When ``adapted=True`` (loss in adapted space): no correction.
         - **Analytic distribution** (has ``.log_prob`` or is callable): receives ``data``.
@@ -280,7 +280,7 @@ class SelfConsistencyLoss:
         Tensor containing log_prob on the desired (adapted/unadapted) space.
         """
 
-        if isinstance(distribution, Approximator):
+        if isinstance(distribution, Estimator):
             log_prob = distribution.log_prob(adapted_data, to_numpy=False, stage=stage)
             if not self.adapted:
                 log_prob = log_prob - log_det_jac
@@ -293,7 +293,7 @@ class SelfConsistencyLoss:
             if self.adapted:
                 log_prob = log_prob + log_det_jac
         else:
-            raise TypeError("distribution must be an Approximator, have a .log_prob method, or be callable.")
+            raise TypeError("distribution must be an Estimator, have a .log_prob method, or be callable.")
 
         if not gradient:
             log_prob = keras.ops.stop_gradient(log_prob)
@@ -315,21 +315,21 @@ class SelfConsistencyLoss:
     def from_config(cls, config, custom_objects=None):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
-    def attach(self, approximators, adapter):
-        """Bind the prior, likelihood, posterior approximators and an adapter.
+    def attach(self, estimators, adapter):
+        """Bind the prior, likelihood, posterior estimators and an adapter.
 
-        Called by ``SemiSupervisedApproximator.compile`` so that the loss can access the
+        Called by ``SemiSupervisedEstimator.compile`` so that the loss can access the
         components it needs without them being passed at construction time.
 
         Parameters
         ----------
-        approximators : dict
+        estimators : dict
             Must contain keys ``"prior"``, ``"likelihood"``, and ``"posterior"``.
         adapter : Adapter
             Shared adapter.
         """
-        self.prior = approximators["prior"]
-        self.likelihood = approximators["likelihood"]
-        self.posterior = approximators["posterior"]
+        self.prior = estimators["prior"]
+        self.likelihood = estimators["likelihood"]
+        self.posterior = estimators["posterior"]
         self.adapter = adapter
         return self

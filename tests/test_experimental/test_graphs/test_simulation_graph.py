@@ -1,57 +1,56 @@
 import pytest
 
-from bayesflow.experimental.graphical_simulator import GraphicalSimulator
-from bayesflow.experimental.graphs import SimulationGraph, ExpandedGraph, InvertedGraph
+from bayesflow.experimental.graphs import SimulationGraph
+from bayesflow.experimental.graphs.simulation_graph import is_exchangeable
+
+SIMULATORS = ["single_level_simulator", "two_level_simulator", "three_level_simulator", "crossed_design_irt_simulator"]
 
 
-@pytest.mark.parametrize(
-    "simulator",
-    ["single_level_simulator", "two_level_simulator", "three_level_simulator", "crossed_design_irt_simulator"],
-)
-def test_simulation_graph(request, simulator):
-    simulator = request.getfixturevalue(simulator)
-    graph = simulator.graph
-
-    assert isinstance(simulator, GraphicalSimulator)
-    assert isinstance(graph, SimulationGraph)
-
-    assert isinstance(graph.expand(), ExpandedGraph)
-    assert isinstance(graph.invert(), InvertedGraph)
-    assert isinstance(graph.variable_names(), dict)
-    assert isinstance(graph.data_node(), str)
+def test_expand_num_nodes(
+    single_level_simulator, two_level_simulator, three_level_simulator, crossed_design_irt_simulator
+):
+    assert single_level_simulator.graph.expand().number_of_nodes() == 2
+    assert two_level_simulator.graph.expand().number_of_nodes() == 6
+    assert three_level_simulator.graph.expand().number_of_nodes() == 12
+    assert crossed_design_irt_simulator.graph.expand().number_of_nodes() == 9
 
 
-def test_simulation_graph_output_shapes(single_level_simulator, three_level_simulator):
-    shapes = single_level_simulator.graph.output_shapes()
-    assert isinstance(shapes, dict)
-    assert all(isinstance(v, tuple) for v in shapes.values())
+@pytest.mark.parametrize("simulator", SIMULATORS)
+def test_expand_preserves_dependencies(request, simulator):
+    graph = request.getfixturevalue(simulator).graph
+    expanded = graph.expand()
 
-    # with meta_dict to cover the substitution branch
-    shapes_meta = three_level_simulator.graph.output_shapes({"N_classrooms": 5, "N_students": 10, "N_scores": 20})
-    assert isinstance(shapes_meta, dict)
+    assert {(u.original, w.original) for u, w in expanded.edges} == set(graph.edges)
 
 
-def test_simulation_graph_output_dimensions(single_level_simulator):
-    dims = single_level_simulator.graph.output_dimensions()
-    assert isinstance(dims, dict)
-    assert all(isinstance(v, tuple) for v in dims.values())
+def test_expand_splits_into_two_instances(two_level_simulator):
+    expanded = two_level_simulator.graph.expand()
+
+    locals_ = [node for node in expanded if node.original == "locals"]
+    assert sorted(node.index for node in locals_) == [(("locals", 1),), (("locals", 2),)]
+
+    # each copy of y belongs to exactly one copy of locals
+    for node in locals_:
+        children = list(expanded.successors(node))
+        assert [child.original for child in children] == ["y"]
+        assert children[0].index == node.index
 
 
-def test_simulation_graph_serialization(single_level_simulator):
-    graph = single_level_simulator.graph
-    config = graph.get_config()
-    restored = SimulationGraph.from_config(config)
-    assert isinstance(restored, SimulationGraph)
-    assert set(restored.nodes) == set(graph.nodes)
+def test_expand_skips_single_repetition(two_level_simulator):
+    two_level_simulator.graph.nodes["locals"]["reps"] = 1
+
+    assert two_level_simulator.graph.expand().number_of_nodes() == 4
 
 
-def test_simulation_graph_serialization_no_meta_fn():
-    from bayesflow.experimental.graphical_simulator.example_simulators.single_level_simulator import prior
+def test_is_exchangeable():
+    graph = SimulationGraph()
+    graph.add_node("single", reps=1)
+    graph.add_node("fixed", reps=5)
+    graph.add_node("from_meta", reps="num_groups")
+    graph.add_node("from_callable", reps=lambda: 3)
 
-    simulator = GraphicalSimulator()
-    simulator.add_node("prior", sample_fn=prior)
-    graph = simulator.graph
-    config = graph.get_config()
-    restored = SimulationGraph.from_config(config)
-    assert isinstance(restored, SimulationGraph)
-    assert set(restored.nodes) == set(graph.nodes)
+    # every node that can have more than one instance is exchangeable
+    assert not is_exchangeable(graph, "single")
+    assert is_exchangeable(graph, "fixed")
+    assert is_exchangeable(graph, "from_meta")
+    assert is_exchangeable(graph, "from_callable")

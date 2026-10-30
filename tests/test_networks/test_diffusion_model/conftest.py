@@ -80,18 +80,6 @@ def diffusion_model(request):
     return DiffusionModel(subnet_kwargs=dict(widths=(8, 8)), **request.param)
 
 
-@pytest.fixture()
-def diffusion_model_with_masking():
-    from bayesflow.networks import DiffusionModel
-
-    return DiffusionModel(
-        subnet_kwargs=dict(widths=(8, 8)),
-        missing_target_prob=0.3,
-        missing_conditions_prob=0.3,
-        fixed_target_prob=0.3,
-    )
-
-
 @pytest.fixture
 def simple_diffusion_model():
     """Create a simple diffusion model for testing compositional sampling."""

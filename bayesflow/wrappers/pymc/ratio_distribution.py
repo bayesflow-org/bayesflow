@@ -16,7 +16,7 @@ class NeuralRatioDistribution:
     """
     User-facing wrapper around :class:`pm.CustomDist` for ratio-based likelihoods.
 
-    Adapts a trained :class:`~bayesflow.approximators.RatioApproximator` for use
+    Adapts a trained :class:`~bayesflow.estimators.RatioEstimator` for use
     as a likelihood term inside a PyMC model.  The approximated log-ratio
     ``log p(x|θ) / p(x)`` is used as an unnormalised log-likelihood, which is
     valid for posterior inference because the evidence ``p(x)`` is constant
@@ -24,12 +24,12 @@ class NeuralRatioDistribution:
 
     Parameters
     ----------
-    ratio_approximator : ~bayesflow.approximators.RatioApproximator
-        A trained ratio approximator whose ``log_ratio`` method will be called
+    ratio_estimator : ~bayesflow.estimators.RatioEstimator
+        A trained ratio estimator whose ``log_ratio`` method will be called
         to evaluate the likelihood.
     param_names : sequence of str
         Names of the model parameters in the order expected by the ratio
-        approximator.  The same order must be used when registering this
+        estimator.  The same order must be used when registering this
         distribution in a PyMC model (see :meth:`__call__`).
     exchangeable : bool, optional
         Controls how the log-ratio is aggregated over observations.
@@ -57,7 +57,7 @@ class NeuralRatioDistribution:
     >>> import pymc as pm
     >>> from bayesflow.wrappers.pymc import RatioDistribution
     >>> ratio_dist = RatioDistribution(
-    ...     ratio_approximator=approximator,
+    ...     ratio_estimator=estimator,
     ...     param_names=["mu", "sigma"],
     ... )
     >>> with pm.Model():
@@ -69,7 +69,7 @@ class NeuralRatioDistribution:
 
     def __init__(
         self,
-        ratio_approximator,
+        ratio_estimator,
         param_names: Sequence[str],
         *,
         exchangeable: bool = True,
@@ -78,7 +78,7 @@ class NeuralRatioDistribution:
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
         self.simulator_fn = simulator_fn
-        self.backend = BackendRatio(ratio_approximator, param_names, exchangeable=exchangeable)
+        self.backend = BackendRatio(ratio_estimator, param_names, exchangeable=exchangeable)
 
     @property
     def log_ratio(self) -> Callable:

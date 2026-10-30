@@ -30,13 +30,13 @@ def test_basic_workflow(tmp_path, inference_network, summary_network):
     assert metrics.values.shape == (4, 2)
 
     # Ensure saving and loading from workflow works fine
-    loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
-    assert_models_equal(workflow.approximator, loaded_approximator)
+    loaded_estimator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
+    assert_models_equal(workflow.estimator, loaded_estimator)
 
     # Get samples (non-batched and batched)
     test_conditions = workflow.simulate(5)
-    samples = loaded_approximator.sample(conditions=test_conditions, num_samples=3)
-    batched_samples = loaded_approximator.sample(conditions=test_conditions, num_samples=3, batch_size=2)
+    samples = loaded_estimator.sample(conditions=test_conditions, num_samples=3)
+    batched_samples = loaded_estimator.sample(conditions=test_conditions, num_samples=3, batch_size=2)
     assert samples["parameters"].shape == (5, 3, 2)
     assert batched_samples["parameters"].shape == samples["parameters"].shape
 
@@ -64,13 +64,13 @@ def test_basic_workflow_fusion(
     assert metrics.values.shape == (4, 2)
 
     # Ensure saving and loading from workflow works fine
-    loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
-    assert_models_equal(workflow.approximator, loaded_approximator)
+    loaded_estimator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
+    assert_models_equal(workflow.estimator, loaded_estimator)
 
     # Get samples (non-batched and batched)
     test_conditions = workflow.simulate(3)
-    samples = loaded_approximator.sample(conditions=test_conditions, num_samples=4)
-    batched_samples = loaded_approximator.sample(conditions=test_conditions, num_samples=4, batch_size=2)
+    samples = loaded_estimator.sample(conditions=test_conditions, num_samples=4)
+    batched_samples = loaded_estimator.sample(conditions=test_conditions, num_samples=4, batch_size=2)
     assert samples["mean"].shape == (3, 4, 2)
     assert batched_samples["mean"].shape == samples["mean"].shape
 
@@ -138,7 +138,7 @@ def test_ancestral_sampling():
     local_n = 4
     num_samples = 2
 
-    # Global posterior samples from an upper-level approximator (pre-computed)
+    # Global posterior samples from an upper-level estimator (pre-computed)
     ancestral_conditions = {"mu": np.random.randn(n_test, num_samples, 1)}
     # Per-subject local observations
     conditions = {"x": np.random.randn(n_test, local_n, 1)}
@@ -152,11 +152,11 @@ def test_ancestral_sampling():
     assert samples["beta"].shape == (n_test, local_n, num_samples, 1)
 
 
-def test_load_approximator_full_model(tiny_workflow):
-    """load_approximator() with no path restores a full .keras checkpoint."""
+def test_load_estimator_full_model(tiny_workflow):
+    """load_estimator() with no path restores a full .keras checkpoint."""
     from bayesflow.networks import CouplingFlow
 
-    original = tiny_workflow.approximator
+    original = tiny_workflow.estimator
     workflow2 = bf.BasicWorkflow(
         inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
         inference_variables=["parameters"],
@@ -164,16 +164,16 @@ def test_load_approximator_full_model(tiny_workflow):
         checkpoint_name="model",
         save_weights_only=False,
     )
-    workflow2.load_approximator()
-    assert_models_equal(original, workflow2.approximator)
+    workflow2.load_estimator()
+    assert_models_equal(original, workflow2.estimator)
 
 
-def test_load_approximator_weights_only(tiny_workflow_weights_only):
-    """load_approximator() with no path restores a weights-only .weights.h5 checkpoint."""
+def test_load_estimator_weights_only(tiny_workflow_weights_only):
+    """load_estimator() with no path restores a weights-only .weights.h5 checkpoint."""
     from bayesflow.networks import CouplingFlow
 
     workflow = tiny_workflow_weights_only
-    original = workflow.approximator
+    original = workflow.estimator
 
     workflow2 = bf.BasicWorkflow(
         inference_network=CouplingFlow(depth=1, subnet_kwargs=dict(widths=(8,))),
@@ -189,12 +189,12 @@ def test_load_approximator_weights_only(tiny_workflow_weights_only):
     workflow2.checkpoint_filepath = workflow.checkpoint_filepath
     workflow2.checkpoint_name = "model"
     workflow2.save_weights_only = True
-    workflow2.load_approximator()
-    assert_models_equal(original, workflow2.approximator)
+    workflow2.load_estimator()
+    assert_models_equal(original, workflow2.estimator)
 
 
-def test_load_approximator_explicit_path(tiny_workflow):
-    """load_approximator(path=...) accepts an explicit file path."""
+def test_load_estimator_explicit_path(tiny_workflow):
+    """load_estimator(path=...) accepts an explicit file path."""
     from bayesflow.networks import CouplingFlow
 
     explicit_path = os.path.join(tiny_workflow.checkpoint_filepath, "model.keras")
@@ -203,12 +203,12 @@ def test_load_approximator_explicit_path(tiny_workflow):
         inference_variables=["parameters"],
         simulator=bf.simulators.TwoMoons(),
     )
-    workflow2.load_approximator(path=explicit_path)
-    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+    workflow2.load_estimator(path=explicit_path)
+    assert_models_equal(tiny_workflow.estimator, workflow2.estimator)
 
 
-def test_load_approximator_pathlib_path(tiny_workflow):
-    """load_approximator(path=...) accepts a pathlib.Path, not just str."""
+def test_load_estimator_pathlib_path(tiny_workflow):
+    """load_estimator(path=...) accepts a pathlib.Path, not just str."""
     from pathlib import Path
 
     from bayesflow.networks import CouplingFlow
@@ -219,11 +219,11 @@ def test_load_approximator_pathlib_path(tiny_workflow):
         inference_variables=["parameters"],
         simulator=bf.simulators.TwoMoons(),
     )
-    workflow2.load_approximator(path=explicit_path)
-    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+    workflow2.load_estimator(path=explicit_path)
+    assert_models_equal(tiny_workflow.estimator, workflow2.estimator)
 
 
-def test_load_approximator_restore_flag(tiny_workflow):
+def test_load_estimator_restore_flag(tiny_workflow, caplog):
     """restore=True in the constructor automatically loads the checkpoint."""
     from bayesflow.networks import CouplingFlow
 
@@ -235,11 +235,13 @@ def test_load_approximator_restore_flag(tiny_workflow):
         checkpoint_name="model",
         restore=True,
     )
-    assert_models_equal(tiny_workflow.approximator, workflow2.approximator)
+    assert_models_equal(tiny_workflow.estimator, workflow2.estimator)
+    warning = next(record.message for record in caplog.records if "Checkpoint file exists" in record.message)
+    assert "To restore the estimator" not in warning
 
 
-def test_load_approximator_no_path_no_checkpoint_raises():
-    """load_approximator() raises ValueError when no path or checkpoint_filepath is set."""
+def test_load_estimator_no_path_no_checkpoint_raises():
+    """load_estimator() raises ValueError when no path or checkpoint_filepath is set."""
     from bayesflow.networks import CouplingFlow
 
     workflow = bf.BasicWorkflow(
@@ -247,11 +249,11 @@ def test_load_approximator_no_path_no_checkpoint_raises():
         inference_variables=["parameters"],
     )
     with pytest.raises(ValueError, match="No path provided"):
-        workflow.load_approximator()
+        workflow.load_estimator()
 
 
-def test_load_approximator_missing_file_raises(tmp_path):
-    """load_approximator() raises FileNotFoundError when the checkpoint file is absent."""
+def test_load_estimator_missing_file_raises(tmp_path):
+    """load_estimator() raises FileNotFoundError when the checkpoint file is absent."""
     from bayesflow.networks import CouplingFlow
 
     workflow = bf.BasicWorkflow(
@@ -261,7 +263,7 @@ def test_load_approximator_missing_file_raises(tmp_path):
         checkpoint_name="ghost",
     )
     with pytest.raises(FileNotFoundError, match="No checkpoint found"):
-        workflow.load_approximator()
+        workflow.load_estimator()
 
 
 def test_save_best_only(tmp_path):
@@ -314,4 +316,7 @@ def test_checkpoint_exists_warning(tmp_path, caplog):
             checkpoint_name="model",
         )
 
-    assert any("Checkpoint file exists" in record.message for record in caplog.records)
+    warning = next(record.message for record in caplog.records if "Checkpoint file exists" in record.message)
+    assert "not automatically loaded" not in warning
+    assert "Upon refitting, the checkpoint will be overwritten." in warning
+    assert "To restore the estimator" in warning

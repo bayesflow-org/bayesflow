@@ -275,7 +275,7 @@ def test_zero_noise_reduces_to_deterministic(method, use_adapt):
     np.testing.assert_allclose(keras.ops.convert_to_numpy(out).mean(), exact, atol=1e-3, rtol=0.1)
 
 
-@pytest.mark.parametrize("start_time, stop_time", [(0.0, 1.0), (0.8, 0.2)])
+@pytest.mark.parametrize("start_time, stop_time", [(1.0, 0.0), (0.2, 0.8)])
 def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time):
     def drift_fn(t, x):
         return {"x": keras.ops.ones_like(x)}
@@ -292,7 +292,7 @@ def test_glass_flow_matching_sampler_returns_finite_state(start_time, stop_time)
         seed=keras.random.SeedGenerator(0),
         method="glass",
         noise_schedule="flow_matching",
-        steps_inner=3,
+        inner_steps=3,
     )["x"]
 
     assert keras.ops.shape(out) == keras.ops.shape(initial_state["x"])
@@ -331,7 +331,7 @@ def test_langevin_gaussian_sampling(steps):
 
     # simple dummy noise schedule: constant alpha
     class DummyNoiseSchedule:
-        def get_log_snr(self, t, training=False):
+        def log_snr(self, t, training=False):
             return keras.ops.zeros_like(t)
 
         def get_alpha_sigma(self, log_snr_t):

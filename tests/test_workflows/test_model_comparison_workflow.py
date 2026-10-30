@@ -43,7 +43,7 @@ def test_pmp_workflow(tmp_path, mc_simulators):
 
     # Save/load round-trip
     loaded = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
-    assert_models_equal(workflow.approximator, loaded)
+    assert_models_equal(workflow.estimator, loaded)
 
 
 def test_pmp_workflow_with_summary_network(mc_simulators, mc_summary_network):
@@ -93,7 +93,7 @@ def test_bf_workflow(tmp_path, mc_simulators):
 
     # Save/load round-trip
     loaded = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
-    assert_models_equal(workflow.approximator, loaded)
+    assert_models_equal(workflow.estimator, loaded)
 
 
 def test_bf_workflow_with_bayes_factor_recovery(mc_simulators):
@@ -356,19 +356,19 @@ def test_plot_diagnostics_with_presimulated_data(mc_simulators):
 
 def test_plot_diagnostics_without_simulator_raises():
     """plot_default_diagnostics(int) raises when no simulator is attached."""
-    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.estimators import ModelComparisonEstimator
     from bayesflow.networks import MLP
 
     from bayesflow.networks import ScoringRuleNetwork
     from bayesflow.scoring_rules import CrossEntropyScore
 
-    approximator = ModelComparisonApproximator(
+    estimator = ModelComparisonEstimator(
         inference_network=ScoringRuleNetwork(
             scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
         ),
     )
     workflow = ModelComparisonWorkflow.__new__(ModelComparisonWorkflow)
-    workflow.approximator = approximator
+    workflow.estimator = estimator
     workflow.simulator = None
     workflow.model_names = None
     workflow.history = None
@@ -379,17 +379,17 @@ def test_plot_diagnostics_without_simulator_raises():
 
 def test_compute_diagnostics_without_simulator_raises():
     """compute_default_diagnostics(int) raises when no simulator is attached."""
-    from bayesflow.approximators import ModelComparisonApproximator
+    from bayesflow.estimators import ModelComparisonEstimator
     from bayesflow.networks import MLP, ScoringRuleNetwork
     from bayesflow.scoring_rules import CrossEntropyScore
 
-    approximator = ModelComparisonApproximator(
+    estimator = ModelComparisonEstimator(
         inference_network=ScoringRuleNetwork(
             scoring_rules={"scoring_rule": CrossEntropyScore()}, subnet=MLP(widths=(8,))
         ),
     )
     workflow = ModelComparisonWorkflow.__new__(ModelComparisonWorkflow)
-    workflow.approximator = approximator
+    workflow.estimator = estimator
     workflow.simulator = None
     workflow.model_names = None
     workflow.history = None

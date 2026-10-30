@@ -1,1 +1,2 @@
 from .diffusion_transformer import DiffusionTransformer
+from .diffusion_transformer_readout import DiffusionTransformerReadout

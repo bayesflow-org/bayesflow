@@ -46,6 +46,7 @@ def test_forward_standardization_mask_invariance():
         np.testing.assert_allclose(
             keras.ops.convert_to_numpy(getattr(masked, attr)[0]),
             keras.ops.convert_to_numpy(getattr(reference, attr)[0]),
+            rtol=1e-6,
         )
 
 

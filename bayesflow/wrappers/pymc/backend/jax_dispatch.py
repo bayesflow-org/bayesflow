@@ -2,7 +2,7 @@
 PyTensor → JAX dispatch registrations for the generic log-prob Ops.
 
 Kept in a dedicated module so neither JAXRatio nor JAXContinuous own them —
-the Ops are approximator-agnostic and the registrations should fire once,
+the Ops are estimator-agnostic and the registrations should fire once,
 regardless of which backend class is instantiated.
 
 Imported automatically by ``bayesflow.wrappers.pymc.backend`` at package load.

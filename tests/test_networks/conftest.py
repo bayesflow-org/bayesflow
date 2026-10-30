@@ -92,6 +92,13 @@ def stable_consistency_model():
 
 
 @pytest.fixture()
+def mean_flow():
+    from bayesflow.experimental import MeanFlow
+
+    return MeanFlow(subnet_kwargs=dict(widths=[8, 8]))
+
+
+@pytest.fixture()
 def affine_coupling_flow():
     from bayesflow.networks import CouplingFlow
 
@@ -195,6 +202,7 @@ def latent_coupling_flow():
         "latent_coupling_flow",
         "diffusion_model",
         "diffusion_model_transformer",
+        "mean_flow",
     ],
     scope="function",
 )
@@ -213,6 +221,7 @@ def inference_network(request):
         "stable_consistency_model",
         "diffusion_model",
         "diffusion_model_transformer",
+        "mean_flow",
     ],
     scope="function",
 )

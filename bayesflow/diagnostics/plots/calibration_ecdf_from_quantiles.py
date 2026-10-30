@@ -34,7 +34,7 @@ def calibration_ecdf_from_quantiles(
     and plots it against a uniform ECDF.
 
     For models with many parameters, use `stacked=True` to obtain an idea
-    of the overall calibration of a posterior approximator.
+    of the overall calibration of a posterior estimator.
 
     Note: In contrast to the related calibration_ecdf() function, this does not use
     simultaneous confidence bands. Confidence bands apply to each quantile level separately.
@@ -52,7 +52,7 @@ def calibration_ecdf_from_quantiles(
     ----------
     estimates         : dict[str, dict[str, np.ndarray]]
         The model-generated estimates in a nested dictionary, e.g. as returned
-        by approximator.estimate(conditions=...).
+        by estimator.estimate(conditions=...).
         - The outer keys identify the inference variable.
         - The inner keys identify point estimates.
           Select which one to treat as quantile predictions with argument quantiles_key.

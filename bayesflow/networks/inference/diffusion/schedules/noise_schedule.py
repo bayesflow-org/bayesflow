@@ -4,6 +4,7 @@ from typing import Literal
 from keras import ops
 
 from bayesflow.types import Tensor
+from bayesflow.utils import logging
 from bayesflow.utils.serialization import deserialize, serializable
 
 
@@ -29,7 +30,7 @@ class NoiseSchedule(ABC):
         self,
         name: str,
         variance_type: Literal["preserving", "exploding"],
-        weighting: Literal["sigmoid", "likelihood_weighting"] = None,
+        weighting: Literal["likelihood_weighting"] = None,
     ):
         """
         Initialize the noise schedule with given variance and weighting strategy.
@@ -42,7 +43,7 @@ class NoiseSchedule(ABC):
             If the variance of noise added to the data should be preserved over time, use "preserving".
             If the variance of noise added to the data should increase over time, use "exploding".
             Default is "preserving".
-        weighting : Literal["sigmoid", "likelihood_weighting"], optional
+        weighting : Literal["likelihood_weighting"], optional
             The type of weighting function to use for the noise schedule.
             Default is None, which means no weighting is applied.
         """
@@ -53,12 +54,12 @@ class NoiseSchedule(ABC):
         self._weighting = weighting
 
     @abstractmethod
-    def get_log_snr(self, t: float | Tensor, training: bool) -> Tensor:
+    def log_snr(self, t: float | Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         pass
 
     @abstractmethod
-    def get_t_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
+    def time_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         pass
 
@@ -86,15 +87,25 @@ class NoiseSchedule(ABC):
         For a variance exploding schedule, one should set f(z, t) = 0.
         """
         beta = self.derivative_log_snr(log_snr_t=log_snr_t, training=training)
+        if self._variance_type == "preserving":
+            g_squared = beta
+        elif self._variance_type == "exploding":
+            # [1], Eq. 103, reuses the VP g^2 here, which is wrong (Eq. 105)
+            g_squared = beta * (1 + ops.exp(-log_snr_t))
+        else:
+            raise ValueError(f"Unknown variance type: {self._variance_type}")
+
         if x is None:  # return g^2 only
-            return beta
+            return g_squared
+
         if self._variance_type == "preserving":
             f = -0.5 * beta * x
         elif self._variance_type == "exploding":
             f = ops.zeros_like(beta)
         else:
             raise ValueError(f"Unknown variance type: {self._variance_type}")
-        return f, beta
+
+        return f, g_squared
 
     def get_alpha_sigma(self, log_snr_t: Tensor) -> tuple[Tensor, Tensor]:
         """Get alpha and sigma for a given log signal-to-noise ratio (lambda).
@@ -118,16 +129,15 @@ class NoiseSchedule(ABC):
             raise TypeError(f"Unknown variance type: {self._variance_type}")
         return alpha_t, sigma_t
 
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
+    def weights_for_snr(self, log_snr_t: Tensor, loss_type: str = "noise") -> Tensor:
         """
         Compute loss weights based on log signal-to-noise ratio (log-SNR).
 
         This method returns a tensor of weights used for loss re-weighting in diffusion models,
         depending on the selected strategy. If no weighting is specified, uniform weights (ones)
-        are returned.
+        are returned. The weightings are defined for the noise prediction loss.
 
         Supported weighting strategies:
-        - "sigmoid": Based on Kingma et al. (2023), uses a sigmoid of shifted log-SNR.
         - "likelihood_weighting": Based on Song et al. (2021), uses ratio of diffusion drift
           to squared noise scale.
 
@@ -135,6 +145,8 @@ class NoiseSchedule(ABC):
         ----------
         log_snr_t : Tensor
             A tensor containing the log signal-to-noise ratio values.
+        loss_type : str
+            The loss the weights are applied to. Default is "noise".
 
         Returns
         -------
@@ -148,12 +160,9 @@ class NoiseSchedule(ABC):
         """
         if self._weighting is None:
             return ops.ones_like(log_snr_t)
-        elif self._weighting == "sigmoid":
-            # sigmoid weighting based on Kingma et al. (2023)
-            return ops.sigmoid(-log_snr_t + 2)
         elif self._weighting == "likelihood_weighting":
-            # likelihood weighting based on Song et al. (2021)
-            g_squared = self.get_drift(log_snr_t)
+            # likelihood weighting based on Song et al. (2021); g^2 / sigma^2 = -dlambda/dt of the training schedule
+            g_squared = self.get_drift(log_snr_t, training=True)
             _, sigma_t = self.get_alpha_sigma(log_snr_t)
             return g_squared / ops.square(sigma_t)
         else:
@@ -166,24 +175,30 @@ class NoiseSchedule(ABC):
     def from_config(cls, config, custom_objects=None):
         return cls(**deserialize(config, custom_objects=custom_objects))
 
-    def validate(self):
-        """Validate the noise schedule."""
+    def validate(self, loss_type: str = "noise"):
+        """Validate the noise schedule and warn if its weighting is not defined for `loss_type`."""
 
         if self.log_snr_min >= self.log_snr_max:
             raise ValueError("min_log_snr must be less than max_log_snr.")
 
         # Validate log SNR values and corresponding time mappings for both training and inference
         for training in (True, False):
-            if not ops.isfinite(self.get_log_snr(0.0, training=training)):
+            if not ops.isfinite(self.log_snr(0.0, training=training)):
                 raise ValueError(f"log_snr(0.0) must be finite (training={training})")
-            if not ops.isfinite(self.get_log_snr(1.0, training=training)):
+            if not ops.isfinite(self.log_snr(1.0, training=training)):
                 raise ValueError(f"log_snr(1.0) must be finite (training={training})")
-            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_max, training=training)):
+            if not ops.isfinite(self.time_from_log_snr(self.log_snr_max, training=training)):
                 raise ValueError(f"t(log_snr_max) must be finite (training={training})")
-            if not ops.isfinite(self.get_t_from_log_snr(self.log_snr_min, training=training)):
+            if not ops.isfinite(self.time_from_log_snr(self.log_snr_min, training=training)):
                 raise ValueError(f"t(log_snr_min) must be finite (training={training})")
 
         # Validate log SNR derivatives at the boundaries
         for boundary, name in [(self.log_snr_max, "log_snr_max (t=0)"), (self.log_snr_min, "log_snr_min (t=1)")]:
             if not ops.isfinite(self.derivative_log_snr(boundary, training=False)):
                 raise ValueError(f"derivative_log_snr at {name} must be finite.")
+
+        if self._weighting is not None and loss_type != "noise":
+            logging.warning(
+                f"The '{self._weighting}' weighting is defined for the noise loss, "
+                f"but loss_type='{loss_type}' is used. You might want to adjust the weighting."
+            )

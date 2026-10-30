@@ -51,7 +51,7 @@ def test_share_inference_network_true_reuses_same_model():
         share_inference_network=True,
     )
 
-    members = workflow.approximator.approximators
+    members = workflow.estimator.estimators
     nets = [members[k].inference_network for k in sorted(members.keys())]
 
     assert nets[0] is nets[1] is nets[2]
@@ -65,7 +65,7 @@ def test_share_inference_network_false_clones_models():
         share_inference_network=False,
     )
 
-    members = workflow.approximator.approximators
+    members = workflow.estimator.estimators
     nets = [members[k].inference_network for k in sorted(members.keys())]
 
     assert nets[0] is not nets[1]
@@ -80,7 +80,7 @@ def test_single_summary_network_is_broadcast_to_all_members():
         share_inference_network=False,
     )
 
-    members = workflow.approximator.approximators
+    members = workflow.estimator.estimators
     s0 = members["0"].summary_network
     s1 = members["1"].summary_network
 
@@ -119,12 +119,12 @@ def test_ensemble_workflow(tmp_path):
     assert metrics.values.shape == (4, 2)
 
     # Ensure saving and loading from workflow works fine
-    loaded_approximator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
-    assert_models_equal(workflow.approximator, loaded_approximator)
+    loaded_estimator = keras.saving.load_model(os.path.join(str(tmp_path), "model.keras"))
+    assert_models_equal(workflow.estimator, loaded_estimator)
 
     # Get samples (non-batched and batched)
     test_conditions = workflow.simulate(5)
-    samples = loaded_approximator.sample(conditions=test_conditions, num_samples=3)
-    batched_samples = loaded_approximator.sample(conditions=test_conditions, num_samples=3, batch_size=2)
+    samples = loaded_estimator.sample(conditions=test_conditions, num_samples=3)
+    batched_samples = loaded_estimator.sample(conditions=test_conditions, num_samples=3, batch_size=2)
     assert samples["parameters"].shape == (5, 3, 2)
     assert batched_samples["parameters"].shape == samples["parameters"].shape

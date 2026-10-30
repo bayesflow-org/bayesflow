@@ -23,7 +23,9 @@ class OrthogonalPermutation(InvertibleLayer):
     def build(self, xz_shape: Shape, **kwargs) -> None:
         self.weight = self.add_weight(shape=(xz_shape[-1], xz_shape[-1]), initializer="orthogonal", trainable=True)
 
-    def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
+    def call(self, xz: Tensor, inverse: bool = False, target_mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
+        if target_mask is not None:
+            raise NotImplementedError(f"{type(self).__name__} does not support masking.")
         if inverse:
             return self._inverse(xz)
         return self._forward(xz)

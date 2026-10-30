@@ -1,12 +1,14 @@
-from collections.abc import Sequence, Callable
+from collections.abc import Callable, Mapping
+from typing import Any
 
 import keras
 
+from bayesflow.masking import MaskHandler
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils import layer_kwargs, find_distribution
 from bayesflow.utils.decorators import allow_batch_size
 from bayesflow.utils.keras_utils import resolve_seed
-from bayesflow.utils.serialization import deserialize
+from bayesflow.utils.serialization import deserialize, serialize
 
 
 class InferenceNetwork(keras.Layer):
@@ -41,6 +43,13 @@ class InferenceNetwork(keras.Layer):
     an omitted ``seed`` against ``self.seed_generator``, so that they never fall back to Keras'
     global generator (which cannot be traced under ``jax.jit``).
 
+    Every inference network also owns a :class:`~bayesflow.masking.MaskHandler`. Implementations resolve masks once
+    at the boundary of each top-level operation and reuse the returned immutable
+    :class:`~bayesflow.masking.InferenceMasks` throughout solver steps or derivative
+    closures. Ordinary padding and attention masks are routed separately to subnets which declare
+    them explicitly. Custom implementations should follow the same boundary so mask sampling is
+    neither repeated nor inserted into the backpropagation loop.
+
     Optionally override:
 
     ``sample(batch_shape, conditions, **kwargs)``
@@ -60,27 +69,40 @@ class InferenceNetwork(keras.Layer):
         ``"student_t"`` (:class:`~bayesflow.distributions.DiagonalStudentT`),
         or an explicit :class:`~bayesflow.distributions.Distribution` instance
         for full control.  Default is ``"normal"``.
+    mask_handler : ~bayesflow.masking.MaskHandler, optional
+        Handler used to generate and route masks. If ``None``, a default
+        :class:`~bayesflow.masking.MaskHandler` is created with the network's
+        seed. A supplied handler retains its own random generator.
+    seed : int, optional
+        Initial seed for the network's local random generator.
     **kwargs
         Forwarded to ``keras.Layer`` after filtering with
         :func:`~bayesflow.utils.layer_kwargs`.
     """
 
-    # Valid mask keys to pass to subnet
-    _SUBNET_MASK_KEYS = {"attention_mask", "mask"}
-
-    def __init__(self, base_distribution: str | keras.Layer = "normal", **kwargs):
+    def __init__(
+        self,
+        base_distribution: str | keras.Layer = "normal",
+        *,
+        mask_handler: MaskHandler | None = None,
+        seed: int | None = None,
+        **kwargs,
+    ):
         super().__init__(**layer_kwargs(kwargs))
         self.base_distribution = find_distribution(base_distribution)
-        self.seed_generator = keras.random.SeedGenerator()
+        self.seed = seed
+        self.seed_generator = keras.random.SeedGenerator(seed)
 
-    @staticmethod
-    def _collect_mask_kwargs(keys: Sequence[str], source: dict) -> dict:
-        """Extract mask kwargs from source dict.
+        if mask_handler is None:
+            mask_handler = MaskHandler(seed=self.seed)
+        self.mask_handler = mask_handler
+        self._mask_seed_generator = mask_handler.seed_generator
 
-        Looks up each key in *keys* and includes it in the result if its value
-        is not ``None``.
-        """
-        return {key: source[key] for key in keys if source.get(key) is not None}
+    def get_config(self):
+        return super().get_config() | {
+            "mask_handler": serialize(self.mask_handler),
+            "seed": self.seed,
+        }
 
     def call(
         self,
@@ -90,8 +112,15 @@ class InferenceNetwork(keras.Layer):
         density: bool = False,
         training: bool = False,
         seed: int | keras.random.SeedGenerator | None = None,
+        hutchinson_steps: int | None = None,
+        guidance_kwargs: Mapping[str, Any] | None = None,
         **kwargs,
     ) -> Tensor | tuple[Tensor, Tensor]:
+        if hutchinson_steps is not None:
+            kwargs["hutchinson_steps"] = hutchinson_steps
+        if guidance_kwargs is not None:
+            kwargs["guidance_kwargs"] = guidance_kwargs
+
         if inverse:
             return self._inverse(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
         return self._forward(xz, conditions=conditions, density=density, training=training, seed=seed, **kwargs)
@@ -105,6 +134,39 @@ class InferenceNetwork(keras.Layer):
         self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
     ) -> Tensor | tuple[Tensor, Tensor]:
         raise NotImplementedError
+
+    def _build_subnet_and_projector(
+        self,
+        xz_shape: Shape,
+        conditions_shape: Shape = None,
+        units: int = None,
+        name: str = "output_projector",
+        has_time: bool = True,
+    ) -> keras.Layer:
+        """Build ``self.subnet`` and return a built projector to ``units`` outputs.
+
+        The projector is the identity if the subnet already outputs ``units`` features (default: the target
+        dimension), and a zero-bias dense layer named ``name`` otherwise. The subnet input is
+        ``(target, time, conditions)`` when ``has_time`` is true and ``(target, conditions)`` otherwise.
+        """
+        units = xz_shape[-1] if units is None else units
+        if has_time:
+            input_shape = (xz_shape, (xz_shape[0], 1), conditions_shape)
+        else:
+            input_shape = (xz_shape, conditions_shape)
+        self.subnet.build(input_shape)
+        return self._build_projector(self.subnet.compute_output_shape(input_shape), units, name)
+
+    @staticmethod
+    def _build_projector(out_shape: Shape, units: int, name: str = "output_projector") -> keras.Layer:
+        """Return a built projector to ``units`` outputs: the identity if ``out_shape`` already has ``units``
+        features, and a zero-bias dense layer named ``name`` otherwise."""
+        if out_shape[-1] != units:
+            projector = keras.layers.Dense(units=units, bias_initializer="zeros", name=name)
+        else:
+            projector = keras.layers.Identity()
+        projector.build(out_shape)
+        return projector
 
     def _inverse_compositional(
         self,

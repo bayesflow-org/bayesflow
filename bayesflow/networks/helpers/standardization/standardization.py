@@ -14,7 +14,7 @@ class Standardization(keras.Layer):
     """
     Initializes a layer that will keep track of the running mean and
     running standard deviation for all possible variables in a BayesFlow
-    approximator.
+    estimator.
     """
 
     def __init__(self, standardize: str | Sequence | None, **kwargs):
@@ -37,6 +37,7 @@ class Standardization(keras.Layer):
         log_det_jac: bool = False,
         transformation_type: str = "location_scale",
         mask: Tensor | None = None,
+        log_det_jac_mask: Tensor | None = None,
     ):
         if x is None:
             if log_det_jac:
@@ -49,7 +50,13 @@ class Standardization(keras.Layer):
             return x
 
         return self.standardize_layers[key](
-            x, forward=forward, stage=stage, log_det_jac=log_det_jac, transformation_type=transformation_type, mask=mask
+            x,
+            forward=forward,
+            stage=stage,
+            log_det_jac=log_det_jac,
+            transformation_type=transformation_type,
+            mask=mask,
+            log_det_jac_mask=log_det_jac_mask,
         )
 
     def build(self, data_shapes: dict[str, tuple[int] | dict[str, dict]]) -> None:

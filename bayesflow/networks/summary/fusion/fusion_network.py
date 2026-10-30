@@ -17,7 +17,7 @@ class FusionNetwork(SummaryNetwork):
         """(SN) Wraps multiple summary networks (`backbones`) to learn summary statistics from multi-modal data.
 
         Networks and inputs are passed as dictionaries with corresponding keys, so that each input is processed
-        by the correct summary network. This means the "summary_variables" entry to the approximator has to be
+        by the correct summary network. This means the "summary_variables" entry to the estimator has to be
         a dictionary, which can be achieved using the :py:meth:`bayesflow.adapters.Adapter.group` method.
 
         This network implements _late_ fusion. The output of the individual summary networks is concatenated, and

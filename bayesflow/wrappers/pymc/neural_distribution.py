@@ -1,8 +1,6 @@
 from collections.abc import Callable, Sequence
 from numpy.typing import ArrayLike
 
-import numpy as np
-
 import keras
 
 import pymc as pm
@@ -14,28 +12,29 @@ from .backend import build_backend
 
 class NeuralDistribution:
     """
-    Wraps a trained BayesFlow approximator as a PyMC custom distribution.
+    Wraps a trained BayesFlow estimator as a PyMC custom distribution.
 
-    Supports two approximator types:
+    Supports two estimator types:
 
-    * :class:`~bayesflow.approximators.RatioApproximator` — Neural Ratio Estimation
+    * :class:`~bayesflow.estimators.RatioEstimator` — Neural Ratio Estimation
       (NRE).  The log-ratio ``log p(x|θ)/p(x)`` is used as an unnormalised
       log-likelihood (the evidence is constant w.r.t. θ and cancels in the
       posterior).
 
-    * :class:`~bayesflow.approximators.ContinuousApproximator` — Neural Likelihood
+    * :class:`~bayesflow.estimators.BasicEstimator` — Neural Likelihood
       Estimation (NLE).  The network must be trained in **NLE mode**: observations
       as ``inference_variables``, parameters as ``inference_conditions``.  The
       network models ``log p(x|θ)`` directly.
 
-    In both cases the JAX backend vmaps the per-trial function over the trial axis
-    and registers an exact VJP so gradient-based samplers (NUTS, HMC) work without
-    finite differences.
+    In exchangeable mode, the JAX backend vmaps the per-trial function over the
+    trial axis. In non-exchangeable mode, it forwards the full observation once.
+    Both modes register an exact VJP so gradient-based samplers (NUTS, HMC) work
+    without finite differences.
 
     Parameters
     ----------
-    approximator :
-        A trained ``RatioApproximator`` or ``ContinuousApproximator``.
+    estimator :
+        A trained ``RatioEstimator`` or ``BasicEstimator``.
     param_names : sequence of str
         Names of the model parameters in the order they will be passed inside
         the PyMC model.
@@ -53,7 +52,7 @@ class NeuralDistribution:
     --------
     **Ratio estimator (NRE)**::
 
-        dist = NeuralDistribution(ratio_approximator, param_names=["mu", "sigma"])
+        dist = NeuralDistribution(ratio_estimator, param_names=["mu", "sigma"])
         with pm.Model():
             mu = pm.Normal("mu", 0, 1)
             sigma = pm.HalfNormal("sigma", 1)
@@ -61,7 +60,7 @@ class NeuralDistribution:
 
     **Likelihood estimator (NLE)**::
 
-        dist = NeuralDistribution(nle_approximator, param_names=["mu", "sigma"])
+        dist = NeuralDistribution(nle_estimator, param_names=["mu", "sigma"])
         with pm.Model():
             mu = pm.Normal("mu", 0, 1)
             sigma = pm.HalfNormal("sigma", 1)
@@ -70,7 +69,7 @@ class NeuralDistribution:
 
     def __init__(
         self,
-        approximator,
+        estimator,
         param_names: Sequence[str],
         *,
         exchangeable: bool = True,
@@ -82,7 +81,7 @@ class NeuralDistribution:
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
         self.simulator_fn = simulator_fn
-        self.backend = build_backend(approximator, param_names, exchangeable=exchangeable)
+        self.backend = build_backend(estimator, param_names, exchangeable=exchangeable)
 
     def logp(self, value: pt.TensorVariable, *dist_params: pt.TensorVariable) -> pt.TensorVariable:
         """
@@ -116,7 +115,12 @@ class NeuralDistribution:
                 p = pt.broadcast_to(p, (n_obs,))  # → (n_obs,)
                 prepared_params.append(p)
         else:
-            prepared_params = [pt.cast(pt.as_tensor_variable(p), pytensor.config.floatX) for p in dist_params]
+            prepared_params = []
+            for p in dist_params:
+                p = pt.cast(pt.as_tensor_variable(p), pytensor.config.floatX)
+                # A scalar-support CustomDist broadcasts shared parameters over
+                # the observed shape. Recover the scalar expected by the estimator.
+                prepared_params.append(pt.reshape(p, (-1,))[0])
 
         return self.backend.logp_op(value, *prepared_params)
 
@@ -150,13 +154,9 @@ class NeuralDistribution:
 
         params = self._prepare_params(args, kwargs)
 
-        if self.exchangeable:
-            signature = ",".join(["()"] * len(self.param_names)) + "->()"
-        else:
-            ndim = np.asarray(observed).ndim
-            dim_names = [chr(ord("m") + i) for i in range(ndim)]
-            data_core = "(" + ",".join(dim_names) + ")"
-            signature = data_core + "," + ",".join(["()"] * len(self.param_names)) + "->()"
+        # The signature describes distribution parameters only; `observed` is
+        # passed separately to the log-probability function by PyMC.
+        signature = ",".join(["()"] * len(self.param_names)) + "->()"
 
         custom_kwargs = {
             "logp": self.logp,

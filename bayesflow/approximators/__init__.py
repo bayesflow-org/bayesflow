@@ -1,7 +1,4 @@
-r"""
-A collection of :py:class:`~bayesflow.approximators.Approximator`\ s, which embody the inference task and the
-neural network components used to perform it.
-"""
+"""Deprecated aliases for :mod:`bayesflow.estimators`."""
 
 from .approximator import Approximator
 from .continuous_approximator import ContinuousApproximator
@@ -11,6 +8,15 @@ from .scoring_rule_approximator import ScoringRuleApproximator
 from .model_comparison_approximator import ModelComparisonApproximator
 from .ratio_approximator import RatioApproximator
 from .ensemble_approximator import EnsembleApproximator
-from ..utils._docs import _add_imports_to_all
+from . import helpers as helpers
 
-_add_imports_to_all(include_modules=[])
+__all__ = [
+    "Approximator",
+    "ContinuousApproximator",
+    "AutoregressiveApproximator",
+    "CompositionalApproximator",
+    "ScoringRuleApproximator",
+    "ModelComparisonApproximator",
+    "RatioApproximator",
+    "EnsembleApproximator",
+]

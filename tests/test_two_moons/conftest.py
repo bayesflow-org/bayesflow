@@ -9,10 +9,10 @@ def inference_network():
 
 
 @pytest.fixture()
-def approximator(adapter, inference_network):
-    from bayesflow import ContinuousApproximator
+def estimator(adapter, inference_network):
+    from bayesflow import BasicEstimator
 
-    return ContinuousApproximator(
+    return BasicEstimator(
         adapter=adapter,
         inference_network=inference_network,
     )
@@ -25,9 +25,9 @@ def batch_size():
 
 @pytest.fixture()
 def adapter():
-    from bayesflow import ContinuousApproximator
+    from bayesflow import BasicEstimator
 
-    return ContinuousApproximator.build_adapter(
+    return BasicEstimator.build_adapter(
         inference_variables=["parameters"],
         inference_conditions=["observables"],
     )

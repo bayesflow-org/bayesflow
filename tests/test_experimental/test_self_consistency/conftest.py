@@ -1,4 +1,4 @@
-from bayesflow.experimental.self_consistency import SemiSupervisedApproximator, MultiDataset
+from bayesflow.experimental.self_consistency import SemiSupervisedEstimator, MultiDataset
 import numpy as np
 import pytest
 import keras
@@ -6,7 +6,7 @@ from tensorflow_probability import distributions as tfd
 
 from bayesflow.datasets import OfflineDataset
 from bayesflow.adapters import Adapter
-from bayesflow.approximators import ContinuousApproximator
+from bayesflow.estimators import BasicEstimator
 from bayesflow.networks import CouplingFlow
 from bayesflow import make_simulator
 
@@ -50,8 +50,8 @@ def shared_adapter():
 
 
 @pytest.fixture()
-def posterior_approximator(posterior_adapter):
-    return ContinuousApproximator(
+def posterior_estimator(posterior_adapter):
+    return BasicEstimator(
         inference_network=CouplingFlow(),
         adapter=posterior_adapter,
     )
@@ -79,8 +79,8 @@ def analytic_likelihood():
 
 
 @pytest.fixture()
-def sc_approximator(posterior_approximator, analytic_prior, analytic_likelihood, shared_adapter):
-    return SemiSupervisedApproximator(
-        approximators=dict(prior=analytic_prior, likelihood=analytic_likelihood, posterior=posterior_approximator),
+def sc_estimator(posterior_estimator, analytic_prior, analytic_likelihood, shared_adapter):
+    return SemiSupervisedEstimator(
+        estimators=dict(prior=analytic_prior, likelihood=analytic_likelihood, posterior=posterior_estimator),
         adapter=shared_adapter,
     )

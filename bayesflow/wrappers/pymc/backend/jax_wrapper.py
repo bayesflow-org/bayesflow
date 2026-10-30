@@ -16,8 +16,8 @@ class JAXWrapper:
 
     Parameters
     ----------
-    approximator :
-        A trained BayesFlow approximator.
+    estimator :
+        A trained BayesFlow estimator.
     param_names :
         Names of the model parameters in the order they will be passed
         at inference time.
@@ -31,12 +31,12 @@ class JAXWrapper:
 
     def __init__(
         self,
-        approximator,
+        estimator,
         param_names: Sequence[str],
         *,
         exchangeable: bool = True,
     ):
-        self.approximator = approximator
+        self.estimator = estimator
         self.param_names = tuple(param_names)
         self.exchangeable = exchangeable
 

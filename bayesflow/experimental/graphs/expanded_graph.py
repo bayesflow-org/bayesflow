@@ -1,113 +1,111 @@
 from copy import deepcopy
-from typing import TypeAlias
+from typing import TYPE_CHECKING, NamedTuple, TypeAlias
 
 import networkx as nx
-from networkx.readwrite import json_graph
 
-from bayesflow.utils.serialization import serializable, serialize
+from .inverted_graph import InvertedGraph
+from .factorizations import enumerate_factorizations, select_factorization
 
-from .simulation_graph import SimulationGraph
-from .utils import has_open_path
+if TYPE_CHECKING:
+    from .simulation_graph import SimulationGraph
 
-Node: TypeAlias = str
 SimulationNode: TypeAlias = str
-ExpandedNode: TypeAlias = str
 
 
-@serializable("bayesflow.experimental")  # type: ignore[missing-argument]
+class ExpandedNode(NamedTuple):
+    """
+    A node of an ExpandedGraph or InvertedGraph.
+
+    Attributes
+    ----------
+    original : str
+        The name of the node in the SimulationGraph.
+    index : tuple[tuple[str, int], ...]
+        Which copy the node is: one ``(node, copy)`` pair for every split node
+        it descends from.
+    """
+
+    original: str
+    index: tuple[tuple[str, int], ...] = ()
+
+
 class ExpandedGraph(nx.DiGraph):
     """
-    Directed graph with a similar structure as the graph defined in `SimulationGraph`,
-    but in which interior nodes are split into two subgraphs.
+    A SimulationGraph in which every repeated latent node with
+    parents is shown twice.
 
-    This is necessary to determine if variables from a node can be estimated
-    group-wise (enabling amortization over groups).
+    The nodes are :py:class:`ExpandedNode` objects, which hold the name of the
+    original node and which copy they are. The graph is created by
+    :py:meth:`SimulationGraph.expand` and used to find the factorization of the
+    posterior.
+
+    Parameters
+    ----------
+    incoming_graph_data : optional
+        Data to initialize the graph with, passed to :py:class:`networkx.DiGraph`.
+    simulation_graph : SimulationGraph, optional
+        A copy of the graph that was expanded.
+    **kwargs
+        Additional keyword arguments passed to :py:class:`networkx.DiGraph`.
     """
 
-    def __init__(self, *, simulation_graph: SimulationGraph, graph_data=None, **kwargs):
-        super().__init__(**kwargs)  # optionally initializing with existing data
+    def __init__(self, incoming_graph_data=None, *, simulation_graph: "SimulationGraph | None" = None, **kwargs):
+        super().__init__(incoming_graph_data, **kwargs)
         self.simulation_graph = deepcopy(simulation_graph)
 
-        if graph_data is not None:
-            g = json_graph.node_link_graph(graph_data, directed=True, multigraph=False)
-
-            self.add_nodes_from(g.nodes(data=True))
-            self.add_edges_from(g.edges(data=True))
-
-    def invert(self, node_ordering=None):
+    def invert(self, ordering: list[SimulationNode] | None = None):
         """
-        Inverts a graph by following the algorithm described by [1], but sorting
-        latent nodes by outer nodes first.
+        Inverts the graph into the factorization of the posterior used by
+        the MultilevelEstimator.
 
-        [1] Stuhlmüller, A., Taylor, J., & Goodman, N. D. (2013). Learning stochastic inverses.
-        In Advances in Neural Information Processing Systems (pp. 3048–3056).
+        The latent nodes are inferred one after the other, starting from the
+        data. Every instance of a latent node is conditioned on the fewest
+        nodes that are already known that makes it independent of the remaining
+        known nodes.
+
+        Parameters
+        ----------
+        ordering : list[str], optional
+            The order in which latent nodes are inferred. Must contain every
+            latent node. By default, every order is tried, and the
+            one with the fewest expected instances that have to be inferred
+            sequentially is chosen.
+
+        Returns
+        -------
+        InvertedGraph
+            The inverted graph, to be passed to the MultilevelEstimator.
         """
-        from .inverted_graph import InvertedGraph
-        from .factorizations import enumerate_factorizations, select_factorization
+        if ordering is None:
+            return select_factorization(enumerate_factorizations(self))
 
-        if not node_ordering:
-            factorizations = enumerate_factorizations(self)
-            return select_factorization(factorizations)
+        inverted = nx.DiGraph()
+        for node in self:
+            if self.out_degree(node) == 0:
+                inverted.add_node(node)
 
-        graph = deepcopy(self)
+        for variable in ordering:
+            for node in instances(self, variable):
+                conditions = minimal_conditions(self, node, known=set(inverted))
 
-        undirected = graph.to_undirected()
-        leaf_nodes = [node for node in graph.nodes() if graph.out_degree(node) == 0]
+                inverted.add_node(node)
+                for condition in conditions:
+                    inverted.add_edge(condition, node)
 
-        latent_nodes = node_ordering
+        return InvertedGraph(inverted, expanded_graph=self, ordering=ordering)
 
-        inverse = InvertedGraph(expanded_graph=self)
-        inverse.add_nodes_from(leaf_nodes)
 
-        for x_j in latent_nodes:
-            inverse.add_node(x_j)
+def minimal_conditions(graph: nx.DiGraph, node: ExpandedNode, known: set[ExpandedNode]) -> set[ExpandedNode]:
+    # drops known nodes one by one, as long as the node stays independent of all dropped nodes
+    conditions = set(known)
 
-            # Iterate over all already added nodes in inverse (shortest distance from x_j first)
-            # and check if the path between that node and x_j is blocked.
-            # If it is open, draw an edge from that node to x_j.
-            other_nodes = [node for node in inverse.nodes() if node != x_j]
-            lengths = [nx.shortest_path_length(undirected, x_j, node) for node in other_nodes]
-            sorted_nodes = [node for _, node in sorted(zip(lengths, other_nodes))]
+    for candidate in sorted(known):
+        fewer = conditions - {candidate}
+        if nx.is_d_separator(graph, {node}, known - fewer, fewer):
+            conditions = fewer
 
-            for node in sorted_nodes:
-                if has_open_path(graph, x_j, node, other_nodes):
-                    inverse.add_edge(node, x_j)
+    return conditions
 
-        return inverse
 
-    def original_node_names(self) -> dict[ExpandedNode, SimulationNode]:
-        """
-        Maps node names of the inverted graph to node names in the corresponding
-        SimulationGraph.
-        """
-        mapping = {}
-
-        for name, attributes in self.nodes(data=True):
-            merged_from = attributes["merged_from"]
-            previous_names = attributes["previous_names"]
-
-            if merged_from:
-                mapping[name] = merged_from[0] if len(merged_from) == 1 else merged_from
-            elif previous_names:
-                mapping[name] = previous_names[0]
-            else:
-                mapping[name] = name
-
-        return mapping
-
-    def get_config(self):
-        graph_data = json_graph.node_link_data(self)
-
-        config = {
-            "graph_data": graph_data,
-            "simulation_graph": self.simulation_graph,
-        }
-
-        return serialize(config)
-
-    @classmethod
-    def from_config(cls, config):
-        graph_data = config["graph_data"]
-        simulation_graph = SimulationGraph.from_config(config["simulation_graph"]["config"])
-
-        return cls(simulation_graph=simulation_graph, graph_data=graph_data)
+def instances(graph, variable: SimulationNode) -> list[ExpandedNode]:
+    return [node for node in graph if node.original == variable]

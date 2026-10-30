@@ -116,8 +116,11 @@ def test_cycle_consistency(adapter, random_data):
         if key == "s3":
             # we subsampled this key, so it is expected for its shape to change
             continue
+        if key == "t1":
+            # broadcast does not have an inverse
+            continue
         assert key in deprocessed
-        assert np.allclose(value, deprocessed[key])
+        assert_allclose(value, deprocessed[key], atol=1e-7)
 
 
 @pytest.mark.cpu_fallback_on_mps

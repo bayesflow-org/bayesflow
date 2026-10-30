@@ -7,7 +7,7 @@ from .transform import Transform
 class Rename(Transform):
     """
     Transform to rename keys in data dictionary. Useful to rename variables to match those required by
-    approximator. This transform can only rename one variable at a time.
+    estimator. This transform can only rename one variable at a time.
 
     Parameters
     ----------
@@ -20,7 +20,7 @@ class Rename(Transform):
     --------
     >>> adapter = (
         bf.adapters.Adapter()
-        # rename the variables to match the required approximator inputs
+        # rename the variables to match the required estimator inputs
         .rename("theta", "inference_variables")
         .rename("x", "inference_conditions")
     )

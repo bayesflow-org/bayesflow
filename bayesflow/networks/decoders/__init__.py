@@ -1,5 +1,5 @@
 r"""
-Neural networks for autoregressive approximators.
+Neural networks for autoregressive estimators.
 """
 
 from .recurrent_decoder import RecurrentDecoder

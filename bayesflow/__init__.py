@@ -100,14 +100,16 @@ setup()
 del setup
 
 from . import (
-    approximators,
     adapters,
     augmentations,
     datasets,
     diagnostics,
     distributions,
+    estimators,
     experimental,
+    masking,
     networks,
+    approximators,
     simulators,
     utils,
     scoring_rules,
@@ -116,6 +118,16 @@ from . import (
 
 from .adapters import Adapter
 from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
+from .estimators import (
+    Estimator,
+    BasicEstimator,
+    AutoregressiveEstimator,
+    CompositionalEstimator,
+    ModelComparisonEstimator,
+    ScoringRuleEstimator,
+    EnsembleEstimator,
+    RatioEstimator,
+)
 from .approximators import (
     ContinuousApproximator,
     AutoregressiveApproximator,

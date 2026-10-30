@@ -10,7 +10,10 @@ from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serialize, serializable
 
 from .transforms import (
+    AsCorrelationMatrix,
+    AsCovarianceMatrix,
     AsSet,
+    AsSimplex,
     AsTimeSeries,
     Broadcast,
     Concatenate,
@@ -760,6 +763,110 @@ class Adapter(MutableSequence[Transform]):
                 for key in keys
             }
         )
+        self.transforms.append(transform)
+        return self
+
+    def as_correlation_matrix(self, keys: str | Sequence[str], cholesky: bool = False):
+        """Append a :py:class:`~transforms.AsCorrelationMatrix` transform to the adapter.
+
+        Constrains neural network predictions of a data variable to a valid (symmetric, positive definite,
+        unit diagonal) K x K correlation matrix, using the transforms explained by [1].
+
+        The unconstrained representation is a flat vector of K * (K - 1) / 2 entries.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        cholesky : bool, optional
+            Whether the *constrained* side of the transform is the lower Cholesky factor,
+            rather than the full correlation matrix.
+            Default is False (use the full correlation matrix).
+
+        References
+        ----------
+        [1] Lewandowski, D., Kurowicka, D., & Joe, H. (2009).
+            Generating random correlation matrices based on vines and extended onion method.
+            Journal of Multivariate Analysis, 100(9), 1989-2001. https://doi.org/10.1016/j.jmva.2009.04.008
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(transform_map={key: AsCorrelationMatrix(cholesky=cholesky) for key in keys})
+        self.transforms.append(transform)
+        return self
+
+    def as_covariance_matrix(self, keys: str | Sequence[str], cholesky: bool = False, diag_kwargs: dict = None):
+        """Append a :py:class:`~transforms.AsCovarianceMatrix` transform to the adapter.
+
+        Constrains neural network predictions of a data variable to a valid (symmetric,
+        positive definite) K x K covariance (or precision) matrix.
+
+        The unconstrained representation is a flat vector of K * (K + 1) / 2 entries
+        of the lower Cholesky factor of the covariance matrix.
+        First, the K diagonal entries, passed through a lower-bounded :py:class:`~transforms.Constrain`
+        transform to keep them positive, followed by the K * (K - 1) / 2 entries from the lower triangular.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        cholesky : bool, optional
+            Whether the *constrained* side of the transform is the Cholesky factor,
+            rather than the full covariance matrix.
+            Default is False (use the full covariance matrix).
+        diag_kwargs : dict, optional
+            Keyword arguments forwarded to the :py:class:`~transforms.Constrain` transform
+            that constrains the diagonal to be positive.
+            The `lower` bound is always fixed to 0.0.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(
+            transform_map={key: AsCovarianceMatrix(cholesky=cholesky, diag_kwargs=diag_kwargs) for key in keys}
+        )
+        self.transforms.append(transform)
+        return self
+
+    def as_precision_matrix(self, **kwargs):
+        """Append a :py:class:`~transforms.AsCovarianceMatrix` transform to the adapter.
+
+        A precision matrix is the inverse of a covariance matrix, but is likewise symmetric
+        and positive definite, so the same transform applies.
+        This is an alias for :py:meth:`~Adapter.as_covariance_matrix`;
+        see there for the accepted parameters.
+        Note that this transform does not itself invert a covariance matrix into a
+        precision matrix (or vice versa), it only constrains its input to *some* symmetric
+        positive definite matrix, whatever you intend that matrix to represent.
+        """
+        return self.as_covariance_matrix(**kwargs)
+
+    def as_simplex(self, keys: str | Sequence[str], axis: int | Tensor = -1, method: str = "default"):
+        """Append a :py:class:`~transforms.AsSimplex` transform to the adapter.
+
+        Constrains neural network predictions of a data variable to a unit simplex, so that the
+        constrained representation is non-negative and sums to one along the given axis.
+
+        Parameters
+        ----------
+        keys : str or Sequence of str
+            The names of the variables to constrain.
+        axis : int, optional
+            The axis of the *simplex-constrained* data along which values sum to one over all K elements.
+            The corresponding unconstrained representation has a size of K-1 along this axis.
+        method : str, optional
+            Method by which to transform between the K dimensional simplex space
+            and the K-1 dimensional unconstrained space.
+            - "default" / "simplex": sum-to-zero (orthogonal basis) transform followed by a softmax transform.
+            Plain softmax is not invertible (shifting all values by a constant results in the same inverse).
+            The sum-to-zero removes this issue.
+            - "stick": stick-breaking logistic transform.
+        """
+        if isinstance(keys, str):
+            keys = [keys]
+
+        transform = MapTransform(transform_map={key: AsSimplex(axis=axis, method=method) for key in keys})
         self.transforms.append(transform)
         return self
 

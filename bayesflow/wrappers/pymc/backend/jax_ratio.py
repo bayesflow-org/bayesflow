@@ -6,7 +6,7 @@ from .jax_wrapper import JAXWrapper
 
 
 class JAXRatio(JAXWrapper):
-    """JAX backend for a :class:`~bayesflow.approximators.RatioApproximator`.
+    """JAX backend for a :class:`~bayesflow.estimators.RatioEstimator`.
 
     Evaluates ``log p(x | θ) / p(x)`` via the classifier + projector heads.
     With ``exchangeable=True`` this is vmapped over observations; with
@@ -14,9 +14,9 @@ class JAXRatio(JAXWrapper):
     """
 
     def make_log_prob(self) -> Callable:
-        classifier = self.approximator.inference_network
-        projector = self.approximator.projector
-        std = self.approximator.standardizer
+        classifier = self.estimator.inference_network
+        projector = self.estimator.projector
+        std = self.estimator.standardizer
 
         def log_prob(x, *params):
             inf_vars = jnp.stack([jnp.asarray(p) for p in params], axis=0)

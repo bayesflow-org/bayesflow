@@ -7,7 +7,7 @@ class CategoricalScoringRule(ScoringRule):
     """Base class for scoring rules over categorical (one-hot encoded) targets.
 
     This is the expected base class for scoring rules passed to
-    :class:`~bayesflow.approximators.ModelComparisonApproximator`.
+    :class:`~bayesflow.estimators.ModelComparisonEstimator`.
     """
 
     def to_log_odds(self, rule_output: dict[str, Tensor]) -> Tensor:

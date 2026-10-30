@@ -1,10 +1,10 @@
 r"""
-A rich collection of neural network architectures for use in :py:class:`~bayesflow.approximators.Approximator`\ s.
+A rich collection of neural network architectures for use in :py:class:`~bayesflow.estimators.Estimator`\ s.
 
 Examples
 --------
 >>> import bayesflow as bf  # doctest: +SKIP
->>> approximator = bf.ContinuousApproximator(  # doctest: +SKIP
+>>> estimator = bf.BasicEstimator(  # doctest: +SKIP
 ...     inference_network=bf.networks.CouplingFlow(),
 ...     summary_network=bf.networks.DeepSet(),
 ... )

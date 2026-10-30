@@ -578,7 +578,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
     reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    mock_approximator = bf.approximators.ContinuousApproximator(
+    mock_estimator = bf.estimators.BasicEstimator(
         adapter=adapter,
         inference_network=None,
         summary_network=summary_network,
@@ -587,7 +587,7 @@ def test_mmd_comparison_shapes(summary_network, adapter):
     mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
         observed_data=observed_data,
         reference_data=reference_data,
-        approximator=mock_approximator,
+        estimator=mock_estimator,
         num_null_samples=num_null_samples,
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
@@ -602,7 +602,7 @@ def test_mmd_comparison_positive(summary_network, adapter):
     reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    mock_approximator = bf.approximators.ContinuousApproximator(
+    mock_estimator = bf.estimators.BasicEstimator(
         adapter=adapter,
         inference_network=None,
         summary_network=summary_network,
@@ -611,7 +611,7 @@ def test_mmd_comparison_positive(summary_network, adapter):
     mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
         observed_data=observed_data,
         reference_data=reference_data,
-        approximator=mock_approximator,
+        estimator=mock_estimator,
         num_null_samples=num_null_samples,
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
@@ -626,7 +626,7 @@ def test_mmd_comparison_same_distribution(summary_network, adapter):
     reference_data = observed_data
     num_null_samples = 5
 
-    mock_approximator = bf.approximators.ContinuousApproximator(
+    mock_estimator = bf.estimators.BasicEstimator(
         adapter=adapter,
         inference_network=None,
         summary_network=summary_network,
@@ -635,7 +635,7 @@ def test_mmd_comparison_same_distribution(summary_network, adapter):
     mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
         observed_data=observed_data,
         reference_data=reference_data,
-        approximator=mock_approximator,
+        estimator=mock_estimator,
         num_null_samples=num_null_samples,
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
@@ -649,7 +649,7 @@ def test_mmd_comparison_different_distributions(summary_network, adapter):
     reference_data = dict(observables=np.random.normal(loc=0.5, scale=0.1, size=(100, 5)))
     num_null_samples = 50
 
-    mock_approximator = bf.approximators.ContinuousApproximator(
+    mock_estimator = bf.estimators.BasicEstimator(
         adapter=adapter,
         inference_network=None,
         summary_network=summary_network,
@@ -658,7 +658,7 @@ def test_mmd_comparison_different_distributions(summary_network, adapter):
     mmd_observed, mmd_null = bf.diagnostics.metrics.summary_space_comparison(
         observed_data=observed_data,
         reference_data=reference_data,
-        approximator=mock_approximator,
+        estimator=mock_estimator,
         num_null_samples=num_null_samples,
         comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
     )
@@ -671,7 +671,7 @@ def test_mmd_comparison_no_summary_network(adapter):
     reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    mock_approximator = bf.approximators.ContinuousApproximator(
+    mock_estimator = bf.estimators.BasicEstimator(
         adapter=adapter,
         inference_network=None,
         summary_network=None,
@@ -681,28 +681,28 @@ def test_mmd_comparison_no_summary_network(adapter):
         bf.diagnostics.metrics.summary_space_comparison(
             observed_data=observed_data,
             reference_data=reference_data,
-            approximator=mock_approximator,
+            estimator=mock_estimator,
             num_null_samples=num_null_samples,
             comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
         )
 
 
-def test_mmd_comparison_approximator_incorrect_instance():
-    """Test mmd_comparison raises ValueError for incorrect approximator instance."""
+def test_mmd_comparison_estimator_incorrect_instance():
+    """Test mmd_comparison raises ValueError for incorrect estimator instance."""
     observed_data = dict(observables=np.random.rand(10, 5))
     reference_data = dict(observables=np.random.rand(100, 5))
     num_null_samples = 50
 
-    class IncorrectApproximator:
+    class IncorrectEstimator:
         pass
 
-    mock_approximator = IncorrectApproximator()
+    mock_estimator = IncorrectEstimator()
 
     with pytest.raises(ValueError):
         bf.diagnostics.metrics.summary_space_comparison(
             observed_data=observed_data,
             reference_data=reference_data,
-            approximator=mock_approximator,
+            estimator=mock_estimator,
             num_null_samples=num_null_samples,
             comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
         )

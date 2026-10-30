@@ -14,10 +14,11 @@ def _use_fast_integration(network, steps=8):
         network.integrate_kwargs.update({"steps": steps})
 
 
-def _skip_free_form_flow_density_on_mps(network, density=True):
-    from bayesflow.experimental import FreeFormFlow
+def _skip_log_det_density_on_mps(network, density=True):
+    from bayesflow.experimental import FreeFormFlow, MeanFlow
 
-    if density and isinstance(network, FreeFormFlow):
+    # their densities need slogdet, which fails to compile on MPS
+    if density and isinstance(network, (FreeFormFlow, MeanFlow)):
         skip_torch_linalg_on_mps()
 
 
@@ -71,7 +72,7 @@ def test_variable_batch_size(inference_network, random_samples, random_condition
 
 @pytest.mark.parametrize("density", [True, False])
 def test_output_structure(density, generative_inference_network, random_samples, random_conditions):
-    _skip_free_form_flow_density_on_mps(generative_inference_network, density)
+    _skip_log_det_density_on_mps(generative_inference_network, density)
     _use_fast_integration(generative_inference_network)
     try:
         output = generative_inference_network(random_samples, conditions=random_conditions, density=density)
@@ -92,7 +93,7 @@ def test_output_structure(density, generative_inference_network, random_samples,
 
 
 def test_output_shape(generative_inference_network, random_samples, random_conditions):
-    _skip_free_form_flow_density_on_mps(generative_inference_network)
+    _skip_log_det_density_on_mps(generative_inference_network)
     _use_fast_integration(generative_inference_network)
     try:
         forward_output, forward_log_density = generative_inference_network(
@@ -117,10 +118,13 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
     # cycle-consistency means the forward and inverse methods are inverses of each other
     import bayesflow as bf
 
-    _skip_free_form_flow_density_on_mps(generative_inference_network)
+    _skip_log_det_density_on_mps(generative_inference_network)
 
     if isinstance(generative_inference_network, bf.networks.DiffusionModel):
         pytest.skip(reason="test unstable for untrained diffusion models")
+    if isinstance(generative_inference_network, bf.experimental.MeanFlow):
+        # the flow maps of an untrained mean flow are not inverses of each other, its ODE is
+        generative_inference_network.use_instantaneous_flow = True
     # 50 fixed steps leave a discretization error orders of magnitude below the
     # tolerances while being much cheaper than an adaptive solve
     _use_fast_integration(generative_inference_network, steps=50)
@@ -141,7 +145,7 @@ def test_cycle_consistency(generative_inference_network, random_samples, random_
 @pytest.mark.parametrize(
     "network_name",
     # one representative per density implementation
-    ["affine_coupling_flow", "spline_coupling_flow", "free_form_flow", "flow_matching", "diffusion_model"],
+    ["affine_coupling_flow", "spline_coupling_flow", "free_form_flow", "flow_matching", "diffusion_model", "mean_flow"],
 )
 @pytest.mark.skip_on_mps
 def test_density_numerically(network_name, request):

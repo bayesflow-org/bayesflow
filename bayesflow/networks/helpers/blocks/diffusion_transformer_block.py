@@ -33,6 +33,10 @@ class DiffusionTransformerBlock(keras.Layer):
     per head (QK-norm) before the attention dot product, which stabilizes training
     regardless of the scale of the query/key projections.
 
+    The block is called on ``(x, modulation)`` with the remaining inputs as keyword arguments,
+    or on ``(x, context)`` with the context returned by
+    :meth:`~bayesflow.networks.DiffusionTransformer.embed`.
+
     Parameters
     ----------
     width : int
@@ -141,6 +145,8 @@ class DiffusionTransformerBlock(keras.Layer):
         training: bool | None = None,
     ) -> Tensor:
         x, base_mod = inputs
+        if isinstance(base_mod, (tuple, list)):
+            base_mod, _, conditions, attention_mask, update_mask = base_mod
         residual = x
 
         # adaLN-single: shared modulation from the network-level MLP plus this block's offset.

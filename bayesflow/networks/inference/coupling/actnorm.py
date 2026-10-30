@@ -1,5 +1,6 @@
 from keras import ops
 
+from bayesflow.masking import MaskHandler
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils.serialization import serializable
 
@@ -33,19 +34,31 @@ class ActNorm(InvertibleLayer):
         self.scale = self.add_weight(shape=(xz_shape[-1],), initializer="ones", name="scale")
         self.bias = self.add_weight(shape=(xz_shape[-1],), initializer="zeros", name="bias")
 
-    def call(self, xz: Tensor, inverse: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
+    def call(self, xz: Tensor, inverse: bool = False, target_mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, **kwargs)
-        return self._forward(xz, **kwargs)
+            return self._inverse(xz, mask=target_mask, **kwargs)
+        return self._forward(xz, mask=target_mask, **kwargs)
 
-    def _forward(self, x: Tensor, **kwargs) -> tuple[Tensor, Tensor]:
+    def _forward(self, x: Tensor, mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
         z = self.scale * x + self.bias
-        log_det = ops.sum(ops.log(ops.abs(self.scale)), axis=-1)
+        log_jac = ops.log(ops.abs(self.scale))
+
+        z = MaskHandler.maybe_apply(z, mask, x)
+        log_jac = MaskHandler.maybe_apply(log_jac, mask)
+
+        log_det = ops.sum(log_jac, axis=-1)
         log_det = ops.broadcast_to(log_det, ops.shape(x)[:-1])
+
         return z, log_det
 
-    def _inverse(self, z: Tensor, **kwargs) -> tuple[Tensor, Tensor]:
+    def _inverse(self, z: Tensor, mask: Tensor = None, **kwargs) -> tuple[Tensor, Tensor]:
         x = (z - self.bias) / self.scale
-        log_det = -ops.sum(ops.log(ops.abs(self.scale)), axis=-1)
+        log_jac = -ops.log(ops.abs(self.scale))
+
+        x = MaskHandler.maybe_apply(x, mask, z)
+        log_jac = MaskHandler.maybe_apply(log_jac, mask)
+
+        log_det = ops.sum(log_jac, axis=-1)
         log_det = ops.broadcast_to(log_det, ops.shape(z)[:-1])
+
         return x, log_det

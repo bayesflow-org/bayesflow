@@ -4,7 +4,7 @@ from typing import Literal
 from keras import ops
 
 from bayesflow.types import Tensor
-from bayesflow.utils.serialization import deserialize, serializable
+from bayesflow.utils.serialization import serializable
 
 from .noise_schedule import NoiseSchedule
 
@@ -37,7 +37,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         sigma_max: float = 80.0,
         variance_type: Literal["preserving", "exploding"] = "preserving",
     ):
-        super().__init__(name="edm_noise_schedule", variance_type=variance_type)
+        super().__init__(name="edm_noise_schedule", variance_type=variance_type, weighting="edm")
         self.sigma_data = sigma_data
         # training settings
         self.p_mean = -1.2
@@ -55,7 +55,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         self._log_snr_min_training = self.log_snr_min - 1  # one is never sampler during training
         self._log_snr_max_training = self.log_snr_max + 1  # 0 is almost surely never sampled during training
 
-    def get_log_snr(self, t: float | Tensor, training: bool) -> Tensor:
+    def log_snr(self, t: float | Tensor, training: bool) -> Tensor:
         """Get the log signal-to-noise ratio (lambda) for a given diffusion time."""
         if training:
             # SNR = dist.icdf(1-t)  # Kingma paper wrote -F(t) but this seems to be wrong
@@ -69,7 +69,7 @@ class EDMNoiseSchedule(NoiseSchedule):
             snr = -2 * self.rho * ops.log(sigma_max_rho + (1 - t) * (sigma_min_rho - sigma_max_rho))
         return snr
 
-    def get_t_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
+    def time_from_log_snr(self, log_snr_t: float | Tensor, training: bool) -> Tensor:
         """Get the diffusion time (t) from the log signal-to-noise ratio (lambda)."""
         if training:
             # SNR = dist.icdf(1-t) => t = 1-dist.cdf(snr)  # Kingma paper wrote -F(t) but this seems to be wrong
@@ -90,7 +90,7 @@ class EDMNoiseSchedule(NoiseSchedule):
         if training:
             raise NotImplementedError("Derivative of log SNR is not implemented for training mode.")
         # sampling mode
-        t = self.get_t_from_log_snr(log_snr_t=log_snr_t, training=training)
+        t = self.time_from_log_snr(log_snr_t=log_snr_t, training=training)
 
         # SNR = -2*rho*log(s_max + (1 - x)*(s_min - s_max))
         s_max = self.sigma_max ** (1 / self.rho)
@@ -104,10 +104,16 @@ class EDMNoiseSchedule(NoiseSchedule):
         factor = ops.exp(-log_snr_t) / (1 + ops.exp(-log_snr_t))
         return -factor * dsnr_dx
 
-    def get_weights_for_snr(self, log_snr_t: Tensor) -> Tensor:
+    def weights_for_snr(self, log_snr_t: Tensor, loss_type: str = "noise") -> Tensor:
         """Get weights for the signal-to-noise ratio (snr) for a given log signal-to-noise ratio (lambda)."""
-        # for F-loss: w = (ops.exp(-log_snr_t) + sigma_data^2) / (ops.exp(-log_snr_t)*sigma_data^2)
+        if loss_type == "F":
+            # the EDM weighting of the noise loss is the unweighted F loss
+            return ops.ones_like(log_snr_t)
         return 1 + ops.exp(-log_snr_t) / ops.square(self.sigma_data)
+
+    def validate(self, loss_type: str = "noise"):
+        # the EDM weighting is also defined for the F loss, see weights_for_snr
+        super().validate(loss_type="noise" if loss_type == "F" else loss_type)
 
     def get_config(self):
         config = {
@@ -117,7 +123,3 @@ class EDMNoiseSchedule(NoiseSchedule):
             "variance_type": self._variance_type,
         }
         return config
-
-    @classmethod
-    def from_config(cls, config, custom_objects=None):
-        return cls(**deserialize(config, custom_objects=custom_objects))

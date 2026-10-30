@@ -1,5 +1,6 @@
 from collections.abc import Callable, Mapping, Sequence
 import re
+from typing import Any, Never
 
 import numpy as np
 import pandas as pd
@@ -10,7 +11,7 @@ import keras
 from bayesflow.networks import ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import ModelComparisonSimulator, Simulator
 from bayesflow.adapters import Adapter
-from bayesflow.approximators import ModelComparisonApproximator
+from bayesflow.estimators import ModelComparisonEstimator
 from bayesflow.scoring_rules import CategoricalScoringRule
 from bayesflow.utils import (
     find_scoring_rule,
@@ -101,7 +102,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         - ``summary_kwargs``    : dict — passed to :func:`~bayesflow.utils.find_summary_network`.
         - ``optimizer_kwargs``  : dict — passed to ``_init_optimizer``.
         - ``simulator_kwargs``  : dict — passed to :class:`~bayesflow.simulators.ModelComparisonSimulator`.
-        - Other keys forwarded to :class:`~bayesflow.approximators.ModelComparisonApproximator`.
+        - Other keys forwarded to :class:`~bayesflow.estimators.ModelComparisonEstimator`.
     """
 
     def __init__(
@@ -126,8 +127,8 @@ class ModelComparisonWorkflow(BasicWorkflow):
         use_mixed_batches: bool = True,
         model_names: Sequence[str] | None = None,
         standardize: Sequence[str] | str | None = "all",
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         if isinstance(simulator, Sequence):
             simulator = ModelComparisonSimulator(
                 simulators=simulator,
@@ -145,7 +146,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         resolved_scoring_rules = ModelComparisonWorkflow._resolve_scoring_rules(scoring_rules)
 
-        self.approximator = ModelComparisonApproximator(
+        self.estimator = ModelComparisonEstimator(
             inference_network=ScoringRuleNetwork(
                 scoring_rules=resolved_scoring_rules,
                 subnet=subnet,
@@ -154,57 +155,13 @@ class ModelComparisonWorkflow(BasicWorkflow):
             summary_network=find_summary_network(summary_network, **kwargs.get("summary_kwargs", {})),
             adapter=adapter,
             standardize=standardize,
-            **filter_kwargs(kwargs, ModelComparisonApproximator.__init__),
+            **filter_kwargs(kwargs, ModelComparisonEstimator.__init__),
         )
 
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
-        self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
+        self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only, restore=False)
         self.history = None
         self._needs_compile = True
-
-    @staticmethod
-    def _resolve_scoring_rules(
-        scoring_rules: CategoricalScoringRule
-        | Sequence[CategoricalScoringRule | str]
-        | Mapping[str, CategoricalScoringRule | str]
-        | str
-        | None,
-    ) -> dict[str, CategoricalScoringRule]:
-        """Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.
-
-        Accepts a single rule (or its string name), a list/tuple of scores (or names), or a
-        mapping of names to scores. ``None`` defaults to a single ``CrossEntropyScore``.
-        Scores given without an explicit name (i.e. in a list) are keyed by a snake-cased
-        version of their class name, de-duplicated with a numeric suffix.
-
-        Raises
-        ------
-        TypeError
-            If ``scoring_rules`` is of an unsupported type.
-        """
-
-        if isinstance(scoring_rules, (str, CategoricalScoringRule)):
-            return {"scoring_rule": find_scoring_rule(scoring_rules)}
-
-        if isinstance(scoring_rules, Mapping):
-            resolved = {key: find_scoring_rule(rule) for key, rule in scoring_rules.items()}
-
-        elif isinstance(scoring_rules, Sequence):
-            resolved: dict[str, CategoricalScoringRule] = {}
-            counts: dict[str, int] = {}
-            for item in scoring_rules:
-                rule = find_scoring_rule(item)
-                base = re.sub(r"(?<!^)(?=[A-Z])", "_", type(rule).__name__).lower()
-                counts[base] = counts.get(base, 0) + 1
-                key = base if counts[base] == 1 else f"{base}_{counts[base]}"
-                resolved[key] = rule
-        else:
-            raise TypeError(
-                "`scoring_rules` must be a CategoricalScoringRule, a string name, a list of "
-                f"scores/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
-            )
-
-        return resolved
 
     @staticmethod
     def default_adapter(
@@ -241,7 +198,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         test_data: Mapping[str, np.ndarray] | int,
         estimates: Mapping[str, np.ndarray] | None = None,
         true_log_bfs_fn: Callable | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> dict[str, plt.Figure]:
         r"""
         Generate default diagnostic plots for model comparison.
@@ -389,7 +346,7 @@ class ModelComparisonWorkflow(BasicWorkflow):
         test_data: Mapping[str, np.ndarray] | int,
         estimates: Mapping[str, np.ndarray] | None = None,
         as_data_frame: bool = True,
-        **kwargs,
+        **kwargs: Any,
     ) -> Sequence[dict] | pd.DataFrame:
         """
         Compute default scalar diagnostic metrics for model comparison.
@@ -511,13 +468,57 @@ class ModelComparisonWorkflow(BasicWorkflow):
 
         return metrics
 
-    def sample(self, *args, **kwargs):
+    def sample(self, *args: Any, **kwargs: Any) -> Never:
         raise NotImplementedError("ModelComparisonWorkflow does not support sampling. Use estimate() instead.")
 
-    def log_prob(self, *args, **kwargs):
+    def log_prob(self, *args: Any, **kwargs: Any) -> Never:
         raise NotImplementedError("ModelComparisonWorkflow does not support log_prob().")
 
-    def ancestral_sample(self, *args, **kwargs):
+    def ancestral_sample(self, *args: Any, **kwargs: Any) -> Never:
         raise NotImplementedError(
             "ModelComparisonWorkflow does not support ancestral_sample(). Use estimate() instead."
         )
+
+    @staticmethod
+    def _resolve_scoring_rules(
+        scoring_rules: CategoricalScoringRule
+        | Sequence[CategoricalScoringRule | str]
+        | Mapping[str, CategoricalScoringRule | str]
+        | str
+        | None,
+    ) -> dict[str, CategoricalScoringRule]:
+        """Normalize the ``scoring_rules`` argument to a ``dict[str, CategoricalScoringRule]``.
+
+        Accepts a single rule (or its string name), a list/tuple of scores (or names), or a
+        mapping of names to scores. ``None`` defaults to a single ``CrossEntropyScore``.
+        Scores given without an explicit name (i.e. in a list) are keyed by a snake-cased
+        version of their class name, de-duplicated with a numeric suffix.
+
+        Raises
+        ------
+        TypeError
+            If ``scoring_rules`` is of an unsupported type.
+        """
+
+        if isinstance(scoring_rules, (str, CategoricalScoringRule)):
+            return {"scoring_rule": find_scoring_rule(scoring_rules)}
+
+        if isinstance(scoring_rules, Mapping):
+            resolved = {key: find_scoring_rule(rule) for key, rule in scoring_rules.items()}
+
+        elif isinstance(scoring_rules, Sequence):
+            resolved: dict[str, CategoricalScoringRule] = {}
+            counts: dict[str, int] = {}
+            for item in scoring_rules:
+                rule = find_scoring_rule(item)
+                base = re.sub(r"(?<!^)(?=[A-Z])", "_", type(rule).__name__).lower()
+                counts[base] = counts.get(base, 0) + 1
+                key = base if counts[base] == 1 else f"{base}_{counts[base]}"
+                resolved[key] = rule
+        else:
+            raise TypeError(
+                "`scoring_rules` must be a CategoricalScoringRule, a string name, a list of "
+                f"scores/names, or a dict of name -> rule, got {type(scoring_rules).__name__}."
+            )
+
+        return resolved

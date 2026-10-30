@@ -176,15 +176,21 @@ def weighted_mean(elements: Tensor, weights: Tensor = None) -> Tensor:
     elements : Tensor
         A tensor containing the elements to average.
     weights : Tensor, optional
-        A tensor of the same shape as `elements` representing weights.
-        If None, the mean is computed without weights.
+        Weights aligned with the leading (batch) axis of `elements`, e.g., of shape (batch_size,) or
+        (batch_size, 1). If None, the mean is computed without weights.
 
     Returns
     -------
     Tensor
         A scalar tensor representing the (weighted) mean.
     """
-    return keras.ops.mean(elements * weights if weights is not None else elements)
+    if weights is None:
+        return keras.ops.mean(elements)
+
+    # drop trailing singleton axes, e.g. (batch_size, 1) -> (batch_size,), then broadcast along the batch axis
+    if keras.ops.ndim(weights) > keras.ops.ndim(elements):
+        weights = keras.ops.reshape(weights, keras.ops.shape(weights)[: keras.ops.ndim(elements)])
+    return keras.ops.mean(elements * expand_right_as(weights, elements))
 
 
 def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:

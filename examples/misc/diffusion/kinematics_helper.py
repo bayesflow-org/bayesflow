@@ -4,8 +4,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 import scipy
-from sklearn.cluster import MeanShift
-from sklearn.neighbors import KernelDensity
 
 
 class InverseKinematicsModel:
@@ -51,6 +49,9 @@ class InverseKinematicsModel:
 
     @staticmethod
     def find_MAP(x):
+        from sklearn.cluster import MeanShift
+        from sklearn.neighbors import KernelDensity
+
         mean_shift = MeanShift()
         mean_shift.fit(x)
         centers = mean_shift.cluster_centers_
@@ -130,6 +131,7 @@ class InverseKinematicsModel:
         vline_color="black",
         exemplar_color="#e6e7eb",
         cross_color="maroon",
+        observed_condition_mask=None,
     ):
         x = np.array(x)  # [:4000, :]
         if exemplar is None:
@@ -139,30 +141,37 @@ class InverseKinematicsModel:
         starting_pos[:, 1] = x[:, 0]
         x0, x1 = self.segment_points(starting_pos, self.lens[0], x[:, 1])
         x1, x2 = self.segment_points(x1, self.lens[1], x[:, 1] + x[:, 2])
-        x2, x3 = self.segment_points(x2, self.lens[2], x[:, 1] + x[:, 2] + x[:, 3])
+        has_third_segment = x.shape[-1] > 3
+        if has_third_segment:
+            x2, x3 = self.segment_points(x2, self.lens[2], x[:, 1] + x[:, 2] + x[:, 3])
 
         ax.axvline(x=0, c=vline_color, linewidth=1, alpha=0.8)
 
         if not arrows:
             l_cross = 0.6
-            ax.plot(
-                [y_target[0] - l_cross, y_target[0] + l_cross],
-                [y_target[1], y_target[1]],
-                ls="-",
-                c=cross_color,
-                linewidth=0.8,
-                alpha=1.0,
-                rasterized=True,
-            )  # , zorder=-1)
-            ax.plot(
-                [y_target[0], y_target[0]],
-                [y_target[1] - l_cross, y_target[1] + l_cross],
-                ls="-",
-                c=cross_color,
-                linewidth=0.8,
-                alpha=1.0,
-                rasterized=True,
-            )  # , zorder=-1)
+            observed_condition_mask = (
+                np.ones(2, dtype=bool) if observed_condition_mask is None else observed_condition_mask
+            )
+            if observed_condition_mask[0]:
+                ax.plot(
+                    [y_target[0] - l_cross, y_target[0] + l_cross],
+                    [y_target[1], y_target[1]],
+                    ls="-",
+                    c=cross_color,
+                    linewidth=0.8,
+                    alpha=1.0,
+                    rasterized=True,
+                )
+            if observed_condition_mask[1]:
+                ax.plot(
+                    [y_target[0], y_target[0]],
+                    [y_target[1] - l_cross, y_target[1] + l_cross],
+                    ls="-",
+                    c=cross_color,
+                    linewidth=0.8,
+                    alpha=1.0,
+                    rasterized=True,
+                )
             if target_label:
                 ax.text(
                     y_target[0] + 0.15,
@@ -186,8 +195,10 @@ class InverseKinematicsModel:
         }
         ax.quiver(x0[:, 0], x0[:, 1], (x1 - x0)[:, 0], (x1 - x0)[:, 1], **{"color": self.linecolors[0], **opts})
         ax.quiver(x1[:, 0], x1[:, 1], (x2 - x1)[:, 0], (x2 - x1)[:, 1], **{"color": self.linecolors[1], **opts})
-        ax.quiver(x2[:, 0], x2[:, 1], (x3 - x2)[:, 0], (x3 - x2)[:, 1], **{"color": self.linecolors[2], **opts})
-        ax.scatter(x3[:, 0], x3[:, 1], color=self.linecolors[0], s=1, rasterized=True, alpha=0.20)
+        if has_third_segment:
+            ax.quiver(x2[:, 0], x2[:, 1], (x3 - x2)[:, 0], (x3 - x2)[:, 1], **{"color": self.linecolors[2], **opts})
+        endpoint = x3 if has_third_segment else x2
+        ax.scatter(endpoint[:, 0], endpoint[:, 1], color=self.linecolors[0], s=1, rasterized=True, alpha=0.20)
 
         ax.plot(
             [x0[exemplar, 0], x1[exemplar, 0], x2[exemplar, 0]],
@@ -209,26 +220,28 @@ class InverseKinematicsModel:
             )
             self.arcarrow(x0[exemplar, :], x1[exemplar, :])
             self.arcarrow(x1[exemplar, :], x2[exemplar, :])
-            self.arcarrow(x2[exemplar, :], x3[exemplar, :])
+            if has_third_segment:
+                self.arcarrow(x2[exemplar, :], x3[exemplar, :])
             ax.text(-0.09, -0.60, r"$x_1$", ha="center", va="center", fontsize=10)
             ax.text(0.13, -0.38, r"$x_2$", ha="center", va="center", fontsize=10)
             ax.text(0.60, -0.40, r"$x_3$", ha="center", va="center", fontsize=10)
             ax.text(1.10, -0.44, r"$x_4$", ha="center", va="center", fontsize=10)
             ax.text(1.97, -0.27, r"$\mathbf{y}$", ha="center", va="center", fontsize=10)
 
-        ax.arrow(
-            x2[exemplar, 0],
-            x2[exemplar, 1],
-            x3[exemplar, 0] - x2[exemplar, 0],
-            x3[exemplar, 1] - x2[exemplar, 1],
-            color=exemplar_color,
-            linewidth=2,
-            head_width=0.05,
-            head_length=0.04,
-            overhang=0.1,
-            length_includes_head=True,
-            zorder=4,
-        )
+        if has_third_segment:
+            ax.arrow(
+                x2[exemplar, 0],
+                x2[exemplar, 1],
+                x3[exemplar, 0] - x2[exemplar, 0],
+                x3[exemplar, 1] - x2[exemplar, 1],
+                color=exemplar_color,
+                linewidth=2,
+                head_width=0.05,
+                head_length=0.04,
+                overhang=0.1,
+                length_includes_head=True,
+                zorder=4,
+            )
         ax.scatter(
             [
                 x0[exemplar, 0],

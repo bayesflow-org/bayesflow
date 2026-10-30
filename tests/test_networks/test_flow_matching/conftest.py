@@ -52,15 +52,3 @@ def flow_matching(request):
     from bayesflow.networks import FlowMatching
 
     return FlowMatching(subnet_kwargs=dict(widths=(8, 8)), **request.param)
-
-
-@pytest.fixture()
-def flow_matching_with_masking():
-    from bayesflow.networks import FlowMatching
-
-    return FlowMatching(
-        subnet_kwargs=dict(widths=(8, 8)),
-        fixed_target_prob=0.3,
-        missing_target_prob=0.3,
-        missing_conditions_prob=0.3,
-    )

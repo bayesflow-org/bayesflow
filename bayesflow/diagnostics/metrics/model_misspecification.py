@@ -9,7 +9,7 @@ import numpy as np
 
 import keras
 
-from bayesflow.approximators import ContinuousApproximator
+from bayesflow.estimators import BasicEstimator
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
 
@@ -82,7 +82,7 @@ def bootstrap_comparison(
 def summary_space_comparison(
     observed_data: Mapping[str, np.ndarray],
     reference_data: Mapping[str, np.ndarray],
-    approximator: ContinuousApproximator,
+    estimator: BasicEstimator,
     num_null_samples: int = 100,
     comparison_fn: Callable = maximum_mean_discrepancy,
     **kwargs,
@@ -99,13 +99,13 @@ def summary_space_comparison(
     Parameters
     ----------
     observed_data : dict[str, np.ndarray]
-        Dictionary of observed data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        Dictionary of observed data as NumPy arrays, which will be preprocessed by the estimator's adapter and passed
         through its summary network.
     reference_data : dict[str, np.ndarray]
-        Dictionary of reference data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        Dictionary of reference data as NumPy arrays, which will be preprocessed by the estimator's adapter and passed
         through its summary network.
-    approximator : ContinuousApproximator
-        An instance of :py:class:`~bayesflow.approximators.ContinuousApproximator` used to compute summary statistics
+    estimator : BasicEstimator
+        An instance of :py:class:`~bayesflow.estimators.BasicEstimator` used to compute summary statistics
         from the data.
     num_null_samples : int, optional
         Number of null samples to generate for hypothesis testing. Default is 100.
@@ -124,26 +124,26 @@ def summary_space_comparison(
     Raises
     ------
     ValueError
-        If approximator is not an instance of ContinuousApproximator or does not have a summary network.
+        If estimator is not an instance of BasicEstimator or does not have a summary network.
     """
 
-    if not isinstance(approximator, ContinuousApproximator):
-        raise ValueError("The approximator must be an instance of ContinuousApproximator.")
+    if not isinstance(estimator, BasicEstimator):
+        raise ValueError("The estimator must be an instance of BasicEstimator.")
 
-    if not hasattr(approximator, "summary_network") or approximator.summary_network is None:
+    if not hasattr(estimator, "summary_network") or estimator.summary_network is None:
         comparison_fn_name = (
             "bayesflow.metrics.functional.maximum_mean_discrepancy"
             if comparison_fn is maximum_mean_discrepancy
             else comparison_fn.__name__
         )
         raise ValueError(
-            "The approximator must have a summary network. If you have manually crafted summary "
+            "The estimator must have a summary network. If you have manually crafted summary "
             "statistics, or want to compare raw data and not summary statistics, please use the "
             f"`bootstrap_comparison` function with `comparison_fn={comparison_fn_name}` on the respective arrays."
         )
 
-    observed_summaries = approximator.summarize(observed_data)
-    reference_summaries = approximator.summarize(reference_data)
+    observed_summaries = estimator.summarize(observed_data)
+    reference_summaries = estimator.summarize(reference_data)
 
     distance_observed, distance_null = bootstrap_comparison(
         observed_samples=observed_summaries,

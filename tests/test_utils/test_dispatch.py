@@ -283,10 +283,10 @@ def test_pass_noise_schedule():
         def __init__(self):
             pass
 
-        def get_log_snr(self, t, training):
+        def log_snr(self, t, training):
             pass
 
-        def get_t_from_log_snr(self, log_snr_t, training):
+        def time_from_log_snr(self, log_snr_t, training):
             pass
 
         def derivative_log_snr(self, log_snr_t, training):

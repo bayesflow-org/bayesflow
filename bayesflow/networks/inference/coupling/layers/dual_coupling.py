@@ -70,37 +70,59 @@ class DualCoupling(InvertibleLayer):
             self.coupling2 = None
 
     def call(
-        self, xz: Tensor, conditions: Tensor = None, inverse: bool = False, training: bool = False, **kwargs
+        self,
+        xz: Tensor,
+        conditions: Tensor = None,
+        inverse: bool = False,
+        training: bool = False,
+        target_mask: Tensor = None,
+        **kwargs,
     ) -> tuple[Tensor, Tensor]:
         if inverse:
-            return self._inverse(xz, conditions=conditions, training=training, **kwargs)
-        return self._forward(xz, conditions=conditions, training=training, **kwargs)
+            return self._inverse(xz, conditions=conditions, training=training, mask=target_mask, **kwargs)
+        return self._forward(xz, conditions=conditions, training=training, mask=target_mask, **kwargs)
 
-    def _forward(self, x: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
+    def _forward(
+        self, x: Tensor, conditions: Tensor = None, training: bool = False, mask: Tensor = None, **kwargs
+    ) -> tuple[Tensor, Tensor]:
         """Transform (x1, x2) -> (g(x1; f(x2; x1)), f(x2; x1))"""
         x1, x2 = x[..., : self.pivot], x[..., self.pivot :]
-        (z1, z2), log_det1 = self.coupling1(x1, x2, conditions=conditions, training=training, **kwargs)
+        mask1 = mask2 = None
+        if mask is not None:
+            mask1, mask2 = mask[..., : self.pivot], mask[..., self.pivot :]
+        (z1, z2), log_det1 = self.coupling1(
+            x1, x2, conditions=conditions, training=training, target_mask=mask2, **kwargs
+        )
 
         log_det2 = 0
         if self.pivot:
-            (z2, z1), log_det2 = self.coupling2(z2, z1, conditions=conditions, training=training, **kwargs)
+            (z2, z1), log_det2 = self.coupling2(
+                z2, z1, conditions=conditions, training=training, target_mask=mask1, **kwargs
+            )
 
         log_det = log_det1 + log_det2
         z = keras.ops.concatenate([z1, z2], axis=-1)
 
         return z, log_det
 
-    def _inverse(self, z: Tensor, conditions: Tensor = None, training: bool = False, **kwargs) -> tuple[Tensor, Tensor]:
+    def _inverse(
+        self, z: Tensor, conditions: Tensor = None, training: bool = False, mask: Tensor = None, **kwargs
+    ) -> tuple[Tensor, Tensor]:
         """Transform (g(x1; f(x2; x1)), f(x2; x1)) -> (x1, x2)"""
         z1, z2 = z[..., : self.pivot], z[..., self.pivot :]
+        mask1 = mask2 = None
+        if mask is not None:
+            mask1, mask2 = mask[..., : self.pivot], mask[..., self.pivot :]
 
         log_det2 = 0
         if self.pivot:
             (z2, z1), log_det2 = self.coupling2(
-                z2, z1, conditions=conditions, inverse=True, training=training, **kwargs
+                z2, z1, conditions=conditions, inverse=True, training=training, target_mask=mask1, **kwargs
             )
 
-        (x1, x2), log_det1 = self.coupling1(z1, z2, conditions=conditions, inverse=True, training=training, **kwargs)
+        (x1, x2), log_det1 = self.coupling1(
+            z1, z2, conditions=conditions, inverse=True, training=training, target_mask=mask2, **kwargs
+        )
 
         x = keras.ops.concatenate([x1, x2], axis=-1)
         log_det = log_det1 + log_det2

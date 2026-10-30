@@ -1,4 +1,5 @@
 from collections.abc import Mapping, Sequence, Callable
+from typing import Any
 
 import os
 
@@ -11,7 +12,7 @@ from bayesflow.datasets.ensemble_dataset import EnsembleDataset
 from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetwork
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
-from bayesflow.approximators import EnsembleApproximator, ContinuousApproximator, ScoringRuleApproximator
+from bayesflow.estimators import EnsembleEstimator, BasicEstimator, ScoringRuleEstimator
 from bayesflow.utils import find_inference_network, find_summary_network, logging, filter_kwargs
 
 from .basic_workflow import BasicWorkflow
@@ -19,7 +20,7 @@ from .basic_workflow import BasicWorkflow
 
 class EnsembleWorkflow(BasicWorkflow):
     """
-    Ensemble variant of :class:`~bayesflow.workflows.BasicWorkflow` that trains multiple approximators
+    Ensemble variant of :class:`~bayesflow.workflows.BasicWorkflow` that trains multiple estimators
     jointly, allowing for flexible sharing of network components and training data.
 
     Two construction modes are supported:
@@ -79,7 +80,7 @@ class EnsembleWorkflow(BasicWorkflow):
         Variables to be summarized through the summary network before being used as conditions
         (default is None).
     standardize : Sequence[str] or str, optional
-        Variables to standardize during preprocessing, applied to each member approximator
+        Variables to standardize during preprocessing, applied to each member estimator
         (default is ``"inference_variables"``).
     **kwargs : dict, optional
         Additional arguments for configuring networks, adapters, optimizers, etc.
@@ -103,8 +104,8 @@ class EnsembleWorkflow(BasicWorkflow):
         inference_conditions: Sequence[str] | str | None = None,
         summary_variables: Sequence[str] | str | None = None,
         standardize: Sequence[str] | str | None = "inference_variables",
-        **kwargs,
-    ):
+        **kwargs: Any,
+    ) -> None:
         _inference_networks = {}
         if isinstance(inference_networks, dict):
             if ensemble_size is not None:
@@ -155,14 +156,14 @@ class EnsembleWorkflow(BasicWorkflow):
 
         adapter = adapter or BasicWorkflow.default_adapter(inference_variables, inference_conditions, summary_variables)
 
-        approximators = {}
+        estimators = {}
         for k, v in _inference_networks.items():
             if isinstance(v, ScoringRuleNetwork):
-                constructor = ScoringRuleApproximator
+                constructor = ScoringRuleEstimator
             else:
-                constructor = ContinuousApproximator
+                constructor = BasicEstimator
 
-            approximators[k] = constructor(
+            estimators[k] = constructor(
                 inference_network=v,
                 summary_network=_summary_networks.get(k, None),
                 adapter=adapter,
@@ -170,14 +171,12 @@ class EnsembleWorkflow(BasicWorkflow):
                 **filter_kwargs(kwargs, constructor.__init__),
             )
 
-        self.approximator = EnsembleApproximator(
-            approximators=approximators, **filter_kwargs(kwargs, EnsembleApproximator.__init__)
-        )
+        self.estimator = EnsembleEstimator(estimators=estimators, **filter_kwargs(kwargs, EnsembleEstimator.__init__))
 
-        self.member_names = tuple(self.approximator.approximators.keys())
+        self.member_names = tuple(self.estimator.estimators.keys())
 
         self._init_optimizer(initial_learning_rate, optimizer, **kwargs.get("optimizer_kwargs", {}))
-        self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only)
+        self._init_checkpointing(checkpoint_filepath, checkpoint_name, save_weights_only, save_best_only, restore=False)
         self.history = None
         self._needs_compile = True
 
@@ -190,10 +189,10 @@ class EnsembleWorkflow(BasicWorkflow):
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int | None = None,
         augmentations: Mapping[str, Callable] | Callable | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> keras.callbacks.History:
         """
-        Train the ensemble of approximators offline using a fixed dataset. This approach will be faster than online
+        Train the ensemble of estimators offline using a fixed dataset. This approach will be faster than online
         training, since no computation time is spent in generating new data for each batch,
         but it assumes that simulations can fit in memory.
 
@@ -259,10 +258,10 @@ class EnsembleWorkflow(BasicWorkflow):
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int | None = None,
         augmentations: Mapping[str, Callable] | Callable | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> keras.callbacks.History:
         """
-        Train the ensemble of approximators using an online data-generating process. The dataset is dynamically
+        Train the ensemble of estimators using an online data-generating process. The dataset is dynamically
         generated during training, making this approach suitable for scenarios where generating new simulations
         is computationally cheap.
 
@@ -329,10 +328,10 @@ class EnsembleWorkflow(BasicWorkflow):
         keep_optimizer: bool = False,
         validation_data: Mapping[str, np.ndarray] | int | None = None,
         augmentations: Mapping[str, Callable] | Callable | None = None,
-        **kwargs,
+        **kwargs: Any,
     ) -> keras.callbacks.History:
         """
-        Train the ensemble of approximators using data stored on disk. This approach is suitable for large sets of
+        Train the ensemble of estimators using data stored on disk. This approach is suitable for large sets of
         simulations that don't fit in memory.
 
         Parameters

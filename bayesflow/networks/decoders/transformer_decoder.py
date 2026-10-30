@@ -12,7 +12,7 @@ class TransformerDecoder(keras.Layer):
     """Causal transformer decoder for autoregressive target sequences.
 
     Alternates causal self-attention over shifted targets with unrestricted
-    cross-attention over encoded summaries. In ``AutoregressiveApproximator``,
+    cross-attention over encoded summaries. In ``AutoregressiveEstimator``,
     it creates one condition per target time step for teacher forcing and cached
     autoregressive sampling.
 

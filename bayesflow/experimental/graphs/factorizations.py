@@ -1,81 +1,69 @@
 import itertools
-from collections import defaultdict
+from typing import TYPE_CHECKING
 
-import sympy as sp
+import numpy as np
 
-from .expanded_graph import ExpandedGraph
 from .inverted_graph import InvertedGraph
-from .simulation_graph import SimulationNode
+
+if TYPE_CHECKING:
+    from .expanded_graph import ExpandedGraph
 
 
-def select_factorization(factorizations: list[InvertedGraph]):
-    """
-    Selects an inverse factorization based on the minimum expected number of sequentially inferred groups,
-    using the number of inference networks and number of summary networks as potential tie breakers.
-    """
-    simulation_graph = factorizations[0].simulation_graph
-    meta_fn = simulation_graph.meta_fn
-    draws = [meta_fn() for _ in range(1000)] if meta_fn else [{}]
-    average_meta = {sp.Symbol(key): sum(d[key] for d in draws) / 1000 for key in draws[0]}
+def enumerate_factorizations(expanded_graph: "ExpandedGraph") -> list[InvertedGraph]:
+    simulation_graph = expanded_graph.simulation_graph
 
-    def cost(factorization):
-        inferred_nodes = set(itertools.chain.from_iterable(factorization.network_composition().values()))
-        non_amortizable_nodes = inferred_nodes - set(factorization.amortizable_nodes())
-        reps = [simulation_graph.nodes[node]["reps"] for node in non_amortizable_nodes]
-
-        sequentially = sp.Add(*[sp.Symbol(r) if isinstance(r, str) else sp.Integer(r) for r in reps])
-        inference_networks = len(factorization.inference_variable_shapes())
-        summary_networks = len(factorization.summary_network_input_shapes())
-
-        return (round(float(sequentially.subs(average_meta.items()))), inference_networks, summary_networks)
-
-    return min(factorizations, key=cost)
-
-
-def enumerate_factorizations(expanded_graph: ExpandedGraph) -> list[InvertedGraph]:
-    """
-    Returns a list of all possible inverse factorizations.
-    """
-    node_mapping = node_name_mapping(expanded_graph)
-
-    latent_nodes = [
-        group for group, nodes in node_mapping.items() if any(expanded_graph.out_degree(n) != 0 for n in nodes)
-    ]
+    latent = []
+    for variable in sorted(simulation_graph):
+        if simulation_graph.out_degree(variable) > 0:
+            latent.append(variable)
 
     factorizations = []
-
-    for permutation in itertools.permutations(latent_nodes):
-        expanded_nodes = to_expanded_nodes(list(permutation), node_mapping)
-        factorizations.append(expanded_graph.invert(node_ordering=expanded_nodes))
+    for ordering in itertools.permutations(latent):
+        factorizations.append(expanded_graph.invert(list(ordering)))
 
     return factorizations
 
 
-def node_name_mapping(expanded_graph: ExpandedGraph):
-    """
-    Creates a dictionary with node names of the simulation graph as keys, and a list of
-    corresponding node names in the expanded graph as values.
-    """
-    original_node_names = expanded_graph.original_node_names()
-    name_mapping = defaultdict(list)
+def select_factorization(factorizations: list[InvertedGraph]) -> InvertedGraph:
+    simulation_graph = factorizations[0].expanded_graph.simulation_graph
+    mean_reps = mean_repetitions(simulation_graph)
 
-    for expanded, original in original_node_names.items():
-        original = tuple(original) if isinstance(original, list) else (original,)
-        name_mapping[original].append(expanded)
+    # the cost is the expected number of instances that are inferred sequentially
+    costs = []
+    for factorization in factorizations:
+        cost = 0
 
-    name_mapping = dict(name_mapping)
+        for variable in simulation_graph:
+            if not factorization.is_amortizable(variable):
+                cost += mean_reps[variable]
 
-    return name_mapping
+        costs.append(cost)
+
+    return factorizations[np.argmin(costs)]
 
 
-def to_expanded_nodes(node_list: list[tuple[SimulationNode, ...]], node_mapping: dict):
-    """
-    Takes a list of nodes in the simulation graph and converts it into a list of nodes
-    in the expanded graph. For this, simulation nodes are replaced with all splits
-    of expanded nodes.
-    """
-    expanded_nodes = []
-    for node in node_list:
-        expanded_nodes.extend(node_mapping[node])
+def mean_repetitions(simulation_graph, num_samples: int = 1000) -> dict[str, float]:
+    mean_meta = {}
+    if simulation_graph.meta_fn:
+        meta_samples = []
+        for _ in range(num_samples):
+            meta_samples.append(simulation_graph.meta_fn())
 
-    return expanded_nodes
+        for key in meta_samples[0]:
+            mean_meta[key] = np.mean([sample[key] for sample in meta_samples])
+
+    mean_reps = {}
+    for variable in simulation_graph:
+        if simulation_graph.out_degree(variable) == 0:
+            continue
+
+        reps = simulation_graph.nodes[variable].get("reps", 1)
+
+        if callable(reps):
+            mean_reps[variable] = np.mean(reps(size=num_samples))
+        elif isinstance(reps, str):
+            mean_reps[variable] = mean_meta[reps]
+        else:
+            mean_reps[variable] = reps
+
+    return mean_reps

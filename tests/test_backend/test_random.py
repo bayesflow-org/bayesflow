@@ -3,7 +3,7 @@ import numpy as np
 import pytest
 
 
-@pytest.mark.skipif(keras.backend.backend() != "jax", reason="JAX-only helper.")
+@pytest.mark.skipif(keras.config.backend() != "jax", reason="JAX-only helper.")
 def test_time_folded_uniform_varies_with_time_and_traces():
     import jax
 

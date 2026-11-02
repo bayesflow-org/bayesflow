@@ -33,6 +33,8 @@ class Concatenate(Transform):
     )
     """
 
+    is_permutation = True
+
     def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, indices: list | None = None):
         self.keys = keys
         self.into = into

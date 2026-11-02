@@ -301,10 +301,11 @@ def test_compositional_minibatch_slices_condition_masks_and_repeats_attention(ta
         )
     )
     seed = 1731
+    time = 0.5
 
     network.compositional_score(
         targets,
-        time=0.5,
+        time=time,
         conditions=compositional_conditions,
         seed=keras.random.SeedGenerator(seed),
         compute_prior_score=lambda value, time: keras.ops.zeros_like(value),
@@ -314,10 +315,11 @@ def test_compositional_minibatch_slices_condition_masks_and_repeats_attention(ta
         clip=None,
     )
 
-    if keras.backend.backend() == "jax":
+    if keras.config.backend() == "jax":
         from bayesflow._backend._jax.random import time_folded_uniform
 
-        ranks = time_folded_uniform((2, 3), keras.random.SeedGenerator(seed), 0.5)
+        # on jax, the mini-batch draw is keyed by the score time as well
+        ranks = time_folded_uniform((2, 3), keras.random.SeedGenerator(seed), time)
     else:
         ranks = keras.random.uniform((2, 3), seed=keras.random.SeedGenerator(seed))
     _, indices = keras.ops.top_k(-ranks, 2)

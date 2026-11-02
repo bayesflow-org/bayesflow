@@ -27,6 +27,8 @@ class ToArray(ElementwiseTransform):
             [3, 4]])
     """
 
+    is_permutation = True
+
     def __init__(self, original_type: type = None):
         super().__init__()
         self.original_type = original_type

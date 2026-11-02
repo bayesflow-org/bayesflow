@@ -49,6 +49,10 @@ class FilterTransform(Transform):
 
         self.transform_map = transform_map or {}
 
+    @property
+    def is_permutation(self) -> bool:
+        return self.transform_constructor.is_permutation
+
     def __repr__(self):
         if e := self.extra_repr():
             return f"{self.transform_constructor.__name__}({e})"

@@ -26,6 +26,8 @@ class Rename(Transform):
     )
     """
 
+    is_permutation = True
+
     def __init__(self, from_key: str, to_key: str):
         super().__init__()
         self.from_key = from_key

@@ -19,6 +19,8 @@ class ConvertDType(ElementwiseTransform):
         Target dtype
     """
 
+    is_permutation = True
+
     def __init__(self, from_dtype: str, to_dtype: str):
         super().__init__()
 

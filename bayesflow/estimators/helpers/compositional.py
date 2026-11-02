@@ -5,7 +5,6 @@ import keras
 
 from bayesflow._backend import vjp
 from bayesflow.adapters import Adapter
-from bayesflow.adapters.transforms import Concatenate, ConvertDType, FilterTransform, Rename, ToArray
 from bayesflow.types import Tensor
 
 
@@ -61,7 +60,7 @@ def build_prior_score_fn(
         std = mean = None
 
     # adapters that only move values around have a permutation Jacobian (J^T = J^-1, log |det J| = 0),
-    permutation_adapter = all(_is_permutation(transform) for transform in adapter.transforms)
+    permutation_adapter = all(transform.is_permutation for transform in adapter.transforms)
 
     def _prior_score(adapted_samples: dict[str, Tensor], time: Tensor) -> dict[str, Tensor]:
         if prior_has_time:
@@ -108,10 +107,3 @@ def build_prior_score_fn(
         return out
 
     return _step
-
-
-def _is_permutation(transform) -> bool:
-    """Whether ``transform`` only renames, concatenates, or casts values, i.e., has a permutation Jacobian."""
-    if isinstance(transform, FilterTransform):
-        return issubclass(transform.transform_constructor, (ToArray, ConvertDType))
-    return isinstance(transform, (Rename, Concatenate))

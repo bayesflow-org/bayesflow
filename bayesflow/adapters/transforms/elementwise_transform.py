@@ -9,6 +9,9 @@ from typing import Union
 class ElementwiseTransform:
     """Base class on which other transforms are based"""
 
+    #: Whether the transform only moves values around, i.e., has a permutation Jacobian.
+    is_permutation = False
+
     def __call__(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         if inverse:
             return self.inverse(data, **kwargs)

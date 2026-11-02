@@ -1353,7 +1353,7 @@ class DiffusionModel(InferenceNetwork):
         batch_size, num_items = ops.shape(conditions)[:2]
         observed_condition_mask = masks.observed_condition_mask
         if mini_batch_size < num_items:
-            if keras.backend.backend() == "jax":
+            if keras.config.backend() == "jax":
                 from bayesflow._backend._jax.random import time_folded_uniform
 
                 ranks = time_folded_uniform((batch_size, num_items), seed, time)
@@ -1453,7 +1453,7 @@ class DiffusionModel(InferenceNetwork):
         mini_batch_size = integrate_kwargs.pop("mini_batch_size", max(num_items * 0.1, 2))
         mini_batch_size = num_items if mini_batch_size is None else min(max(int(mini_batch_size), 1), num_items)
         # jax cannot advance a SeedGenerator inside the solver loop
-        item_seed = seed.next() if keras.backend.backend() == "jax" else seed
+        item_seed = seed.next() if keras.config.backend() == "jax" else seed
 
         score_kwargs = {
             "clip": integrate_kwargs.pop("clip", (-3, 3)),

@@ -80,6 +80,40 @@ class TestFastPathGating:
         assert calls["n"] == 1
         assert calls["kwargs"]["flash_attention"] is False
 
+    @pytest.mark.parametrize("attention_dtype", ["float16", "bfloat16"])
+    def test_attention_dtype_casts_qkv_and_restores_output_dtype(self, monkeypatch, x, attention_dtype):
+        attn = FlashMultiHeadAttention(
+            key_dim=8,
+            num_heads=2,
+            dropout=0.0,
+            flash_attention=False,
+            attention_dtype=attention_dtype,
+        )
+        calls = spy_on_dot_product_attention(monkeypatch)
+
+        output = attn(query=x, key=x, value=x, training=False)
+
+        assert calls["n"] == 1
+        assert calls["kwargs"]["query"].dtype == attention_dtype
+        assert calls["kwargs"]["key"].dtype == attention_dtype
+        assert calls["kwargs"]["value"].dtype == attention_dtype
+        assert output.dtype == x.dtype
+
+    def test_attention_dtype_default_does_not_cast(self, monkeypatch, x):
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=False)
+        calls = spy_on_dot_product_attention(monkeypatch)
+
+        output = attn(query=x, key=x, value=x, training=False)
+
+        assert calls["kwargs"]["query"].dtype == x.dtype
+        assert calls["kwargs"]["key"].dtype == x.dtype
+        assert calls["kwargs"]["value"].dtype == x.dtype
+        assert output.dtype == x.dtype
+
+    def test_invalid_attention_dtype_raises(self):
+        with pytest.raises(ValueError, match="`attention_dtype` must be one of"):
+            FlashMultiHeadAttention(key_dim=8, num_heads=2, attention_dtype="float32")
+
     def test_default_flash_attention_respects_global_disabling(self, monkeypatch, x):
         # Regression test: `flash_attention=None` (the default) must defer to
         # `keras.config.disable_flash_attention()` rather than always attempting flash attention
@@ -175,6 +209,19 @@ class TestFlashAttentionPropagation:
         pma = PoolingByMultiHeadAttention(embed_dim=8, num_heads=2, flash_attention=False)
         assert pma.mab.attention._fast_path_flash_attention is False
 
+    def test_set_transformer_propagates_attention_dtype(self):
+        st = SetTransformer(
+            summary_dim=4,
+            embed_dims=(8,),
+            num_heads=(2,),
+            mlp_depths=(2,),
+            mlp_widths=(32,),
+            attention_dtype="bfloat16",
+        )
+
+        assert st.attention_blocks.layers[0].attention._attention_dtype == "bfloat16"
+        assert st.pooling_by_attention.mab.attention._attention_dtype == "bfloat16"
+
     def test_set_transformer_propagates_flash_attention_setting(self, x):
         st = SetTransformer(
             summary_dim=4, embed_dims=(8, 8), num_heads=(2, 2), num_inducing_points=3, flash_attention=False
@@ -197,7 +244,13 @@ class TestSetTransformerISAB:
 
 class TestSerialization:
     def test_flash_multihead_attention_round_trip(self, x):
-        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, dropout=0.2, flash_attention=False)
+        attn = FlashMultiHeadAttention(
+            key_dim=8,
+            num_heads=2,
+            dropout=0.2,
+            flash_attention=False,
+            attention_dtype="float16",
+        )
         attn(query=x, key=x, value=x, training=False)  # build
 
         config = serialize(attn)
@@ -205,6 +258,7 @@ class TestSerialization:
 
         assert reloaded._dropout == 0.2
         assert reloaded._fast_path_flash_attention is False
+        assert reloaded._attention_dtype == "float16"
         assert keras.tree.lists_to_tuples(config) == keras.tree.lists_to_tuples(serialize(reloaded))
 
     def test_set_transformer_isab_flash_attention_round_trip(self, x):
@@ -216,6 +270,7 @@ class TestSerialization:
             mlp_widths=(32,),
             num_inducing_points=3,
             flash_attention=False,
+            attention_dtype="bfloat16",
         )
         st(x, training=False)
 
@@ -226,3 +281,6 @@ class TestSerialization:
         for block in reloaded.attention_blocks.layers:
             assert block.mab0.attention._fast_path_flash_attention is False
             assert block.mab1.attention._fast_path_flash_attention is False
+            assert block.mab0.attention._attention_dtype == "bfloat16"
+            assert block.mab1.attention._attention_dtype == "bfloat16"
+        assert reloaded.pooling_by_attention.mab.attention._attention_dtype == "bfloat16"

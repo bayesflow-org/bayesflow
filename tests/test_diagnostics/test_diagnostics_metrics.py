@@ -5,6 +5,7 @@ from scipy.special import expit
 from scipy.stats import binom
 
 import bayesflow as bf
+from bayesflow.utils.exceptions import ShapeError
 
 
 def num_variables(x: dict):
@@ -237,6 +238,61 @@ def test_classifier_two_sample_test(random_samples_a, random_samples_b):
     keys = ("score", "auc", "regression_statistic", "conformal_p_value")
     assert all(first[key] == second[key] for key in keys)
     assert any(first[key] != other[key] for key in keys)
+
+
+def test_local_classifier_two_sample_test():
+    c2st = bf.diagnostics.metrics.classifier_two_sample_test
+    rng = np.random.default_rng(2026)
+    n = 1000
+
+    # true pairs (theta, x) against approximate pairs whose parameters ignore the observation
+    theta = rng.normal(size=(n, 2))
+    x = theta + 0.1 * rng.normal(size=(n, 2))
+    theta_approx = rng.normal(size=(n, 2))
+
+    # flat conditions are appended as columns; the marginals of theta agree, so only the local test detects it
+    metric = c2st(estimates=theta_approx, targets=theta, conditions=x, cross_validation_splits=1, max_epochs=30)
+    assert metric > 0.7
+
+    # set-valued conditions are summarized by a summary network trained jointly with the classifier
+    x_set = theta[:, None, :] + 0.1 * rng.normal(size=(n, 10, 2))
+    results = c2st(
+        estimates=theta_approx,
+        targets=theta,
+        conditions=x_set,
+        summary_network=bf.networks.DeepSet(summary_dim=4),
+        cross_validation_splits=1,
+        max_epochs=30,
+        return_metric_only=False,
+    )
+    assert results["score"] > 0.7
+    assert len(results["classifiers"][0].inputs) == 2
+
+
+def test_classifier_two_sample_test_sklearn(random_samples_a, random_samples_b):
+    ensemble = pytest.importorskip("sklearn.ensemble")
+    c2st = bf.diagnostics.metrics.classifier_two_sample_test
+    forest = ensemble.RandomForestClassifier(n_estimators=5, random_state=0)
+
+    # a scikit-learn style instance (cloned, not fit) and a class or callable building one are accepted
+    for classifier in (forest, ensemble.RandomForestClassifier):
+        results = c2st(
+            estimates=random_samples_a[:1000],
+            targets=random_samples_b[:1000],
+            classifier=classifier,
+            cross_validation_splits=2,
+            return_metric_only=False,
+        )
+        assert results["score"] > 0.55 and results["auc"] > 0.55 and results["conformal_p_value"] < 0.01
+        assert all(isinstance(c, ensemble.RandomForestClassifier) for c in results["classifiers"])
+    assert not hasattr(forest, "estimators_")
+
+    # local C2ST with flat conditions; the marginals of theta agree, so only the observations reveal the difference
+    rng = np.random.default_rng(2026)
+    theta = rng.normal(size=(1000, 2))
+    x = theta + 0.1 * rng.normal(size=(1000, 2))
+    metric = c2st(estimates=rng.normal(size=(1000, 2)), targets=theta, conditions=x, classifier=forest)
+    assert metric > 0.7
 
 
 def test_classifier_two_sample_test_statistics():

@@ -14,9 +14,11 @@ from bayesflow.networks import MLP
 def classifier_two_sample_test(
     estimates: np.ndarray,
     targets: np.ndarray,
+    conditions: np.ndarray | None = None,
+    summary_network: keras.Layer | None = None,
     metric: str = "accuracy",
     patience: int = 5,
-    min_epochs: int = 5,
+    min_epochs: int = 20,
     max_epochs: int = 100,
     batch_size: int = 128,
     initial_learning_rate: float = 5e-4,
@@ -54,18 +56,29 @@ def classifier_two_sample_test(
     [4] Yao, Y., & Domke, J. (2023). Discriminative calibration: Check Bayesian computation from simulations
     and flexible classifier. NeurIPS 2023. arXiv:2305.14593.
 
+    [5] Linhart, J., Gramfort, A., & Rodrigues, P. (2023). L-C2ST: Local Diagnostics for Posterior
+    Approximations in Simulation-Based Inference. NeurIPS 2023.
+
     Parameters
     ----------
     estimates : np.ndarray
         Array of shape (num_samples_est, num_variables), e.g., approximate posterior samples.
     targets : np.ndarray
         Array of shape (num_samples_tar, num_variables), e.g., samples from a reference posterior.
+    conditions : np.ndarray, optional
+        Observations of shape (num_samples, ...) for the local C2ST [5]. The classifier distinguishes true pairs
+        ``(theta_i, x_i)`` from approximate pairs ``(theta~_i, x_i)`` with ``theta~_i ~ q(theta | x_i)``.
+        Requires equally many estimates, targets and conditions. Default is None.
+    summary_network : keras.Layer, optional
+        A summary network (e.g., from :py:mod:`bayesflow.networks`) applied only to the ``conditions``.
+        Its outputs, which must be flat vectors, are appended to the parameters and fed to the classifier,
+        and both are trained jointly. Default is None.
     metric : str
         Classifier metric in [0, 1] where larger is better; mapped to >= 0.5. Default is "accuracy".
     patience : int
         Number of epochs without improvement after which training stops. Default is 5.
     min_epochs : int
-        Number of warm-up epochs during which early stopping is disabled. Default is 5.
+        Number of warm-up epochs during which early stopping is disabled. Default is 20.
     max_epochs : int
         Maximum number of epochs to train the classifier. Default is 100.
     batch_size : int
@@ -89,11 +102,16 @@ def classifier_two_sample_test(
     mlp_widths : Sequence[int] or "auto"
         Hidden layer widths of the default MLP. 'auto' uses two layers of the smallest power of two above
         10 times the number of variables. Ignored if ``classifier`` is passed. Default is 'auto'.
-    classifier : keras.Model or callable, optional
-        Classifier to use instead of the default MLP: a Keras model (cloned) or a callable returning one.
-        It must map (num_samples, num_variables) to a probability in [0, 1]; uncompiled models are compiled
-        with AdamW, binary cross-entropy and `metric``. If it ends in a dense sigmoid unit (like the default MLP),
-        its pre-sigmoid log-odds are used as scores for the rank-based statistics. Default is None.
+    classifier : keras.Model, scikit-learn classifier, class or callable, optional
+        Classifier to use instead of the default MLP. For example:
+        - ``keras.Sequential([keras.layers.Dense(64, activation="relu"), keras.layers.Dense(1, "sigmoid")])``.
+        - ``sklearn.ensemble.RandomForestClassifier`` or an instance with your settings,
+        e.g. ``RandomForestClassifier(n_estimators=500)``.
+        - ``tabpfn.TabPFNClassifier()``.
+        - Any other scikit-learn classifier, e.g. ``sklearn.neural_network.MLPClassifier(max_iter=1000)``.
+
+        Scikit-learn like classifiers are trained on all training samples without early stopping
+        or class weights and cannot be combined with a ``summary_network``. Default is None.
     conformal : bool, optional
         Whether to additionally compute the conformal two-sample test of [3] (their budget-matched
         "multiple" variant), which calibrates the ranks of the held-out scores without re-training and
@@ -103,7 +121,7 @@ def classifier_two_sample_test(
         Number of label permutations for permutation p-values of the classification metric, the regression
         statistic and the AUC, with resolution ``1 / (num_permutations + 1)``. Default is 0 (no test).
     seed : int, optional
-        Seed for reproduciblity. Default is None (non-deterministic).
+        Seed for reproducibility. Default is None (non-deterministic).
     **kwargs
         Additional keyword arguments. Recognized keyword:
             mlp_kwargs : dict
@@ -123,7 +141,21 @@ def classifier_two_sample_test(
         )
 
     num_estimates, num_targets = estimates.shape[0], targets.shape[0]
-    if num_estimates != num_targets:
+    if conditions is None and summary_network is not None:
+        raise ValueError("A summary_network can only be passed together with conditions.")
+    if conditions is not None:
+        if not num_estimates == num_targets == conditions.shape[0]:
+            raise ShapeError(
+                f"The local C2ST appends conditions[i] to both estimates[i] and targets[i], so all three must have "
+                f"the same number of samples. Found: {num_estimates} estimates, {num_targets} targets, "
+                f"{conditions.shape[0]} conditions."
+            )
+        if summary_network is None and conditions.ndim != 2:
+            raise ShapeError(
+                f"Without a summary_network, every condition must be a flat vector, i.e. conditions must have "
+                f"shape (num_samples, num_condition_variables), but found shape {conditions.shape}."
+            )
+    elif num_estimates != num_targets:
         logging.warning(
             f"Found {num_estimates} estimates but {num_targets} targets. The classifier is trained with class weights "
             "to compensate, but the classification metric is still dominated by the ratio of the two sample sizes. "
@@ -137,21 +169,38 @@ def classifier_two_sample_test(
     rng = np.random.default_rng(seed)
     seed_generator = keras.random.SeedGenerator(seed)
 
-    if mlp_widths == "auto":
-        widths = 2 ** int(np.ceil(np.log2(10 * num_dims)))
-        mlp_widths = [widths, widths]
-
     data = np.r_[estimates, targets]
     labels = np.r_[np.zeros((num_estimates,)), np.ones((num_targets,))]
+    if conditions is not None and summary_network is None:
+        data = np.c_[data, np.r_[conditions, conditions]]
+
+    # Number of classifier inputs after appending the (summarized) conditions
+    input_dims = data.shape[1]
+    if summary_network is not None:
+        summary_shape = summary_network.compute_output_shape((1, *conditions.shape[1:]))
+        if len(summary_shape) != 2:
+            raise ShapeError(
+                f"The summary_network must output a flat vector for every condition, but its output for a "
+                f"batch of shape (1, *{conditions.shape[1:]}) has shape {tuple(summary_shape)}."
+            )
+        input_dims += summary_shape[-1]
+
+    if mlp_widths == "auto":
+        widths = 2 ** int(np.ceil(np.log2(10 * input_dims)))
+        mlp_widths = [widths, widths]
 
     # Standardize the pooled samples
     if standardize:
         data_std = np.std(data, axis=0)
         data = (data - np.mean(data, axis=0)) / np.where(data_std == 0, 1.0, data_std)
 
+    if summary_network is not None:
+        data = (data, np.r_[conditions, conditions])
+
     split_kwargs = {
         "data": data,
         "classifier": classifier,
+        "summary_network": summary_network,
         "mlp_widths": mlp_widths,
         "mlp_kwargs": kwargs.get("mlp_kwargs", {}),
         "metric": metric,
@@ -165,6 +214,7 @@ def classifier_two_sample_test(
         "early_stopping_split": early_stopping_split,
         "rng": rng,
         "seed_generator": seed_generator,
+        "paired": conditions is not None,
     }
 
     folds = fit_splits(split_labels=labels, **split_kwargs)
@@ -211,7 +261,8 @@ def classifier_two_sample_test(
         # procedure on permuted labels samples from the null distribution of the statistics
         observed = results
         null_summaries = (
-            summarize(fit_splits(split_labels=rng.permutation(labels), **split_kwargs)) for _ in range(num_permutations)
+            summarize(fit_splits(split_labels=_permute_labels(labels, conditions is not None, rng), **split_kwargs))
+            for _ in range(num_permutations)
         )
 
         null_statistics = {key: [] for key in test_statistics}
@@ -241,30 +292,52 @@ def build_classifier(
     metric: str,
     learning_rate: float | keras.optimizers.schedules.LearningRateSchedule,
     seed_generator: keras.random.SeedGenerator,
+    summary_network: keras.Layer | None = None,
+    input_shapes: tuple[tuple, tuple] | None = None,
 ) -> keras.Model:
-    """Build a freshly initialized classifier."""
+    """Build a freshly initialized classifier, optionally with a summary network for the conditions."""
     if classifier is None:
         mlp_kwargs = dict(mlp_kwargs)
         initializer = mlp_kwargs.pop("kernel_initializer", "he_normal")
         mlp_kwargs["kernel_initializer"] = _seed_initializer(initializer, seed_generator)
         mlp_kwargs.setdefault("dropout", 0.1)
-        model = keras.Sequential(
-            [
-                MLP(widths=mlp_widths, **mlp_kwargs),
-                keras.layers.Dense(
-                    units=1,
-                    activation="sigmoid",
-                    kernel_initializer=keras.initializers.GlorotUniform(seed=seed_generator),
-                ),
-            ]
-        )
+        layers = [
+            MLP(widths=mlp_widths, **mlp_kwargs),
+            keras.layers.Dense(
+                units=1,
+                activation="sigmoid",
+                kernel_initializer=keras.initializers.GlorotUniform(seed=seed_generator),
+            ),
+        ]
+        model = keras.Sequential(layers) if summary_network is None else layers
     elif isinstance(classifier, keras.Model):
         # Cloning keeps the compile configuration, but re-initializes the weights
         model = keras.models.clone_model(classifier)
+    elif _is_sklearn_classifier(classifier):
+        # Unfitted copy with the same hyperparameters, like sklearn.base.clone
+        model = type(classifier)(**classifier.get_params(deep=False))
     elif callable(classifier):
         model = classifier()
     else:
-        raise TypeError(f"classifier must be a keras.Model or a callable returning one, but found: {classifier}")
+        raise TypeError(
+            f"classifier must be a keras.Model, a scikit-learn style classifier or a callable returning one, "
+            f"but found: {classifier}"
+        )
+
+    if _is_sklearn_classifier(model):
+        if summary_network is not None:
+            raise ValueError("A summary_network can only be trained jointly with a Keras classifier.")
+        return model
+
+    if summary_network is not None:
+        # Copy of the summary network, trained jointly with the classifier on (theta, summary(x))
+        summary_network = summary_network.__class__.from_config(summary_network.get_config())
+        parameters, conditions = keras.Input(input_shapes[0]), keras.Input(input_shapes[1])
+        outputs = keras.layers.Concatenate(axis=-1)([parameters, summary_network(conditions)])
+        # The default layers are applied one by one, so the final sigmoid unit stays visible to _predict_scores
+        for layer in model if isinstance(model, list) else [model]:
+            outputs = layer(outputs)
+        model = keras.Model([parameters, conditions], outputs)
 
     if not model.compiled:
         model.compile(
@@ -278,9 +351,10 @@ def build_classifier(
 
 def fit_splits(
     *,
-    data: np.ndarray,
+    data: np.ndarray | tuple[np.ndarray, np.ndarray],
     split_labels: np.ndarray,
     classifier: keras.Model | Callable[[], keras.Model] | None,
+    summary_network: keras.Layer | None,
     mlp_widths: Sequence[int],
     mlp_kwargs: Mapping[str, Any],
     metric: str,
@@ -294,11 +368,14 @@ def fit_splits(
     early_stopping_split: float,
     rng: np.random.Generator,
     seed_generator: keras.random.SeedGenerator,
+    paired: bool = False,
 ) -> list[dict]:
     """Train one classifier per split and collect its held-out scores."""
     folds = []
-    for train_idx, val_idx in _make_splits(split_labels, cross_validation_splits, validation_split, rng):
-        data_train, data_val = data[train_idx], data[val_idx]
+    for train_idx, val_idx in _make_splits(split_labels, cross_validation_splits, validation_split, rng, paired):
+        data_train, data_val = (
+            keras.tree.map_structure(lambda array: array[idx], data) for idx in (train_idx, val_idx)
+        )
         labels_train, labels_val = split_labels[train_idx], split_labels[val_idx]
 
         # Weight the loss inversely to the class sizes, so that unequal sample sizes do not bias
@@ -317,7 +394,28 @@ def fit_splits(
             alpha=0.0,
         )
 
-        model = build_classifier(classifier, mlp_widths, mlp_kwargs, metric, learning_rate, seed_generator)
+        input_shapes = tuple(array.shape[1:] for array in data) if summary_network is not None else None
+        model = build_classifier(
+            classifier, mlp_widths, mlp_kwargs, metric, learning_rate, seed_generator, summary_network, input_shapes
+        )
+        if _is_sklearn_classifier(model):
+            model.fit(data_train, labels_train)
+            # Column of the target class (label 1)
+            predictions = model.predict_proba(data_val)[:, list(model.classes_).index(1)]
+            evaluation = keras.metrics.get("binary_accuracy" if metric == "accuracy" else metric)
+            evaluation.update_state(labels_val.astype("float32"), predictions.astype("float32"))
+            folds.append(
+                {
+                    "score": float(evaluation.result()),
+                    "predictions": predictions,
+                    "ranking_scores": predictions,
+                    "labels": labels_val,
+                    "history": None,
+                    "classifier": model,
+                }
+            )
+            continue
+
         callbacks = []
         if early_stopping_split > 0:
             callbacks.append(
@@ -382,10 +480,40 @@ def summarize(folds: list[dict]) -> dict:
     }
 
 
+def _permute_labels(labels: np.ndarray, paired: bool, rng: np.random.Generator) -> np.ndarray:
+    """Labels under the null: a permutation, or random swaps within pairs that share a condition."""
+    if not paired:
+        return rng.permutation(labels)
+    swap = rng.random(len(labels) // 2) < 0.5
+    return np.r_[swap, ~swap].astype(labels.dtype)
+
+
 def _make_splits(
-    labels: np.ndarray, cross_validation_splits: int, validation_split: float, rng: np.random.Generator
+    labels: np.ndarray,
+    cross_validation_splits: int,
+    validation_split: float,
+    rng: np.random.Generator,
+    paired: bool = False,
 ) -> list[tuple]:
     """Stratified cross-validation or hold-out splits of the pooled samples."""
+    if paired:
+        # Rows i and i + num_pairs share a condition. Splitting them apart leaks the label of the held-out row.
+        num_pairs = len(labels) // 2
+        pairs = rng.permutation(num_pairs)
+        if cross_validation_splits > 1:
+            validation_pairs = np.array_split(pairs, cross_validation_splits)
+        else:
+            validation_pairs = [pairs[: max(1, int(round(num_pairs * validation_split)))]]
+
+        splits = []
+        for val_pairs in validation_pairs:
+            train_pairs = rng.permutation(np.setdiff1d(pairs, val_pairs))
+            # partners stay adjacent, so the early stopping split of keras separates at most one pair
+            splits.append(
+                (np.c_[train_pairs, train_pairs + num_pairs].ravel(), np.r_[val_pairs, val_pairs + num_pairs])
+            )
+        return splits
+
     # Permute indices of each class separately to ensure stratification
     class_indices = [rng.permutation(np.where(labels == label)[0]) for label in (0, 1)]
 
@@ -429,6 +557,14 @@ def _seed_random_layers(model: keras.Model, seed_generator: keras.random.SeedGen
             # Keras' Torch backend only uses the generator path when the layer was created with an explicit seed.
             layer_seed_generator._initial_seed = True
             layer_seed_generator.state.assign(seed_generator.next())
+
+
+def _is_sklearn_classifier(classifier: Any) -> bool:
+    """Duck-typed check for scikit-learn style classifiers, so that scikit-learn is not a dependency."""
+    # Classes (e.g. RandomForestClassifier itself) are callables that build a classifier, not classifiers
+    return not isinstance(classifier, (keras.Model, type)) and all(
+        hasattr(classifier, name) for name in ("fit", "predict_proba", "get_params")
+    )
 
 
 def _predict_scores(model: keras.Model, inputs: np.ndarray) -> np.ndarray:

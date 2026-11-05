@@ -26,6 +26,7 @@ jobs:
         backend: ["jax", "tensorflow", "torch"]
 
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 120
 
     permissions: {}
 

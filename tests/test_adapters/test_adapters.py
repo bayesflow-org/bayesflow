@@ -10,6 +10,28 @@ from bayesflow.utils.serialization import deserialize, serialize
 from tests.utils import assert_allclose
 
 
+def test_has_permutation_jacobian_property():
+    from bayesflow.adapters.transforms import (
+        Concatenate,
+        ConvertDType,
+        ElementwiseTransform,
+        FilterTransform,
+        Log,
+        Rename,
+        ToArray,
+        Transform,
+    )
+
+    assert Transform.has_permutation_jacobian is False
+    assert ElementwiseTransform.has_permutation_jacobian is False
+    assert Rename.has_permutation_jacobian is True
+    assert Concatenate.has_permutation_jacobian is True
+    assert ToArray.has_permutation_jacobian is True
+    assert ConvertDType.has_permutation_jacobian is True
+    assert FilterTransform(transform_constructor=ToArray).has_permutation_jacobian is True
+    assert FilterTransform(transform_constructor=Log).has_permutation_jacobian is False
+
+
 def test_jit_compile_is_lazy_directional_and_picklable(monkeypatch):
     adapter_module = importlib.import_module("bayesflow.adapters.adapter")
     events = []

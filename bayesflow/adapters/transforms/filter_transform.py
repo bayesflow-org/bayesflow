@@ -50,8 +50,8 @@ class FilterTransform(Transform):
         self.transform_map = transform_map or {}
 
     @property
-    def is_permutation(self) -> bool:
-        return self.transform_constructor.is_permutation
+    def has_permutation_jacobian(self) -> bool:
+        return self.transform_constructor.has_permutation_jacobian
 
     def __repr__(self):
         if e := self.extra_repr():

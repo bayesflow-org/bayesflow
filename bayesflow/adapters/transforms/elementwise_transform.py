@@ -1,8 +1,9 @@
+from typing import ClassVar, Union
+
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, deserialize
 from bayesflow.types import Tensor
-from typing import Union
 
 
 @serializable("bayesflow.adapters")
@@ -10,7 +11,7 @@ class ElementwiseTransform:
     """Base class on which other transforms are based"""
 
     #: Whether the transform only moves values around, i.e., has a permutation Jacobian.
-    is_permutation = False
+    has_permutation_jacobian: ClassVar[bool] = False
 
     def __call__(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         if inverse:

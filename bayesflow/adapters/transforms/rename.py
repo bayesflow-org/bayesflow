@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from bayesflow.utils.serialization import serializable, serialize
 
 from .transform import Transform
@@ -26,7 +28,7 @@ class Rename(Transform):
     )
     """
 
-    is_permutation = True
+    has_permutation_jacobian: ClassVar[bool] = True
 
     def __init__(self, from_key: str, to_key: str):
         super().__init__()

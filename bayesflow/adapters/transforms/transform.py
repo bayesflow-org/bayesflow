@@ -1,3 +1,5 @@
+from typing import ClassVar
+
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
 
@@ -9,7 +11,7 @@ class Transform:
     """
 
     #: Whether the transform only moves values around and has a permutation Jacobian.
-    is_permutation = False
+    has_permutation_jacobian: ClassVar[bool] = False
 
     def __call__(self, data: dict[str, Tensor], *, inverse: bool = False, **kwargs) -> dict[str, Tensor]:
         if inverse:

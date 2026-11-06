@@ -1,4 +1,5 @@
 from collections.abc import Sequence
+from typing import ClassVar
 
 import keras.ops as ops
 from numpy import cumsum
@@ -33,7 +34,7 @@ class Concatenate(Transform):
     )
     """
 
-    is_permutation = True
+    has_permutation_jacobian: ClassVar[bool] = True
 
     def __init__(self, keys: Sequence[str], *, into: str, axis: int = -1, indices: list | None = None):
         self.keys = keys

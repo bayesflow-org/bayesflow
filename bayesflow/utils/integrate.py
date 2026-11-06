@@ -71,8 +71,9 @@ def _error_ratio(
 ) -> ArrayLike:
     """Normalize a local error estimate by a per-component tolerance.
 
-    The error of an entry is reduced with a root-mean-square norm, which keeps the criterion independent of
-    the number of components.
+    Each entry is reduced with a root-mean-square norm over all its elements, batch included. Averaging
+    over the batch keeps a few samples with near-zero components, whose tolerance is close to ``atol``,
+    from setting the step size for the whole batch.
 
     Parameters
     ----------
@@ -95,7 +96,7 @@ def _error_ratio(
     ratio = None
     for key, err in err_state.items():
         scale = atol + rtol * keras.ops.maximum(keras.ops.abs(state[key]), keras.ops.abs(new_state[key]))
-        key_ratio = keras.ops.max(keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale), axis=-1)))
+        key_ratio = keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale)))
         ratio = key_ratio if ratio is None else keras.ops.maximum(ratio, key_ratio)
 
     return ratio

@@ -108,7 +108,7 @@ def test_adaptive_integration_low_precision_matmul(caplog):
     x = integrate(fn, {"x": keras.ops.convert_to_tensor(x0)}, **kwargs)["x"]
     steps = [float(s) for s in re.findall(r"after ([\d.]+) steps", caplog.text)]
     # the step count is only logged eagerly; TensorFlow traces the solver
-    if keras.backend.backend() != "tensorflow":
+    if keras.config.backend() != "tensorflow":
         assert steps and steps[-1] <= 60, f"adaptive integration took {steps} steps"
 
     state = {"x": keras.ops.convert_to_tensor(x0), "trace": keras.ops.zeros((512, 1))}

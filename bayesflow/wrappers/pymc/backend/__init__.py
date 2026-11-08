@@ -5,8 +5,8 @@ from . import jax_dispatch  # noqa: F401 — registers pytensor→JAX dispatch f
 
 def build_backend(estimator, param_names, *, exchangeable: bool = True):
     """Return the appropriate JAX backend for *estimator*."""
-    if keras.backend.backend() != "jax":
-        raise ImportError(f"Backend '{keras.backend.backend()}' is not yet supported. Please use 'jax'.")
+    if keras.config.backend() != "jax":
+        raise ImportError(f"Backend '{keras.config.backend()}' is not yet supported. Please use 'jax'.")
 
     from bayesflow.estimators import RatioEstimator, BasicEstimator
 

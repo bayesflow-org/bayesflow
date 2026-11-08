@@ -49,6 +49,10 @@ class FilterTransform(Transform):
 
         self.transform_map = transform_map or {}
 
+    @property
+    def has_permutation_jacobian(self) -> bool:
+        return self.transform_constructor.has_permutation_jacobian
+
     def __repr__(self):
         if e := self.extra_repr():
             return f"{self.transform_constructor.__name__}({e})"

@@ -98,9 +98,7 @@ def test_jit_compile_falls_back_after_compiler_error(monkeypatch):
 
 
 @pytest.mark.cpu_fallback_on_mps
-@pytest.mark.skipif(
-    keras.backend.backend() == "torch", reason="Torch adapter compilation is covered by fallback tests."
-)
+@pytest.mark.skipif(keras.config.backend() == "torch", reason="Torch adapter compilation is covered by fallback tests.")
 def test_jit_compile_differentiable_forward_and_inverse():
     from bayesflow._backend import grad
 

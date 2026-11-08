@@ -26,7 +26,7 @@ def test_transformer_reads_target_time(random_samples, random_conditions):
 
 
 def test_transformer_compute_metrics(random_samples, random_conditions):
-    if keras.backend.backend() == "torch":
+    if keras.config.backend() == "torch":
         import torch
 
         if not torch.cuda.is_available():

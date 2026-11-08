@@ -341,7 +341,7 @@ def fit_splits(
         )
 
         # Gradients are disabled by default, so they need to be enabled for training
-        if keras.backend.backend() == "torch":
+        if keras.config.backend() == "torch":
             import torch
 
             with torch.enable_grad():

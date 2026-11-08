@@ -7,7 +7,7 @@ from bayesflow._backend import jacrev, jacfwd, jit
 
 
 def test_jacrev(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     w = keras.random.normal((32, 16))
@@ -30,7 +30,7 @@ def test_jacrev(jit_compile):
 
 
 def test_jacrev_unary_scalar(fn_unary_scalar, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform(())
@@ -47,7 +47,7 @@ def test_jacrev_unary_scalar(fn_unary_scalar, jit_compile):
 
 
 def test_jacrev_unary_vector(fn_unary_vector, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))
@@ -64,7 +64,7 @@ def test_jacrev_unary_vector(fn_unary_vector, jit_compile):
 
 
 def test_jacrev_binary_scalars(fn_binary_scalars, jit_compile, subtests):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform(())
@@ -102,7 +102,7 @@ def test_jacrev_binary_scalars(fn_binary_scalars, jit_compile, subtests):
 
 
 def test_jacrev_binary_vectors(fn_binary_vectors, jit_compile, subtests):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))
@@ -140,7 +140,7 @@ def test_jacrev_binary_vectors(fn_binary_vectors, jit_compile, subtests):
 
 
 def test_jacrev_jacfwd_consistency(fn_unary_vector, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))
@@ -160,7 +160,7 @@ def test_jacrev_jacfwd_consistency(fn_unary_vector, jit_compile):
 
 
 def test_jacrev_with_aux(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     w = keras.random.normal((4, 2))
@@ -184,7 +184,7 @@ def test_jacrev_with_aux(jit_compile):
 
 
 def test_jacrev_multiple_outputs(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     w = keras.random.normal((3, 2))

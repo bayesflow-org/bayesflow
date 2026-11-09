@@ -10,6 +10,28 @@ from bayesflow.utils.serialization import deserialize, serialize
 from tests.utils import assert_allclose
 
 
+def test_has_permutation_jacobian_property():
+    from bayesflow.adapters.transforms import (
+        Concatenate,
+        ConvertDType,
+        ElementwiseTransform,
+        FilterTransform,
+        Log,
+        Rename,
+        ToArray,
+        Transform,
+    )
+
+    assert Transform.has_permutation_jacobian is False
+    assert ElementwiseTransform.has_permutation_jacobian is False
+    assert Rename.has_permutation_jacobian is True
+    assert Concatenate.has_permutation_jacobian is True
+    assert ToArray.has_permutation_jacobian is True
+    assert ConvertDType.has_permutation_jacobian is True
+    assert FilterTransform(transform_constructor=ToArray).has_permutation_jacobian is True
+    assert FilterTransform(transform_constructor=Log).has_permutation_jacobian is False
+
+
 def test_jit_compile_is_lazy_directional_and_picklable(monkeypatch):
     adapter_module = importlib.import_module("bayesflow.adapters.adapter")
     events = []
@@ -76,9 +98,7 @@ def test_jit_compile_falls_back_after_compiler_error(monkeypatch):
 
 
 @pytest.mark.cpu_fallback_on_mps
-@pytest.mark.skipif(
-    keras.backend.backend() == "torch", reason="Torch adapter compilation is covered by fallback tests."
-)
+@pytest.mark.skipif(keras.config.backend() == "torch", reason="Torch adapter compilation is covered by fallback tests.")
 def test_jit_compile_differentiable_forward_and_inverse():
     from bayesflow._backend import grad
 
@@ -544,3 +564,17 @@ def test_nan_to_num():
     out = transform(arr)
     np.testing.assert_array_equal(out["test-2d"], np.array([[1.0, 0.5], [0.5, 4.0]]))
     np.testing.assert_array_equal(out["new_mask_test-2d"], np.array([[1, 0], [0, 1]]))
+
+
+@pytest.mark.parametrize("fraction,n,expected", [(0.5, 10, 5), (0.25, 8, 2), (0.3, 7, 2)])
+def test_random_subsample_fraction(fraction, n, expected):
+    transform = bf.adapters.transforms.RandomSubsample(sample_size=fraction, axis=-1)
+    out = keras.ops.convert_to_numpy(transform.forward(np.arange(n, dtype="float32")[None, :].repeat(3, axis=0)))
+    assert out.shape == (3, expected)
+    assert len(np.unique(out[0])) == expected
+
+
+def test_random_subsample_fraction_via_adapter():
+    adapter = bf.Adapter().random_subsample("x", sample_size=0.5, axis=0)
+    out = adapter({"x": np.arange(10, dtype="float32")})
+    assert out["x"].shape == (5,)

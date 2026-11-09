@@ -9,7 +9,7 @@ logger = logging.getLogger("bayesflow")
 
 
 def _log(msg, *args, callback_fn: Callable = print, **kwargs):
-    if keras.backend.backend() == "jax":
+    if keras.config.backend() == "jax":
         import jax
 
         def __log(*a, **k):

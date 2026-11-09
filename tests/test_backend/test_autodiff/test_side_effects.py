@@ -53,7 +53,7 @@ def test_jacfwd_side_effect(jit_compile):
 
 
 def test_jacrev_side_effect(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacrev is not yet compatible with jit compilation.")
 
     counter = {"count": 0}
@@ -91,7 +91,7 @@ def test_jvp_side_effect(jit_compile):
 
 
 def test_vjp_side_effect(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     counter = {"count": 0}

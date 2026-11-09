@@ -121,6 +121,7 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 15. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
 16. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
 17. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
+18. {doc}`Model predictive control <_examples/Model_Predictive_Control>` - Use posterior uncertainty to guide robust control of an inverted double pendulum.
 
 ### Tutorial papers
 

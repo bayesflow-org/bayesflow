@@ -212,3 +212,30 @@ def test_make_simulator_distributes_obj_kwargs(as_mapping):
 
     assert samples["x"].shape == (3, 1)
     assert samples["y"].shape == (3, 1)
+
+
+def _constant_simulators(n):
+    from bayesflow.simulators import make_simulator
+
+    return [make_simulator([lambda i=i: {"x": np.float32(i)}]) for i in range(n)]
+
+
+@pytest.mark.parametrize("p", [[0.7, 0.3], [0.5, 0.3, 0.2]])
+def test_model_comparison_p_gives_probabilities(p):
+    from bayesflow.simulators import ModelComparisonSimulator
+    from bayesflow.utils.numpy_utils import softmax
+
+    simulator = ModelComparisonSimulator(_constant_simulators(len(p)), p=p)
+    np.testing.assert_allclose(softmax(np.asarray(simulator.logits)), p, atol=1e-6)
+
+    samples = simulator.sample(20_000)
+    np.testing.assert_allclose(samples["model_indices"].mean(axis=0), p, atol=0.02)
+
+
+def test_model_comparison_logits_equivalent_to_p():
+    from bayesflow.simulators import ModelComparisonSimulator
+
+    p = np.array([0.7, 0.3])
+    from_p = ModelComparisonSimulator(_constant_simulators(2), p=p)
+    from_logits = ModelComparisonSimulator(_constant_simulators(2), logits=np.log(p))
+    np.testing.assert_allclose(np.asarray(from_p.logits), np.asarray(from_logits.logits))

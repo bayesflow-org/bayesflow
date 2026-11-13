@@ -18,8 +18,11 @@ from .metrics import (
     brier_score,
     posterior_contraction,
     posterior_z_score,
+    mahalanobis_distance,
+    mahalanobis_test,
     root_mean_squared_error,
     summary_space_comparison,
+    summary_space_mahalanobis,
     correlation,
     accuracy_random_points,
 )

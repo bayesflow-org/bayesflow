@@ -706,3 +706,379 @@ def test_mmd_comparison_estimator_incorrect_instance():
             num_null_samples=num_null_samples,
             comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
         )
+
+
+def _gaussian(n, dim=3, loc=0.0, seed=0):
+    # fixed covariance, so draws with different seeds come from the same distribution
+    a = np.random.default_rng(12345).normal(size=(dim, dim))
+    cov = a @ a.T + dim * np.eye(dim)
+    rng = np.random.default_rng(seed)
+    return rng.multivariate_normal(mean=np.full(dim, loc), cov=cov, size=n)
+
+
+def test_mahalanobis_distance_matches_scipy():
+    from scipy.spatial.distance import mahalanobis
+
+    reference = _gaussian(500, seed=1)
+    samples = _gaussian(20, seed=2)
+
+    distances = bf.diagnostics.metrics.mahalanobis_distance(samples, reference, regularization=0.0)
+    squared = bf.diagnostics.metrics.mahalanobis_distance(samples, reference, regularization=0.0, squared=True)
+
+    mean = reference.mean(axis=0)
+    precision = np.linalg.inv(np.cov(reference, rowvar=False))
+    expected = np.array([mahalanobis(s, mean, precision) for s in samples])
+
+    assert distances.shape == (20,)
+    np.testing.assert_allclose(distances, expected, rtol=1e-6)
+    np.testing.assert_allclose(squared, expected**2, rtol=1e-6)
+
+
+def test_mahalanobis_distance_flattens_trailing_dims():
+    reference = np.random.normal(size=(200, 2, 3))
+    samples = np.random.normal(size=(7, 2, 3))
+
+    distances = bf.diagnostics.metrics.mahalanobis_distance(samples, reference)
+    flat = bf.diagnostics.metrics.mahalanobis_distance(samples.reshape(7, 6), reference.reshape(200, 6))
+
+    np.testing.assert_allclose(distances, flat)
+
+
+def test_mahalanobis_distance_rank_deficient_covariance():
+    reference = np.random.normal(size=(100, 2))
+    # third column is a copy of the first, so the covariance is singular
+    reference = np.concatenate([reference, reference[:, :1]], axis=-1)
+    samples = np.random.normal(size=(10, 3))
+
+    distances = bf.diagnostics.metrics.mahalanobis_distance(samples, reference)
+
+    assert np.all(np.isfinite(distances))
+    assert np.all(distances >= 0)
+
+
+def test_mahalanobis_distance_invariant_to_rescaling():
+    # the default ridge must not let large-variance dimensions swamp small-variance ones
+    reference = _gaussian(5000, dim=2)
+    samples = _gaussian(50, dim=2, seed=1)
+    scales = np.array([1e3, 1e-3])
+
+    distances = bf.diagnostics.metrics.mahalanobis_distance(samples, reference)
+    rescaled = bf.diagnostics.metrics.mahalanobis_distance(samples * scales, reference * scales)
+
+    np.testing.assert_allclose(rescaled, distances, rtol=1e-4)
+
+
+def test_mahalanobis_distance_invalid_inputs():
+    reference = np.random.normal(size=(100, 3))
+    samples = np.random.normal(size=(10, 3))
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_distance(samples, reference[:1])
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_distance(np.where(samples > 1, np.nan, samples), reference)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_distance(samples, reference, regularization=-1.0)
+
+    with pytest.warns(UserWarning, match="reference samples"):
+        bf.diagnostics.metrics.mahalanobis_distance(np.random.normal(size=(10, 50)), np.random.normal(size=(30, 50)))
+
+
+def test_mahalanobis_distance_mismatched_shapes():
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_distance(np.random.rand(10, 5), np.random.rand(100, 4))
+
+
+def test_mahalanobis_test_false_positive_rate():
+    alpha = 0.05
+    num_observed = 2000
+    reference = _gaussian(20_000, seed=3)
+    calibration = _gaussian(2000, seed=4)
+    observed = _gaussian(num_observed, seed=5)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, alpha=alpha)
+
+    # observed data come from the reference distribution, so the rejection rate must be close to alpha;
+    # estimating the quantile on the calibration samples adds variance
+    variance = alpha * (1 - alpha) * (1 / num_observed + 1 / len(calibration))
+    assert abs(result["is_ood"].mean() - alpha) <= 4 * np.sqrt(variance)
+
+
+@pytest.mark.parametrize("num_reference, dim", [(100, 8), (200, 32)])
+def test_mahalanobis_test_false_positive_rate_small_reference(num_reference, dim):
+    # mean and covariance are estimated from few samples, which inflates distances; the calibration samples
+    # see the same estimation error, so the test stays calibrated (a chi-square threshold would not)
+    alpha = 0.05
+    rejection_rates = []
+    for seed in range(20):
+        reference = _gaussian(num_reference, dim=dim, seed=3 * seed)
+        calibration = _gaussian(500, dim=dim, seed=3 * seed + 1)
+        observed = _gaussian(500, dim=dim, seed=3 * seed + 2)
+        result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, alpha=alpha)
+        rejection_rates.append(result["is_ood"].mean())
+
+    # averaged over draws of the reference and calibration samples, the conformal test has level alpha
+    assert abs(np.mean(rejection_rates) - alpha) <= 0.015
+
+
+@pytest.mark.parametrize("squared", [False, True])
+def test_mahalanobis_test_threshold_consistent_with_p_values(squared):
+    reference = _gaussian(1000)
+    calibration = _gaussian(99, seed=1)
+    observed = _gaussian(500, seed=2)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, alpha=0.05, squared=squared)
+
+    np.testing.assert_array_equal(result["is_ood"], result["p_values"] <= 0.05)
+    np.testing.assert_array_equal(result["is_ood"], result["distances"] > result["threshold"])
+    assert np.all((result["p_values"] > 0) & (result["p_values"] <= 1))
+
+
+@pytest.mark.parametrize("alpha", [0.01, 0.05, 1 / 3, 0.7, 0.95, 0.99])
+@pytest.mark.parametrize("num_calibration", [9, 10, 99, 1000])
+def test_mahalanobis_test_threshold_round_off(alpha, num_calibration):
+    # (n + 1) * (1 - alpha) can land just above an integer, which must not shift the reported threshold
+    reference = _gaussian(500)
+    calibration = _gaussian(num_calibration, seed=1)
+    observed = _gaussian(2000, seed=2)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, alpha=alpha)
+
+    np.testing.assert_array_equal(result["is_ood"], result["p_values"] <= alpha)
+    np.testing.assert_array_equal(result["is_ood"], result["distances"] > result["threshold"])
+
+
+def test_mahalanobis_test_squared():
+    # squaring changes only the scale of distances and threshold, not p-values or flags
+    reference = _gaussian(1000)
+    calibration = _gaussian(200, seed=1)
+    observed = _gaussian(100, loc=0.3, seed=2)
+
+    plain = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration)
+    squared = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, squared=True)
+
+    np.testing.assert_allclose(squared["distances"], plain["distances"] ** 2)
+    np.testing.assert_allclose(squared["threshold"], plain["threshold"] ** 2)
+    np.testing.assert_array_equal(squared["p_values"], plain["p_values"])
+    np.testing.assert_array_equal(squared["is_ood"], plain["is_ood"])
+
+
+def test_mahalanobis_test_too_few_calibration_samples():
+    # with n calibration samples, the smallest p-value is 1 / (n + 1), so nothing can be flagged at alpha < 1 / 20
+    reference = _gaussian(500)
+    observed = _gaussian(10, loc=50.0, seed=1)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, _gaussian(18, seed=2), alpha=0.05)
+
+    assert result["threshold"] == np.inf
+    assert not result["is_ood"].any()
+
+
+@pytest.mark.parametrize("degenerate", ["constant", "constant_nonzero", "collinear"])
+def test_mahalanobis_test_rank_deficient(degenerate):
+    # constant or collinear dimensions must neither break the test nor change the distances beyond the ridge
+    alpha = 0.05
+    reference = _gaussian(20_000, dim=2, seed=3)
+    calibration = _gaussian(2000, dim=2, seed=4)
+    observed = _gaussian(4000, dim=2, seed=5)
+
+    def extend(x):
+        match degenerate:
+            case "constant":
+                extra = np.zeros((len(x), 1))
+            case "constant_nonzero":
+                # np.cov returns a tiny round-off variance for this column
+                extra = np.full((len(x), 1), 0.1)
+            case "collinear":
+                extra = x[:, :1] + 2 * x[:, 1:]
+        return np.concatenate([x, extra], axis=-1)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(
+        extend(observed), extend(reference), extend(calibration), alpha=alpha
+    )
+
+    variance = alpha * (1 - alpha) * (1 / len(observed) + 1 / len(calibration))
+    assert abs(result["is_ood"].mean() - alpha) <= 4 * np.sqrt(variance)
+    expected = bf.diagnostics.metrics.mahalanobis_distance(observed, reference)
+    np.testing.assert_allclose(result["distances"], expected, rtol=1e-4)
+
+
+def test_mahalanobis_empty_and_singular_inputs():
+    reference = _gaussian(100)
+
+    assert bf.diagnostics.metrics.mahalanobis_distance(reference[:0], reference).shape == (0,)
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_test(reference[:10], reference, reference[:0])
+
+    singular = np.concatenate([reference, np.zeros((100, 1))], axis=-1)
+    with pytest.raises(ValueError, match="singular"):
+        bf.diagnostics.metrics.mahalanobis_distance(singular[:10], singular, regularization=0.0)
+
+
+def test_mahalanobis_test_warnings_point_to_caller():
+    reference = np.random.normal(size=(30, 50))
+
+    with pytest.warns(UserWarning, match="reference samples") as record:
+        bf.diagnostics.metrics.mahalanobis_test(reference[:10], reference, np.random.normal(size=(20, 50)))
+
+    assert record[0].filename == __file__
+
+
+def test_mahalanobis_test_constant_reference():
+    reference = np.ones((100, 3))
+    observed = np.r_[np.ones((5, 3)), np.full((5, 3), 2.0)]
+
+    # any deviation from the constant is flagged
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, np.ones((99, 3)))
+    np.testing.assert_array_equal(result["is_ood"], [False] * 5 + [True] * 5)
+
+
+def test_mahalanobis_test_mismatched_shapes():
+    with pytest.raises(ValueError, match="observed_samples"):
+        bf.diagnostics.metrics.mahalanobis_test(np.random.rand(10, 5), np.random.rand(100, 4), np.random.rand(50, 4))
+
+    with pytest.raises(ValueError, match="calibration_samples"):
+        bf.diagnostics.metrics.mahalanobis_test(np.random.rand(10, 4), np.random.rand(100, 4), np.random.rand(50, 5))
+
+
+def test_mahalanobis_test_input_hints():
+    reference = _gaussian(100)
+    calibration = _gaussian(100, seed=1)
+
+    # a single sample without a leading axis
+    with pytest.raises(ValueError, match=r"observed_samples\[None\]"):
+        bf.diagnostics.metrics.mahalanobis_test(reference[0], reference, calibration)
+
+    # data dicts instead of summaries
+    with pytest.raises(ValueError, match="summary_space_mahalanobis"):
+        bf.diagnostics.metrics.mahalanobis_test({"x": reference[:10]}, reference, calibration)
+
+    with pytest.raises(ValueError, match="scalar"):
+        bf.diagnostics.metrics.mahalanobis_test(np.float64(1.0), reference, calibration)
+
+    # trailing dimensions only need to match after flattening
+    result = bf.diagnostics.metrics.mahalanobis_test(reference[:10].reshape(10, 3, 1), reference, calibration)
+    assert result["distances"].shape == (10,)
+
+
+def test_summary_space_mahalanobis_incorrect_estimator_instance():
+    class IncorrectEstimator:
+        pass
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.summary_space_mahalanobis(
+            observed_data=dict(observables=np.random.rand(10, 5)),
+            reference_data=dict(observables=np.random.rand(100, 5)),
+            estimator=IncorrectEstimator(),
+            calibration_data=dict(observables=np.random.rand(100, 5)),
+        )
+
+    # calibration data passed positionally in place of the estimator
+    with pytest.raises(ValueError, match="calibration_data="):
+        bf.diagnostics.metrics.summary_space_mahalanobis(
+            dict(observables=np.random.rand(10, 5)),
+            dict(observables=np.random.rand(100, 5)),
+            dict(observables=np.random.rand(100, 5)),
+            calibration_data=dict(observables=np.random.rand(100, 5)),
+        )
+
+
+def test_mahalanobis_test_detects_shift():
+    reference = _gaussian(5000)
+    calibration = _gaussian(1000, seed=2)
+    observed = _gaussian(200, loc=15.0, seed=1)
+
+    result = bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration)
+
+    assert result["is_ood"].all()
+
+
+def test_mahalanobis_test_invalid_arguments():
+    reference = _gaussian(100)
+    calibration = _gaussian(100, seed=2)
+    observed = _gaussian(10, seed=1)
+
+    for alpha in [0.0, 1.0, 1.5]:
+        with pytest.raises(ValueError):
+            bf.diagnostics.metrics.mahalanobis_test(observed, reference, calibration, alpha=alpha)
+
+
+def test_summary_space_mahalanobis(summary_network, adapter):
+    observed_data = dict(observables=np.random.normal(loc=5.0, size=(10, 5)))
+    reference_data = dict(observables=np.random.normal(size=(500, 5)))
+    calibration_data = dict(observables=np.random.normal(size=(200, 5)))
+
+    mock_estimator = bf.estimators.BasicEstimator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=summary_network,
+    )
+
+    result = bf.diagnostics.metrics.summary_space_mahalanobis(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        estimator=mock_estimator,
+        calibration_data=calibration_data,
+    )
+
+    assert set(result) == {"distances", "p_values", "threshold", "is_ood"}
+    assert result["distances"].shape == (10,)
+    assert result["is_ood"].all()
+
+
+def test_summary_space_mahalanobis_no_summary_network(adapter):
+    mock_estimator = bf.estimators.BasicEstimator(
+        adapter=adapter,
+        inference_network=None,
+        summary_network=None,
+    )
+
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.summary_space_mahalanobis(
+            observed_data=dict(observables=np.random.rand(10, 5)),
+            reference_data=dict(observables=np.random.rand(100, 5)),
+            estimator=mock_estimator,
+            calibration_data=dict(observables=np.random.rand(100, 5)),
+        )
+
+
+@pytest.mark.slow
+def test_summary_space_mahalanobis_trained_summary_network():
+    """End-to-end: with a plainly trained summary network, the test is calibrated and detects shifts."""
+
+    def prior():
+        return dict(theta=np.random.normal(size=2))
+
+    def likelihood(theta):
+        return dict(x=np.random.normal(loc=theta, size=(20, 2)))
+
+    simulator = bf.make_simulator([prior, likelihood])
+    adapter = (
+        bf.Adapter()
+        .convert_dtype("float64", "float32")
+        .rename("theta", "inference_variables")
+        .rename("x", "summary_variables")
+    )
+    workflow = bf.BasicWorkflow(
+        simulator=simulator,
+        adapter=adapter,
+        inference_network=bf.networks.CouplingFlow(depth=2),
+        summary_network=bf.networks.DeepSet(summary_dim=4),
+    )
+    workflow.fit_online(epochs=10, num_batches_per_epoch=50, batch_size=64, verbose=0)
+
+    reference = {"x": simulator.sample(5000)["x"]}
+    calibration = {"x": simulator.sample(2000)["x"]}
+    observed = {"x": simulator.sample(2000)["x"]}
+
+    result = bf.diagnostics.metrics.summary_space_mahalanobis(
+        observed, reference, workflow.estimator, calibration_data=calibration
+    )
+    shifted = bf.diagnostics.metrics.summary_space_mahalanobis(
+        {"x": observed["x"] + 10.0}, reference, workflow.estimator, calibration_data=calibration
+    )
+
+    assert abs(result["is_ood"].mean() - 0.05) <= 4 * np.sqrt(0.05 * 0.95 * (1 / 2000 + 1 / 2000))
+    assert shifted["is_ood"].mean() >= 0.9

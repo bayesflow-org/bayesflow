@@ -102,6 +102,7 @@ del setup
 from . import (
     adapters,
     augmentations,
+    correction,
     datasets,
     diagnostics,
     distributions,

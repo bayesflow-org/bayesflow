@@ -17,6 +17,7 @@ from .metrics import (
     accuracy,
     brier_score,
     posterior_contraction,
+    pareto_smooth,
     posterior_z_score,
     root_mean_squared_error,
     summary_space_comparison,

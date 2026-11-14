@@ -54,6 +54,7 @@ docs = [
   "sphinxcontrib-bibtex>=2.6.5",
 ]
 test = [
+  "arviz-stats>=1.1.0",
   "ipykernel>=7.1.0",
   "ipython>=8.38.0",
   "joblib>=1.5.2",

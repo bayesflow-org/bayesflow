@@ -107,3 +107,8 @@ def summary_network():
     from tests.utils import MeanStdSummaryNetwork
 
     return MeanStdSummaryNetwork()
+
+
+@pytest.fixture()
+def x():
+    return np.random.normal(size=(4, 10))

@@ -138,12 +138,18 @@ class TestFlashAttentionSupport:
         attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
         assert not attn._flash_attention_supported(x)
 
-    @pytest.mark.jax
-    def test_reduced_precision_is_not_supported_on_jax_cpu(self, x):
-        import jax
+    def test_reduced_precision_is_not_supported_on_cpu(self, x):
+        # covers the device check of every backend; CI runs on CPU only
+        if keras.backend.backend() == "jax":
+            import jax
 
-        if jax.default_backend() != "cpu":
-            pytest.skip("requires a CPU-only JAX installation")
+            if jax.default_backend() != "cpu":
+                pytest.skip("requires a CPU-only JAX installation")
+        elif keras.backend.backend() == "torch":
+            import torch
+
+            if torch.cuda.is_available():
+                pytest.skip("requires a CPU-only PyTorch installation")
         attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, attention_dtype="bfloat16")
         assert not attn._flash_attention_supported(x)
 
@@ -242,6 +248,23 @@ def test_flash_attention_true_raises_on_unsupported_backend(x):
     attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=True)
     with pytest.raises(ValueError, match="(?i)flash attention"):
         attn(query=x, key=x, value=x, training=False)
+
+
+@pytest.mark.parametrize("flash_attention", [None, False, True])
+def test_get_config_round_trip(flash_attention):
+    attn = FlashMultiHeadAttention(
+        key_dim=8, num_heads=2, dropout=0.1, flash_attention=flash_attention, attention_dtype="bfloat16"
+    )
+    config = attn.get_config()
+    assert config["flash_attention"] is flash_attention
+    assert config["attention_dtype"] == "bfloat16"
+    assert config["dropout"] == 0.1
+
+    reloaded = FlashMultiHeadAttention.from_config(config)
+    assert reloaded._fast_path_flash_attention is flash_attention
+    assert reloaded._attention_dtype == "bfloat16"
+    assert reloaded._dropout == 0.1
+    assert reloaded._flash_attention is False
 
 
 def _attention_layers(network):

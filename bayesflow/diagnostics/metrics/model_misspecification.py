@@ -6,9 +6,10 @@ distributions within the reference samples for hypothesis testing.
 from collections.abc import Mapping, Callable
 
 import numpy as np
-from keras.ops import convert_to_numpy, convert_to_tensor
 
-from bayesflow.approximators import ContinuousApproximator
+import keras
+
+from bayesflow.estimators import BasicEstimator
 from bayesflow.metrics.functional import maximum_mean_discrepancy
 from bayesflow.types import Tensor
 
@@ -18,13 +19,13 @@ def bootstrap_comparison(
     reference_samples: np.ndarray,
     comparison_fn: Callable[[Tensor, Tensor], Tensor],
     num_null_samples: int = 100,
-) -> tuple[float, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Computes the distance between observed and reference samples and generates a distribution of null sample
     distances by bootstrapping for hypothesis testing.
 
     Parameters
     ----------
-    observed_samples : np.ndarray)
+    observed_samples : np.ndarray
         Observed samples, shape (num_observed, ...).
     reference_samples : np.ndarray
         Reference samples, shape (num_reference, ...).
@@ -35,8 +36,8 @@ def bootstrap_comparison(
 
     Returns
     -------
-    distance_observed : float
-        The distance value between observed and reference samples.
+    distance_observed : np.ndarray
+        A scalar NumPy array containing the distance between observed and reference samples.
     distance_null : np.ndarray
         A distribution of distance values under the null hypothesis.
 
@@ -46,36 +47,34 @@ def bootstrap_comparison(
         - If the number of number of observed samples exceeds the number of reference samples
         - If the shapes of observed and reference samples do not match on dimensions besides the first one.
     """
-    num_observed: int = observed_samples.shape[0]
-    num_reference: int = reference_samples.shape[0]
+    observed_samples = np.asarray(observed_samples)
+    reference_samples = np.asarray(reference_samples)
 
-    if num_observed > num_reference:
-        raise ValueError(
-            f"Number of observed samples ({num_observed}) cannot exceed"
-            f"the number of reference samples ({num_reference}) for bootstrapping."
-        )
+    num_observed = observed_samples.shape[0]
+    num_reference = reference_samples.shape[0]
+
     if observed_samples.shape[1:] != reference_samples.shape[1:]:
         raise ValueError(
             f"Expected observed and reference samples to have the same shape, "
             f"but got {observed_samples.shape[1:]} != {reference_samples.shape[1:]}."
         )
 
-    observed_samples_tensor: Tensor = convert_to_tensor(observed_samples, dtype="float32")
-    reference_samples_tensor: Tensor = convert_to_tensor(reference_samples, dtype="float32")
+    dtype = keras.config.floatx()
+    observed_samples = keras.ops.convert_to_tensor(observed_samples, dtype=dtype)
+    reference_samples = keras.ops.convert_to_tensor(reference_samples, dtype=dtype)
 
-    distance_null_samples: np.ndarray = np.zeros(num_null_samples, dtype=np.float64)
+    distance_observed = comparison_fn(observed_samples, reference_samples)
+    distance_observed = keras.ops.convert_to_numpy(distance_observed)
+
+    if distance_observed.ndim != 0:
+        raise ValueError(f"Expected comparison_fn to return a scalar, but got shape {distance_observed.shape}.")
+
+    distance_null_samples = np.empty(num_null_samples, dtype=distance_observed.dtype)
     for i in range(num_null_samples):
-        bootstrap_idx: np.ndarray = np.random.randint(0, num_reference, size=num_observed)
-        bootstrap_samples: np.ndarray = reference_samples[bootstrap_idx]
-        bootstrap_samples_tensor: Tensor = convert_to_tensor(bootstrap_samples, dtype="float32")
-        distance_null_samples[i] = convert_to_numpy(comparison_fn(bootstrap_samples_tensor, reference_samples_tensor))
-
-    distance_observed_tensor: Tensor = comparison_fn(
-        observed_samples_tensor,
-        reference_samples_tensor,
-    )
-
-    distance_observed: float = float(convert_to_numpy(distance_observed_tensor))
+        bootstrap_indices = np.random.randint(num_reference, size=num_observed)
+        bootstrap_samples = keras.ops.take(reference_samples, bootstrap_indices, axis=0)
+        distance_null = comparison_fn(bootstrap_samples, reference_samples)
+        distance_null_samples[i] = keras.ops.convert_to_numpy(distance_null)
 
     return distance_observed, distance_null_samples
 
@@ -83,11 +82,11 @@ def bootstrap_comparison(
 def summary_space_comparison(
     observed_data: Mapping[str, np.ndarray],
     reference_data: Mapping[str, np.ndarray],
-    approximator: ContinuousApproximator,
+    estimator: BasicEstimator,
     num_null_samples: int = 100,
     comparison_fn: Callable = maximum_mean_discrepancy,
     **kwargs,
-) -> tuple[float, np.ndarray]:
+) -> tuple[np.ndarray, np.ndarray]:
     """Computes the distance between observed and reference data in the summary space and
     generates a distribution of distance values under the null hypothesis to assess model misspecification.
 
@@ -100,13 +99,13 @@ def summary_space_comparison(
     Parameters
     ----------
     observed_data : dict[str, np.ndarray]
-        Dictionary of observed data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        Dictionary of observed data as NumPy arrays, which will be preprocessed by the estimator's adapter and passed
         through its summary network.
     reference_data : dict[str, np.ndarray]
-        Dictionary of reference data as NumPy arrays, which will be preprocessed by the approximators adapter and passed
+        Dictionary of reference data as NumPy arrays, which will be preprocessed by the estimator's adapter and passed
         through its summary network.
-    approximator : ContinuousApproximator
-        An instance of :py:class:`~bayesflow.approximators.ContinuousApproximator` used to compute summary statistics
+    estimator : BasicEstimator
+        An instance of :py:class:`~bayesflow.estimators.BasicEstimator` used to compute summary statistics
         from the data.
     num_null_samples : int, optional
         Number of null samples to generate for hypothesis testing. Default is 100.
@@ -117,33 +116,34 @@ def summary_space_comparison(
 
     Returns
     -------
-    distance_observed : float
-        The MMD value between observed and reference summaries.
+    distance_observed : np.ndarray
+        A scalar NumPy array containing the MMD value between observed and reference summaries.
     distance_null : np.ndarray
         A distribution of MMD values under the null hypothesis.
 
     Raises
     ------
     ValueError
-        If approximator is not an instance of ContinuousApproximator or does not have a summary network.
+        If estimator is not an instance of BasicEstimator or does not have a summary network.
     """
 
-    if not isinstance(approximator, ContinuousApproximator):
-        raise ValueError("The approximator must be an instance of ContinuousApproximator.")
+    if not isinstance(estimator, BasicEstimator):
+        raise ValueError("The estimator must be an instance of BasicEstimator.")
 
-    if not hasattr(approximator, "summary_network") or approximator.summary_network is None:
+    if not hasattr(estimator, "summary_network") or estimator.summary_network is None:
         comparison_fn_name = (
             "bayesflow.metrics.functional.maximum_mean_discrepancy"
             if comparison_fn is maximum_mean_discrepancy
             else comparison_fn.__name__
         )
         raise ValueError(
-            "The approximator must have a summary network. If you have manually crafted summary "
+            "The estimator must have a summary network. If you have manually crafted summary "
             "statistics, or want to compare raw data and not summary statistics, please use the "
             f"`bootstrap_comparison` function with `comparison_fn={comparison_fn_name}` on the respective arrays."
         )
-    observed_summaries = convert_to_numpy(approximator.summarize(observed_data))
-    reference_summaries = convert_to_numpy(approximator.summarize(reference_data))
+
+    observed_summaries = estimator.summarize(observed_data)
+    reference_summaries = estimator.summarize(reference_data)
 
     distance_observed, distance_null = bootstrap_comparison(
         observed_samples=observed_summaries,

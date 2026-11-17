@@ -37,6 +37,8 @@ if "SOURCE_DATE_EPOCH" in os.environ:
 project = "BayesFlow"
 author = "The BayesFlow authors"
 copyright = "2023-%Y, BayesFlow authors (lead maintainer: Stefan T. Radev)"
+version = current
+release = current
 
 
 # -- General configuration ---------------------------------------------------
@@ -100,7 +102,7 @@ templates_path = ["_templates"]
 # List of patterns, relative to source directory, that match files and
 # directories to ignore when looking for source files.
 # This pattern also affects html_static_path and html_extra_path.
-exclude_patterns = []
+exclude_patterns = ["_examples/misc/**.ipynb"]
 
 # Options for autodoc and autosummary
 # do not ignore __all__, use it to determine public members
@@ -169,6 +171,7 @@ html_theme_options = {
         "version_match": current,
     },
     "check_switcher": False,
+    "show_version_warning_banner": True,
 }
 html_context = {
     "github_url": "https://github.com",  # or your GitHub Enterprise site

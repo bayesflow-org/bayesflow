@@ -24,8 +24,11 @@ class Ordered(keras.Layer):
     def build(self, input_shape):
         super().build(input_shape)
 
-        if self.anchor_index % input_shape[self.axis] == 0 or self.anchor_index == -1:
-            raise RuntimeError("Anchor should not be first or last index.")
+        axis_size = input_shape[self.axis]
+        if not (0 <= self.anchor_index < axis_size):
+            raise ValueError(
+                f"anchor_index={self.anchor_index} is out of bounds for axis {self.axis} with size {axis_size}."
+            )
 
         self.group_indices = dict(
             below=list(range(0, self.anchor_index)),
@@ -34,21 +37,29 @@ class Ordered(keras.Layer):
 
     def call(self, inputs):
         # Divide in anchor, below and above
-        below_inputs = keras.ops.take(inputs, self.group_indices["below"], axis=self.axis)
         anchor_input = keras.ops.take(inputs, self.anchor_index, axis=self.axis)
         anchor_input = keras.ops.expand_dims(anchor_input, axis=self.axis)
-        above_inputs = keras.ops.take(inputs, self.group_indices["above"], axis=self.axis)
 
-        # Apply softplus for positivity and cumulate to ensure ordered quantiles
-        below = keras.activations.softplus(below_inputs)
-        above = keras.activations.softplus(above_inputs)
+        parts = []
 
-        below = anchor_input - keras.ops.flip(keras.ops.cumsum(below, axis=self.axis), self.axis)
-        above = anchor_input + keras.ops.cumsum(above, axis=self.axis)
+        if self.group_indices["below"]:
+            below_inputs = keras.ops.take(inputs, self.group_indices["below"], axis=self.axis)
+            below = keras.activations.softplus(below_inputs)
+            below = anchor_input - keras.ops.flip(keras.ops.cumsum(below, axis=self.axis), self.axis)
+            parts.append(below)
+
+        parts.append(anchor_input)
+
+        if self.group_indices["above"]:
+            above_inputs = keras.ops.take(inputs, self.group_indices["above"], axis=self.axis)
+            above = keras.activations.softplus(above_inputs)
+            above = anchor_input + keras.ops.cumsum(above, axis=self.axis)
+            parts.append(above)
 
         # Concatenate and reshape back
-        x = keras.ops.concatenate([below, anchor_input, above], self.axis)
-        return x
+        if len(parts) == 1:
+            return parts[0]
+        return keras.ops.concatenate(parts, self.axis)
 
     @sanitize_input_shape
     def compute_output_shape(self, input_shape):

@@ -3,11 +3,6 @@ import pytest
 import keras
 
 
-@pytest.fixture(params=[2])
-def batch_size(request):
-    return request.param
-
-
 @pytest.fixture(params=[2, 3])
 def num_features(request):
     return request.param

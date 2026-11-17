@@ -1,6 +1,6 @@
-import numpy as np
-
+import keras.ops as ops
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -23,26 +23,26 @@ class Log(ElementwiseTransform):
         super().__init__()
         self.p1 = p1
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
         if self.p1:
-            return np.log1p(data)
+            return ops.log1p(data)
         else:
-            return np.log(data)
+            return ops.log(data)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
         if self.p1:
-            return np.expm1(data)
+            return ops.expm1(data)
         else:
-            return np.exp(data)
+            return ops.exp(data)
 
     def get_config(self) -> dict:
         return serialize({"p1": self.p1})
 
-    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
         if self.p1:
-            ldj = -np.log1p(data)
+            ldj = -ops.log1p(data)
         else:
-            ldj = -np.log(data)
+            ldj = -ops.log(data)
         if inverse:
             ldj = -ldj
-        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+        return self._sum_except_batch(ldj)

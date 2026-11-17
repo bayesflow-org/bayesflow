@@ -1,0 +1,102 @@
+import keras
+import numpy as np
+import pytest
+
+from bayesflow.utils.serialization import serialize, deserialize
+
+
+# ===========================================================================
+# ConsistencyModel
+# ===========================================================================
+
+
+def test_forward_raises(consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    with pytest.raises(NotImplementedError):
+        consistency_model(random_samples, conditions=random_conditions)
+
+
+def test_inverse_output_shape(consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    z = keras.random.normal(keras.ops.shape(random_samples))
+    x = consistency_model(z, conditions=random_conditions, inverse=True)
+    assert keras.ops.shape(x) == keras.ops.shape(random_samples)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(x)))
+
+
+def test_serialize_deserialize(consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    serialized = serialize(consistency_model)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+
+def test_compute_metrics(consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    metrics = consistency_model.compute_metrics(random_samples, conditions=random_conditions)
+    assert "loss" in metrics
+    loss = keras.ops.convert_to_numpy(metrics["loss"])
+    assert np.isfinite(loss), f"Loss is not finite: {loss}"
+
+
+# ===========================================================================
+# StableConsistencyModel
+# ===========================================================================
+
+
+def test_stable_forward_raises(stable_consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    stable_consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    with pytest.raises(NotImplementedError):
+        stable_consistency_model(random_samples, conditions=random_conditions)
+
+
+def test_stable_inverse_output_shape(stable_consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    stable_consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    z = keras.random.normal(keras.ops.shape(random_samples))
+    x = stable_consistency_model(z, conditions=random_conditions, inverse=True)
+    assert keras.ops.shape(x) == keras.ops.shape(random_samples)
+    assert np.all(np.isfinite(keras.ops.convert_to_numpy(x)))
+
+
+def test_stable_serialize_deserialize(stable_consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    stable_consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    serialized = serialize(stable_consistency_model)
+    deserialized = deserialize(serialized)
+    reserialized = serialize(deserialized)
+
+    assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
+
+
+@pytest.mark.skip_on_mps
+def test_stable_compute_metrics(stable_consistency_model, random_samples, random_conditions):
+    xz_shape = keras.ops.shape(random_samples)
+    cond_shape = keras.ops.shape(random_conditions) if random_conditions is not None else None
+    stable_consistency_model.build(xz_shape, conditions_shape=cond_shape)
+
+    metrics = stable_consistency_model.compute_metrics(random_samples, conditions=random_conditions)
+    assert "loss" in metrics
+    loss = keras.ops.convert_to_numpy(metrics["loss"])
+    assert np.isfinite(loss), f"Loss is not finite: {loss}"

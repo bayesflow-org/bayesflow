@@ -9,7 +9,7 @@ from .simulator import Simulator
 
 
 @singledispatch
-def make_simulator(arg, *_, **__):
+def make_simulator(arg, *_, **__) -> Simulator:
     """
     This is a dispatch function that will accept a list of simulators (callables) returning
     dictionaries with simulated outputs. The outputs of simulators will be passed to following
@@ -65,11 +65,11 @@ def _(
 
     for obj in objs:
         if hasattr(obj, "__name__"):
-            obj_kwargs = obj_kwargs.get(obj.__name__, {})
+            sim_kwargs = obj_kwargs.get(obj.__name__, {})
         else:
-            obj_kwargs = {}
+            sim_kwargs = {}
 
-        simulators.append(make_simulator(obj, **obj_kwargs))
+        simulators.append(make_simulator(obj, **sim_kwargs))
 
     if meta_fn is not None:
         if not inspect.signature(meta_fn).parameters:
@@ -111,8 +111,8 @@ def _(
     simulators = []
 
     for name, obj in objs.items():
-        obj_kwargs = obj_kwargs.get(name, {})
-        simulators.append(make_simulator(obj, **obj_kwargs))
+        sim_kwargs = obj_kwargs.get(name, {})
+        simulators.append(make_simulator(obj, **sim_kwargs))
 
     if meta_fn is not None:
         meta = LambdaSimulator(meta_fn, is_batched=True)

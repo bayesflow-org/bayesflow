@@ -10,13 +10,21 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    :glob:
    :numbered:
 
-   _examples/Linear_Regression_Starter.ipynb
-   _examples/From_BayesFlow_1.1_to_2.0.ipynb
-   _examples/Two_Moons_Starter.ipynb
-   _examples/SIR_Posterior_Estimation.ipynb
-   _examples/Bayesian_Experimental_Design.ipynb
-   _examples/From_ABC_to_BayesFlow.ipynb
-   _examples/One_Sample_TTest.ipynb
-   _examples/Lotka_Volterra_Point_Estimation.ipynb
-   _examples/Likelihood_Estimation.ipynb
-   _examples/Multimodal_Data.ipynb
+   Diffusion starter <_examples/Diffusion_Models>
+   Minimal amortized workflow <_examples/SIR_Posterior_Estimation>
+   Time-varying parameters <_examples/Bivariate_Smoothing>
+   Image or other spatial data <_examples/Spatial_Data_and_Parameters>
+   Generalized linear models <_examples/Bayesian_GLM>
+   Foundation models as backbones <_examples/Foundation_Models>
+   Neural likelihood estimation <_examples/Likelihood_Estimation>
+   Neural ratio estimation <_examples/Ratio_Estimation>
+   Compositional estimation <_examples/Compositional_Diffusion>
+   Deep Ensembles <_examples/Ensembles>
+   Self-consistency <_examples/Self_Consistency>
+   Model comparisons <_examples/One_Sample_TTest>
+   Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>
+   Multimodal data <_examples/Multimodal_Data>
+   Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>
+   From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>
+   Bayesian experimental design <_examples/Bayesian_Experimental_Design>
+   Model predictive control <_examples/Model_Predictive_Control>

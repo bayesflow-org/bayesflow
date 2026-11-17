@@ -2,10 +2,13 @@
 A collection of utility functions, mostly used for internal purposes.
 """
 
+from .keras_utils import resolve_seed
+
 from . import (
     keras_utils,
     logging,
     numpy_utils,
+    rng,
     serialization,
     tree,
 )
@@ -26,6 +29,7 @@ from .dict_utils import (
     squeeze_inner_estimates_dict,
     slice_maybe_nested,
     dim_maybe_nested,
+    expand_singletons_to_common_length,
 )
 
 from .dispatch import (
@@ -36,6 +40,8 @@ from .dispatch import (
     find_summary_network,
     find_inference_network,
     find_distribution,
+    find_scoring_rule,
+    find_transform,
 )
 
 from .ecdf import simultaneous_ecdf_bands, ranks
@@ -77,6 +83,8 @@ from .plot_utils import (
 )
 from .serialization import serialize_value_or_type, deserialize_value_or_type
 
+from .rng import next_seed_sequence, next_uint32, reseed_generator, reseed_random_state
+
 from .tensor_utils import (
     concatenate_valid,
     concatenate_valid_shapes,
@@ -91,9 +99,13 @@ from .tensor_utils import (
     expand_right_to,
     expand_tile,
     fill_triangular_matrix,
+    non_batch_axis,
     pad,
     positive_diag,
+    repeat_and_flatten,
     searchsorted,
+    linsolve_batched,
+    log_abs_det,
     size_of,
     stack_valid,
     tile_axis,
@@ -110,4 +122,4 @@ from ._docs import _add_imports_to_all
 
 from .logging import format_duration
 
-_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "serialization", "tree"])
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "rng", "serialization", "tree"])

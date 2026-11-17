@@ -1,6 +1,6 @@
 import pytest
 
-from bayesflow.networks import Sequential
+from bayesflow.networks.helpers import Sequential
 
 
 @pytest.fixture()

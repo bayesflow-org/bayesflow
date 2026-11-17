@@ -5,9 +5,12 @@ import keras
 import numpy as np
 
 from bayesflow.types import Tensor, Shape
-from . import logging
 
 T = TypeVar("T")
+
+
+def non_batch_axis(x: Tensor):
+    return tuple(range(1, keras.ops.ndim(x)))
 
 
 def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor | None:
@@ -16,6 +19,9 @@ def concatenate_valid(tensors: Sequence[Tensor | None], axis: int = 0) -> Tensor
 
     if not tensors:
         return None
+
+    if len(tensors) == 1:
+        return tensors[0]
 
     return keras.ops.concatenate(tensors, axis=axis)
 
@@ -104,11 +110,24 @@ def expand_tile(x: Tensor, n: int, axis: int) -> Tensor:
     return tile_axis(x, n, axis=axis)
 
 
+def repeat_and_flatten(x: Tensor, num_repeats: int) -> Tensor:
+    """Repeat each element along the leading (batch) axis and flatten back into it.
+
+    Inserts a new axis after the batch axis, tiles it ``num_repeats`` times and merges it back,
+    so ``(B, ...) -> (B * num_repeats, ...)`` with repeats of the same element kept adjacent
+    (ordering ``[x0, x0, ..., x1, x1, ...]``).
+    """
+    batch_size = keras.ops.shape(x)[0]
+    rest = tuple(keras.ops.shape(x)[1:])
+    x = expand_tile(x, num_repeats, axis=1)
+    return keras.ops.reshape(x, (batch_size * num_repeats,) + rest)
+
+
 def is_symbolic_tensor(x: Tensor) -> bool:
     if keras.utils.is_keras_tensor(x):
         return True
 
-    match keras.backend.backend():
+    match keras.config.backend():
         case "jax":
             import jax
 
@@ -120,7 +139,7 @@ def is_symbolic_tensor(x: Tensor) -> bool:
         case "torch":
             return False
         case _:
-            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.backend.backend()!r}")
+            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.config.backend()!r}")
 
 
 def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
@@ -157,15 +176,21 @@ def weighted_mean(elements: Tensor, weights: Tensor = None) -> Tensor:
     elements : Tensor
         A tensor containing the elements to average.
     weights : Tensor, optional
-        A tensor of the same shape as `elements` representing weights.
-        If None, the mean is computed without weights.
+        Weights aligned with the leading (batch) axis of `elements`, e.g., of shape (batch_size,) or
+        (batch_size, 1). If None, the mean is computed without weights.
 
     Returns
     -------
     Tensor
         A scalar tensor representing the (weighted) mean.
     """
-    return keras.ops.mean(elements * weights if weights is not None else elements)
+    if weights is None:
+        return keras.ops.mean(elements)
+
+    # drop trailing singleton axes, e.g. (batch_size, 1) -> (batch_size,), then broadcast along the batch axis
+    if keras.ops.ndim(weights) > keras.ops.ndim(elements):
+        weights = keras.ops.reshape(weights, keras.ops.shape(weights)[: keras.ops.ndim(elements)])
+    return keras.ops.mean(elements * expand_right_as(weights, elements))
 
 
 def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") -> Tensor:
@@ -173,12 +198,10 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
     Find indices where elements should be inserted to maintain order.
     """
 
-    match keras.backend.backend():
+    match keras.config.backend():
         case "jax":
             import jax
             import jax.numpy as jnp
-
-            logging.warn_once(f"searchsorted is not yet optimized for backend {keras.backend.backend()!r}")
 
             # do not vmap over the side argument (we have to pass it as a positional argument)
             in_axes = [0, 0, None]
@@ -216,7 +239,19 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
 
             return indices
         case _:
-            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")
+            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.config.backend()!r}")
+
+
+def linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:
+    """Solve Λ x = rhs for x, batched.  Lambda: (B,m,m), rhs: (B,m)."""
+    rhs_col = keras.ops.expand_dims(rhs, -1)
+    x = keras.ops.solve(lambda_matrix, rhs_col)
+    return keras.ops.squeeze(x, axis=-1)
+
+
+def log_abs_det(x: Tensor) -> Tensor:
+    """Compute the log absolute determinant of a matrix or batch of matrices."""
+    return keras.ops.slogdet(x)[1]
 
 
 def size_of(x) -> int:

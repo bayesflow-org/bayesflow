@@ -13,6 +13,7 @@ from matplotlib.legend_handler import HandlerPatch
 
 from .validators import check_estimates_prior_shapes
 from .dict_utils import dicts_to_arrays
+from .exceptions import ShapeError
 
 
 def prepare_plot_data(
@@ -24,6 +25,7 @@ def prepare_plot_data(
     num_row: int = None,
     figsize: tuple = None,
     stacked: bool = False,
+    pairwise: bool = False,
     default_name: str = "v",
 ) -> dict[str, Any]:
     """
@@ -56,6 +58,8 @@ def prepare_plot_data(
         Size of the figure adjusting to the display resolution
     stacked           : bool, optional, default: False
         Whether the plots are stacked horizontally
+    pairwise          : bool, optional, default: False
+        Whether to arrange one row and column per variable.
     default_name      : str, optional (default = "v")
         The default name to use for estimates if None provided
 
@@ -82,7 +86,12 @@ def prepare_plot_data(
     plot_data["num_variables"] = num_variables
 
     # Configure layout
-    num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
+    if pairwise:
+        if num_variables == 0:
+            raise ShapeError("Pairwise plots require at least one variable.")
+        num_row = num_col = num_variables
+    else:
+        num_row, num_col = set_layout(num_variables, num_row, num_col, stacked)
 
     # Initialize figure
     fig, axes = make_figure(num_row, num_col, figsize=figsize)
@@ -93,6 +102,47 @@ def prepare_plot_data(
     plot_data["num_col"] = num_col
 
     return plot_data
+
+
+def compute_recovery_estimates(
+    estimates: np.ndarray,
+    targets: np.ndarray,
+    point_agg,
+    uncertainty_agg,
+    point_agg_kwargs: dict = None,
+    uncertainty_agg_kwargs: dict = None,
+) -> dict[str, np.ndarray | None]:
+    """Compute and validate point estimates and error bars for recovery plots.
+
+    Returns
+    -------
+    dict[str, np.ndarray or None]
+        The computed ``point_estimates`` and ``uncertainty`` errors. The latter
+        is ``None`` when no uncertainty aggregator is supplied.
+    """
+    if estimates.ndim != 3 or any(size == 0 for size in estimates.shape):
+        raise ShapeError("estimates must have nonempty dataset, draw, and variable axes.")
+
+    points = np.asarray(point_agg(estimates, axis=1, **(point_agg_kwargs or {})))
+    if points.shape != targets.shape:
+        raise ShapeError("point_agg must return shape (num_datasets, num_variables).")
+
+    if uncertainty_agg is None:
+        return {"point_estimates": points, "uncertainty": None}
+
+    uncertainty = np.asarray(uncertainty_agg(estimates, axis=1, **(uncertainty_agg_kwargs or {})))
+    if uncertainty.shape == (2, *points.shape):
+        # Do not modify a caller-owned (possibly read-only) bounds array.
+        errors = np.stack((points - uncertainty[0], uncertainty[1] - points))
+    elif uncertainty.shape == points.shape:
+        errors = np.stack((uncertainty, uncertainty))
+    else:
+        raise ShapeError("uncertainty_agg must return shape (num_datasets, num_variables) or (2, ...).")
+
+    if np.any(errors < 0):
+        raise ValueError("Uncertainty errors must be nonnegative and bounds must enclose the point estimates.")
+
+    return {"point_estimates": points, "uncertainty": errors}
 
 
 def compute_empirical_coverage(
@@ -296,8 +346,11 @@ def add_x_labels(
     """TODO: docstring"""
     if num_row == 1:
         bottom_row = axes
+    elif axes.ndim == 2:
+        bottom_row = axes[num_row - 1, :]
     else:
-        bottom_row = axes[num_row - 1, :] if num_col > 1 else axes
+        # 1D array: single-column layout — bottom axis is the last element
+        bottom_row = axes[-1:]
     for i, ax in enumerate(bottom_row):
         # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
         ax.set_xlabel(xlabel if isinstance(xlabel, str) else xlabel[i], fontsize=label_fontsize)
@@ -306,11 +359,12 @@ def add_x_labels(
 def add_y_labels(axes: np.ndarray, num_row: int = None, ylabel: Sequence[str] | str = None, label_fontsize: int = None):
     """TODO: docstring"""
 
-    if num_row == 1:  # if there is only one row, the ax array is 1D
-        axes[0].set_ylabel(ylabel, fontsize=label_fontsize)
-    # If there is more than one row, the ax array is 2D
+    if num_row == 1:
+        axes.flat[0].set_ylabel(ylabel, fontsize=label_fontsize)
     else:
-        for i, ax in enumerate(axes[:, 0]):
+        # axes[:, 0] for 2D; axes itself for 1D (single-column layout)
+        left_col = axes[:, 0] if axes.ndim == 2 else axes
+        for i, ax in enumerate(left_col):
             # If labels are in sequence, set them sequentially. Otherwise, one label fits all.
             ax.set_ylabel(ylabel if isinstance(ylabel, str) else ylabel[i], fontsize=label_fontsize)
 
@@ -475,10 +529,14 @@ def create_legends(
     color2: str | tuple = "gray",
     label: str = "Posterior",
     show_single_legend: bool = False,
+    place_legend_below: bool = False,
     legend_fontsize: int = 14,
-    markersize: float = 40,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
     target_color: str = "red",
     target_markersize: float = 40,
+    **kwargs,
 ):
     """
     Helper function to create legends for pairplots.
@@ -498,10 +556,20 @@ def create_legends(
     show_single_legend : bool, optional, default: False
         Optional toggle for the user to choose whether a single dataset
         should also display legend
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot.
+        If set to True, then user-defined legend location, anchor, and ncol
+        will be ignored and overwritten by presets.
     legend_fontsize    : int, optional, default: 14
         fontsize for the legend
-    markersize  : float, optional, default: 40
-        The marker size in points**2
+    legend_location  : str, optional, default: "center left"
+        Anchoring location of the legend bounding box to position the legends
+        globally
+    legend_anchor  : tuple, optional, default: (1, 0.5)
+        Anchor coordinate to globally position the legends
+    legend_ncol  : int, optional, default: 1
+        Number of legend columns
     target_color : str, optional, default: "red"
         Color for the target label
     target_markersize : float, optional, default: 40
@@ -535,13 +603,20 @@ def create_legends(
         handles.append(target_handle)
         labels.append(target_label)
 
+    if place_legend_below:
+        legend_location = "upper center"
+        legend_anchor = (0.5, 0)
+        legend_ncol = 3
+
     # If there are more than one dataset to plot,
     if len(handles) > 1 or show_single_legend:
         g.figure.legend(
             handles=handles,
             labels=labels,
-            loc="center left",
-            bbox_to_anchor=(1, 0.5),
+            loc=legend_location,
+            bbox_to_anchor=legend_anchor,
+            ncol=legend_ncol,
             frameon=False,
             fontsize=legend_fontsize,
+            **kwargs,
         )

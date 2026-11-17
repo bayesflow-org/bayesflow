@@ -4,22 +4,7 @@ import pytest
 
 @pytest.fixture()
 def batch_size():
-    return 16
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_batched(request):
-    return request.param
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_numpy(request):
-    return request.param
-
-
-@pytest.fixture(params=[False, True], autouse=True)
-def use_squeezed(request):
-    return request.param
+    return 4
 
 
 @pytest.fixture()
@@ -189,6 +174,32 @@ def multimodel():
     simulator = ModelComparisonSimulator(simulators=[simulator_0, simulator_1], shared_simulator=context)
 
     return simulator
+
+
+@pytest.fixture()
+def multimodel_single_batch():
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+
+    def context(batch_size):
+        return dict(n=np.random.randint(10, 100))
+
+    def prior_0():
+        return dict(mu=0)
+
+    def prior_1():
+        return dict(mu=np.random.standard_normal())
+
+    def likelihood(n, mu):
+        return dict(y=np.random.normal(mu, 1, n))
+
+    simulator_0 = make_simulator([prior_0, likelihood])
+    simulator_1 = make_simulator([prior_1, likelihood])
+
+    return ModelComparisonSimulator(
+        simulators=[simulator_0, simulator_1],
+        shared_simulator=context,
+        use_mixed_batches=False,
+    )
 
 
 @pytest.fixture(params=["drop", "fill", "error"])

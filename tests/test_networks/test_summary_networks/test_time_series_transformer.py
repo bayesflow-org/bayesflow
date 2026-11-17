@@ -1,0 +1,219 @@
+import numpy as np
+import pytest
+import keras
+
+from bayesflow.networks import TimeSeriesTransformer
+
+from .conftest import (
+    BATCH,
+    FEATURE_DIM,
+    SUMMARY_DIM,
+    make_3d_input,
+    check_output_shape,
+    check_serialize_deserialize,
+    check_save_and_load,
+    check_variable_set_size,
+)
+
+
+def _make(return_sequences=False, **kwargs):
+    return TimeSeriesTransformer(
+        summary_dim=SUMMARY_DIM,
+        embed_dims=(8, 8),
+        num_heads=(2, 2),
+        dropout=0.0,
+        return_sequences=return_sequences,
+        **kwargs,
+    )
+
+
+@pytest.fixture
+def net():
+    return _make()
+
+
+@pytest.fixture
+def x():
+    return make_3d_input(set_size=12)
+
+
+def test_output_shape(net, x):
+    check_output_shape(net, x)
+
+
+def test_serialize_deserialize(net, x):
+    check_serialize_deserialize(net, x)
+
+
+def test_save_and_load(net, x, tmp_path):
+    check_save_and_load(net, x, tmp_path)
+
+
+def test_variable_sequence_length(net, x):
+    check_variable_set_size(net, x)
+
+
+def test_save_and_load_gru_embedding(tmp_path):
+    net = _make(time_embedding="gru", time_embed_dim=4)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+def test_save_and_load_no_time_embedding(tmp_path):
+    net = _make(time_embedding=None)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+def test_save_and_load_explicit_time_axis(tmp_path):
+    net = _make(time_axis=2, time_embed_dim=4)
+    check_save_and_load(net, make_3d_input(set_size=12, features=3), tmp_path)
+
+
+@pytest.mark.parametrize("time_embedding", ["time2vec", "gru"])
+def test_time_embedding_types(time_embedding):
+    net = _make(time_embedding=time_embedding, time_embed_dim=4)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_no_time_embedding():
+    net = _make(time_embedding=None)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_explicit_time_axis():
+    net = _make(time_axis=2, time_embed_dim=4)
+    x = make_3d_input(set_size=12, features=3)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_return_sequences_false():
+    net = _make(return_sequences=False)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert len(keras.ops.shape(y)) == 2
+    assert keras.ops.shape(y)[-1] == SUMMARY_DIM
+    assert net.summary_token.__class__.__name__ == "SummaryToken"
+
+
+def test_attention_is_ungated_by_default():
+    net = _make()
+
+    assert net.gate_attention is False
+    assert all(block.gate_attention is False for block in net.attention_blocks)
+    assert all(block.attention_scale is None for block in net.attention_blocks)
+
+
+@pytest.mark.parametrize("glu_variant", ["swiglu", "geglu"])
+def test_glu_variants(glu_variant):
+    net = _make(glu_variant=glu_variant)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_return_sequences_true():
+    net = _make(return_sequences=True)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    # many-to-many: (batch, seq_len, summary_dim)
+    assert keras.ops.shape(y) == (BATCH, 12, SUMMARY_DIM)
+
+
+def test_save_and_load_return_sequences_true(tmp_path):
+    net = _make(return_sequences=True)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+def test_make_attention_mask_prefers_attention_mask():
+    mask = keras.ops.ones((BATCH, 12), dtype="bool")
+    attention_mask = keras.ops.zeros((BATCH, 12), dtype="bool")
+    out = TimeSeriesTransformer.make_attention_mask(attention_mask=attention_mask, mask=mask)
+
+    assert keras.ops.shape(out) == (BATCH, 1, 12)
+    assert not np.any(keras.ops.convert_to_numpy(out))
+
+
+def test_make_attention_mask_rejects_non_sequence_mask():
+    attention_mask = keras.ops.ones((BATCH, 12, 12), dtype="bool")
+
+    with pytest.raises(ValueError):
+        TimeSeriesTransformer.make_attention_mask(attention_mask=attention_mask)
+
+
+def test_downsample_output_shape():
+    net = _make(downsample=2)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_downsample_return_sequences_true():
+    net = _make(return_sequences=True, downsample=3)
+    x = make_3d_input(set_size=12)
+    y = net(x, training=False)
+    assert keras.ops.shape(y) == (BATCH, 4, SUMMARY_DIM)
+
+
+def test_downsample_explicit_attention_mask():
+    net = _make(downsample=3)
+    x = make_3d_input(set_size=12)
+    attention_mask = keras.ops.ones((BATCH, 12), dtype="bool")
+    y = net(x, training=False, attention_mask=attention_mask)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_save_and_load_downsample(tmp_path):
+    net = _make(downsample=2)
+    check_save_and_load(net, make_3d_input(set_size=12), tmp_path)
+
+
+@pytest.mark.parametrize("downsample", [0, -1, 1.5, True])
+def test_invalid_downsample(downsample):
+    with pytest.raises(ValueError):
+        _make(downsample=downsample)
+
+
+def test_no_layer_norm():
+    net = _make(layer_norm=False)
+    y = net(make_3d_input(set_size=12), training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_lstm_embedding():
+    net = _make(time_embedding="lstm", time_embed_dim=4)
+    y = net(make_3d_input(set_size=12), training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def test_use_bias():
+    net = _make(use_bias=True)
+    y = net(make_3d_input(set_size=12), training=False)
+    assert keras.ops.shape(y) == (BATCH, SUMMARY_DIM)
+
+
+def _padding_mask(real_len, pad_len):
+    return keras.ops.concatenate([keras.ops.ones((BATCH, real_len)), keras.ops.zeros((BATCH, pad_len))], axis=1)
+
+
+def test_padding_mask_invariance():
+    """Right-padding with a matching mask leaves the summary unchanged."""
+    real_len, pad_len = 5, 4
+    net = _make()
+
+    x_real = make_3d_input(set_size=real_len)
+    s_short = keras.ops.convert_to_numpy(net(x_real, training=False))
+
+    pad = keras.ops.full((BATCH, pad_len, FEATURE_DIM), 1e3)
+    x_pad = keras.ops.concatenate([x_real, keras.ops.cast(pad, x_real.dtype)], axis=1)
+    mask = _padding_mask(real_len, pad_len)
+
+    s_masked = keras.ops.convert_to_numpy(net(x_pad, training=False, mask=mask))
+    s_nomask = keras.ops.convert_to_numpy(net(x_pad, training=False))
+
+    assert s_masked.shape == (BATCH, SUMMARY_DIM)
+    assert np.allclose(s_short, s_masked, rtol=1e-4, atol=1e-5)
+    assert not np.allclose(s_short, s_nomask, atol=1e-3)

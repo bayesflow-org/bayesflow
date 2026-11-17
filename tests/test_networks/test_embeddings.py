@@ -2,7 +2,7 @@ import pytest
 import keras
 import numpy as np
 
-from bayesflow.networks.embeddings import FourierEmbedding, RecurrentEmbedding, Time2Vec, FiLM
+from bayesflow.networks.helpers import FourierEmbedding, RecurrentEmbedding, Time2Vec, FiLM
 
 
 def test_fourier_embedding_output_shape_and_type():
@@ -39,6 +39,29 @@ def test_fourier_embedding_without_identity():
 def test_fourier_embedding_raises_for_odd_embed_dim():
     with pytest.raises(ValueError):
         FourierEmbedding(embed_dim=7)
+
+
+def _fourier_features(t, w, scale):
+    proj = t * w * 2 * np.pi * scale
+    return np.concatenate([np.sin(proj), np.cos(proj)], axis=-1)
+
+
+def test_fourier_embedding_embeds_each_time_channel():
+    emb_layer = FourierEmbedding(embed_dim=8)
+    t = keras.random.uniform((4, 2))
+    emb = keras.ops.convert_to_numpy(emb_layer(t))
+
+    assert tuple(emb_layer.w.shape) == (2, 4)
+    assert emb.shape == emb_layer.compute_output_shape((4, 2)) == (4, 18)
+
+    # identity first, then the features of each channel with its own frequencies
+    t = keras.ops.convert_to_numpy(t)
+    w = keras.ops.convert_to_numpy(emb_layer.w)
+    expected = np.concatenate(
+        [t, _fourier_features(t[:, :1], w[0], emb_layer.scale), _fourier_features(t[:, 1:], w[1], emb_layer.scale)],
+        axis=-1,
+    )
+    np.testing.assert_allclose(emb, expected, rtol=1e-5, atol=1e-5)
 
 
 def test_recurrent_embedding_lstm_and_gru_shapes():
@@ -82,6 +105,30 @@ def test_time2vec_shapes_and_output():
     assert emb.shape == (batch_size, seq_len, expected_dim)
 
 
+@pytest.mark.parametrize(
+    "make_layer",
+    [
+        lambda: Time2Vec(num_periodic_features=4),
+        lambda: RecurrentEmbedding(embed_dim=6, embedding="lstm"),
+        lambda: RecurrentEmbedding(embed_dim=6, embedding="gru"),
+    ],
+    ids=["time2vec", "lstm", "gru"],
+)
+def test_implicit_steps_length_invariant(make_layer):
+    """With t=None implicit time steps, the embedding of
+    the first real steps is unchanged when the sequence is right-padded with extra steps."""
+    batch, real_len, pad_len, dim = 2, 5, 4, 3
+    layer = make_layer()
+
+    x_short = keras.ops.zeros((batch, real_len, dim), dtype="float32")
+    x_padded = keras.ops.zeros((batch, real_len + pad_len, dim), dtype="float32")
+
+    emb_short = keras.ops.convert_to_numpy(layer(x_short))
+    emb_padded = keras.ops.convert_to_numpy(layer(x_padded))
+
+    np.testing.assert_allclose(emb_short, emb_padded[:, :real_len], rtol=1e-5, atol=1e-6)
+
+
 def test_film_modulation():
     """Test that FiLM correctly applies affine transformation."""
     batch_size = 2
@@ -105,15 +152,15 @@ def test_film_modulation():
 
 
 def test_film_integration_with_conditional_residual():
-    """Test FiLM works correctly when used in ConditionalResidual."""
-    from bayesflow.networks.residual import ConditionalResidual
+    """Test FiLM works correctly when used in ConditionalDenseBlock."""
+    from bayesflow.networks.helpers import ConditionalDenseBlock
 
     width = 32
     batch_size = 4
     input_dim = 16
     cond_dim = 64
 
-    block = ConditionalResidual(
+    block = ConditionalDenseBlock(
         width=width,
         residual=True,
         activation="relu",

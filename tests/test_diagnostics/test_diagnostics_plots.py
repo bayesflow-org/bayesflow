@@ -1,4 +1,5 @@
 import bayesflow as bf
+import keras
 import numpy as np
 import pytest
 
@@ -102,6 +103,29 @@ def test_loss(history):
     assert out.axes[0].title._text == "Loss Trajectory"
 
 
+def test_loss_components():
+    h = keras.callbacks.History()
+    total, reg = np.linspace(1, 0, 10), np.linspace(5, 0, 10)
+    h.history = {"loss": total.tolist(), "val_loss": (total + 0.1).tolist(), "layer_loss": reg.tolist()}
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0)
+    assert len(out.axes) == 1
+    assert out.axes[0].get_ylabel() == "Loss"
+    assert out.axes[0].get_title() == "Loss Trajectory"
+
+    out = bf.diagnostics.loss(h, smoothing_factor=0, show_components=True)
+    assert len(out.axes) == 2
+    np.testing.assert_allclose(out.axes[0].lines[0].get_ydata(), total)
+    np.testing.assert_allclose(out.axes[0].lines[1].get_ydata(), total + 0.1)
+    np.testing.assert_allclose(out.axes[1].lines[0].get_ydata(), reg)
+    assert out.axes[0].get_ylabel() == "Total Loss"
+    assert out.axes[0].get_title() == "Loss Trajectories"
+    assert out.axes[1].get_ylabel() == "Layer Loss"
+
+    out = bf.diagnostics.loss(h, show_components=True, component_names={"layer_loss": "Regularization"})
+    assert out.axes[1].get_ylabel() == "Regularization"
+
+
 def test_recovery_bounds(random_estimates, random_targets):
     # basic functionality: automatic variable names
     from bayesflow.utils.numpy_utils import credible_interval
@@ -192,6 +216,25 @@ def test_pairs_posterior(random_estimates, random_targets, random_priors):
     assert out.axes[0, 0].get_ylabel() == "beta_0"
     assert out.axes[2, 2].get_xlabel() == "sigma"
     assert out.figure.legends[0].get_texts()[0]._text == "Prior"
+
+    # Test legend placement toggle
+    out = bf.diagnostics.plots.pairs_posterior(
+        estimates=random_estimates,
+        targets=random_targets,
+        dataset_id=1,
+        place_legend_below=True,
+    )
+    assert len(out.figure.legends) >= 1
+
+    # Placement should change location, number of columns, and anchor point
+    legends = out.figure.legends[0]
+    assert legends._loc == "upper center" or legends._loc == 9
+    assert legends._ncols == 3
+
+    bbox = legends.get_bbox_to_anchor()
+    anchor = getattr(bbox, "_bbox", bbox)
+    assert np.isclose(anchor.x0, 0.5)
+    assert np.isclose(anchor.y0, 0.0)
 
     with pytest.raises(ValueError):
         bf.diagnostics.plots.pairs_posterior(
@@ -313,6 +356,19 @@ def test_mc_confusion_matrix(pred_models, true_models, model_names):
     assert out.axes[0].get_title() == "Confusion Matrix"
 
 
+def test_mc_confusion_matrix_into_axis(pred_models, true_models, model_names):
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    out = bf.diagnostics.plots.mc_confusion_matrix(pred_models, true_models, model_names, ax=ax)
+    # Draws into the provided axis and returns its parent figure (enables composition).
+    assert out is fig
+    assert ax.get_ylabel() == "True model"
+    assert ax.get_xlabel() == "Predicted model"
+    assert ax.get_title() == "Confusion Matrix"
+    plt.close(fig)
+
+
 def test_coverage(random_estimates, random_targets):
     # basic functionality: automatic variable names
     out = bf.diagnostics.plots.coverage(random_estimates, random_targets)
@@ -339,3 +395,229 @@ def test_coverage_diff(random_estimates, random_targets):
     assert out.axes[1].title._text == "beta_1"
     assert out.axes[0].get_xlabel() == "Central interval width"
     assert out.axes[0].get_ylabel() == "Empirical coverage difference"
+
+
+def test_bayes_factor_recovery(pred_log_bayes_factors, true_log_bayes_factors, true_models, model_names):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+    )
+    num_competing = pred_log_bayes_factors.shape[-1]
+    assert len(out.axes) == num_competing
+    assert "log" in out.axes[0].get_xlabel().lower()
+    assert "log" in out.axes[0].get_ylabel().lower()
+
+
+def test_pairwise_bayes_factors(pred_log_bayes_factors, true_models, model_names):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_into_axis(pred_log_bayes_factors, true_models, model_names):
+    import matplotlib.pyplot as plt
+
+    fig, ax = plt.subplots()
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+        ax=ax,
+    )
+    # Draws into the provided axis and returns its parent figure (enables composition).
+    assert out is fig
+    assert ax.get_ylabel() == "True model"
+    assert ax.get_title() == "Mean log Bayes factor"
+    plt.close(fig)
+
+
+def test_pairwise_bayes_factors_blue_only_when_embedded(pred_log_bayes_factors, true_models, model_names):
+    """The brighter accent blue appears only when embedded in an axis; standalone stays navy."""
+    import matplotlib.pyplot as plt
+    import matplotlib.colors as mcolors
+
+    # Standalone (ax=None) -> navy blue end.
+    standalone = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors, true_models=true_models, model_names=model_names
+    )
+    standalone_blue = mcolors.to_hex(standalone.axes[0].images[0].cmap(1.0))
+    assert standalone_blue == "#132a70"
+    plt.close(standalone)
+
+    # Embedded (ax provided) -> brighter Bayes factor accent blue.
+    fig, ax = plt.subplots()
+    bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors, true_models=true_models, model_names=model_names, ax=ax
+    )
+    embedded_blue = mcolors.to_hex(ax.images[0].cmap(1.0))
+    assert embedded_blue == "#6969ff"
+    plt.close(fig)
+
+
+def test_confusion_matrix_and_pairwise_bayes_factors_side_by_side(
+    pred_models, pred_log_bayes_factors, true_models, model_names
+):
+    """The confusion matrix and pairwise Bayes factor heatmap compose into a shared figure."""
+    import matplotlib.pyplot as plt
+
+    fig, axes = plt.subplots(1, 2, figsize=(11, 5))
+    cm_fig = bf.diagnostics.plots.mc_confusion_matrix(pred_models, true_models, model_names, ax=axes[0])
+    pbf_fig = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        model_names=model_names,
+        ax=axes[1],
+    )
+    # Both draw into the same shared figure...
+    assert cm_fig is fig and pbf_fig is fig
+    # ...each panel plus its own colorbar -> 4 axes total...
+    assert len(fig.axes) == 4
+    # ...and each panel keeps its own title (no grand overarching title).
+    assert axes[0].get_title() == "Confusion Matrix"
+    assert axes[1].get_title() == "Mean log Bayes factor"
+    # Embedded pairwise heatmap uses the brighter accent blue to stand apart from the navy matrix.
+    import matplotlib.colors as mcolors
+
+    assert mcolors.to_hex(axes[1].images[0].cmap(1.0)) == "#6969ff"
+    plt.close(fig)
+
+
+def test_pairwise_bayes_factors_integer_labels(pred_log_bayes_factors, true_models):
+    true_model_idx = np.argmax(true_models, axis=-1)
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_model_idx,
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_no_title(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        title=False,
+    )
+    assert out.axes[0].get_title() == ""
+
+
+def test_pairwise_bayes_factors_custom_fmt(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        fmt=".2f",
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_custom_cmap(pred_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_models=true_models,
+        cmap="coolwarm",
+    )
+    assert out.axes is not None
+
+
+def test_pairwise_bayes_factors_zero_matrix():
+    # all-zero mean matrix triggers abs_max = 0 → fallback to 1.0
+    pred = np.zeros((10, 2))
+    true_models = np.eye(3)[np.zeros(10, dtype=int)]
+    out = bf.diagnostics.plots.pairwise_bayes_factors(
+        pred_log_bayes_factors=pred,
+        true_models=true_models,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_shape_mismatch():
+    pred = np.random.normal(size=(10, 2))
+    true_wrong = np.random.normal(size=(10, 3))
+    true_models = np.eye(3)[np.random.choice(3, 10)]
+    with pytest.raises(ValueError, match="same shape"):
+        bf.diagnostics.plots.bayes_factor_recovery(
+            pred_log_bayes_factors=pred,
+            true_log_bayes_factors=true_wrong,
+            true_models=true_models,
+        )
+
+
+def test_bayes_factor_recovery_integer_labels(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    true_model_idx = np.argmax(true_models, axis=-1)
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_model_idx,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_no_corr(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        add_corr=False,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_markersize(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        markersize=5.0,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_custom_layout(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # Use a 2×2 grid (more panels than needed) to exercise custom num_col/num_row
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_col=2,
+        num_row=2,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_only_num_row(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # num_row set, num_col inferred → covers elif num_col is None branch
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_row=1,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_only_num_col(pred_log_bayes_factors, true_log_bayes_factors, true_models):
+    # num_col set, num_row inferred → covers elif num_row is None branch
+    # num_col=1 also exercises the single-column layout path in add_y_labels / add_x_labels
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models,
+        num_col=1,
+    )
+    assert out.axes is not None
+
+
+def test_bayes_factor_recovery_missing_model(pred_log_bayes_factors, true_log_bayes_factors):
+    # All samples from model 0 → models 1 and 2 have empty masks → covers continue branch
+    true_models_skewed = np.zeros((100, 3), dtype=np.int32)
+    true_models_skewed[:, 0] = 1
+    out = bf.diagnostics.plots.bayes_factor_recovery(
+        pred_log_bayes_factors=pred_log_bayes_factors,
+        true_log_bayes_factors=true_log_bayes_factors,
+        true_models=true_models_skewed,
+    )
+    assert out.axes is not None

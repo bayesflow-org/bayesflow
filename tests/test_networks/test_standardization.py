@@ -2,7 +2,8 @@ import pytest
 import numpy as np
 import keras
 
-from bayesflow.networks.standardization import Standardization
+from bayesflow.networks.helpers import Standardization
+from bayesflow.networks.helpers.standardization.standardize import Standardize
 from bayesflow.utils.serialization import serialize, deserialize
 
 from tests.utils import assert_layers_equal
@@ -10,9 +11,11 @@ from tests.utils import assert_layers_equal
 
 def test_forward_standardization_training():
     random_input = keras.random.normal((8, 4))
+    random_input_shapes = dict(inference_variables=random_input.shape)
 
-    layer = Standardization()
-    layer.build(random_input.shape)
+    std = Standardization(standardize="all")
+    std.build(random_input_shapes)
+    layer = std.standardize_layers["inference_variables"]
 
     out = layer(random_input, stage="training")
 
@@ -27,11 +30,33 @@ def test_forward_standardization_training():
     np.testing.assert_allclose(np.std(out, axis=0), 1.0, atol=1e-5)
 
 
+def test_forward_standardization_mask_invariance():
+    real_len, pad_len = 5, 4
+    real_input = keras.random.normal((8, real_len, 3), mean=10)
+    padded_input = keras.ops.concatenate([real_input, keras.ops.zeros((8, pad_len, 3))], axis=-2)
+    mask = keras.ops.concatenate([keras.ops.ones((8, real_len)), keras.ops.zeros((8, pad_len))], axis=-1)
+
+    masked = Standardize()
+    masked(padded_input, stage="training", mask=mask)
+
+    reference = Standardize()
+    reference(real_input, stage="training")
+
+    for attr in ["moving_mean", "moving_m2", "count"]:
+        np.testing.assert_allclose(
+            keras.ops.convert_to_numpy(getattr(masked, attr)[0]),
+            keras.ops.convert_to_numpy(getattr(reference, attr)[0]),
+            rtol=1e-6,
+        )
+
+
 def test_forward_standardization_training_constant_batch():
     constant_input = keras.ops.ones((8, 4))
+    constant_input_shapes = dict(a=constant_input.shape)
 
-    layer = Standardization()
-    layer.build(constant_input.shape)
+    std = Standardization(standardize="a")
+    std.build(constant_input_shapes)
+    layer = std.standardize_layers["a"]
 
     out = layer(constant_input, stage="training")
 
@@ -49,9 +74,11 @@ def test_forward_standardization_training_constant_batch():
 
 def test_inverse_standardization_ldj():
     random_input = keras.random.normal((1, 3))
+    random_input_shapes = dict(a=random_input.shape)
 
-    layer = Standardization(momentum=0.0)
-    layer.build(random_input.shape)
+    std = Standardization(standardize="a", momentum=0.0)
+    std.build(random_input_shapes)
+    layer = std.standardize_layers["a"]
 
     _ = layer(random_input, stage="training", forward=True)
     inv_x, ldj = layer(random_input, stage="inference", forward=False, log_det_jac=True)
@@ -62,7 +89,12 @@ def test_inverse_standardization_ldj():
 
 def test_consistency_forward_inverse():
     random_input = keras.random.normal((4, 20, 5))
-    layer = Standardization()
+    random_input_shapes = dict(z=random_input.shape)
+
+    std = Standardization(standardize="z")
+    std.build(random_input_shapes)
+    layer = std.standardize_layers["z"]
+
     _ = layer(random_input, stage="training", forward=True)
 
     standardized = layer(random_input, stage="inference", forward=True)
@@ -78,12 +110,23 @@ def test_nested_consistency_forward_inverse():
     random_input_a = keras.random.normal((2, 3, 5))
     random_input_b = keras.random.normal((4, 3))
     random_input = {"a": random_input_a, "b": random_input_b}
+    random_input_shapes = {"a": random_input_a.shape, "b": random_input_b.shape}
 
-    layer = Standardization()
+    std = Standardization(standardize=["a", "b"])
+    std.build(random_input_shapes)
 
-    _ = layer(random_input, stage="training", forward=True)
-    standardized = layer(random_input, stage="inference", forward=True)
-    recovered = layer(standardized, stage="inference", forward=False)
+    _ = std.maybe_standardize(random_input["a"], key="a", stage="training", forward=True)
+    _ = std.maybe_standardize(random_input["b"], key="b", stage="training", forward=True)
+
+    standardized = {
+        "a": std.maybe_standardize(random_input["a"], key="a", stage="inference", forward=True),
+        "b": std.maybe_standardize(random_input["b"], key="b", stage="inference", forward=True),
+    }
+
+    recovered = {
+        "a": std.maybe_standardize(standardized["a"], key="a", stage="inference", forward=False),
+        "b": std.maybe_standardize(standardized["b"], key="b", stage="inference", forward=False),
+    }
 
     random_input = keras.tree.map_structure(keras.ops.convert_to_numpy, random_input)
     recovered = keras.tree.map_structure(keras.ops.convert_to_numpy, recovered)
@@ -99,22 +142,28 @@ def test_nested_accuracy_forward():
     random_input_a_1 = keras.random.normal((2, 3, 5))
     random_input_b_1 = keras.random.normal((4, 3))
     random_input_1 = {"a": random_input_a_1, "b": random_input_b_1}
-
     random_input_a_2 = keras.random.normal((3, 3, 5))
     random_input_b_2 = keras.random.normal((3, 3))
     random_input_2 = {"a": random_input_a_2, "b": random_input_b_2}
 
     # complete data for testing mean and std are 0 and 1
     random_input = tree_concatenate([random_input_1, random_input_2], axis=0)
+    random_input_shapes = {"a": random_input_a_1.shape, "b": random_input_b_1.shape}
+    std = Standardization(standardize=["a", "b"])
+    std.build(random_input_shapes)
 
-    layer = Standardization()
+    # two training passes
+    _ = std.maybe_standardize(random_input_1["a"], key="a", stage="training", forward=True)
+    _ = std.maybe_standardize(random_input_1["b"], key="b", stage="training", forward=True)
+    _ = std.maybe_standardize(random_input_2["a"], key="a", stage="training", forward=True)
+    _ = std.maybe_standardize(random_input_2["b"], key="b", stage="training", forward=True)
 
-    _ = layer(random_input_1, stage="training", forward=True)
-    _ = layer(random_input_2, stage="training", forward=True)
-
-    standardized = layer(random_input, stage="inference", forward=True)
+    # standardize the full combined input at inference
+    standardized = {
+        "a": std.maybe_standardize(random_input["a"], key="a", stage="inference", forward=True),
+        "b": std.maybe_standardize(random_input["b"], key="b", stage="inference", forward=True),
+    }
     standardized = keras.tree.map_structure(keras.ops.convert_to_numpy, standardized)
-
     np.testing.assert_allclose(
         np.mean(standardized["a"], axis=tuple(range(standardized["a"].ndim - 1))), 0.0, atol=1e-4
     )
@@ -125,59 +174,75 @@ def test_nested_accuracy_forward():
     np.testing.assert_allclose(np.std(standardized["b"], axis=tuple(range(standardized["b"].ndim - 1))), 1.0, atol=1e-4)
 
 
+def test_transformation_type_identity():
+    x = keras.random.normal((2, 2))
+    y = keras.random.normal((2, 2))
+
+    std = Standardization(standardize=["x"])
+    std.build({"x": x.shape})
+    _ = std.maybe_standardize(x, key="x", stage="training", forward=True)
+
+    should_be_unchanged = std.maybe_standardize(
+        y, key="x", stage="inference", forward=False, transformation_type="identity"
+    )
+
+    # conversion needed for torch on mps
+    should_be_unchanged = keras.ops.convert_to_numpy(should_be_unchanged)
+    y = keras.ops.convert_to_numpy(y)
+    np.testing.assert_allclose(y, should_be_unchanged, atol=1e-4)
+
+
+@pytest.mark.skip_on_mps
 def test_transformation_type_both_sides_scale():
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
     mean = np.array([1, 10], dtype="float32")
-
     # Generate samples
     cholesky = keras.ops.cholesky(covariance)  # (dim, dim)
     normals = keras.random.normal((128, 2))  # (batch_size, dim)
     scaled = keras.ops.einsum("ij,bj->bi", cholesky, normals)
-
     random_input = keras.ops.convert_to_tensor(mean[None, :]) + scaled
-
-    layer = Standardization()
-    _ = layer(random_input, stage="training", forward=True)
-
+    random_input_shapes = {"x": random_input.shape}
+    std = Standardization(standardize=["x"])
+    std.build(random_input_shapes)
+    _ = std.maybe_standardize(random_input, key="x", stage="training", forward=True)
     # Standardize samples
-    standardized = layer(random_input, stage="inference", forward=True)
+    standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     # Inverse standardization of covariance matrix in standardized space
-    cov_standardized_and_recovered = layer(
-        cov_standardized, stage="inference", forward=False, transformation_type="both_sides_scale"
+    cov_standardized_and_recovered = std.maybe_standardize(
+        cov_standardized, key="x", stage="inference", forward=False, transformation_type="both_sides_scale"
     )
-
     random_input = keras.ops.convert_to_numpy(random_input)
     cov_standardized_and_recovered = keras.ops.convert_to_numpy(cov_standardized_and_recovered)
     cov_input = np.cov(random_input, rowvar=False)
-
     np.testing.assert_allclose(cov_input, cov_standardized_and_recovered, atol=1e-4)
 
 
 @pytest.mark.parametrize("transformation_type", ["left_side_scale", "right_side_scale_inverse"])
+@pytest.mark.skip_on_mps
 def test_transformation_type_one_side_scale(transformation_type):
     # Fix a known covariance and mean in original (not standardized space)
     covariance = np.array([[1, 0.5], [0.5, 2.0]], dtype="float32")
-
     mean = np.array([1, 10], dtype="float32")
 
     # Generate samples
     cholesky = keras.ops.cholesky(covariance)  # (dim, dim)
     normals = keras.random.normal((1024, 2))  # (batch_size, dim)
     scaled = keras.ops.einsum("ij,bj->bi", cholesky, normals)
-
     random_input = keras.ops.convert_to_tensor(mean[None, :]) + scaled
-
-    layer = Standardization()
-    _ = layer(random_input, stage="training", forward=True)
+    random_input_shapes = {"x": random_input.shape}
+    std = Standardization(standardize=["x"])
+    std.build(random_input_shapes)
+    _ = std.maybe_standardize(random_input, key="x", stage="training", forward=True)
 
     # Standardize samples
-    standardized = layer(random_input, stage="inference", forward=True)
+    standardized = std.maybe_standardize(random_input, key="x", stage="inference", forward=True)
+
     # Compute covariance matrix in standardized space
-    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False)
+    cov_standardized = np.cov(keras.ops.convert_to_numpy(standardized), rowvar=False).astype("float32")
     cov_standardized = keras.ops.convert_to_tensor(cov_standardized)
     chol_standardized = keras.ops.cholesky(cov_standardized)  # (dim, dim)
 
@@ -185,26 +250,22 @@ def test_transformation_type_one_side_scale(transformation_type):
     # instead of a covariance chol factor.
     if "inverse" in transformation_type:
         chol_standardized = keras.ops.inv(chol_standardized)
-
     # Inverse standardization of covariance matrix in standardized space
-    chol_standardized_and_recovered = layer(
-        chol_standardized, stage="inference", forward=False, transformation_type=transformation_type
+    chol_standardized_and_recovered = std.maybe_standardize(
+        chol_standardized, key="x", stage="inference", forward=False, transformation_type=transformation_type
     )
-
     random_input = keras.ops.convert_to_numpy(random_input)
     chol_standardized_and_recovered = keras.ops.convert_to_numpy(chol_standardized_and_recovered)
     cov_input = np.cov(random_input, rowvar=False)
     chol_input = np.linalg.cholesky(cov_input)
-
     if "inverse" in transformation_type:
         chol_input = np.linalg.inv(chol_input)
-
     np.testing.assert_allclose(chol_input, chol_standardized_and_recovered, atol=1e-4)
 
 
 def test_serialize_deserialize():
-    layer = Standardization(momentum=0.0)
-    layer.build((32, 5))
+    layer = Standardization(standardize="a", momentum=0.0)
+    layer.build({"a": (32, 5)})
 
     serialized = serialize(layer)
     deserialized = deserialize(serialized)
@@ -213,9 +274,41 @@ def test_serialize_deserialize():
     assert keras.tree.lists_to_tuples(serialized) == keras.tree.lists_to_tuples(reserialized)
 
 
+@pytest.mark.parametrize(
+    ("standardize", "data_shapes", "expected"),
+    [
+        (
+            "all",
+            {"inference_conditions": (2, 8), "inference_variables": (2, 2), "mu": (2, 1)},
+            ["inference_variables", "inference_conditions"],
+        ),
+        (
+            ["summary_variables", "inference_conditions"],
+            {"inference_conditions": (2, 8), "mu": (2, 1)},
+            ["inference_conditions"],
+        ),
+    ],
+)
+def test_serialize_deserialize_after_pruning_missing_standardize_keys(standardize, data_shapes, expected):
+    layer = Standardization(standardize=standardize, momentum=0.0)
+    layer.build(data_shapes)
+
+    assert layer.standardize == expected
+    assert list(layer.standardize_layers) == expected
+
+    serialized = serialize(layer)
+    deserialized = deserialize(serialized)
+
+    assert deserialized.standardize == expected
+    assert deserialized.built
+    assert deserialized.standardize_layers is not None
+    assert list(deserialized.standardize_layers) == expected
+    assert all(layer.built for layer in deserialized.standardize_layers.values())
+
+
 def test_save_and_load(tmp_path):
-    layer = Standardization(momentum=0.0)
-    layer.build((32, 5))
+    layer = Standardization(standardize="a", momentum=0.0)
+    layer.build({"a": (32, 5)})
 
     keras.saving.save_model(layer, tmp_path / "model.keras")
     loaded = keras.saving.load_model(tmp_path / "model.keras")

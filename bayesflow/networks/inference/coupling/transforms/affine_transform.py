@@ -1,0 +1,66 @@
+import keras.ops as ops
+
+from bayesflow.types import Tensor
+from bayesflow.utils.keras_utils import shifted_softplus
+from bayesflow.utils.serialization import serializable
+
+from .transform import Transform
+
+
+@serializable("bayesflow.networks")
+class AffineTransform(Transform):
+    """Elementwise affine transformation ``z = scale * x + shift``.
+
+    Uses two parameters per dimension. The predicted scale is passed through a
+    shifted softplus to keep it strictly positive.
+
+    Parameters
+    ----------
+    clamp : bool, optional
+        Whether to soft clamp the predicted scale with ``arcsinh`` before making
+        it positive. Bounds the attainable scale in exchange for more stable
+        training. Default is True.
+    **kwargs
+        Additional keyword arguments passed to the base ``Transform``.
+    """
+
+    def __init__(self, clamp: bool = True, **kwargs):
+        super().__init__(**kwargs)
+        self.clamp = clamp
+
+    def get_config(self) -> dict:
+        return {"clamp": self.clamp}
+
+    @property
+    def params_per_dim(self):
+        return 2
+
+    def split_parameters(self, parameters: Tensor) -> dict[str, Tensor]:
+        scale, shift = ops.split(parameters, 2, axis=-1)
+
+        return {"scale": scale, "shift": shift}
+
+    def constrain_parameters(self, parameters: dict[str, Tensor]) -> dict[str, Tensor]:
+        scale = parameters["scale"]
+
+        # soft clamp
+        if self.clamp:
+            scale = ops.arcsinh(scale)
+
+        # constrain to positive values
+        scale = shifted_softplus(scale)
+
+        parameters["scale"] = scale
+        return parameters
+
+    def _forward(self, x: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
+        z = parameters["scale"] * x + parameters["shift"]
+        log_jac = ops.log(parameters["scale"])
+
+        return z, log_jac
+
+    def _inverse(self, z: Tensor, parameters: dict[str, Tensor] = None) -> tuple[Tensor, Tensor]:
+        x = (z - parameters["shift"]) / parameters["scale"]
+        log_jac = -ops.log(parameters["scale"])
+
+        return x, log_jac

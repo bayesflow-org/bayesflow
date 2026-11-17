@@ -39,6 +39,16 @@ def test_ordering(axis, unordered):
     check_ordering(output, axis)
 
 
+def test_ordering_short_axis(unordered_short):
+    from bayesflow.links import Ordered
+
+    axis = 1
+    # anchor_index=0 is valid for both lengths. For length 1, it is trivially ordered, only tests not crashing
+    activation = Ordered(axis=axis, anchor_index=0)
+    output = activation(unordered_short)
+    check_ordering(output, axis)
+
+
 def test_quantile_ordering(quantiles, unordered):
     from bayesflow.links import OrderedQuantiles
 

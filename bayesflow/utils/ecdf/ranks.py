@@ -1,3 +1,5 @@
+from collections.abc import Callable
+
 import numpy as np
 
 
@@ -11,7 +13,7 @@ def _helper_distance_ranks(
     prior_samples: np.ndarray,
     stacked: bool,
     references: np.ndarray,
-    distance: callable,
+    distance: Callable,
     p_norm: int,
 ) -> np.ndarray:
     """
@@ -58,7 +60,7 @@ def distance_ranks(
     prior_samples: np.ndarray,
     stacked: bool,
     references: np.ndarray = None,
-    distance: callable = None,
+    distance: Callable = None,
     p_norm: int = 2,
 ) -> np.ndarray:
     """
@@ -74,7 +76,7 @@ def distance_ranks(
         The references to compute the ranks.
     stacked : bool
         If True, compute ranks for all parameters jointly. Otherwise, compute marginal ranks.
-    distance : callable, optional
+    distance : Callable, optional
         The distance function to compute the ranks. If None, the distance defined by the p_norm is used. Must be
         a function that takes two arrays (if stacked, it gets the full parameter vectors, if not only the single
         parameters) and returns an array with the distances. This could be based on the log-posterior, for example.

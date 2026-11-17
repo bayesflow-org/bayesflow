@@ -1,6 +1,9 @@
-import numpy as np
+from typing import ClassVar
+
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
@@ -18,6 +21,8 @@ class ConvertDType(ElementwiseTransform):
         Target dtype
     """
 
+    has_permutation_jacobian: ClassVar[bool] = True
+
     def __init__(self, from_dtype: str, to_dtype: str):
         super().__init__()
 
@@ -31,8 +36,8 @@ class ConvertDType(ElementwiseTransform):
         }
         return serialize(config)
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.to_dtype, copy=False)
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
+        return ops.cast(data, self.to_dtype)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data.astype(self.from_dtype, copy=False)
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
+        return ops.cast(data, self.from_dtype)

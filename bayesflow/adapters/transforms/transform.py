@@ -1,5 +1,6 @@
-import numpy as np
+from typing import ClassVar
 
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, deserialize
 
 
@@ -9,7 +10,10 @@ class Transform:
     Base class on which other transforms are based
     """
 
-    def __call__(self, data: dict[str, np.ndarray], *, inverse: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    #: Whether the transform only moves values around and has a permutation Jacobian.
+    has_permutation_jacobian: ClassVar[bool] = False
+
+    def __call__(self, data: dict[str, Tensor], *, inverse: bool = False, **kwargs) -> dict[str, Tensor]:
         if inverse:
             return self.inverse(data, **kwargs)
 
@@ -28,16 +32,16 @@ class Transform:
     def get_config(self) -> dict:
         raise NotImplementedError
 
-    def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, Tensor], **kwargs) -> dict[str, Tensor]:
         raise NotImplementedError
 
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], **kwargs) -> dict[str, Tensor]:
         raise NotImplementedError
 
     def extra_repr(self) -> str:
         return ""
 
     def log_det_jac(
-        self, data: dict[str, np.ndarray], log_det_jac: dict[str, np.ndarray], inverse: bool = False, **kwargs
-    ) -> dict[str, np.ndarray]:
+        self, data: dict[str, Tensor], log_det_jac: dict[str, Tensor], inverse: bool = False, **kwargs
+    ) -> dict[str, Tensor]:
         return log_det_jac

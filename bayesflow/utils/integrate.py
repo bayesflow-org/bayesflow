@@ -7,7 +7,6 @@ import keras
 import numpy as np
 from typing import Literal, Union
 
-from bayesflow.adapters import Adapter
 from bayesflow.types import Tensor
 from bayesflow.utils import filter_kwargs
 from bayesflow.utils.logging import warning, debug
@@ -18,7 +17,7 @@ StateDict = Dict[str, ArrayLike]
 
 
 DETERMINISTIC_METHODS = ["euler", "rk45", "tsit5"]
-STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin"]
+STOCHASTIC_METHODS = ["euler_maruyama", "sea", "shark", "two_step_adaptive", "langevin", "glass"]
 
 
 def _check_all_nans(state: StateDict):
@@ -26,6 +25,15 @@ def _check_all_nans(state: StateDict):
     for v in state.values():
         all_nans_flags.append(keras.ops.all(keras.ops.isnan(v)))
     return keras.ops.all(keras.ops.stack(all_nans_flags))
+
+
+def _as_concrete_bool(x) -> bool | None:
+    """Return ``bool(x)`` if `x` holds a concrete value, or None if `x` is symbolic,
+    e.g. while tracing inside ``tf.function`` or ``jax.jit``."""
+    try:
+        return bool(x)
+    except Exception:
+        return None
 
 
 def euler_step(
@@ -54,6 +62,46 @@ def add_scaled(state, ks, coeffs, h):
     return out
 
 
+def _error_ratio(
+    err_state: StateDict,
+    state: StateDict,
+    new_state: StateDict,
+    atol: ArrayLike,
+    rtol: ArrayLike,
+) -> ArrayLike:
+    """Normalize a local error estimate by a per-component tolerance.
+
+    Each entry is reduced with a root-mean-square norm over all its elements, batch included. Averaging
+    over the batch keeps a few samples with near-zero components, whose tolerance is close to ``atol``,
+    from setting the step size for the whole batch.
+
+    Parameters
+    ----------
+    err_state : dict
+        Local error estimate per state entry, as returned by the adaptive step functions.
+    state : dict
+        State at the beginning of the step.
+    new_state : dict
+        State at the end of the step.
+    atol : int or float or Tensor
+        Absolute tolerance.
+    rtol : int or float or Tensor
+        Relative tolerance.
+
+    Returns
+    -------
+    int or float or Tensor
+        The normalized error, which is at most 1 if the step meets the requested tolerance.
+    """
+    ratio = None
+    for key, err in err_state.items():
+        scale = atol + rtol * keras.ops.maximum(keras.ops.abs(state[key]), keras.ops.abs(new_state[key]))
+        key_ratio = keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale)))
+        ratio = key_ratio if ratio is None else keras.ops.maximum(ratio, key_ratio)
+
+    return ratio
+
+
 def rk45_step(
     fn: Callable,
     state: StateDict,
@@ -61,7 +109,7 @@ def rk45_step(
     step_size: ArrayLike,
     k1: StateDict = None,
     use_adaptive_step_size: bool = True,
-) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, StateDict | None, StateDict | None]:
     """
     Dormand-Prince 5(4) method with embedded error estimation [1].
 
@@ -97,7 +145,7 @@ def rk45_step(
 
     new_time = time + h
     if not use_adaptive_step_size:
-        return new_state, new_time, None, 0.0
+        return new_state, new_time, None, None
 
     k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
@@ -114,10 +162,7 @@ def rk45_step(
         )
         err_state[key] = new_state[key] - y4
 
-    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-    err = keras.ops.max(err_norm)
-
-    return new_state, new_time, k7, err
+    return new_state, new_time, k7, err_state
 
 
 def tsit5_step(
@@ -127,7 +172,7 @@ def tsit5_step(
     step_size: ArrayLike,
     k1: StateDict = None,
     use_adaptive_step_size: bool = True,
-) -> Tuple[StateDict, ArrayLike, StateDict | None, ArrayLike]:
+) -> Tuple[StateDict, ArrayLike, StateDict | None, StateDict | None]:
     """
     Implements a single step of the Tsitouras 5/4 Runge-Kutta method [1].
 
@@ -192,7 +237,7 @@ def tsit5_step(
 
     new_time = time + h
     if not use_adaptive_step_size:
-        return new_state, new_time, None, 0.0
+        return new_state, new_time, None, None
 
     k7 = fn(time + h, **filter_kwargs(new_state, fn))
 
@@ -208,10 +253,7 @@ def tsit5_step(
             - 0.45808210592918697 * k6[key]
         )
 
-    err_norm = keras.ops.stack([keras.ops.norm(v, ord=2, axis=-1) for v in err_state.values()])
-    err = keras.ops.max(err_norm)
-
-    return new_state, new_time, k7, err
+    return new_state, new_time, k7, err_state
 
 
 def integrate_fixed(
@@ -228,11 +270,11 @@ def integrate_fixed(
 
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -261,13 +303,15 @@ def integrate_scheduled(
     method: str,
     **kwargs,
 ) -> StateDict:
+    steps = keras.ops.convert_to_tensor(steps, dtype=keras.config.floatx())
+
     match method:
         case "euler":
-            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, rk45_step))
+            step_fn = partial(euler_step, fn, **filter_kwargs(kwargs, euler_step))
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=False)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=False)
         case str() as name:
             raise ValueError(f"Unknown integration method name: {name!r}")
         case other:
@@ -305,7 +349,7 @@ def integrate_adaptive(
         case "rk45":
             step_fn = partial(rk45_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
         case "tsit5":
-            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, rk45_step), use_adaptive_step_size=True)
+            step_fn = partial(tsit5_step, fn, **filter_kwargs(kwargs, tsit5_step), use_adaptive_step_size=True)
         case "euler":
             raise ValueError("Adaptive step sizing is not supported for the 'euler' method.")
         case str() as name:
@@ -313,11 +357,13 @@ def integrate_adaptive(
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
-    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype="float32")
-    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4), dtype="float32")
-    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype="float32")
-    step0 = keras.ops.convert_to_tensor(0.0, dtype="float32")
-    count_not_accepted = 0
+    # density computation (state carries more than one entry) needs higher accuracy than sampling
+    dtype = keras.config.floatx()
+    atol = keras.ops.convert_to_tensor(kwargs.get("atol", 1e-6), dtype=dtype)
+    rtol = keras.ops.convert_to_tensor(kwargs.get("rtol", 1e-4 if len(state) == 1 else 1e-5), dtype=dtype)
+    initial_step = keras.ops.convert_to_tensor((stop_time - start_time) / float(min_steps), dtype=dtype)
+    step0 = keras.ops.convert_to_tensor(0.0, dtype=dtype)
+    count_not_accepted = keras.ops.convert_to_tensor(0.0, dtype=dtype)
 
     # "First Same As Last" (FSAL) property
     k1_0 = fn(start_time, **filter_kwargs(state, fn))
@@ -342,7 +388,7 @@ def integrate_adaptive(
         h = keras.ops.sign(_step_size) * keras.ops.clip(keras.ops.abs(_step_size), min_step_size, max_step_size)
 
         # Take one trial step
-        new_state, new_time, new_k1, err = step_fn(
+        new_state, new_time, new_k1, err_state = step_fn(
             state=_state,
             time=_time,
             step_size=h,
@@ -350,24 +396,22 @@ def integrate_adaptive(
         )
 
         # New step size suggestion
-        max_abs = None
-        for k, v in _state.items():
-            m = keras.ops.max(keras.ops.abs(v))
-            max_abs = m if max_abs is None else keras.ops.maximum(max_abs, m)
-        scale = atol + rtol * max_abs
-        error_ratio = err / scale
+        error_ratio = _error_ratio(err_state, _state, new_state, atol, rtol)
         new_step_size = h * keras.ops.clip(0.9 * (1.0 / (error_ratio + 1e-12)) ** 0.2, 0.2, 5.0)
         new_step_size = keras.ops.sign(new_step_size) * keras.ops.clip(
             keras.ops.abs(new_step_size), min_step_size, max_step_size
         )
 
         # Error control
-        too_big = keras.ops.greater(error_ratio, 1.0)
+        within_tol = keras.ops.logical_or(
+            keras.ops.less_equal(error_ratio, 1.0),
+            keras.ops.isnan(error_ratio),
+        )
         at_min = keras.ops.less_equal(
             keras.ops.abs(h),
             keras.ops.abs(min_step_size),
         )
-        accepted = keras.ops.logical_or(keras.ops.logical_not(too_big), at_min)
+        accepted = keras.ops.logical_or(within_tol, at_min)
 
         updated_state = keras.ops.cond(accepted, lambda: new_state, lambda: _state)
         updated_time = keras.ops.cond(accepted, lambda: new_time, lambda: _time)
@@ -385,24 +429,32 @@ def integrate_adaptive(
         cond,
         body,
         [state, start_time, initial_step, step0, k1_0, count_not_accepted],
+        # never reached in normal operation and only guards against non-terminating loops (e.g. NaN pathologies)
+        maximum_iterations=10 * max_steps,
     )
 
-    if _check_all_nans(state):
+    # skipped while tracing (symbolic tensors have no concrete bool)
+    all_nans = _as_concrete_bool(_check_all_nans(state))
+    if all_nans:
         raise RuntimeError(f"All values are NaNs in state during integration at {time}.")
 
     # Final step to hit stop_time exactly
     time_diff = stop_time - time
     time_remaining = keras.ops.sign(stop_time - start_time) * time_diff
-    if keras.ops.all(time_remaining > 0):
-        state, time, _, _ = step_fn(
+
+    def take_final_step():
+        final_state, _, _, _ = step_fn(
             state=state,
             time=time,
             step_size=time_diff,
             k1=k1,
         )
-        step = step + 1.0
+        return final_state, step + 1.0
 
-    debug(f"Finished integration after {step} steps with {count_not_accepted} rejected steps.")
+    state, step = keras.ops.cond(keras.ops.all(time_remaining > 0), take_final_step, lambda: (state, step))
+
+    if all_nans is not None:  # not tracing, values are concrete
+        debug(f"Finished integration after {step} steps with {count_not_accepted} rejected steps.")
     return state
 
 
@@ -419,25 +471,23 @@ def integrate_scipy(
     keys = list(state.keys())
     # convert to tensor before determining the shape in case a number was passed
     shapes = keras.tree.map_structure(lambda x: keras.ops.shape(keras.ops.convert_to_tensor(x)), state)
-    adapter = Adapter().concatenate(keys, into="x", axis=-1).convert_dtype(np.float32, np.float64)
+    split_indices = np.cumsum([int(np.prod(shapes[key])) for key in keys])[:-1]
 
     def state_to_vector(state):
-        state = keras.tree.map_structure(keras.ops.convert_to_numpy, state)
-        # flatten state
-        state = keras.tree.map_structure(lambda x: keras.ops.reshape(x, (-1,)), state)
-        # apply concatenation
-        x = adapter.forward(state)["x"]
-        return x
+        flat = [np.reshape(keras.ops.convert_to_numpy(state[key]), (-1,)) for key in keys]
+        # scipy's error control needs float64
+        return np.concatenate(flat, axis=-1).astype(np.float64)
 
     def vector_to_state(x):
-        state = adapter.inverse({"x": x})
-        state = {key: keras.ops.reshape(value, shapes[key]) for key, value in state.items()}
-        state = keras.tree.map_structure(keras.ops.convert_to_tensor, state)
-        return state
+        parts = np.split(np.asarray(x), split_indices)
+        return {
+            key: keras.ops.convert_to_tensor(np.reshape(part, shapes[key]), dtype=keras.config.floatx())
+            for key, part in zip(keys, parts)
+        }
 
     def scipy_wrapper_fn(time, x):
         state = vector_to_state(x)
-        time = keras.ops.convert_to_tensor(time, dtype="float32")
+        time = keras.ops.convert_to_tensor(time, dtype=keras.config.floatx())
         deltas = fn(time, **filter_kwargs(state, fn))
         return state_to_vector(deltas)
 
@@ -452,6 +502,24 @@ def integrate_scipy(
     return result
 
 
+def _compile_loop_integrator(func: Callable) -> Callable:
+    """On the TensorFlow backend, wrap an integration call in ``tf.function``.
+
+    TensorFlow executes ``keras.ops.while_loop``/``fori_loop`` eagerly, one Python
+    iteration per solver step. Tracing the whole integration once removes the per-step
+    Python and GradientTape overhead.
+    """
+    if keras.config.backend() != "tensorflow":
+        return func
+
+    import tensorflow as tf
+
+    if not tf.executing_eagerly():
+        return func
+
+    return tf.function(func, autograph=False)
+
+
 def integrate(
     fn: Callable,
     state: StateDict,
@@ -463,6 +531,8 @@ def integrate(
     method: str = "rk45",
     **kwargs,
 ) -> StateDict:
+    if isinstance(steps, str) and steps not in ["adaptive", "dynamic"]:
+        raise ValueError(f"Unknown steps value: {steps!r}. Use an integer, an array of times, or 'adaptive'.")
     if isinstance(steps, str) and steps in ["adaptive", "dynamic"]:
         if start_time is None or stop_time is None:
             raise ValueError(
@@ -470,26 +540,39 @@ def integrate(
                 f"'start_time={start_time}', 'stop_time={stop_time}'."
             )
         if method == "scipy":
-            if min_steps != 10:
+            if min_steps != 50:
                 warning("Setting min_steps has no effect for method 'scipy'")
             if max_steps != 10_000:
                 warning("Setting max_steps has no effect for method 'scipy'")
-            return integrate_scipy(fn, state, start_time, stop_time)
-        return integrate_adaptive(fn, state, start_time, stop_time, min_steps, max_steps, method, **kwargs)
+            return integrate_scipy(fn, state, start_time, stop_time, scipy_kwargs=kwargs.get("scipy_kwargs"))
+
+        def run():
+            return integrate_adaptive(fn, state, start_time, stop_time, min_steps, max_steps, method, **kwargs)
+
+        result = _compile_loop_integrator(run)()
+        # covers the TensorFlow backend, where the check inside integrate_adaptive is skipped while tracing
+        if _as_concrete_bool(_check_all_nans(result)):
+            raise RuntimeError("All values are NaNs in state during integration.")
+        return result
     elif isinstance(steps, int):
         if start_time is None or stop_time is None:
             raise ValueError(
                 "Please provide start_time and stop_time for the integration, was "
                 f"'start_time={start_time}', 'stop_time={stop_time}'."
             )
-        return integrate_fixed(fn, state, start_time, stop_time, steps, method, **kwargs)
+
+        def run():
+            return integrate_fixed(fn, state, start_time, stop_time, steps, method, **kwargs)
+
+        return _compile_loop_integrator(run)()
     elif isinstance(steps, Sequence) or isinstance(steps, np.ndarray) or keras.ops.is_tensor(steps):
-        return integrate_scheduled(fn, state, steps, method, **kwargs)
+
+        def run():
+            return integrate_scheduled(fn, state, steps, method, **kwargs)
+
+        return _compile_loop_integrator(run)()
     else:
         raise RuntimeError(f"Type or value of `steps` not understood (steps={steps})")
-
-
-############ SDE Solvers #############
 
 
 def generate_noise(z: StateDict, seed: keras.random.SeedGenerator) -> StateDict:
@@ -921,6 +1004,16 @@ def shark_step(
     return new_state, t + h, h
 
 
+def _apply_state_projection(
+    state: StateDict,
+    state_projection_fn: Optional[Callable],
+) -> StateDict:
+    """Apply an optional invariant-preserving projection to an integrator state."""
+    if state_projection_fn is None:
+        return state
+    return state_projection_fn(state)
+
+
 def _apply_corrector(
     new_state: StateDict,
     new_time: ArrayLike,
@@ -931,6 +1024,8 @@ def _apply_corrector(
     seed: keras.random.SeedGenerator,
     step_size_factor: ArrayLike = 0.01,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """Helper function to apply corrector steps [1].
 
@@ -942,8 +1037,10 @@ def _apply_corrector(
             _z_corr = generate_noise(new_state, seed=seed)
         else:
             _z_corr = {k: val[i, j] for k, val in corrector_noise_history.items()}
+        score = _apply_state_projection(score, state_update_projection_fn)
+        _z_corr = _apply_state_projection(_z_corr, state_update_projection_fn)
 
-        log_snr_t = noise_schedule.get_log_snr(t=new_time, training=False)
+        log_snr_t = noise_schedule.log_snr(t=new_time, training=False)
         alpha_t, _ = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         for k in new_state.keys():
@@ -958,6 +1055,7 @@ def _apply_corrector(
 
                 # Annealed Langevin Dynamics update
                 new_state[k] = new_state[k] + e * score[k] + keras.ops.sqrt(2.0 * e) * _z_corr[k]
+        new_state = _apply_state_projection(new_state, state_projection_fn)
     return new_state
 
 
@@ -977,6 +1075,8 @@ def integrate_stochastic_fixed(
     seed: keras.random.SeedGenerator,
     corrector_steps: int = 0,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Performs fixed-step SDE integration.
@@ -1000,12 +1100,14 @@ def integrate_stochastic_fixed(
             _noise_i = generate_noise(_current_state, seed=seed)
         else:
             _noise_i = {k: val[_i] for k, val in z_history.items()}
+        _noise_i = _apply_state_projection(_noise_i, state_update_projection_fn)
         _noise_extra_i = None
         if z_extra_history is not None:
             if len(z_extra_history) == 0:
                 _noise_extra_i = generate_noise(_current_state, seed=seed)
             else:
-                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
+                _noise_extra_i = {k: val[_i] for k, val in z_extra_history.items()}
+            _noise_extra_i = _apply_state_projection(_noise_extra_i, state_update_projection_fn)
 
         step_fn_additional_args = dict(
             noise_aux=_noise_extra_i,
@@ -1020,6 +1122,7 @@ def integrate_stochastic_fixed(
             noise=_noise_i,
             **filter_kwargs(step_fn_additional_args, step_fn),
         )
+        new_state = _apply_state_projection(new_state, state_projection_fn)
 
         if corrector_steps > 0:
             new_state = _apply_corrector(
@@ -1032,6 +1135,8 @@ def integrate_stochastic_fixed(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
         return _i + 1, new_state, new_time, initial_step
 
@@ -1040,7 +1145,8 @@ def integrate_stochastic_fixed(
         body,
         [0, state, start_time, initial_step],
     )
-    if _check_all_nans(final_state):
+    # skipped while tracing
+    if _as_concrete_bool(_check_all_nans(final_state)):
         raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
 
     return final_state
@@ -1063,15 +1169,14 @@ def integrate_stochastic_adaptive(
     corrector_noise_history: StateDict | None,
     corrector_steps: int = 0,
     noise_schedule=None,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
-    if keras.backend.backend() == "jax":
-        seed = None  # not needed, noise is generated upfront
-    else:
-        seed_body = seed
+    seed_body = None if keras.config.backend() == "jax" else seed
 
     def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
@@ -1091,13 +1196,15 @@ def integrate_stochastic_adaptive(
             _noise_i = generate_noise(_current_state, seed=seed_body)
         else:
             _noise_i = {k: val[_i] for k, val in z_history.items()}
+        _noise_i = _apply_state_projection(_noise_i, state_update_projection_fn)
 
         _noise_extra_i = None
         if z_extra_history is not None:
             if len(z_extra_history) == 0:
                 _noise_extra_i = generate_noise(_current_state, seed=seed_body)
             else:
-                _noise_extra_i = {k: val[_i] for k, val in z_history.items()}
+                _noise_extra_i = {k: val[_i] for k, val in z_extra_history.items()}
+            _noise_extra_i = _apply_state_projection(_noise_extra_i, state_update_projection_fn)
 
         step_fn_additional_args = dict(
             last_state=_last_state,
@@ -1113,6 +1220,8 @@ def integrate_stochastic_adaptive(
             use_adaptive_step_size=True,
             **filter_kwargs(step_fn_additional_args, step_fn),
         )
+        new_state = _apply_state_projection(new_state, state_projection_fn)
+        _new_current_state = _apply_state_projection(_new_current_state, state_projection_fn)
 
         if corrector_steps > 0:
             new_state = _apply_corrector(
@@ -1125,6 +1234,8 @@ def integrate_stochastic_adaptive(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed_body,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
 
         return _i + 1, new_state, new_time, new_step, _new_current_state
@@ -1132,23 +1243,27 @@ def integrate_stochastic_adaptive(
     # Execute the adaptive loop
     final_counter, final_state, final_time, _, final_k1 = keras.ops.while_loop(cond, body_adaptive, initial_loop_state)
 
-    if _check_all_nans(final_state):
+    # skipped while tracing
+    if _as_concrete_bool(_check_all_nans(final_state)):
         raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
 
     # Final step to hit stop_time exactly
     time_diff = stop_time - final_time
     time_remaining = keras.ops.sign(stop_time - start_time) * time_diff
-    if keras.ops.all(time_remaining > 0):
+
+    def take_final_step():
         noise_final = generate_noise(final_state, seed=seed)
+        noise_final = _apply_state_projection(noise_final, state_update_projection_fn)
         noise_extra_final = None
         if z_extra_history is not None and len(z_extra_history) > 0:
             noise_extra_final = generate_noise(final_state, seed=seed)
+            noise_extra_final = _apply_state_projection(noise_extra_final, state_update_projection_fn)
 
         step_fn_additional_args_final = dict(
             noise_aux=noise_extra_final,
             last_state=final_k1,
         )
-        final_state, _, _ = step_fn(
+        stepped_state, _, _ = step_fn(
             state=final_state,
             time=final_time,
             step_size=time_diff,
@@ -1158,9 +1273,21 @@ def integrate_stochastic_adaptive(
             use_adaptive_step_size=False,
             **filter_kwargs(step_fn_additional_args_final, step_fn),
         )
-        final_counter = final_counter + 1
+        stepped_state = _apply_state_projection(stepped_state, state_projection_fn)
+        return stepped_state, final_counter + 1
 
-    debug(f"Finished integration after {final_counter}.")
+    take_final = _as_concrete_bool(keras.ops.all(time_remaining > 0))
+    if take_final is None:
+        # tracing inside tf.function: express the branch in-graph. On eager backends the Python
+        # branch below is kept instead, since jax.lax.cond would trace the noise generation
+        final_state, final_counter = keras.ops.cond(
+            keras.ops.all(time_remaining > 0), take_final_step, lambda: (final_state, final_counter)
+        )
+    elif take_final:
+        final_state, final_counter = take_final_step()
+
+    if take_final is not None:  # not tracing, values are concrete
+        debug(f"Finished integration after {final_counter}.")
     return final_state
 
 
@@ -1176,6 +1303,8 @@ def integrate_langevin(
     corrector_noise_history: StateDict | None,
     step_size_factor: ArrayLike = 0.01,
     corrector_steps: int = 0,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
 ) -> StateDict:
     """
     Annealed Langevin dynamics using the given score_fn and noise_schedule [1].
@@ -1205,9 +1334,10 @@ def integrate_langevin(
     def body(_i, _loop_state, _loop_time):
         # score at current time
         score = score_fn(_loop_time, **filter_kwargs(_loop_state, score_fn))
+        score = _apply_state_projection(score, state_update_projection_fn)
 
         # noise schedule
-        log_snr_t = noise_schedule.get_log_snr(t=_loop_time, training=False)
+        log_snr_t = noise_schedule.log_snr(t=_loop_time, training=False)
         _, sigma_t = noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
 
         new_state: StateDict = {}
@@ -1215,6 +1345,7 @@ def integrate_langevin(
             z_history_i = generate_noise(_loop_state, seed=seed)
         else:
             z_history_i = {k: val[_i] for k, val in z_history.items()}
+        z_history_i = _apply_state_projection(z_history_i, state_update_projection_fn)
         for k in _loop_state.keys():
             s_k = score.get(k, None)
             if s_k is None:
@@ -1223,6 +1354,7 @@ def integrate_langevin(
 
             e = effective_factor * sigma_t**2
             new_state[k] = _loop_state[k] + e * s_k + keras.ops.sqrt(2.0 * e) * z_history_i[k]
+        new_state = _apply_state_projection(new_state, state_projection_fn)
 
         new_time = _loop_time + dt
 
@@ -1237,6 +1369,8 @@ def integrate_langevin(
                 step_size_factor=step_size_factor,
                 corrector_noise_history=corrector_noise_history,
                 seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
             )
 
         return _i + 1, new_state, new_time
@@ -1246,9 +1380,299 @@ def integrate_langevin(
         body,
         (0, state, start_time),
     )
-    if _check_all_nans(final_state):
+    # skipped while tracing
+    if _as_concrete_bool(_check_all_nans(final_state)):
         raise RuntimeError(f"All values are NaNs in state during integration at {final_time}.")
     return final_state
+
+
+def _glass_alpha_sigma(noise_schedule, t: Tensor) -> Tuple[Tensor, Tensor]:
+    """Return (alpha_t, sigma_t) for the given schedule at time t.
+
+    Accepts either the string ``"flow_matching"`` (alpha_t = 1 - t, sigma_t = t)
+    or any ``NoiseSchedule`` instance.
+    """
+    if noise_schedule == "flow_matching":
+        return 1.0 - t, t
+    log_snr = noise_schedule.log_snr(t, training=False)
+    return noise_schedule.get_alpha_sigma(log_snr)
+
+
+def _glass_g_inv(noise_schedule, v: Tensor) -> Tensor:
+    """
+    Invert g(t) = sigma_t^2 / alpha_t^2 to obtain t* s.t. g(t*) = v.
+
+    For implemented diffusion noise schedule g(t) = exp(-lambda_t).
+    """
+    if noise_schedule == "flow_matching":
+        t_star = keras.ops.sqrt(v) / (1.0 + keras.ops.sqrt(v))
+    else:
+        # g(t) = exp(-lamda_t)
+        log_snr_star = -keras.ops.log(v)
+        t_star = noise_schedule.time_from_log_snr(log_snr_star, training=False)
+    return t_star
+
+
+def _glass_alpha_sigma_dot(noise_schedule, t: Tensor) -> Tuple[Tensor, Tensor]:
+    """Return (alpha_dot_t, sigma_dot_t) — analytical schedule derivatives at t.
+
+    Uses the identity beta(t) = d/dt log(1 + e^{-lambda(t)}) = -lambda_dot * sigmoid(-lambda),
+    plus the variance-preserving / variance-exploding parameterizations of (alpha, sigma)
+    in terms of lambda.
+
+    Flow matching:        alpha_t = 1 - t,  sigma_t = t   (closed form)
+    Variance preserving:  alpha_dot = -0.5 * alpha * beta
+                          sigma_dot =  0.5 * alpha^2 * beta / sigma
+    Variance exploding:   alpha_dot = 0
+                          sigma_dot = beta * (1 + sigma^2) / (2 * sigma)
+    """
+    if noise_schedule == "flow_matching":
+        ones = keras.ops.ones_like(t)
+        return -ones, ones
+
+    log_snr = noise_schedule.log_snr(t, training=False)
+    alpha, sigma = noise_schedule.get_alpha_sigma(log_snr)
+    beta = noise_schedule.derivative_log_snr(log_snr, training=False)
+
+    if noise_schedule._variance_type == "preserving":
+        alpha_dot = -0.5 * alpha * beta
+        sigma_dot = 0.5 * alpha**2 * beta / sigma
+    elif noise_schedule._variance_type == "exploding":
+        alpha_dot = keras.ops.zeros_like(beta)
+        sigma_dot = beta * (1.0 + sigma**2) / (2.0 * sigma)
+    else:
+        raise ValueError(f"Unknown variance type for GLASS: {noise_schedule._variance_type!r}")
+    return alpha_dot, sigma_dot
+
+
+def _glass_suf_stat(
+    x_t: Tensor,
+    x_bar_s: Tensor,
+    alpha_t: Tensor,
+    sigma_t: Tensor,
+    alpha_bar_s: Tensor,
+    sigma_bar_s: Tensor,
+    gamma_bar: Tensor,
+) -> Tuple[Tensor, Tensor]:
+    """
+    Compute the GLASS sufficient statistic S.
+
+    For the structured covariance
+
+        Sigma = [[sigma_t²,               sigma_t² * gamma_bar           ],
+                 [sigma_t² * gamma_bar,   sigma_bar_s² + gamma_bar² * sigma_t²]]
+
+    det = sigma_t² * sigma_bar_s², giving closed-form weights::
+
+        w_t  = alpha_t / sigma_t²  -  alpha_bar_s * gamma_bar / sigma_bar_s²
+        w_b  = alpha_bar_s / sigma_bar_s²
+        norm = alpha_t² / sigma_t²  +  alpha_bar_s² / sigma_bar_s²
+        S    = (w_t * x_t + w_b * x_bar_s) / norm
+
+    Returns ``(S, norm)``.
+    """
+    sigma_t_sq = sigma_t**2
+    sigma_bar_s_sq = sigma_bar_s**2
+
+    w_t = alpha_t / sigma_t_sq - alpha_bar_s * gamma_bar / sigma_bar_s_sq
+    w_b = alpha_bar_s / sigma_bar_s_sq
+    norm = alpha_t**2 / sigma_t_sq + alpha_bar_s**2 / sigma_bar_s_sq
+    norm = keras.ops.maximum(norm, keras.ops.cast(1e-12, keras.ops.dtype(norm)))
+    suf_stat = (w_t * x_t + w_b * x_bar_s) / norm
+    return suf_stat, norm
+
+
+def glass_step(
+    fn: Callable,
+    state: StateDict,
+    time: ArrayLike,
+    step_size: ArrayLike,
+    noise_schedule,
+    *,
+    x_t: StateDict,
+    alpha_t,
+    sigma_t,
+    alpha_bar,
+    sigma_bar,
+    gamma_bar,
+    sigma_bar_0: float,
+    state_projection_fn: Optional[Callable] = None,
+) -> Tuple[StateDict, ArrayLike]:
+    """
+    Single Euler step of the GLASS inner ODE at inner time s in [0, 1).
+
+    ``fn`` returns the velocity field; denoiser is derived using the noise schedule ``noise_schedule``.
+    """
+    dtype = keras.ops.dtype(next(iter(x_t.values())))
+    s_val = keras.ops.cast(time, dtype)
+
+    alpha_bar_s = s_val * alpha_bar
+    sigma_bar_s = (1 - s_val) * sigma_bar_0 + s_val * sigma_bar
+    dot_alpha_bar_s = alpha_bar
+    dot_sigma_bar_s = sigma_bar - sigma_bar_0
+
+    w1 = dot_sigma_bar_s / sigma_bar_s
+    w2 = dot_alpha_bar_s - alpha_bar_s * w1
+    w3 = -gamma_bar * w1
+
+    suf_stats = {}
+    norm = None
+    for key, x_bar_s in state.items():
+        suf_stat, norm = _glass_suf_stat(x_t[key], x_bar_s, alpha_t, sigma_t, alpha_bar_s, sigma_bar_s, gamma_bar)
+        suf_stats[key] = suf_stat
+
+    t_star = _glass_g_inv(noise_schedule, 1.0 / norm)
+    alpha_t_star, sigma_t_star = _glass_alpha_sigma(noise_schedule, t_star)
+    dot_alpha_t_star, dot_sigma_t_star = _glass_alpha_sigma_dot(noise_schedule, t_star)
+    denom = dot_alpha_t_star * sigma_t_star - alpha_t_star * dot_sigma_t_star
+
+    z_in = {key: alpha_t_star * suf_stat for key, suf_stat in suf_stats.items()}
+    z_in = _apply_state_projection(z_in, state_projection_fn)
+    fn_out = fn(t_star, **filter_kwargs(z_in, fn))
+    missing_keys = set(state) - set(fn_out)
+    if missing_keys:
+        raise ValueError(f"GLASS model output is missing state keys: {sorted(missing_keys)}.")
+
+    new_state = {}
+    for key, x_bar_s in state.items():
+        d_val = (sigma_t_star * fn_out[key] - dot_sigma_t_star * z_in[key]) / denom
+
+        velocity = w1 * x_bar_s + w2 * d_val + w3 * x_t[key]
+        new_state[key] = x_bar_s + step_size * velocity
+
+    return new_state, time + step_size
+
+
+def integrate_glass(
+    fn: Callable,
+    state: StateDict,
+    start_time: ArrayLike,
+    stop_time: ArrayLike,
+    steps: int,
+    seed: int | keras.random.SeedGenerator | None,
+    noise_schedule,
+    inner_steps: int = 1,
+    rho: float = 0.4,
+    sigma_bar_0: float = 1.0,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
+    **kwargs,
+) -> StateDict:
+    """
+    Sample from the Markov transition p_{t'|t}(·|x_t) using the GLASS inner ODE [1].
+
+    Constructs a deterministic inner ODE whose endpoint approximates a draw
+    from p_{t'|t}(·|x_t) implied by the trained model. Allows stochastic sampling from a flow matching model.
+
+    [1] Holderrieth et al. (2026) "GLASS Flows: Transition Sampling for Alignment of Flow and Diffusion Models"
+
+    Parameters
+    ----------
+    fn : Callable
+        Model forward function in integrate-compatible form. It receives
+        ``fn(time, **state)`` velocity field and returns a state dictionary with matching keys.
+    state : dict
+        Current trajectory state.
+    start_time : float or Tensor
+        Start outer time.
+    stop_time : float or Tensor
+        Target outer time.
+    steps : int
+        Number of GLASS transitions. K=1 standard flow matching integration.
+    noise_schedule : "flow_matching" or NoiseSchedule, optional
+        Outer noise schedule.  Pass "flow_matching" for flow matching; pass the model's
+        ".noise_schedule" attribute for diffusion models.
+    seed : int, SeedGenerator, or None
+        Seed for the stochastic inner initialization.
+    inner_steps : int
+        Inner GLASS-ODE steps M. M=1 recovers DDIM.
+    rho : float, optional
+        Correlation ρ ∈ [-1, 1]. Default 0.4.
+    sigma_bar_0 : float, optional
+        Initial inner noise level (> 0).  Default 1.
+    Returns
+    -------
+    dict
+        State dictionary containing the approximate transition sample.
+
+    """
+    if not isinstance(steps, int) or steps <= 0:
+        raise ValueError(f"GLASS integration requires a positive integer number of steps, got {steps}.")
+    if start_time is None or stop_time is None:
+        raise ValueError(
+            "Please provide start_time and stop_time for GLASS integration, was "
+            f"'start_time={start_time}', 'stop_time={stop_time}'."
+        )
+    if not state:
+        raise ValueError("GLASS integration requires a non-empty state dictionary.")
+    if sigma_bar_0 < 0:
+        raise ValueError(f"sigma_bar_0 must be > 0, got {sigma_bar_0}.")
+
+    x_t = {key: keras.ops.convert_to_tensor(value) for key, value in state.items()}
+    x_t = _apply_state_projection(x_t, state_projection_fn)
+    dtype = keras.ops.dtype(next(iter(x_t.values())))
+    t_val = keras.ops.cast(start_time, dtype)
+    t_prime_val = keras.ops.cast(stop_time, dtype)
+    rho_val = keras.ops.cast(rho, dtype)
+    sigma_bar_0_val = keras.ops.cast(sigma_bar_0, dtype)
+
+    glass_transitions = steps  # K
+    outer_step_size = (t_prime_val - t_val) / keras.ops.cast(glass_transitions, dtype)  # K
+    inner_step_size = keras.ops.cast(1.0 / inner_steps, dtype)
+
+    # Pre-generate noise for all outer steps
+    noise_per_step = {}
+    for key, value in x_t.items():
+        noise_per_step[key] = keras.random.normal(
+            (glass_transitions, *keras.ops.shape(value)),
+            dtype=keras.ops.dtype(value),
+            seed=seed,
+        )
+
+    def outer_body(i, current_state):
+        i_f = keras.ops.cast(i, dtype)
+        t_curr = t_val + i_f * outer_step_size
+        t_next = t_val + (i_f + 1.0) * outer_step_size
+
+        alpha_curr, sigma_curr = _glass_alpha_sigma(noise_schedule, t_curr)
+        alpha_next, sigma_next = _glass_alpha_sigma(noise_schedule, t_next)
+
+        # Derived scalars for this sub-interval
+        gamma_bar_i = rho_val * sigma_next / sigma_curr
+        alpha_bar_i = alpha_next - gamma_bar_i * alpha_curr
+        sigma_bar_i = keras.ops.sqrt(sigma_next**2 * (1.0 - rho_val**2))
+
+        noise_i = {key: value[i] for key, value in noise_per_step.items()}
+        noise_i = _apply_state_projection(noise_i, state_update_projection_fn)
+        inner_state_i = {
+            key: gamma_bar_i * current_state[key] + sigma_bar_0_val * noise_i[key] for key in current_state
+        }
+        inner_state_i = _apply_state_projection(inner_state_i, state_projection_fn)
+
+        def inner_body(_j, _inner_loop_state):
+            _state, _time = _inner_loop_state
+            _state, _time = glass_step(
+                fn,
+                _state,
+                _time,
+                inner_step_size,
+                noise_schedule=noise_schedule,
+                x_t=current_state,
+                alpha_t=alpha_curr,
+                sigma_t=sigma_curr,
+                alpha_bar=alpha_bar_i,
+                sigma_bar=sigma_bar_i,
+                gamma_bar=gamma_bar_i,
+                sigma_bar_0=sigma_bar_0_val,
+                state_projection_fn=state_projection_fn,
+            )
+            _state = _apply_state_projection(_state, state_projection_fn)
+            return _state, _time
+
+        inner_state_i, _ = keras.ops.fori_loop(0, inner_steps, inner_body, (inner_state_i, keras.ops.cast(0.0, dtype)))
+        return inner_state_i
+
+    return keras.ops.fori_loop(0, glass_transitions, outer_body, x_t)
 
 
 def integrate_stochastic(
@@ -1266,6 +1690,8 @@ def integrate_stochastic(
     corrector_steps: int = 0,
     noise_schedule=None,
     step_size_factor: ArrayLike = 0.01,
+    state_projection_fn: Optional[Callable] = None,
+    state_update_projection_fn: Optional[Callable] = None,
     **kwargs,
 ) -> StateDict:
     """
@@ -1276,10 +1702,10 @@ def integrate_stochastic(
 
     Parameters
     ----------
-    drift_fn : callable
+    drift_fn : Callable
         Function computing the drift term of the SDE. It should accept the current
         state and time as inputs.
-    diffusion_fn : callable
+    diffusion_fn : Callable
         Function computing the diffusion term of the SDE. It should accept the current
         state and time as inputs.
     state : StateDict
@@ -1303,8 +1729,8 @@ def integrate_stochastic(
         Maximum number of steps for adaptive integration. Noise is pre-generated
         up to this number of steps, which may increase memory usage. Default is
         ``1000``.
-    score_fn : callable, optional
-        Score function used for predictor–corrector sampling. If ``None``,
+    score_fn : Callable, optional
+        Score function used for predictor-corrector sampling. If ``None``,
         no corrector step is applied.
     corrector_steps : int, optional
         Number of corrector steps applied after each predictor step. Default is ``0``.
@@ -1313,6 +1739,13 @@ def integrate_stochastic(
         Required if ``corrector_steps > 0``.
     step_size_factor : array-like, optional
         Scaling factor applied to the corrector step size. Default is ``0.01``.
+    state_projection_fn : Callable, optional
+        Function mapping a state dictionary to a projected state dictionary.
+        It is applied after every stochastic predictor and corrector update,
+        including GLASS inner steps, to preserve hard state invariants.
+    state_update_projection_fn : Callable, optional
+        Function mapping noise, score, or tangent state dictionaries to their
+        admissible components before stochastic norms and updates are computed.
     **kwargs
         Additional keyword arguments passed to the underlying step function.
 
@@ -1322,7 +1755,31 @@ def integrate_stochastic(
         Final state dictionary after integration.
     """
 
+    if isinstance(steps, str) and steps not in ["adaptive", "dynamic"]:
+        raise ValueError(f"Unknown steps value: {steps!r}. Use an integer or 'adaptive'.")
     is_adaptive = isinstance(steps, str) and steps in ["adaptive", "dynamic"]
+
+    if method == "glass":
+        if is_adaptive:
+            raise ValueError("Adaptive step sizing is not supported for the 'glass' method.")
+        if isinstance(steps, Sequence) or isinstance(steps, np.ndarray) or keras.ops.is_tensor(steps):
+            raise ValueError("Scheduled integration is not supported for the 'glass' method.")
+
+        def run_glass():
+            return integrate_glass(
+                fn=drift_fn,
+                state=state,
+                start_time=start_time,
+                stop_time=stop_time,
+                steps=steps,
+                noise_schedule=noise_schedule or "flow_matching",
+                seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
+                **kwargs,
+            )
+
+        return _compile_loop_integrator(run_glass)()
 
     if is_adaptive:
         if start_time is None or stop_time is None:
@@ -1348,7 +1805,7 @@ def integrate_stochastic(
     if corrector_steps > 0:
         if score_fn is None or noise_schedule is None:
             raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
-        if keras.backend.backend() == "jax":
+        if keras.config.backend() == "jax":
             corrector_noise_history = {}
             for key, val in state.items():
                 shape = keras.ops.shape(val)
@@ -1374,26 +1831,35 @@ def integrate_stochastic(
                 raise ValueError("Langevin sampling does not support adaptive steps.")
 
             z_history = None
-            if keras.backend.backend() == "jax":
-                warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
+            if keras.config.backend() == "jax":
+                warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
                 z_history = {}
                 for key, val in state.items():
                     shape = keras.ops.shape(val)
                     z_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
-            return integrate_langevin(
-                state=state,
-                start_time=start_time,
-                stop_time=stop_time,
-                steps=loop_steps,
-                z_history=z_history,
-                score_fn=score_fn,
-                noise_schedule=noise_schedule,
-                step_size_factor=step_size_factor,
-                corrector_steps=corrector_steps,
-                corrector_noise_history=corrector_noise_history,
-                seed=seed,
-            )
+            def run_langevin():
+                return integrate_langevin(
+                    state=state,
+                    start_time=start_time,
+                    stop_time=stop_time,
+                    steps=loop_steps,
+                    z_history=z_history,
+                    score_fn=score_fn,
+                    noise_schedule=noise_schedule,
+                    step_size_factor=step_size_factor,
+                    corrector_steps=corrector_steps,
+                    corrector_noise_history=corrector_noise_history,
+                    seed=seed,
+                    state_projection_fn=state_projection_fn,
+                    state_update_projection_fn=state_update_projection_fn,
+                )
+
+            result = _compile_loop_integrator(run_langevin)()
+            # covers the TensorFlow backend, where the check inside integrate_langevin is skipped while tracing
+            if _as_concrete_bool(_check_all_nans(result)):
+                raise RuntimeError("All values are NaNs in state during integration.")
+            return result
         case other:
             raise TypeError(f"Invalid integration method: {other!r}")
 
@@ -1403,8 +1869,8 @@ def integrate_stochastic(
     # Pre-generate standard normals for the predictor step (up to max_steps)
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
-    if keras.backend.backend() == "jax":
-        warning(f"JAX backend needs to preallocate random samples for 'max_steps={max_steps}'.")
+    if keras.config.backend() == "jax":
+        warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
         z_history = {}
         for key, val in state.items():
             shape = keras.ops.shape(val)
@@ -1412,40 +1878,51 @@ def integrate_stochastic(
             if method in ["sea", "shark"]:
                 z_extra_history[key] = keras.random.normal((loop_steps, *shape), dtype=keras.ops.dtype(val), seed=seed)
 
-    if is_adaptive:
-        return integrate_stochastic_adaptive(
-            step_fn=step_fn,
-            state=state,
-            start_time=start_time,
-            stop_time=stop_time,
-            max_steps=max_steps,
-            min_step_size=min_step_size,
-            max_step_size=max_step_size,
-            initial_step=initial_step,
-            z_history=z_history,
-            z_extra_history=z_extra_history,
-            corrector_steps=corrector_steps,
-            score_fn=score_fn,
-            noise_schedule=noise_schedule,
-            step_size_factor=step_size_factor,
-            corrector_noise_history=corrector_noise_history,
-            seed=seed,
-        )
-    else:
-        return integrate_stochastic_fixed(
-            step_fn=step_fn,
-            state=state,
-            start_time=start_time,
-            stop_time=stop_time,
-            min_step_size=min_step_size,
-            max_step_size=max_step_size,
-            steps=loop_steps,
-            z_history=z_history,
-            z_extra_history=z_extra_history,
-            corrector_steps=corrector_steps,
-            score_fn=score_fn,
-            noise_schedule=noise_schedule,
-            step_size_factor=step_size_factor,
-            corrector_noise_history=corrector_noise_history,
-            seed=seed,
-        )
+    def run():
+        if is_adaptive:
+            return integrate_stochastic_adaptive(
+                step_fn=step_fn,
+                state=state,
+                start_time=start_time,
+                stop_time=stop_time,
+                max_steps=max_steps,
+                min_step_size=min_step_size,
+                max_step_size=max_step_size,
+                initial_step=initial_step,
+                z_history=z_history,
+                z_extra_history=z_extra_history,
+                corrector_steps=corrector_steps,
+                score_fn=score_fn,
+                noise_schedule=noise_schedule,
+                step_size_factor=step_size_factor,
+                corrector_noise_history=corrector_noise_history,
+                seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
+            )
+        else:
+            return integrate_stochastic_fixed(
+                step_fn=step_fn,
+                state=state,
+                start_time=start_time,
+                stop_time=stop_time,
+                min_step_size=min_step_size,
+                max_step_size=max_step_size,
+                steps=loop_steps,
+                z_history=z_history,
+                z_extra_history=z_extra_history,
+                corrector_steps=corrector_steps,
+                score_fn=score_fn,
+                noise_schedule=noise_schedule,
+                step_size_factor=step_size_factor,
+                corrector_noise_history=corrector_noise_history,
+                seed=seed,
+                state_projection_fn=state_projection_fn,
+                state_update_projection_fn=state_update_projection_fn,
+            )
+
+    result = _compile_loop_integrator(run)()
+    # covers the TensorFlow backend, where the checks inside the integrators are skipped while tracing
+    if _as_concrete_bool(_check_all_nans(result)):
+        raise RuntimeError("All values are NaNs in state during integration.")
+    return result

@@ -7,6 +7,7 @@ from keras import ops
 
 from bayesflow.types import Shape, Tensor
 from bayesflow.utils.decorators import allow_batch_size
+from bayesflow.utils.keras_utils import resolve_seed
 from bayesflow.utils.serialization import serializable, serialize
 
 from .distribution import Distribution
@@ -21,7 +22,6 @@ class DiagonalNormal(Distribution):
         mean: int | float | np.ndarray | Tensor = 0.0,
         std: int | float | np.ndarray | Tensor = 1.0,
         trainable_parameters: bool = False,
-        seed_generator: keras.random.SeedGenerator = None,
         **kwargs,
     ):
         """
@@ -42,9 +42,6 @@ class DiagonalNormal(Distribution):
             Default is 1.0.
         trainable_parameters : bool, optional
             Whether to treat the mean and standard deviation as learnable parameters. Default is False.
-        seed_generator : keras.random.SeedGenerator, optional
-            A Keras seed generator for reproducible random sampling. If None, a new seed
-            generator is created. Default is None.
         **kwargs
             Additional keyword arguments passed to the base `Distribution` class.
 
@@ -55,7 +52,7 @@ class DiagonalNormal(Distribution):
         self.std = std
 
         self.trainable_parameters = trainable_parameters
-        self.seed_generator = seed_generator or keras.random.SeedGenerator()
+        self.seed_generator = keras.random.SeedGenerator()
 
         self.dim = None
         self._mean = None
@@ -66,39 +63,50 @@ class DiagonalNormal(Distribution):
             return
 
         self.dim = input_shape[-1]
+        dtype = keras.config.floatx()
 
-        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), "float32")
-        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), "float32")
+        self.mean = ops.cast(ops.broadcast_to(self.mean, (self.dim,)), dtype)
+        self.std = ops.cast(ops.broadcast_to(self.std, (self.dim,)), dtype)
 
         if self.trainable_parameters:
             self._mean = self.add_weight(
                 shape=ops.shape(self.mean),
                 initializer=keras.initializers.get(keras.ops.copy(self.mean)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
             self._std = self.add_weight(
                 shape=ops.shape(self.std),
                 initializer=keras.initializers.get(keras.ops.copy(self.std)),
-                dtype="float32",
+                dtype=dtype,
                 trainable=True,
             )
         else:
             self._mean = self.mean
             self._std = self.std
 
-    def log_prob(self, samples: Tensor, *, normalize: bool = True) -> Tensor:
-        result = -0.5 * ops.sum((samples - self._mean) ** 2 / self._std**2, axis=-1)
+    def log_prob(
+        self,
+        samples: Tensor,
+        *,
+        normalize: bool = True,
+        mask: Tensor | None = None,
+    ) -> Tensor:
+        log_prob = -0.5 * (samples - self._mean) ** 2 / self._std**2
 
         if normalize:
-            log_normalization_constant = -0.5 * self.dim * math.log(2.0 * math.pi) - ops.sum(ops.log(self._std))
-            result += log_normalization_constant
+            log_prob += -0.5 * math.log(2.0 * math.pi) - ops.log(self._std)
 
-        return result
+        if mask is not None:
+            mask = ops.cast(ops.broadcast_to(mask, ops.shape(samples)), "bool")
+            log_prob = ops.where(mask, log_prob, ops.zeros_like(log_prob))
+
+        return ops.sum(log_prob, axis=-1)
 
     @allow_batch_size
-    def sample(self, batch_shape: Shape) -> Tensor:
-        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=self.seed_generator)
+    def sample(self, batch_shape: Shape, seed: int | keras.random.SeedGenerator | None = None) -> Tensor:
+        seed = resolve_seed(seed, self.seed_generator)
+        z = keras.random.normal(shape=batch_shape + (self.dim,), seed=seed)
         z = self._mean + self._std * z
         return z
 
@@ -109,7 +117,6 @@ class DiagonalNormal(Distribution):
             "mean": self.mean,
             "std": self.std,
             "trainable_parameters": self.trainable_parameters,
-            "seed_generator": self.seed_generator,
         }
 
         return base_config | serialize(config)

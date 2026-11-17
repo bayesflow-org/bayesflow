@@ -3,8 +3,8 @@ import keras
 
 
 @singledispatch
-def find_summary_network(arg, *args, **kwargs):
-    raise TypeError(f"Cannot infer inference network from {arg!r}.")
+def find_summary_network(arg, *args, **kwargs) -> keras.Layer:
+    raise TypeError(f"Cannot infer summary network from {arg!r}.")
 
 
 @find_summary_network.register
@@ -35,6 +35,11 @@ def _(name: str, *args, **kwargs):
 
             return TimeSeriesNetwork(*args, **kwargs)
 
+        case "recurrent_net" | "recurrent_network":
+            from bayesflow.networks import RecurrentNetwork
+
+            return RecurrentNetwork(*args, **kwargs)
+
         case unknown_network:
             raise ValueError(f"Unknown summary network: '{unknown_network}'")
 
@@ -54,3 +59,8 @@ def _(layer: keras.Layer, *args, **kwargs):
 @find_summary_network.register
 def _(model: keras.Model, *args, **kwargs):
     return model
+
+
+@find_summary_network.register
+def _(none: type(None), *args, **kwargs):
+    return None

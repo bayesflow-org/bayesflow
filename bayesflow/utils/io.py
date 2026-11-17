@@ -62,8 +62,8 @@ def parse_bytes(s: str) -> int:
     s = s.strip()
     if s.count(" ") != 1:
         raise ValueError(
-            "Cannot parse bytes from string without exactly one space separator. "
-            "Expected format: '{value} {prefix}{unit}'."
+            "Cannot parse bytes from string without exactly one space separator.\n"
+            "Expected format: '{value} {prefix}{unit}'.\n"
             "Example: '8 GiB'."
         )
 

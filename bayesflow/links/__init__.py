@@ -1,5 +1,6 @@
 """Activation functions linking network output to estimates with architecturally enforced properties."""
 
+from .leaky import Leaky
 from .ordered import Ordered
 from .ordered_quantiles import OrderedQuantiles
 from .cholesky_factor import CholeskyFactor

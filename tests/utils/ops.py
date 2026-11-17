@@ -1,5 +1,34 @@
+import contextlib
+
 import keras
 import numpy as np
+
+
+def on_torch_mps():
+    """Whether keras places tensors on the MPS (Apple GPU) device of the torch backend.
+
+    Useful to guard tests that fail because of MPS limitations, e.g. its lack of float64 support.
+    """
+    if keras.config.backend() != "torch":
+        return False
+
+    return keras.ops.convert_to_tensor(0.0).device.type == "mps"
+
+
+def skip_torch_linalg_on_mps():
+    """Skip a test that exercises a ``torch.linalg``-backed Keras operation on MPS."""
+    if on_torch_mps():
+        import pytest
+
+        pytest.skip("torch.linalg operations fail to compile on MPS.")
+
+
+def cpu_if_torch_mps():
+    """Context manager that runs the enclosed block on the CPU if keras would use torch's MPS device."""
+    if on_torch_mps():
+        return keras.device("cpu")
+
+    return contextlib.nullcontext()
 
 
 def allclose(x1, x2, rtol=1e-5, atol=1e-5):

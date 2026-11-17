@@ -45,7 +45,7 @@ def recovery_from_estimates(
     ----------
     estimates         : dict[str, dict[str, np.ndarray]]
         The model-generated estimates in a nested dictionary, e.g. as returned
-        by approximator.estimate(conditions=...).
+        by estimator.estimate(conditions=...).
         - The outer keys identify the inference variable.
         - The inner keys identify point estimates.
         - The inner value is an ndarray of shape (num_datasets, point_estimate_size, variable_block_size)

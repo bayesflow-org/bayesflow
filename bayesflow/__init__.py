@@ -57,8 +57,8 @@ def setup():
             chosen_backend = found_backends[0]
             os.environ["KERAS_BACKEND"] = chosen_backend.env_name
 
-            logging.warning(
-                f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}).\n"
+            logger.info(
+                f"Multiple Keras-compatible backends detected ({', '.join(b.display_name for b in found_backends)}). "
                 f"Defaulting to {chosen_backend.display_name}.\n"
                 "To override, set the KERAS_BACKEND environment variable before importing bayesflow.\n"
                 "See: https://keras.io/getting_started/#configuring-your-backend"
@@ -69,12 +69,12 @@ def setup():
     import keras
     from bayesflow.utils import logging
 
-    if keras.backend.backend().lower() != os.environ["KERAS_BACKEND"].lower():
+    if keras.config.backend().lower() != os.environ["KERAS_BACKEND"].lower():
         logging.warning("Automatic backend selection failed, most likely because Keras was imported before BayesFlow.")
 
-    logging.info(f"Using backend {keras.backend.backend()!r}")
+    logging.info(f"Using backend {keras.config.backend()!r}")
 
-    if keras.backend.backend() == "torch":
+    if keras.config.backend() == "torch":
         import torch
 
         torch.autograd.set_grad_enabled(False)
@@ -100,22 +100,42 @@ setup()
 del setup
 
 from . import (
-    approximators,
     adapters,
     augmentations,
     datasets,
     diagnostics,
     distributions,
+    estimators,
     experimental,
+    masking,
     networks,
+    approximators,
     simulators,
     utils,
+    scoring_rules,
     workflows,
-    wrappers,
 )
 
 from .adapters import Adapter
-from .approximators import ContinuousApproximator, PointApproximator
-from .datasets import OfflineDataset, OnlineDataset, DiskDataset
+from .datasets import OfflineDataset, OnlineDataset, DiskDataset, EnsembleDataset
+from .estimators import (
+    Estimator,
+    BasicEstimator,
+    AutoregressiveEstimator,
+    CompositionalEstimator,
+    ModelComparisonEstimator,
+    ScoringRuleEstimator,
+    EnsembleEstimator,
+    RatioEstimator,
+)
+from .approximators import (
+    ContinuousApproximator,
+    AutoregressiveApproximator,
+    CompositionalApproximator,
+    ModelComparisonApproximator,
+    ScoringRuleApproximator,
+    EnsembleApproximator,
+    RatioApproximator,
+)
 from .simulators import make_simulator
-from .workflows import BasicWorkflow
+from .workflows import BasicWorkflow, EnsembleWorkflow, CompositionalWorkflow, ModelComparisonWorkflow

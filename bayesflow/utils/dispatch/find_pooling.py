@@ -18,7 +18,7 @@ def _(name: str, *args, **kwargs):
         case "min":
             pooling = keras.layers.Lambda(lambda inp: keras.ops.min(inp, axis=-2))
         case "learnable" | "pma" | "attention":
-            from bayesflow.networks.transformers.pma import PoolingByMultiHeadAttention
+            from bayesflow.networks.summary.transformers.attention import PoolingByMultiHeadAttention
 
             pooling = PoolingByMultiHeadAttention(*args, **kwargs)
         case other:

@@ -28,6 +28,10 @@ def pairs_posterior(
     label_fontsize: int = 14,
     tick_fontsize: int = 12,
     legend_fontsize: int = 14,
+    legend_location: str = "center left",
+    legend_anchor: tuple = (1, 0.5),
+    legend_ncol: int = 1,
+    place_legend_below: bool = False,
     **kwargs,
 ) -> sns.PairGrid:
     """Generates a bivariate pair plot given posterior draws and optional prior or prior draws.
@@ -53,8 +57,20 @@ def pairs_posterior(
         The font size of the x and y-label texts (parameter names)
     tick_fontsize     : int, optional, default: 12
         The font size of the axis tick labels
+    place_legend_below : bool, optional, default: False
+        Optional toggle for the user to choose whether to place the legends
+        below the plot.
+        If set to True, then user-defined legend location, anchor, and ncol
+        will be ignored and overwritten by presets.
     legend_fontsize   : int, optional, default: 16
         The font size of the legend text
+    legend_location  : str, optional, default: "center left"
+        Anchoring location of the legend bounding box to position the legends
+        globally
+    legend_anchor  : tuple, optional, default: (1, 0.5)
+        Anchor coordinate to globally position the legends
+    legend_ncol  : int, optional, default: 1
+        Number of legend columns
     post_color        : str, optional, default: '#132a70'
         The color for the posterior histograms and KDEs
     prior_color      : str, optional, default: gray
@@ -106,10 +122,13 @@ def pairs_posterior(
         label_fontsize=label_fontsize,
         tick_fontsize=tick_fontsize,
         legend_fontsize=legend_fontsize,
+        legend_location=legend_location,
+        legend_anchor=legend_anchor,
+        legend_ncol=legend_ncol,
         markersize=markersize,
         target_markersize=target_markersize,
         target_color=target_color,
-        **kwargs,
+        place_legend_below=place_legend_below,
     )
 
     targets = plot_data.get("targets")
@@ -133,6 +152,10 @@ def pairs_posterior(
             show_single_legend=False,
             target_color=target_color,
             target_markersize=target_markersize,
+            legend_location=legend_location,
+            legend_anchor=legend_anchor,
+            legend_ncol=legend_ncol,
+            place_legend_below=place_legend_below,
         )
 
     return g

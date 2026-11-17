@@ -11,6 +11,23 @@ from . import logging
 T = TypeVar("T")
 
 
+def expand_singletons_to_common_length(**kwargs) -> dict:
+    values = {k: tuple(v) if isinstance(v, Sequence) and not isinstance(v, str) else (v,) for k, v in kwargs.items()}
+    lengths = {len(value) for value in values.values()}
+    common_length = max(lengths)
+
+    incompatible = {length for length in lengths if length not in {1, common_length}}
+
+    if incompatible:
+        lengths_by_name = {key: len(value) for key, value in values.items()}
+        raise ValueError(
+            "All per-layer arguments must either have length 1 or the common layer count, "
+            f"but got lengths {lengths_by_name}."
+        )
+
+    return {key: value * common_length if len(value) == 1 else value for key, value in values.items()}
+
+
 def convert_args(f: Callable, *args: any, **kwargs: any) -> tuple[any, ...]:
     """Convert positional and keyword arguments to just positional arguments for f"""
     if not kwargs:
@@ -377,6 +394,19 @@ def compute_test_quantities(
     """Compute additional test quantities for given targets and estimates."""
     import keras
 
+    if not isinstance(targets, Mapping) or (estimates is not None and not isinstance(estimates, Mapping)):
+        raise TypeError("test_quantities requires dictionaries for estimates and targets.")
+
+    if isinstance(variable_keys, str):
+        variable_keys = [variable_keys]
+    elif variable_keys is not None:
+        variable_keys = list(variable_keys)
+
+    if isinstance(variable_names, str):
+        variable_names = [variable_names]
+    elif variable_names is not None:
+        variable_names = list(variable_names)
+
     test_quantities_estimates = {} if estimates is not None else None
     test_quantities_targets = {}
 
@@ -403,7 +433,7 @@ def compute_test_quantities(
 
     if variable_keys is None:
         variable_keys = list(estimates.keys() if estimates is not None else targets.keys())
-    if isinstance(variable_names, list):
+    if variable_names is not None:
         variable_names = test_quantities_names + variable_names
 
     variable_keys = test_quantities_names + variable_keys

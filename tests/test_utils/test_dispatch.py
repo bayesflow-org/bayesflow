@@ -1,10 +1,14 @@
 import keras
 import pytest
 
-from bayesflow.utils import find_inference_network, find_distribution, find_network, find_summary_network
-from bayesflow.networks.diffusion_model import find_noise_schedule
-
-# --- Tests for find__network.py ---
+from bayesflow.networks.inference.diffusion import find_noise_schedule
+from bayesflow.utils import (
+    find_distribution,
+    find_inference_network,
+    find_network,
+    find_recurrent_net,
+    find_summary_network,
+)
 
 
 class DummyNetwork:
@@ -17,6 +21,8 @@ class DummyNetwork:
     "name,expected_class_path",
     [
         ("mlp", "bayesflow.networks.MLP"),
+        ("time_mlp", "bayesflow.networks.TimeMLP"),
+        ("diffusion_transformer", "bayesflow.networks.DiffusionTransformer"),
     ],
 )
 def test_find_network_by_name(monkeypatch, name, expected_class_path):
@@ -64,7 +70,22 @@ def test_find_network_invalid_type():
         find_network(12345)
 
 
-# --- Tests for find_inference_network.py ---
+def test_find_recurrent_net_by_name_returns_constructed_layer():
+    net = find_recurrent_net("gru", units=4)
+    assert isinstance(net, keras.layers.GRU)
+    assert net.units == 4
+
+
+def test_find_recurrent_net_by_keras_layer():
+    layer = keras.layers.LSTM(4)
+    result = find_recurrent_net(layer)
+    assert result is layer
+
+
+def test_find_recurrent_net_rejects_constructor_kwargs_for_keras_layer():
+    layer = keras.layers.GRU(4)
+    with pytest.raises(TypeError):
+        find_recurrent_net(layer, units=8)
 
 
 class DummyInferenceNetwork:
@@ -126,9 +147,6 @@ def test_find_inference_network_invalid_type():
         find_inference_network(12345)
 
 
-# --- Tests for find_distribution.py ---
-
-
 class DummyDistribution:
     def __init__(self, *a, **kw):
         self.args = a
@@ -181,9 +199,6 @@ def test_find_distribution_invalid_name():
 def test_find_distribution_invalid_type():
     with pytest.raises(TypeError):
         find_distribution(3.14)
-
-
-# --- Tests for find_summary_network.py ---
 
 
 class DummySummaryNetwork:
@@ -247,7 +262,7 @@ def test_find_summary_network_invalid_type():
 
 
 def test_find_noise_schedule_by_name():
-    from bayesflow.networks.diffusion_model.schedules import CosineNoiseSchedule, EDMNoiseSchedule
+    from bayesflow.networks.inference.diffusion.schedules import CosineNoiseSchedule, EDMNoiseSchedule
 
     schedule = find_noise_schedule("cosine")
     assert isinstance(schedule, CosineNoiseSchedule)
@@ -262,16 +277,16 @@ def test_find_noise_schedule_unknown_name():
 
 
 def test_pass_noise_schedule():
-    from bayesflow.networks.diffusion_model.schedules.noise_schedule import NoiseSchedule
+    from bayesflow.networks.inference.diffusion.schedules.noise_schedule import NoiseSchedule
 
     class CustomNoiseSchedule(NoiseSchedule):
         def __init__(self):
             pass
 
-        def get_log_snr(self, t, training):
+        def log_snr(self, t, training):
             pass
 
-        def get_t_from_log_snr(self, log_snr_t, training):
+        def time_from_log_snr(self, log_snr_t, training):
             pass
 
         def derivative_log_snr(self, log_snr_t, training):
@@ -282,7 +297,7 @@ def test_pass_noise_schedule():
 
 
 def test_pass_noise_schedule_type():
-    from bayesflow.networks.diffusion_model.schedules import EDMNoiseSchedule
+    from bayesflow.networks.inference.diffusion.schedules import EDMNoiseSchedule
 
     schedule = find_noise_schedule(EDMNoiseSchedule, sigma_data=10.0)
     assert isinstance(schedule, EDMNoiseSchedule)
@@ -297,3 +312,124 @@ def test_find_noise_schedule_invalid_class():
 def test_find_noise_schedule_invalid_object():
     with pytest.raises(TypeError):
         find_noise_schedule(1.0)
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("cross_entropy", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("default", "bayesflow.scoring_rules.CrossEntropyScore"),
+        ("brier", "bayesflow.scoring_rules.BrierScore"),
+        ("polynomial", "bayesflow.scoring_rules.PolynomialScore"),
+        ("exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("leaky_exponential", "bayesflow.scoring_rules.ExponentialScore"),
+        ("logistic", "bayesflow.scoring_rules.LogisticScore"),
+        ("power_logistic", "bayesflow.scoring_rules.LogisticScore"),
+    ],
+)
+def test_find_scoring_rule_by_name(name, expected_class):
+    from bayesflow.utils import find_scoring_rule
+    import importlib
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_leaky_default_sets_link():
+    from bayesflow.links import Leaky
+    from bayesflow.scoring_rules import ExponentialScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("leaky_exponential")
+    assert isinstance(rule, ExponentialScore)
+    link = rule.get_link("logits")
+    assert isinstance(link, Leaky)
+    assert link.power == 2.0
+
+
+def test_find_scoring_rule_power_logistic_default_sets_alpha():
+    from bayesflow.scoring_rules import LogisticScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("power_logistic")
+    assert isinstance(rule, LogisticScore)
+    assert rule.alpha == 1.0
+
+
+def test_find_scoring_rule_by_type():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import CrossEntropyScore
+
+    rule = find_scoring_rule(CrossEntropyScore)
+    assert isinstance(rule, CrossEntropyScore)
+
+
+def test_find_scoring_rule_by_instance():
+    from bayesflow.utils import find_scoring_rule
+    from bayesflow.scoring_rules import BrierScore
+
+    existing = BrierScore()
+    result = find_scoring_rule(existing)
+    assert result is existing
+
+
+def test_find_scoring_rule_unknown_name():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(ValueError, match="Unsupported scoring rule name"):
+        find_scoring_rule("unknown_rule")
+
+
+def test_find_scoring_rule_invalid_type():
+    from bayesflow.utils import find_scoring_rule
+
+    with pytest.raises(TypeError):
+        find_scoring_rule(42)
+
+
+@pytest.mark.parametrize(
+    "name,expected_class",
+    [
+        ("mean", "bayesflow.scoring_rules.MeanScore"),
+        ("median", "bayesflow.scoring_rules.MedianScore"),
+        ("quantile", "bayesflow.scoring_rules.QuantileScore"),
+        ("mv_normal", "bayesflow.scoring_rules.MvNormalScore"),
+        ("multivariate_normal", "bayesflow.scoring_rules.MvNormalScore"),
+    ],
+)
+def test_find_scoring_rule_continuous_by_name(name, expected_class):
+    import importlib
+
+    from bayesflow.utils import find_scoring_rule
+
+    module_path, class_name = expected_class.rsplit(".", 1)
+    expected_cls = getattr(importlib.import_module(module_path), class_name)
+    rule = find_scoring_rule(name)
+    assert isinstance(rule, expected_cls)
+
+
+def test_find_scoring_rule_normed_difference():
+    from bayesflow.scoring_rules import NormedDifferenceScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("normed_difference", k=2)
+    assert isinstance(rule, NormedDifferenceScore)
+
+
+def test_find_scoring_rule_mixture():
+    from bayesflow.scoring_rules import MixtureScore, MvNormalScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("mixture", mvn1=MvNormalScore(), mvn2=MvNormalScore())
+    assert isinstance(rule, MixtureScore)
+
+
+def test_find_scoring_rule_case_insensitive():
+    from bayesflow.scoring_rules import CrossEntropyScore
+    from bayesflow.utils import find_scoring_rule
+
+    rule = find_scoring_rule("CROSS_ENTROPY")
+    assert isinstance(rule, CrossEntropyScore)

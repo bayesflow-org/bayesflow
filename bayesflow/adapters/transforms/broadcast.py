@@ -1,6 +1,7 @@
 from collections.abc import Sequence
-import numpy as np
+import keras.ops as ops
 
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serialize, serializable
 
 from .transform import Transform
@@ -102,43 +103,42 @@ class Broadcast(Transform):
         }
         return serialize(config)
 
-    # noinspection PyMethodOverriding
-    def forward(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
-        target_shape = data[self.to].shape
+    def forward(self, data: dict[str, Tensor], **kwargs) -> dict[str, Tensor]:
+        target_shape = list(ops.shape(data[self.to]))
 
         data = data.copy()
 
         for k in self.keys:
-            # ensure that .shape is defined
-            data[k] = np.asarray(data[k])
-            len_diff = len(target_shape) - len(data[k].shape)
+            current = ops.convert_to_tensor(data[k])
+            len_diff = len(target_shape) - len(ops.shape(current))
 
             if self.expand == "left":
-                data[k] = np.expand_dims(data[k], axis=tuple(np.arange(0, len_diff)))
+                for _ in range(len_diff):
+                    current = ops.expand_dims(current, axis=0)
             elif self.expand == "right":
-                data[k] = np.expand_dims(data[k], axis=tuple(-np.arange(1, len_diff + 1)))
+                for _ in range(len_diff):
+                    current = ops.expand_dims(current, axis=-1)
             elif isinstance(self.expand, Sequence):
-                if len(self.expand) is not len_diff:
-                    raise ValueError("Length of `expand` must match the length difference of the involed arrays.")
-                data[k] = np.expand_dims(data[k], axis=self.expand)
+                if len(self.expand) != len_diff:
+                    raise ValueError("Length of `expand` must match the length difference of the involved arrays.")
+                current = ops.expand_dims(current, axis=self.expand)
 
             new_shape = target_shape
             if self.exclude is not None:
-                new_shape = np.array(new_shape, dtype=int)
-                old_shape = np.array(data[k].shape, dtype=int)
-                exclude = list(self.exclude)
-                new_shape[exclude] = old_shape[exclude]
-                new_shape = tuple(new_shape)
+                current_shape = list(ops.shape(current))
+                for ax in list(self.exclude):
+                    new_shape[ax] = current_shape[ax]
 
-            data[k] = np.broadcast_to(data[k], new_shape)
+            current = ops.broadcast_to(current, new_shape)
 
             if self.squeeze is not None:
-                data[k] = np.squeeze(data[k], axis=self.squeeze)
+                current = ops.squeeze(current, axis=self.squeeze)
+
+            data[k] = current
 
         return data
 
-    # noinspection PyMethodOverriding
-    def inverse(self, data: dict[str, np.ndarray], **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], **kwargs) -> dict[str, Tensor]:
         # TODO: add inverse
         # we will likely never actually need the inverse broadcasting in practice
         # so adding this method is not high priority

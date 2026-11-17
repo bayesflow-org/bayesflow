@@ -3,12 +3,28 @@ import logging
 import matplotlib
 import pytest
 
+from tests.utils import cpu_if_torch_mps, skip_torch_linalg_on_mps
+
 BACKENDS = ["jax", "numpy", "tensorflow", "torch"]
+
+
+@pytest.fixture(autouse=True)
+def _cpu_fallback_on_mps(request):
+    """Runs tests marked `cpu_fallback_on_mps` on the CPU instead of torch's MPS device."""
+    if request.node.get_closest_marker("cpu_fallback_on_mps") is None:
+        yield
+        return
+
+    with cpu_if_torch_mps():
+        yield
 
 
 def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
-    backend = keras.backend.backend()
+    backend = keras.config.backend()
+
+    if item.get_closest_marker("skip_on_mps") is not None:
+        skip_torch_linalg_on_mps()
 
     test_backends = [mark.name for mark in item.iter_markers() if mark.name in BACKENDS]
 
@@ -18,7 +34,7 @@ def pytest_runtest_setup(item):
     # always show full tracebacks
     keras.config.disable_traceback_filtering()
 
-    if keras.backend.backend() == "jax":
+    if keras.config.backend() == "jax":
         import jax
 
         jax.config.update("jax_traceback_filtering", "off")
@@ -54,11 +70,6 @@ def conditions_size(request):
 @pytest.fixture(params=[1, 4], scope="session")
 def summary_dim(request):
     return request.param
-
-
-@pytest.fixture(params=["two_moons"], scope="session")
-def dataset(request):
-    return request.getfixturevalue(request.param)
 
 
 @pytest.fixture(params=[2, 3], scope="session")

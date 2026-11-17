@@ -29,11 +29,15 @@ def posterior_z_score(
 
     Parameters
     ----------
-    estimates   : np.ndarray of shape (num_datasets, num_draws_post, num_variables)
-        Posterior samples, comprising `num_draws_post` random draws from the posterior distribution
+    estimates   : np.ndarray or dict[str, np.ndarray]
+        Posterior samples, either as a NumPy array of shape (num_datasets, num_draws_post, num_variables)
+        or as a dictionary mapping variable names to arrays.
+        Comprises `num_draws_post` random draws from the posterior distribution
         for each data set from `num_datasets`.
-    targets  : np.ndarray of shape (num_datasets, num_variables)
-        Prior samples, comprising `num_datasets` ground truths.
+    targets  : np.ndarray or dict[str, np.ndarray]
+        Prior samples, either as a NumPy array of shape (num_datasets, num_variables)
+        or as a dictionary mapping variable names to arrays.
+        Comprises `num_datasets` ground truths.
     variable_keys : Sequence[str], optional (default = None)
        Select keys from the dictionaries provided in estimates and targets.
        By default, select all keys.
@@ -51,7 +55,7 @@ def posterior_z_score(
         ``(batch_size,)``.
         The functions do not have to deal with an additional
         sample dimension, as appropriate reshaping is done internally.
-    aggregation    : callable or None, optional (default = np.median)
+    aggregation    : Callable or None, optional (default = np.median)
         Function to aggregate the PC across draws. Typically `np.mean` or `np.median`.
         If None is provided, the individual values are returned.
 

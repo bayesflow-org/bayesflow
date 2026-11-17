@@ -4,15 +4,15 @@ channels:
 dependencies:
   - jupyter
   - jupyterlab
-  - keras ~= 3.9.0
-  - numpy ~= 1.26
+  - keras
+  - numpy
   - matplotlib
   - pre-commit
   - pytest
   - pytest-cov
   - pytest-rerunfailures
   - pytest-xdist
-  - python >= 3.10, < 3.12
+  - python >= 3.12, < 3.14
   - ruff
   - seaborn
   - pandas

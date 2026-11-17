@@ -1,3 +1,4 @@
+from typing import Any
 from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
@@ -12,10 +13,10 @@ def calibration_error(
     variable_names: Sequence[str] = None,
     test_quantities: dict[str, Callable] = None,
     resolution: int = 20,
-    aggregation: Callable = np.median,
+    aggregation: Callable | None = np.median,
     min_quantile: float = 0.005,
     max_quantile: float = 0.995,
-) -> dict[str, any]:
+) -> dict[str, Any]:
     """
     Computes an aggregate score for the marginal calibration error over an ensemble of approximate
     posteriors. The calibration error is given as the aggregate (e.g., median) of the absolute deviation
@@ -24,10 +25,14 @@ def calibration_error(
 
     Parameters
     ----------
-    estimates  : np.ndarray of shape (num_datasets, num_draws, num_variables)
-        The random draws from the approximate posteriors over ``num_datasets``
-    targets : np.ndarray of shape (num_datasets, num_variables)
-        The corresponding ground-truth values sampled from the prior
+    estimates  : np.ndarray or dict[str, np.ndarray]
+        The random draws from the approximate posteriors, either as a NumPy array of
+        shape (num_datasets, num_draws, num_variables) or as a dictionary mapping variable
+        names to arrays, over ``num_datasets``.
+    targets : np.ndarray or dict[str, np.ndarray]
+        The corresponding ground-truth values sampled from the prior, either as a NumPy
+        array of shape (num_datasets, num_variables) or as a dictionary mapping variable
+        names to arrays.
     variable_keys : Sequence[str], optional (default = None)
        Select keys from the dictionaries provided in estimates and targets.
        By default, select all keys.
@@ -47,7 +52,7 @@ def calibration_error(
         sample dimension, as appropriate reshaping is done internally.
     resolution    : int, optional, default: 20
         The number of credibility intervals (CIs) to consider
-    aggregation   : callable or None, optional, default: np.median
+    aggregation   : Callable or None, optional, default: np.median
         The function used to aggregate the marginal calibration errors.
         If ``None`` provided, the per-alpha calibration errors will be returned.
     min_quantile  : float in (0, 1), optional, default: 0.005
@@ -111,10 +116,11 @@ def calibration_error(
     alpha_pred = np.mean(inlier_id, axis=1)
 
     # Calculate absolute error between predicted inliers and alpha
-    absolute_errors = np.abs(alpha_pred - alphas[:, None])
+    error = np.abs(alpha_pred - alphas[:, None])
 
     # Aggregate errors across alpha
-    error = aggregation(absolute_errors, axis=0)
+    if aggregation is not None:
+        error = aggregation(error, axis=0)
 
     variable_names = samples["estimates"].variable_names
     return {"values": error, "metric_name": "Calibration Error", "variable_names": variable_names}

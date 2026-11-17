@@ -1,6 +1,7 @@
 from collections.abc import Sequence
-import numpy as np
+import keras.ops as ops
 
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import deserialize, serializable, serialize
 
 from .transform import Transform
@@ -45,7 +46,7 @@ class Split(Transform):
         }
         return serialize(config)
 
-    def forward(self, data: dict[str, np.ndarray], strict: bool = True, **kwargs) -> dict[str, np.ndarray]:
+    def forward(self, data: dict[str, Tensor], strict: bool = True, **kwargs) -> dict[str, Tensor]:
         # avoid side effects
         data = data.copy()
 
@@ -55,7 +56,7 @@ class Split(Transform):
             # we cannot produce a result, but also don't have to
             return data
 
-        splits = np.split(data.pop(self.key), self.indices_or_sections, axis=self.axis)
+        splits = ops.split(data.pop(self.key), self.indices_or_sections, axis=self.axis)
 
         if len(splits) != len(self.into):
             raise ValueError(f"Requested {len(self.into)} splits, but produced {len(splits)}.")
@@ -65,7 +66,7 @@ class Split(Transform):
 
         return data
 
-    def inverse(self, data: dict[str, np.ndarray], strict: bool = False, **kwargs) -> dict[str, np.ndarray]:
+    def inverse(self, data: dict[str, Tensor], strict: bool = False, **kwargs) -> dict[str, Tensor]:
         # avoid side effects
         data = data.copy()
 
@@ -88,7 +89,7 @@ class Split(Transform):
         splits = [data.pop(key) for key in self.into]
 
         # concatenate them all
-        result = np.concatenate(splits, axis=self.axis)
+        result = ops.concatenate(splits, axis=self.axis)
 
         # store the result
         data[self.key] = result

@@ -1,20 +1,16 @@
-import keras
+from functools import wraps
 
-from bayesflow.utils import filter_kwargs
+from bayesflow.estimators.backend_estimators import BackendEstimator
 
-
-match keras.backend.backend():
-    case "jax":
-        from .jax_approximator import JAXApproximator as BaseBackendApproximator
-    case "tensorflow":
-        from .tensorflow_approximator import TensorFlowApproximator as BaseBackendApproximator
-    case "torch":
-        from .torch_approximator import TorchApproximator as BaseBackendApproximator
-    case other:
-        raise ValueError(f"Backend '{other}' is not supported.")
+from .._deprecation import warn_approximator_deprecation
 
 
-class BackendApproximator(BaseBackendApproximator):
-    # noinspection PyMethodOverriding
-    def fit(self, *, dataset: keras.utils.PyDataset, **kwargs):
-        return super().fit(x=dataset, y=None, **filter_kwargs(kwargs, super().fit))
+class BackendApproximator(BackendEstimator):
+    """Deprecated alias for :class:`bayesflow.estimators.backend_estimators.BackendEstimator`."""
+
+    @wraps(BackendEstimator.__init__)
+    def __init__(self, *args, **kwargs):
+        warn_approximator_deprecation(
+            "backend_approximators.BackendApproximator", "backend_estimators.BackendEstimator"
+        )
+        super().__init__(*args, **kwargs)

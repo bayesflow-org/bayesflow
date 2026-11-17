@@ -3,7 +3,7 @@ import keras
 
 
 @singledispatch
-def find_inference_network(arg, *args, **kwargs):
+def find_inference_network(arg, *args, **kwargs) -> keras.Layer:
     raise TypeError(f"Cannot infer inference network from {arg!r}.")
 
 
@@ -19,6 +19,11 @@ def _(name: str, *args, **kwargs):
             from bayesflow.networks import FlowMatching
 
             return FlowMatching(*args, **kwargs)
+
+        case "diffusion_model":
+            from bayesflow.networks import DiffusionModel
+
+            return DiffusionModel(*args, **kwargs)
 
         case "consistency_model":
             from bayesflow.networks import ConsistencyModel

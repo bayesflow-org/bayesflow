@@ -3,7 +3,7 @@ import keras
 
 
 @singledispatch
-def find_network(arg, *args, **kwargs):
+def find_network(arg, *args, **kwargs) -> keras.Layer:
     raise TypeError(f"Cannot infer network from {arg!r}.")
 
 
@@ -18,6 +18,10 @@ def _(name: str, *args, **kwargs):
             from bayesflow.networks import TimeMLP
 
             network = TimeMLP(*args, **kwargs)
+        case "diffusion_transformer":
+            from bayesflow.networks import DiffusionTransformer
+
+            network = DiffusionTransformer(*args, **kwargs)
         case other:
             raise ValueError(f"Unsupported network name: '{other}'.")
 

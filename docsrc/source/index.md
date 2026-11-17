@@ -4,15 +4,15 @@ BayesFlow is a Python library for efficient Bayesian inference with deep learnin
 It provides users with:
 
 - A user-friendly API for [amortized Bayesian workflows](https://arxiv.org/abs/2409.04332)
-- A rich collection of [neural network architectures](https://arxiv.org/abs/2512.20685)
+- A rich collection of generative models, [from diffusion to consistency models](https://bayesflow-org.github.io/diffusion-experiments/)
 - Multi-backend support via [Keras3](https://keras.io/keras_3/): You can use [PyTorch](https://github.com/pytorch/pytorch), [TensorFlow](https://github.com/tensorflow/tensorflow), or [JAX](https://github.com/google/jax)
 
 ## Conceptual Overview
 
 <div align="center">
 <picture>
-  <source media="(prefers-color-scheme: dark)" srcset="_static/bayesflow_landing_dark.png">
-  <source media="(prefers-color-scheme: light)" srcset="_static/bayesflow_landing_light.png">
+  <source media="(prefers-color-scheme: dark)" srcset="_static/bf_landing_dark.png">
+  <source media="(prefers-color-scheme: light)" srcset="_static/bf_landing_light.png">
   <img alt="Overview graphic on using BayesFlow. It is split in three columns: 1. Simulate: generate data from any simulation you like. 2. Amortize: use BayesFlow to define your neural estimator with any deep learning backend you choose, as it is part of the Keras ecosystem. 3. Learn: with powerful generative AI and robust diagnostic features, BayesFlow is the gold-standard toolkit for simulation intelligence." src="_static/bayesflow_landing_dark.png">
 </picture>
 </div>
@@ -24,7 +24,7 @@ complex to be described analytically.
 
 ## Install
 
-We currently support Python 3.10 to 3.13. You can install the latest stable version from PyPI using:
+We currently support Python 3.11 to 3.13. You can install the latest stable version from PyPI using:
 
 ```bash
 pip install "bayesflow>=2.0"
@@ -95,18 +95,37 @@ For an in-depth exposition, check out our expanding list of resources below.
 
 Many examples from [Bayesian Cognitive Modeling: A Practical Course](https://bayesmodels.com/) by Lee & Wagenmakers (2013) in [BayesFlow](https://kucharssim.github.io/bayesflow-cognitive-modeling-book/).
 
+### Videos
+
+A few video tutorial videos are available as part of the [Learning Bayesian Statistics](https://learnbayesstats.com/) podcast:
+
+1. Marvin Schmitt on [Amortized Bayesian Inference with Neural Networks](https://www.youtube.com/watch?v=_lotzkvy6mY)
+2. Jonas Arruda on [Diffusion Models for Simulation-Based Inference](https://www.youtube.com/watch?v=ZlcEkHXgF5k)
+
 ### Tutorial notebooks
 
-1. [Linear regression starter example](examples/Linear_Regression_Starter.ipynb)
-2. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb)
-3. [Two moons starter example](examples/Two_Moons_Starter.ipynb)
-4. [Rapid iteration with point estimators](examples/Lotka_Volterra_Point_Estimation.ipynb)
-5. [SIR model with custom summary network](examples/SIR_Posterior_Estimation.ipynb)
-6. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb)
-7. [Simple model comparison example](examples/One_Sample_TTest.ipynb)
-8. [Likelihood estimation](examples/Likelihood_Estimation.ipynb)
-9. [Multimodal data](examples/Multimodal_Data.ipynb)
-10. [Moving from BayesFlow v1.1 to v2.0](examples/From_BayesFlow_1.1_to_2.0.ipynb)
+1. {doc}`Diffusion starter <_examples/Diffusion_Models>` - A small tutorial on the power of diffusion models for SBI.
+2. {doc}`Minimal amortized workflow <_examples/SIR_Posterior_Estimation>` - Build an amortized inference workflow with an SIR simulator.
+3. {doc}`Time-varying parameters <_examples/Bivariate_Smoothing>` - Estimate latent trajectories with autoregressive estimators.
+4. {doc}`Image or other spatial data <_examples/Spatial_Data_and_Parameters>` - Learn parameters from or generate image data.
+5. {doc}`Generalized linear models <_examples/Bayesian_GLM>` - Infer a Bayesian regression with multiple predictors, interactions, and varying sample size.
+6. {doc}`Foundation models as backbones <_examples/Foundation_Models>` - Easily turn TabPFN or other foundation models into Bayesian estimators.
+7. {doc}`Neural likelihood estimation <_examples/Likelihood_Estimation>` - Learn synthetic likelihood functions and plug them into the PyMC ecosystem.
+8. {doc}`Neural ratio estimation <_examples/Ratio_Estimation>` - Learn neural ratios for downstream MCMC sampling using the classifier trick.
+9. {doc}`Compositional estimation <_examples/Compositional_Diffusion>` - Estimate hierarchical Bayesian models via composition.
+10. {doc}`Deep Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine their inferences.
+11. {doc}`Self-consistency <_examples/Self_Consistency>` - Refine posterior estimates using unlabeled observations.
+12. {doc}`Model comparisons <_examples/One_Sample_TTest>` - Learn the basic workflow of Bayesian model comparison.
+13. {doc}`Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>` - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+14. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
+15. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
+16. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
+17. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
+18. {doc}`Model predictive control <_examples/Model_Predictive_Control>` - Use posterior uncertainty to guide robust control of an inverted double pendulum.
+
+### Tutorial papers
+
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685*. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
 
 More tutorials are always welcome! Please consider making a pull request if you have a cool application that you want to contribute.
 
@@ -124,47 +143,26 @@ Please use the [BayesFlow Forums](https://discuss.bayesflow.org/) for any BayesF
 
 ## Citing BayesFlow
 
-You can cite BayesFlow along the lines of:
-
-- We approximated the posterior using neural posterior estimation (NPE) with learned summary statistics (Radev et al., 2020), as implemented in the BayesFlow framework for amortized Bayesian inference (Radev et al., 2023a).
-- We approximated the likelihood using neural likelihood estimation (NLE) without hand-crafted summary statistics (Papamakarios et al., 2019), leveraging its implementation in BayesFlow for efficient and flexible inference.
-
-1. Radev, S. T., Schmitt, M., Schumacher, L., Elsemüller, L., Pratz, V., Schälte, Y., Köthe, U., & Bürkner, P.-C. (2023a). BayesFlow: Amortized Bayesian workflows with neural networks. *The Journal of Open Source Software, 8(89)*, 5702.([arXiv](https://arxiv.org/abs/2306.16015))([JOSS](https://joss.theoj.org/papers/10.21105/joss.05702))
-2. Radev, S. T., Mertens, U. K., Voss, A., Ardizzone, L., Köthe, U. (2020). BayesFlow: Learning complex stochastic models with invertible neural networks. *IEEE Transactions on Neural Networks and Learning Systems, 33(4)*, 1452-1466. ([arXiv](https://arxiv.org/abs/2003.06281))([IEEE TNNLS](https://ieeexplore.ieee.org/document/9298920))
-3. Radev, S. T., Schmitt, M., Pratz, V., Picchini, U., Köthe, U., & Bürkner, P.-C. (2023b). JANA: Jointly amortized neural approximation of complex Bayesian models. *Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence, 216*, 1695-1706. ([arXiv](https://arxiv.org/abs/2302.09125))([PMLR](https://proceedings.mlr.press/v216/radev23a.html))
+If you are using the new multi-backend version of BayesFlow, we recommend citing our new [software paper](https://arxiv.org/abs/2602.07098) (Kühmichel et al., 2026). For uses of the [legacy version](https://joss.theoj.org/papers/10.21105/joss.05702), you can still reference Radev et al., (2023).
 
 **BibTeX:**
 
 ```
+@article{kuhmichel2026bayesflow,
+  title={{BayesFlow} 2: Multi-backend amortized {B}ayesian inference in Python},
+  author={Kühmichel, Lars and Huang, Jerry M and Pratz, Valentin and Arruda, Jonas and Olischläger, Hans and Habermann, Daniel and Kucharsky, Simon and Elsemüller, Lasse and Mishra, Aayush and Bracher, Niels and Jedhoff, Svenja and Schmitt, Marvin and Bürkner, Paul-Christian and Radev, Stefan T},
+  journal={arXiv preprint arXiv:2602.07098},
+  year={2026}
+}
+
 @article{bayesflow_2023_software,
   title = {{BayesFlow}: Amortized {B}ayesian workflows with neural networks},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
+  author = {Radev, Stefan T and Schmitt, Marvin and Schumacher, Lukas and Elsemüller, Lasse and Pratz, Valentin and Schälte, Yannik and Köthe, Ullrich and Bürkner, Paul-Christian},
   journal = {Journal of Open Source Software},
   volume = {8},
   number = {89},
   pages = {5702},
   year = {2023}
-}
-
-@article{bayesflow_2020_original,
-  title = {{BayesFlow}: Learning complex stochastic models with invertible neural networks},
-  author = {Radev, Stefan T. and Mertens, Ulf K. and Voss, Andreas and Ardizzone, Lynton and K{\"o}the, Ullrich},
-  journal = {IEEE transactions on neural networks and learning systems},
-  volume = {33},
-  number = {4},
-  pages = {1452--1466},
-  year = {2020}
-}
-
-@inproceedings{bayesflow_2023_jana,
-  title = {{JANA}: Jointly amortized neural approximation of complex {B}ayesian models},
-  author = {Radev, Stefan T. and Schmitt, Marvin and Pratz, Valentin and Picchini, Umberto and K\"othe, Ullrich and B\"urkner, Paul-Christian},
-  booktitle = {Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence},
-  pages = {1695--1706},
-  year = {2023},
-  volume = {216},
-  series = {Proceedings of Machine Learning Research},
-  publisher = {PMLR}
 }
 ```
 

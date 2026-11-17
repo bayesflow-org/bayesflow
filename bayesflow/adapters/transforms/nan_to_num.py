@@ -1,4 +1,4 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
 from .transform import Transform
@@ -18,7 +18,9 @@ class NanToNum(Transform):
     default_value : float, optional
         Value to substitute wherever data is NaN. Default is 0.0.
     return_mask : bool, optional
-        If True, a mask array will be returned under a new key. Default is False.
+        If True, a mask array will be returned under a new key, and the inverse transform uses it to restore
+        the NaNs. If False, the transform is not invertible: the inverse leaves the filled values untouched,
+        since genuine occurrences of `default_value` cannot be distinguished from filled-in NaNs. Default is False.
     mask_prefix : str, optional
         Prefix for the mask key in the output dictionary. Default is 'mask_'.
     """
@@ -60,15 +62,16 @@ class NanToNum(Transform):
             )
 
         # Identify NaNs and fill with default value
-        mask = np.isnan(data[self.key])
-        data[self.key] = np.nan_to_num(data[self.key], copy=False, nan=self.default_value)
+        mask = ops.isnan(data[self.key])
+        data[self.key] = ops.where(
+            mask, ops.convert_to_tensor(self.default_value, dtype=data[self.key].dtype), data[self.key]
+        )
 
         if not self.return_mask:
             return data
 
         # Prepare mask array (1 for valid, 0 for NaN)
-        mask_array = (~mask).astype(np.int8)
-
+        mask_array = ops.cast(~mask, "int8")
         # Return both the filled data and the mask under separate keys
         data[self.mask_key] = mask_array
         return data
@@ -76,7 +79,11 @@ class NanToNum(Transform):
     def inverse(self, data: dict[str, any], **kwargs) -> dict[str, any]:
         """
         Inverse transform: restore NaNs using the mask under 'mask_<key>'.
+        Without a mask (`return_mask=False`), the data is returned unchanged.
         """
+        if not self.return_mask:
+            return data
+
         data = data.copy()
 
         # Retrieve mask and values to reconstruct NaNs
@@ -84,12 +91,8 @@ class NanToNum(Transform):
             return data
         values = data[self.key]
 
-        if not self.return_mask:
-            # assumes default_value is not in nan
-            values[values == self.default_value] = np.nan
-        else:
-            mask_array = data[self.mask_key].astype(bool)
-            values[~mask_array] = np.nan
+        nan = ops.convert_to_tensor(float("nan"), dtype=values.dtype)
+        mask_array = ops.cast(data[self.mask_key], "bool")
+        data[self.key] = ops.where(mask_array, values, nan)
 
-        data[self.key] = values
         return data

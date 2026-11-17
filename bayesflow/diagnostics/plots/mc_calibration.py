@@ -28,6 +28,8 @@ def mc_calibration(
     num_col: int = None,
     num_row: int = None,
     markersize: float = None,
+    xlabel: str = "Predicted Probability",
+    ylabel: str = "True Probability",
 ) -> plt.Figure:
     """Plots the calibration curves, the ECEs and the marginal histograms of predicted posterior model probabilities
     for a model comparison problem. The marginal histograms inform about the fraction of predictions in each bin.
@@ -35,9 +37,9 @@ def mc_calibration(
 
     Parameters
     ----------
-    pred_models       : np.ndarray of shape (num_data_sets, num_models)
+    pred_models       : np.ndarray of shape (num_datasets, num_models)
         The predicted posterior model probabilities (PMPs) per data set.
-    true_models       : np.ndarray of shape (num_data_sets, num_models)
+    true_models       : np.ndarray of shape (num_datasets, num_models)
         The one-hot-encoded true model indices per data set.
     model_names       : list or None, optional, default: None
         The model names for nice plot titles. Inferred if None.
@@ -63,11 +65,20 @@ def mc_calibration(
         The number of columns for the subplots. Dynamically determined if None.
     markersize          : float, optional, default: None
         The marker size in points.
+    xlabel              : str, optional, default: 'Predicted Probability'
+        Label for the x-axis.
+    ylabel              : str, optional, default: 'True Probability'
+        Label for the y-axis.
 
     Returns
     -------
     fig : plt.Figure - the figure instance for optional saving
     """
+
+    # Default to the same 1-based names as the other model comparison plots
+    if model_names is None and not isinstance(true_models, Mapping):
+        num_models = np.asarray(true_models).shape[-1]
+        model_names = [rf"$M_{{{m}}}$" for m in range(1, num_models + 1)]
 
     # Gather plot data and metadata into a dictionary
     plot_data = prepare_plot_data(
@@ -123,8 +134,8 @@ def mc_calibration(
         num_row=plot_data["num_row"],
         num_col=plot_data["num_col"],
         title=plot_data["variable_names"],
-        xlabel="Predicted Probability",
-        ylabel="True Probability",
+        xlabel=xlabel,
+        ylabel=ylabel,
         title_fontsize=title_fontsize,
         label_fontsize=label_fontsize,
     )

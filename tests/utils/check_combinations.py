@@ -13,9 +13,9 @@ def check_combination_simulator_adapter(simulator, adapter):
         with pytest.raises(KeyError):
             adapter(simulator.sample(1))
         # Don't use this fixture combination for further tests.
-        pytest.skip(reason="Do not use this fixture combination for further tests")  # TODO: better reason
+        pytest.skip(reason="Adapter expects 'sample_weight' but simulator does not provide 'weight'")
     elif simulator_with_sample_weight and not adapter_with_sample_weight:
         # When a weight key is present, but the adapter does not configure it
         # to be used as sample weight, no error is raised currently.
         # Don't use this fixture combination for further tests.
-        pytest.skip(reason="Do not use this fixture combination for further tests")  # TODO: better reason
+        pytest.skip(reason="Simulator provides 'weight' but adapter does not map it to 'sample_weight'")

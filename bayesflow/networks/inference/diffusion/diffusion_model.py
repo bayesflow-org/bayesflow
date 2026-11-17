@@ -1,0 +1,1521 @@
+from collections.abc import Sequence, Mapping
+from typing import Any, Literal, Callable
+
+import keras
+from keras import ops
+
+from bayesflow._backend import grad
+from bayesflow.distributions import DiagonalNormal
+from bayesflow.types import Tensor, Shape
+from bayesflow.utils import (
+    expand_right_as,
+    find_network,
+    integrate,
+    integrate_stochastic,
+    jacobian_trace,
+    logging,
+    linsolve_batched,
+    repeat_and_flatten,
+    resolve_seed,
+    vjp,
+    weighted_mean,
+    DETERMINISTIC_METHODS,
+    STOCHASTIC_METHODS,
+)
+from bayesflow.utils.jacobian.jacobian_trace import hutchinson_projectors
+from bayesflow.utils.serialization import serialize, serializable
+
+from .schedules.noise_schedule import NoiseSchedule
+from .dispatch import find_noise_schedule
+
+from ...inference import InferenceNetwork
+from bayesflow.masking import InferenceMasks, MaskHandler
+from ...defaults import TIME_MLP_DEFAULTS, DIFFUSION_TRANSFORMER_DEFAULTS, DIFFUSION_INTEGRATE_DEFAULTS
+
+
+@serializable("bayesflow.networks")
+class DiffusionModel(InferenceNetwork):
+    """Score-based diffusion model for simulation-based inference (SBI).
+
+    Implements a score-based diffusion model with configurable subnet architecture,
+    noise schedule, and prediction/loss types for amortized SBI as described in [1].
+    The diffusion model allows for post-hoc guidance (see [1]) and composition [2],
+    implementing, stabilizing, and scaling initial ideas from [3] and [4].
+    To learn arbitrary conditional distributions, the model can be trained with a
+    transformer backbone and masking based on ideas from [5].
+
+    Note that score-based diffusion is the most sluggish of all available samplers,
+    so expect slower inference times than flow matching and much slower than
+    normalizing flows.
+
+    Parameters
+    ----------
+    subnet : str, type, or keras.Layer
+        A neural network type for the diffusion model, will be instantiated using
+        *subnet_kwargs*.  If a string is provided, it should be a registered name
+        (e.g., ``"time_mlp"``, ``"diffusion_transformer"``).  If a type or ``keras.Layer`` is provided,
+        it will be directly instantiated with the given *subnet_kwargs*.  Any subnet must
+        accept a tuple of tensors ``(target, time, conditions)``.
+    noise_schedule : {'edm', 'cosine'} or NoiseSchedule or type
+        Noise schedule controlling the diffusion dynamics.  Can be a string
+        identifier, a schedule class, or a pre-initialised schedule instance.
+        Default is ``"cosine"``.
+    prediction_type : {'velocity', 'noise', 'F', 'x', 'score', 'potential'}
+        Output format of the model's prediction.  Default is ``"velocity"``.
+    loss_type : {'velocity', 'noise', 'F'}
+        Loss function used to train the model.  Default is ``"noise"``.
+    subnet_kwargs : dict[str, Any], optional
+        Additional keyword arguments passed to the subnet constructor.
+    schedule_kwargs : dict[str, Any], optional
+        Additional keyword arguments passed to the noise schedule constructor.
+    integrate_kwargs : dict[str, Any], optional
+        Configuration dictionary for the ODE/SDE integrator used at inference time.
+    mask_handler : ~bayesflow.masking.MaskHandler, optional
+        Handler used to generate and route masks. If ``None``, a default mask handler is created.
+    **kwargs
+        Additional keyword arguments passed to the base ``InferenceNetwork``.
+
+    References
+    ----------
+    [1] Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2026).
+        Diffusion Models in Simulation-Based Inference: A Tutorial Review.
+        https://openreview.net/forum?id=86Q261z005
+    [2] Arruda et al., (2025). Compositional amortized inference for large-scale hierarchical Bayesian models.
+        https://arxiv.org/abs/2505.14429
+    [3] Geffner et al., (2023). Compositional score modeling for simulation-based inference.
+        https://arxiv.org/abs/2209.14249
+    [4] Linhart et al., (2024). Diffusion posterior sampling for simulation-based inference in tall data settings.
+        https://arxiv.org/abs/2404.07593
+    [5] Gloeckler et al. (2024). All-in-one simulation-based inference.
+        https://dl.acm.org/doi/proceedings/10.5555/3692070
+    """
+
+    def __init__(
+        self,
+        *,
+        subnet: str | type | keras.Layer = "time_mlp",
+        noise_schedule: Literal["edm", "cosine"] | NoiseSchedule | type = "cosine",
+        prediction_type: Literal["velocity", "noise", "F", "x", "score", "potential"] = "velocity",
+        loss_type: Literal["velocity", "noise", "F"] = "noise",
+        subnet_kwargs: dict[str, Any] = None,
+        schedule_kwargs: dict[str, Any] = None,
+        integrate_kwargs: dict[str, Any] = None,
+        mask_handler: MaskHandler | None = None,
+        **kwargs,
+    ):
+        noise_schedule = find_noise_schedule(noise_schedule, **(schedule_kwargs or {}))
+        base_distribution = "normal"
+        if noise_schedule._variance_type == "exploding":
+            _, sigma_max = noise_schedule.get_alpha_sigma(noise_schedule.log_snr(1.0, training=False))
+            base_distribution = DiagonalNormal(std=float(ops.convert_to_numpy(sigma_max)))
+
+        super().__init__(
+            base_distribution=base_distribution,
+            mask_handler=mask_handler,
+            **kwargs,
+        )
+
+        if prediction_type not in ["noise", "velocity", "F", "x", "score", "potential"]:
+            raise ValueError(f"Unknown prediction type: {prediction_type}")
+
+        if loss_type not in ["noise", "velocity", "F"]:
+            raise ValueError(f"Unknown loss type: {loss_type}")
+
+        self._prediction_type = prediction_type
+        self._loss_type = loss_type
+
+        self.noise_schedule = noise_schedule
+        self.noise_schedule.validate(loss_type=loss_type)
+
+        self.integrate_kwargs = DIFFUSION_INTEGRATE_DEFAULTS | (integrate_kwargs or {})
+
+        subnet_defaults = {"time_mlp": TIME_MLP_DEFAULTS, "diffusion_transformer": DIFFUSION_TRANSFORMER_DEFAULTS}
+        self.subnet = find_network(subnet, **(subnet_defaults.get(subnet, {}) | (subnet_kwargs or {})))
+
+        self.output_projector = None
+
+        self.compositional_bridge_d0 = 1.0
+        self.compositional_bridge_d1 = 1.0
+
+    def compute_metrics(
+        self,
+        x: Tensor | Sequence[Tensor],
+        conditions: Tensor = None,
+        sample_weight: Tensor = None,
+        stage: str = "training",
+        **kwargs,
+    ) -> dict[str, Tensor]:
+        training = stage == "training"
+        noise_schedule_training_stage = stage == "training" or stage == "validation"
+
+        # Sample training diffusion time as a low discrepancy sequence to decrease variance
+        u0 = keras.random.uniform(shape=(1,), dtype=ops.dtype(x), seed=self.seed_generator)
+        i = ops.arange(0, ops.shape(x)[0], dtype=ops.dtype(x))
+        t = (u0 + i / ops.cast(ops.shape(x)[0], dtype=ops.dtype(x))) % 1
+
+        # Calculate the noise level
+        log_snr_t = self.noise_schedule.log_snr(t, training=noise_schedule_training_stage)
+        log_snr_t = expand_right_as(log_snr_t, x)
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        weights_for_snr = self.noise_schedule.weights_for_snr(log_snr_t=log_snr_t, loss_type=self._loss_type)
+
+        # Generate noise vector
+        eps_t = keras.random.normal(ops.shape(x), dtype=ops.dtype(x), seed=self.seed_generator)
+
+        # Diffuse x to get noisy input to the network
+        diffused_x = alpha_t * x + sigma_t * eps_t
+
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+            stage=stage,
+            subnet=self.subnet,
+        )
+
+        # Fixed targets remain clean while inferred targets are diffused.
+        diffused_x = self.mask_handler.maybe_apply(diffused_x, masks.fixed_target_mask, replacement=x)
+
+        x_pred = self._predict_x(diffused_x, log_snr_t, alpha_t, sigma_t, conditions, training, masks.subnet_kwargs)
+
+        # Finally, compute the loss according to the configured loss type
+        match self._loss_type:
+            case "noise":
+                noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+                error = (noise_pred - eps_t) ** 2
+
+            case "velocity":
+                noise_pred = (diffused_x - alpha_t * x_pred) / sigma_t
+                velocity_pred = alpha_t * noise_pred - sigma_t * x_pred
+                v_t = alpha_t * eps_t - sigma_t * x
+                error = (velocity_pred - v_t) ** 2
+
+            case "F":
+                sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
+                x1 = ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2) / (ops.exp(-log_snr_t / 2) * sigma_data)
+                error = (x1 * (x_pred - x)) ** 2
+
+            case _:
+                raise ValueError(f"Unknown loss type: {self._loss_type}")
+
+        error = self.mask_handler.maybe_apply(error, masks.fixed_target_mask)
+        weights_for_snr = ops.reshape(weights_for_snr, (ops.shape(x)[0],))
+        loss = weights_for_snr * ops.mean(error, axis=tuple(range(1, ops.ndim(error))))
+        loss = weighted_mean(loss, sample_weight)
+
+        return {"loss": loss}
+
+    def build(self, xz_shape: Shape, conditions_shape: Shape = None):
+        if self.built:
+            return
+
+        self.base_distribution.build(xz_shape)
+        units = 1 if self._prediction_type == "potential" else xz_shape[-1]
+        self.output_projector = self._build_subnet_and_projector(xz_shape, conditions_shape, units=units)
+
+    def get_config(self):
+        base_config = super().get_config()
+
+        config = {
+            "subnet": self.subnet,
+            "noise_schedule": self.noise_schedule,
+            "prediction_type": self._prediction_type,
+            "loss_type": self._loss_type,
+            "integrate_kwargs": self.integrate_kwargs,
+        }
+        return base_config | serialize(config)
+
+    def guidance_function(
+        self,
+        x_pred: Tensor,
+        time: Tensor,
+        score: Tensor,
+        constraints: Callable | Sequence[Callable] = None,
+        guidance_strength: float = 1.0,
+        scaling_function: Callable = None,
+        reduce: Literal["sum", "mean"] = "sum",
+        unstandardize: Callable = None,
+    ) -> Tensor:
+        """
+        Takes the current denoised estimate and the diffusion time. By default, it computes a guidance constraint term
+         if guidance constraints are provided, and returns the score otherwise. Function can be overwritten by the
+         user to implement custom guidance.
+
+        Custom guidance:
+        def guidance_function(x_pred, time, score, unstandardize=None, **kwargs):
+            # x_pred is in the standardized space; call unstandardize(x_pred) to map it
+            # back to the original parameter space.
+        workflow.estimator.inference_network.guidance_function = guidance_function
+
+        Parameters
+        ----------
+        x_pred : Tensor
+            The denoised target at time t.
+        time : Tensor
+            The time corresponding to x.
+        score: Tensor
+            The score at the current time point, which should be guided.
+        constraints : Callable or Sequence[Callable], optional
+            A single constraint function or a list/tuple of constraint functions.
+            Each function should take x as input and return a tensor of constraint values.
+        guidance_strength : float
+            A positive scaling factor for the guidance term. Default is 1.0.
+        scaling_function : Callable, optional
+            A function that takes time t as input and returns a scaling factor s(t).
+            If None, a default scaling based on the noise schedule is used. Default is None.
+        reduce : {'sum', 'mean'}
+            Method to reduce the log-probabilities from multiple constraints. Default is 'sum'.
+        unstandardize : Callable, optional
+            A function mapping the standardized denoised estimate back to the original
+            (unstandardized) inference-variable space. When set, constraints are evaluated
+            on the unstandardized estimate, so they can be expressed directly in the
+            original parameter space. Injected automatically by the estimator during
+            sampling; the gradient flows back through the transformation. Default is None.
+
+        Returns
+        -------
+        Tensor
+            The computed guidance term of the same shape as zt.
+        """
+        if constraints is None:
+            return score
+
+        if not isinstance(constraints, Sequence):
+            constraints = [constraints]
+
+        if scaling_function is None:
+
+            def scaling_function(t: Tensor) -> Tensor:
+                log_snr = self.noise_schedule.log_snr(t, training=False)
+                alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr)
+                return ops.square(alpha_t) / ops.square(sigma_t)
+
+        if unstandardize is None:
+
+            def unstandardize(x):
+                return x
+
+        def objective_fn(x: Tensor) -> Tensor:
+            st = scaling_function(time)
+            x = unstandardize(x)
+            logp = keras.ops.zeros((), dtype=x.dtype)
+            for c in constraints:
+                ck = c(x)
+                logp = logp - keras.ops.softplus(st * ck)
+            return keras.ops.sum(logp) if reduce == "sum" else keras.ops.mean(logp)
+
+        grad_val = grad(objective_fn)(x_pred)
+        return score + guidance_strength * grad_val
+
+    def convert_prediction_to_x(
+        self, pred: Tensor, z: Tensor, alpha_t: Tensor, sigma_t: Tensor, log_snr_t: Tensor, prediction_type: str
+    ) -> Tensor:
+        """
+        Converts the neural network prediction into the denoised data `x`, depending on
+        the prediction type configured for the model.
+
+        Parameters
+        ----------
+        pred : Tensor
+            The output prediction from the neural network, typically representing noise,
+            velocity, or a transformation of the clean signal.
+        z : Tensor
+            The noisy latent variable `z` to be denoised.
+        alpha_t : Tensor
+            The noise schedule's scaling factor for the clean signal at time `t`.
+        sigma_t : Tensor
+            The standard deviation of the noise at time `t`.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`.
+        prediction_type : str
+            The type of prediction made by the model, which determines how to convert it to `x`.
+            Must be one of {'velocity', 'noise', 'F', 'x', 'score'}.
+
+        Returns
+        -------
+        Tensor
+            The reconstructed clean signal `x` from the model prediction.
+        """
+
+        match prediction_type:
+            case "velocity":
+                return (alpha_t * z - sigma_t * pred) / (alpha_t**2 + sigma_t**2)
+
+            case "noise":
+                return (z - sigma_t * pred) / alpha_t
+
+            case "F":
+                sigma_data = getattr(self.noise_schedule, "sigma_data", 1.0)
+                x1 = (sigma_data**2 * alpha_t) / (ops.exp(-log_snr_t) + sigma_data**2)
+                x2 = ops.exp(-log_snr_t / 2) * sigma_data / ops.sqrt(ops.exp(-log_snr_t) + sigma_data**2)
+                return x1 * z + x2 * pred
+
+            case "x":
+                return pred
+
+            case "score":
+                return (z + sigma_t**2 * pred) / alpha_t
+
+            case "potential":
+                # Score is computed as ∇_z phi via _compute_grad_of_potential.
+                raise RuntimeError("convert_prediction_to_x should not be called for prediction_type='potential'. ")
+
+            case _:
+                raise ValueError(f"Unknown prediction type {prediction_type}.")
+
+    def score(
+        self,
+        xz: Tensor,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the score of the target or latent variable `xz`.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz. If None, log_snr_t must be provided.
+        log_snr_t : Tensor
+            The log signal-to-noise ratio at time `t`. If None, time must be provided.
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+        guidance_kwargs : Mapping[str, Any], optional
+            A dictionary of parameters for computing a guidance constraint term, which is
+            added to the score for guided sampling. The specific keys and values depend on
+            the implementation of `guidance_function`.
+        **kwargs
+            Subnet kwargs (e.g., attention_mask, mask) for the subnet layer.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the probability-flow SDE or ODE at the given `time`.
+        """
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+        return self._score(
+            xz,
+            time=time,
+            log_snr_t=log_snr_t,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+        )
+
+    def _predict_x(
+        self,
+        xz: Tensor,
+        log_snr_t: Tensor,
+        alpha_t: Tensor,
+        sigma_t: Tensor,
+        conditions: Tensor,
+        training: bool,
+        subnet_kwargs: dict,
+    ) -> Tensor:
+        """Predict the clean signal x from the noisy xz with the configured prediction type."""
+        norm_log_snr = self._transform_log_snr(log_snr_t)
+        if self._prediction_type == "potential":
+            pred = self._compute_grad_of_potential(
+                xz=xz, norm_log_snr=norm_log_snr, conditions=conditions, training=training, **subnet_kwargs
+            )
+            prediction_type = "velocity"
+        else:
+            subnet_out = self.subnet((xz, norm_log_snr, conditions), training=training, **subnet_kwargs)
+            pred = self.output_projector(subnet_out)
+            prediction_type = self._prediction_type
+        return self.convert_prediction_to_x(
+            pred=pred, z=xz, alpha_t=alpha_t, sigma_t=sigma_t, log_snr_t=log_snr_t, prediction_type=prediction_type
+        )
+
+    def _score(
+        self,
+        xz: Tensor,
+        *,
+        masks: InferenceMasks,
+        time: float | Tensor = None,
+        log_snr_t: Tensor = None,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+    ) -> Tensor:
+        if log_snr_t is None:
+            log_snr_t = self.noise_schedule.log_snr(t=time, training=training)
+            log_snr_t = expand_right_as(log_snr_t, xz)
+            log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        if time is None:
+            time = self.noise_schedule.time_from_log_snr(log_snr_t, training=training)
+
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        x_pred = self._predict_x(xz, log_snr_t, alpha_t, sigma_t, conditions, training, masks.subnet_kwargs)
+        score = (alpha_t * x_pred - xz) / ops.square(sigma_t)
+
+        score = self.guidance_function(x_pred=x_pred, time=time, score=score, **(guidance_kwargs or {}))
+        if not training:
+            score = self.mask_handler.maybe_apply(score, masks.fixed_target_mask)
+        return score
+
+    def velocity(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor = None,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the velocity (i.e., time derivative) of the target or latent variable `xz` for either
+        a stochastic differential equation (SDE) or ordinary differential equation (ODE).
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable `z`, typically of shape (..., D),
+            where D is the dimensionality of the latent space.
+        time : float or Tensor
+            Scalar or tensor representing the time (or noise level) at which the velocity
+            should be computed. Will be broadcasted to xz.
+        stochastic_solver : bool
+            If True, computes the velocity for the stochastic formulation (SDE).
+            If False, uses the deterministic formulation (ODE).
+        conditions : Tensor, optional
+            Conditional inputs to the network, such as conditioning variables
+            or encoder outputs. Shape must be broadcastable with `xz`. Default is None.
+        training : bool, optional
+            Whether the model is in training mode. Affects behavior of dropout, batch norm,
+            or other stochastic layers. Default is False.
+
+        Returns
+        -------
+        Tensor
+            The velocity tensor of the same shape as `xz`, representing the right-hand
+            side of the SDE or ODE at the given `time`.
+        """
+
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=xz,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+        return self._velocity(
+            xz,
+            time=time,
+            stochastic_solver=stochastic_solver,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=kwargs.get("guidance_kwargs"),
+            masks=masks,
+        )
+
+    def _velocity(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        masks: InferenceMasks,
+        conditions: Tensor = None,
+        training: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+    ) -> Tensor:
+        log_snr_t = expand_right_as(self.noise_schedule.log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        score = self._score(
+            xz,
+            log_snr_t=log_snr_t,
+            conditions=conditions,
+            training=training,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+        )
+
+        # compute velocity f, g of the SDE or ODE
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
+
+        if stochastic_solver:
+            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
+            out = f - g_squared * score
+        else:
+            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
+            out = f - 0.5 * g_squared * score
+
+        # Zero out velocity where target is fixed (during inference only)
+        if not training:
+            out = self.mask_handler.maybe_apply(out, masks.fixed_target_mask)
+
+        return out
+
+    def diffusion_term(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Compute the diffusion term (standard deviation of the noise) at a given time.
+
+        Parameters
+        ----------
+        xz : Tensor
+            Input tensor of shape (..., D), typically representing the target or latent variables at given time.
+        time : float or Tensor
+            The diffusion time step(s). Can be a scalar or a tensor broadcastable to the shape of `xz`.
+        training : bool, optional
+            Whether to use the training noise schedule (default is False).
+
+        Returns
+        -------
+        Tensor
+            The diffusion term tensor with shape matching `xz` except for the last dimension, which is set to 1.
+        """
+        masks = self.mask_handler.resolve(kwargs, targets=xz)
+        return self._diffusion_term(xz, time=time, training=training, masks=masks)
+
+    def _diffusion_term(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        masks: InferenceMasks,
+        training: bool = False,
+    ) -> Tensor:
+        log_snr_t = expand_right_as(self.noise_schedule.log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t)
+        g = ops.sqrt(g_squared)
+
+        # Zero out diffusion where target is fixed (during inference only)
+        if not training:
+            g = self.mask_handler.maybe_apply(g, masks.fixed_target_mask)
+
+        return g
+
+    def _compute_grad_of_potential(
+        self,
+        xz: Tensor,
+        norm_log_snr: Tensor,
+        conditions: Tensor = None,
+        training: bool = False,
+        **subnet_kwargs,
+    ) -> Tensor:
+        """
+        Compute the gradient of the predicted potential phi w.r.t. xz.
+
+        The network outputs a scalar potential phi(z, t, cond) per sample. The output is
+        then defined as ∇_z phi, i.e. the gradient of the potential w.r.t. the noisy input.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The noisy latent variable z at which to evaluate the score.
+        norm_log_snr : Tensor
+            Normalised log-SNR fed to the subnet as the time embedding.
+        conditions : Tensor, optional
+            Conditioning variables passed to the subnet. Default is None.
+        training : bool, optional
+            Whether the subnet is in training mode.
+        **subnet_kwargs
+            Additional keyword arguments forwarded to the subnet (e.g. attention masks).
+
+        Returns
+        -------
+        Tensor
+            Output of the same shape as *xz*, equal to some parameterization of ∇_xz phi(xz, t, cond).
+        """
+
+        def phi_fn(x):
+            subnet_out = self.subnet(
+                (x, norm_log_snr, conditions),
+                training=training,
+                **subnet_kwargs,
+            )
+            return self.output_projector(subnet_out)
+
+        phi, vjp_fn = vjp(phi_fn, xz, return_output=True)
+        return vjp_fn(ops.ones_like(phi))
+
+    def _transform_log_snr(self, log_snr: Tensor) -> Tensor:
+        """Transform the log_snr to the range [-1, 1] for the diffusion process."""
+        log_snr_min = self.noise_schedule.log_snr_min
+        log_snr_max = self.noise_schedule.log_snr_max
+        normalized_snr = (log_snr - log_snr_min) / (log_snr_max - log_snr_min)
+        scaled_value = 2 * normalized_snr - 1
+        return scaled_value
+
+    def _integrate(
+        self,
+        xz: Tensor,
+        *,
+        velocity_fn: Callable[[Tensor, Tensor, bool], Tensor],
+        masks: InferenceMasks,
+        integrate_kwargs: dict,
+        seed: keras.random.SeedGenerator,
+        training: bool,
+        density: bool = False,
+        hutchinson_steps: int | None = None,
+        score_fn: Callable[[Tensor, Tensor], Tensor] | None = None,
+    ) -> tuple[Tensor, Tensor | None]:
+        """Integrate ``xz`` with ``velocity_fn(xz, time, stochastic_solver)``.
+
+        Uses the probability flow ODE for deterministic methods and density computation, and the reverse SDE for
+        stochastic methods. Returns the final state and, if ``density``, the integrated divergence of the velocity.
+        """
+        method = integrate_kwargs["method"]
+        if density and method in STOCHASTIC_METHODS:
+            logging.warning(
+                "Stochastic methods are not supported for density computation."
+                " Falling back to ODE solver."
+                " Use one of the deterministic methods: " + str(DETERMINISTIC_METHODS) + "."
+            )
+            integrate_kwargs["method"] = method = "tsit5"
+
+        if density:
+            # one probe per solve, fixed over time, keeps the augmented ODE deterministic
+            projectors = hutchinson_projectors(xz, hutchinson_steps, seed=seed)
+
+            def deltas(time, xz):
+                def ode_velocity(x):
+                    return velocity_fn(x, time, False)
+
+                v, trace = jacobian_trace(ode_velocity, xz, projectors=projectors, return_output=True)
+                return {"xz": v, "trace": ops.expand_dims(trace, axis=-1)}
+
+            state = {"xz": xz, "trace": ops.zeros(ops.shape(xz)[:-1] + (1,), dtype=ops.dtype(xz))}
+            state = integrate(deltas, state, **integrate_kwargs)
+            return state["xz"], ops.squeeze(state["trace"], axis=-1)
+
+        if method not in STOCHASTIC_METHODS:
+
+            def deltas(time, xz):
+                return {"xz": velocity_fn(xz, time, False)}
+
+            state = integrate(deltas, {"xz": xz}, **integrate_kwargs)
+            return state["xz"], None
+
+        def drift(time, xz):
+            return {"xz": velocity_fn(xz, time, method != "glass")}
+
+        def diffusion(time, xz):
+            return {"xz": self._diffusion_term(xz, time=time, masks=masks, training=training)}
+
+        def score(time, xz):
+            return {"xz": score_fn(xz, time)}
+
+        needs_score = "corrector_steps" in integrate_kwargs or method == "langevin"
+        state_projection_fn, state_update_projection_fn = self.mask_handler.integrator_callbacks(masks)
+        state = integrate_stochastic(
+            drift_fn=drift,
+            diffusion_fn=diffusion,
+            score_fn=score if needs_score else None,
+            noise_schedule=self.noise_schedule,
+            state={"xz": xz},
+            seed=seed,
+            state_projection_fn=state_projection_fn,
+            state_update_projection_fn=state_update_projection_fn,
+            **integrate_kwargs,
+        )
+        return state["xz"], None
+
+    def _forward(
+        self,
+        x: Tensor,
+        conditions: Tensor = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=x,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        guidance_kwargs = runtime_kwargs.pop("guidance_kwargs", None)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
+        hutchinson_steps = runtime_kwargs.pop("hutchinson_steps", None)
+
+        # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
+        integrate_kwargs = {"start_time": 0.0, "stop_time": 1.0} | self.integrate_kwargs | runtime_kwargs
+
+        if integrate_kwargs["method"] in STOCHASTIC_METHODS:
+            logging.warning(
+                "Stochastic methods are not supported for density evaluation."
+                " Falling back to tsit5 ODE solver."
+                " To suppress this warning, explicitly pass a method from " + str(DETERMINISTIC_METHODS) + "."
+            )
+            integrate_kwargs["method"] = "tsit5"
+
+        # In a forward pass, fixed coordinates are already present in ``x``.
+        replacement = masks.fixed_target_value if masks.fixed_target_value is not None else x
+        x = self.mask_handler.maybe_apply(x, masks.fixed_target_mask, replacement=replacement)
+
+        def velocity_fn(xz, time, stochastic_solver):
+            return self._velocity(
+                xz,
+                time=time,
+                stochastic_solver=stochastic_solver,
+                masks=masks,
+                conditions=conditions,
+                training=training,
+                guidance_kwargs=guidance_kwargs,
+            )
+
+        z, trace = self._integrate(
+            x,
+            velocity_fn=velocity_fn,
+            masks=masks,
+            integrate_kwargs=integrate_kwargs,
+            seed=seed,
+            training=training,
+            density=density,
+            hutchinson_steps=hutchinson_steps,
+        )
+        if not density:
+            return z
+        return z, self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) + trace
+
+    def _inverse(
+        self, z: Tensor, conditions: Tensor = None, density: bool = False, training: bool = False, **kwargs
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        masks = self.mask_handler.resolve(
+            kwargs,
+            targets=z,
+            conditions=conditions,
+            subnet=self.subnet,
+        )
+
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        guidance_kwargs = runtime_kwargs.pop("guidance_kwargs", None)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
+        hutchinson_steps = runtime_kwargs.pop("hutchinson_steps", None)
+
+        # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | runtime_kwargs
+
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+
+        def velocity_fn(xz, time, stochastic_solver):
+            return self._velocity(
+                xz,
+                time=time,
+                stochastic_solver=stochastic_solver,
+                masks=masks,
+                conditions=conditions,
+                training=training,
+                guidance_kwargs=guidance_kwargs,
+            )
+
+        def score_fn(xz, time):
+            return self._score(
+                xz, time=time, masks=masks, conditions=conditions, training=training, guidance_kwargs=guidance_kwargs
+            )
+
+        x, trace = self._integrate(
+            z,
+            velocity_fn=velocity_fn,
+            score_fn=score_fn,
+            masks=masks,
+            integrate_kwargs=integrate_kwargs,
+            seed=seed,
+            training=training,
+            density=density,
+            hutchinson_steps=hutchinson_steps,
+        )
+        if not density:
+            return x
+        return x, self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) - trace
+
+    def compositional_bridge(self, time: Tensor, d0: float = None, d1: float = None) -> Tensor:
+        """Bridge function for compositional diffusion. In the simplest case,
+        this is just 1 if d0 = d1 = 1. Otherwise, it can be used to stabilize the
+        compositional score over time.
+
+        Parameters
+        ----------
+        time: Tensor
+            Time step for the diffusion process.
+        d0, d1 : float, optional
+            Bridge values at time 0 and 1. If None, ``compositional_bridge_d0`` and ``compositional_bridge_d1``
+            are used.
+
+        Returns
+        -------
+        Tensor
+            Bridge function value with same shape as time.
+
+        """
+        d0 = self.compositional_bridge_d0 if d0 is None else d0
+        d1 = self.compositional_bridge_d1 if d1 is None else d1
+        return d0 * ops.exp(-ops.log(d0 / d1) * time)
+
+    def compositional_velocity(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int | None = None,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the compositional velocity for multiple datasets using the formula:
+        s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
+        time : float or Tensor
+            Time step for the diffusion process
+        stochastic_solver : bool
+            Whether to use stochastic (SDE) or deterministic (ODE) formulation
+        conditions : Tensor
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator
+            For reproducibility.
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional
+            score is used.
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
+        training : bool, optional
+            Whether in training mode
+        **kwargs
+            Additional keyword arguments passed to the individual score computation.
+
+        Returns
+        -------
+        Tensor
+            Compositional velocity of same shape as input xz
+        """
+        mini_batch_size, masks, repeated_masks = self._resolve_compositional(
+            xz, conditions, mini_batch_size, kwargs.get("use_jac", False) or compute_prior_score is None, kwargs
+        )
+        return self._compositional_velocity(
+            xz=xz,
+            time=time,
+            stochastic_solver=stochastic_solver,
+            conditions=conditions,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+            seed=seed,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            clip=kwargs.get("clip", (-3, 3)),
+            use_jac=kwargs.get("use_jac", False),
+            guidance_kwargs=kwargs.get("guidance_kwargs"),
+            regularize_precision=kwargs.get("regularize_precision", 1e-6),
+        )
+
+    def _resolve_compositional(
+        self, xz: Tensor, conditions: Tensor, mini_batch_size: int | None, with_prior_item: bool, kwargs: dict
+    ) -> tuple[int, InferenceMasks, InferenceMasks]:
+        """Clamp the mini-batch size to the number of items and resolve the masks for compositional scores."""
+        if conditions is None:
+            raise ValueError("Conditions are required for compositional sampling")
+        num_items = ops.shape(conditions)[1]
+        if mini_batch_size is None or mini_batch_size >= num_items:
+            mini_batch_size = num_items
+        masks = self.mask_handler.resolve_compositional(self.subnet, kwargs, targets=xz, conditions=conditions)
+        repeated_masks = self.mask_handler.repeat_compositional(masks, mini_batch_size + int(with_prior_item))
+        return mini_batch_size, masks, repeated_masks
+
+    def _compositional_velocity(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        stochastic_solver: bool,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int | None = None,
+        training: bool = False,
+        clip: tuple[float, float] | None = (-3, 3),
+        use_jac: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        regularize_precision: float = 1e-6,
+        bridge: tuple[float | None, float | None] = (None, None),
+    ) -> Tensor:
+        compositional_score = self._compositional_score(
+            xz=xz,
+            time=time,
+            conditions=conditions,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+            seed=seed,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            clip=clip,
+            use_jac=use_jac,
+            guidance_kwargs=guidance_kwargs,
+            regularize_precision=regularize_precision,
+            bridge=bridge,
+        )
+
+        # Calculate standard noise schedule components
+        log_snr_t = expand_right_as(self.noise_schedule.log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+
+        # Compute velocity using standard drift-diffusion formulation
+        f, g_squared = self.noise_schedule.get_drift(log_snr_t=log_snr_t, x=xz, training=training)
+
+        if stochastic_solver:
+            # for the SDE: d(z) = [f(z, t) - g(t) ^ 2 * score(z, lambda )] dt + g(t) dW
+            out = f - g_squared * compositional_score
+        else:
+            # for the ODE: d(z) = [f(z, t) - 0.5 * g(t) ^ 2 * score(z, lambda )] dt
+            out = f - 0.5 * g_squared * compositional_score
+
+        # Zero out velocity where target is fixed (during inference only)
+        if not training:
+            out = self.mask_handler.maybe_apply(out, masks.fixed_target_mask)
+
+        return out
+
+    def compositional_score(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator | None,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
+        training: bool = False,
+        clip: tuple[float, float] | None = (-3, 3),
+        use_jac: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        **kwargs,
+    ) -> Tensor:
+        """
+        Computes the compositional score for multiple datasets.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
+        time : float or Tensor
+            Time step for the diffusion process
+        conditions : Tensor
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: keras.random.SeedGenerator or None
+            Optional seed for reproducibility.
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
+        training : bool, optional
+            Whether in training mode
+        clip: (float, float), optional
+            Whether to clip the predicted x for numerical stability at given values.
+        use_jac: bool, optional
+            Whether to use the Jacobian-based compositional score instead of the direct sum.
+        guidance_kwargs : Mapping[str, Any], optional
+            A dictionary of parameters for computing a guidance constraint term, which is
+            added to the score for guided sampling. The specific keys and values depend on
+            the implementation of `guidance_function`.
+        **kwargs
+            Additional keyword arguments passed to the individual score computation
+
+        Returns
+        -------
+        Tensor
+            Compositional velocity of same shape as input xz
+        """
+        mini_batch_size, masks, repeated_masks = self._resolve_compositional(
+            xz, conditions, mini_batch_size, use_jac or compute_prior_score is None, kwargs
+        )
+        return self._compositional_score(
+            xz=xz,
+            time=time,
+            conditions=conditions,
+            seed=seed,
+            compute_prior_score=compute_prior_score,
+            mini_batch_size=mini_batch_size,
+            training=training,
+            clip=clip,
+            use_jac=use_jac,
+            guidance_kwargs=guidance_kwargs,
+            masks=masks,
+            repeated_masks=repeated_masks,
+            regularize_precision=kwargs.get("regularize_precision", 1e-6),
+        )
+
+    def _compositional_score(
+        self,
+        xz: Tensor,
+        *,
+        time: float | Tensor,
+        conditions: Tensor,
+        seed: keras.random.SeedGenerator | None,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
+        training: bool = False,
+        clip: tuple[float, float] | None = (-3, 3),
+        use_jac: bool = False,
+        guidance_kwargs: Mapping[str, Any] = None,
+        regularize_precision: float = 1e-6,
+        bridge: tuple[float | None, float | None] = (None, None),
+    ) -> Tensor:
+        log_snr_t = expand_right_as(self.noise_schedule.log_snr(t=time, training=training), xz)
+        log_snr_t = ops.broadcast_to(log_snr_t, ops.shape(xz)[:-1] + (1,))
+        alpha_t, sigma_t = self.noise_schedule.get_alpha_sigma(log_snr_t=log_snr_t)
+        time = ops.cast(time, dtype=ops.dtype(xz))
+
+        if not use_jac:
+            compositional_score = self._compositional_score_direct(
+                xz=xz,
+                time=time,
+                log_snr_t=log_snr_t,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                mini_batch_size=mini_batch_size,
+                training=training,
+                seed=seed,
+                masks=masks,
+                repeated_masks=repeated_masks,
+            )
+        else:
+            # uses a Gaussian approximation, can be very slow
+            compositional_score = self._compositional_score_jac(
+                xz=xz,
+                time=time,
+                log_snr_t=log_snr_t,
+                sigma_t=sigma_t,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                mini_batch_size=mini_batch_size,
+                training=training,
+                seed=seed,
+                masks=masks,
+                repeated_masks=repeated_masks,
+                regularize_precision=regularize_precision,
+            )
+
+        compositional_score = self.compositional_bridge(time, *bridge) * compositional_score
+
+        x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
+        compositional_score = self.guidance_function(
+            x_pred=x_pred, time=time, score=compositional_score, **(guidance_kwargs or {})
+        )
+
+        compositional_score = self._maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz)
+        return self.mask_handler.maybe_apply(compositional_score, masks.fixed_target_mask)
+
+    def _compositional_score_direct(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        log_snr_t: Tensor,
+        conditions: Tensor,
+        *,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        seed: keras.random.SeedGenerator = None,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
+        training: bool = False,
+    ) -> Tensor:
+        """
+        Computes the compositional score for multiple datasets using the formula:
+        s_ψ(θ,t,Y) = (1-n)(1-t) ∇_θ log p(θ) + Σᵢ₌₁ⁿ s_ψ(θ,t,yᵢ)
+        with possible weighting of the scores.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
+        time : float or Tensor
+            Time step for the diffusion process.
+        log_snr_t : Tensor
+            Log SNR at time t, broadcastable to shape of xz.
+        conditions : Tensor
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: keras.random.SeedGenerator or None
+            Optional seed for reproducibility.
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is estimated.
+        mini_batch_size : int or None
+            Mini batch size for computing individual scores. If None, use all conditions.
+        training : bool, optional
+            Whether in training mode.
+        **kwargs
+            Additional keyword arguments passed to the individual score computation.
+
+        Returns
+        -------
+        Tensor
+            Compositional score of same shape as input xz
+        """
+        batch_size, num_items = ops.shape(conditions)[:2]
+        if mini_batch_size is None or mini_batch_size > num_items:
+            mini_batch_size = num_items
+        needs_network_prior = compute_prior_score is None
+        num_total = mini_batch_size + int(needs_network_prior)
+
+        xz_flat, log_snr_flat, conditions_flat, score_masks = self._flatten_compositional_items(
+            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, needs_network_prior, time
+        )
+        scores_flat = self._score(
+            xz_flat,
+            log_snr_t=log_snr_flat,
+            conditions=conditions_flat,
+            training=training,
+            masks=score_masks,
+        )
+        all_scores = ops.reshape(scores_flat, (batch_size, num_total) + tuple(ops.shape(xz)[1:]))
+        individual_scores = all_scores[:, :mini_batch_size]
+
+        if needs_network_prior:
+            prior_score = all_scores[:, -1]
+        else:
+            # internally uses a (1-time) weight if prior score has no time argument
+            prior_score = compute_prior_score(xz, time)
+
+        # Combined score using compositional formula: (1-n) prior_score + Σᵢ₌₁ⁿ posterior_score
+        delta = individual_scores - ops.expand_dims(prior_score, axis=1)
+        compositional_score = prior_score + (num_items / mini_batch_size) * ops.sum(delta, axis=1)
+
+        return compositional_score
+
+    def _compositional_score_jac(
+        self,
+        xz: Tensor,
+        time: float | Tensor,
+        log_snr_t: Tensor,
+        sigma_t: Tensor,
+        conditions: Tensor,
+        *,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        seed: keras.random.SeedGenerator = None,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        mini_batch_size: int = None,
+        training: bool = False,
+        regularize_precision: float = 1e-6,
+    ) -> Tensor:
+        """Stabilized version of JAC compositional score (Linhart et al. 2026) with mini-batching from
+        (Arruda et al. 2026).
+
+        Precision-weighted compositional posterior score where both individual posterior precisions
+        and the prior precision are estimated via the Jacobian of the score network.
+
+        Parameters
+        ----------
+        xz : Tensor
+            The current state of the latent variable, shape (num_datasets, num_items, ...)
+        time : float or Tensor
+            Time step for the diffusion process.
+        log_snr_t : Tensor
+            Log SNR at time t, broadcastable to shape of xz.
+        sigma_t : Tensor
+            Sigma component of noise schedule at time t, broadcastable to shape of xz.
+        conditions : Tensor
+            Conditional inputs with compositional structure (num_datasets, num_items, ...)
+        seed: SeedGenerator or None
+            Optional seed for reproducibility.
+        compute_prior_score: Callable, optional
+            Function to compute the prior score ∇_θ log p(θ). Otherwise, the unconditional score is used.
+        mini_batch_size : int or None, optional
+            Mini batch size for computing individual scores. If None, use all conditions.
+        training : bool
+            Whether in training mode.
+        regularize_precision : float
+            Tikhonov regularization added to Λ before solving for numerical stability.
+        **kwargs
+            Additional keyword arguments passed to the individual score computation.
+
+        Returns
+        -------
+        Tensor
+            Compositional score of same shape as input xz
+        """
+        batch_size, num_items = ops.shape(conditions)[:2]
+        m = ops.shape(xz)[-1]
+        upsilon_t = ops.maximum(ops.reshape(sigma_t, (-1,))[0] ** 2, 1e-8)
+
+        if mini_batch_size is None or mini_batch_size > num_items:
+            mini_batch_size = num_items
+        num_total = mini_batch_size + 1
+
+        # the prior is appended as an extra, zero-conditioned observation
+        xz_rep, lsnr_rep, cond_flat, score_masks = self._flatten_compositional_items(
+            xz, log_snr_t, conditions, masks, repeated_masks, mini_batch_size, seed, with_prior=True, time=time
+        )
+        all_scores, all_jacs = self._compute_score_and_jacobian(
+            xz=xz_rep,
+            log_snr_t=lsnr_rep,
+            conditions=cond_flat,
+            training=training,
+            masks=score_masks,
+        )
+
+        # Reshape: (B, num_total, m) and (B, num_total, m, m)
+        all_scores = ops.reshape(all_scores, (batch_size, num_total, m))
+        all_jacs = ops.reshape(all_jacs, (batch_size, num_total, m, m))
+
+        # compute P_k = (I + υ J_k)⁻¹ for all k at once
+        I_m = ops.eye(m, dtype=ops.dtype(xz))
+        I_4d = ops.broadcast_to(
+            ops.reshape(I_m, (1, 1, m, m)),
+            (batch_size, num_total, m, m),
+        )
+        A_all = I_4d + upsilon_t * all_jacs
+        P_all = ops.inv(A_all)
+
+        # P_k @ s_k for all k: (B, num_total, m, 1) → (B, num_total, m)
+        scores_col = ops.expand_dims(all_scores, -1)
+        Ps_all = ops.squeeze(ops.matmul(P_all, scores_col), axis=-1)  # (B, num_total, m)
+
+        # split observations and prior
+        P_obs = P_all[:, :mini_batch_size]  # (B, n_obs, m, m)
+        Ps_obs = Ps_all[:, :mini_batch_size]  # (B, n_obs, m)
+        P_lambda = P_all[:, -1]  # (B, m, m)
+
+        # Sum over observations
+        sum_P = ops.sum(P_obs, axis=1)  # (B, m, m)
+        sum_Ps = ops.sum(Ps_obs, axis=1)  # (B, m)
+
+        # Scale for mini-batch estimator
+        if mini_batch_size < num_items:
+            scale = num_items / mini_batch_size
+            sum_P = scale * sum_P
+            sum_Ps = scale * sum_Ps
+
+        # prior score
+        if compute_prior_score is not None:
+            s_lambda = compute_prior_score(xz, time)
+            P_lambda_s = ops.squeeze(ops.matmul(P_lambda, ops.expand_dims(s_lambda, -1)), axis=-1)
+        else:
+            P_lambda_s = Ps_all[:, -1]  # already computed
+
+        # solve: Λ x = s̃
+        w_prior = 1 - num_items
+        I_m_batch = ops.broadcast_to(I_m, (batch_size, m, m))
+
+        lambda_matrix = sum_P + w_prior * P_lambda + regularize_precision * I_m_batch
+        s_tilde = sum_Ps + w_prior * P_lambda_s
+
+        compositional_score = linsolve_batched(lambda_matrix, s_tilde)
+        return compositional_score
+
+    def _flatten_compositional_items(
+        self,
+        xz: Tensor,
+        log_snr_t: Tensor,
+        conditions: Tensor,
+        masks: InferenceMasks,
+        repeated_masks: InferenceMasks,
+        mini_batch_size: int,
+        seed: keras.random.SeedGenerator | Tensor | None,
+        with_prior: bool,
+        time: Tensor,
+    ) -> tuple[Tensor, Tensor, Tensor, InferenceMasks]:
+        """Flatten a random mini-batch of the items of each dataset into the batch axis for one score evaluation.
+
+        With ``with_prior``, a zero condition is appended as last item, whose score estimates the prior score.
+        """
+        batch_size, num_items = ops.shape(conditions)[:2]
+        observed_condition_mask = masks.observed_condition_mask
+        if mini_batch_size < num_items:
+            if keras.config.backend() == "jax":
+                from bayesflow._backend._jax.random import time_folded_uniform
+
+                ranks = time_folded_uniform((batch_size, num_items), seed, time)
+            else:
+                ranks = keras.random.uniform((batch_size, num_items), seed=seed)
+            _, per_row_idx = ops.top_k(-ranks, mini_batch_size)
+            conditions = ops.take_along_axis(conditions, per_row_idx[..., None], axis=1)
+            if observed_condition_mask is not None:
+                observed_condition_mask = ops.take_along_axis(observed_condition_mask, per_row_idx[..., None], axis=1)
+
+        if with_prior:
+            conditions = ops.concatenate([conditions, ops.zeros_like(conditions[:, :1])], axis=1)
+            if observed_condition_mask is not None:
+                observed_condition_mask = ops.concatenate(
+                    [observed_condition_mask, ops.zeros_like(observed_condition_mask[:, :1])], axis=1
+                )
+
+        num_total = mini_batch_size + int(with_prior)
+        conditions_flat = ops.reshape(conditions, (batch_size * num_total,) + tuple(ops.shape(conditions)[2:]))
+        return (
+            repeat_and_flatten(xz, num_total),
+            repeat_and_flatten(log_snr_t, num_total),
+            conditions_flat,
+            self.mask_handler.with_flattened_condition_mask(repeated_masks, observed_condition_mask),
+        )
+
+    def _compute_score_and_jacobian(
+        self,
+        xz: Tensor,
+        log_snr_t: Tensor,
+        conditions: Tensor,
+        masks: InferenceMasks,
+        training: bool = False,
+    ) -> tuple[Tensor, Tensor]:
+        """Compute score and JAC precision Σ̂⁻¹ for one conditioning input using full Jacobian J = ∇_{θ_t} s(θ_t).
+
+        Returns
+        -------
+        s : Tensor (B, m)
+        prec : Tensor (B, m, m)
+            Σ̂⁻¹ = (α_t/υ_t)(I + υ_t J)⁻¹
+        """
+        m = ops.shape(xz)[-1]
+
+        def score_fn(x):
+            return self._score(
+                xz=x,
+                log_snr_t=log_snr_t,
+                conditions=conditions,
+                training=training,
+                masks=masks,
+            )
+
+        score, vjp_fn = vjp(score_fn, xz, return_output=True)
+
+        rows = []
+        for i in range(m):
+            e_i = ops.broadcast_to(
+                ops.reshape(keras.ops.one_hot(i, num_classes=m, dtype=ops.dtype(score)), (1, m)),
+                (ops.shape(score)[0], m),
+            )
+            row_i = vjp_fn(e_i)
+            rows.append(ops.expand_dims(row_i, axis=1))
+
+        jacobian = ops.concatenate(rows, axis=1)
+        return score, jacobian
+
+    @staticmethod
+    def _maybe_clip_score(compositional_score, clip, alpha_t, sigma_t, xz):
+        if clip is not None:
+            min_clip, max_clip = clip
+            x_pred = (xz + sigma_t**2 * compositional_score) / alpha_t
+            x_pred = ops.clip(x_pred, min_clip, max_clip)
+            compositional_score = (x_pred * alpha_t - xz) / (sigma_t**2)
+        return compositional_score
+
+    def _inverse_compositional(
+        self,
+        z: Tensor,
+        conditions: Tensor,
+        compute_prior_score: Callable[[Tensor], Tensor] = None,
+        density: bool = False,
+        training: bool = False,
+        **kwargs,
+    ) -> Tensor | tuple[Tensor, Tensor]:
+        """
+        Inverse pass for compositional diffusion sampling.
+        """
+        runtime_kwargs = self.mask_handler.without_mask_kwargs(kwargs)
+        seed = resolve_seed(runtime_kwargs.pop("seed", None), self.seed_generator)
+        hutchinson_steps = runtime_kwargs.pop("hutchinson_steps", None)
+
+        # Build integrate kwargs: hardcoded defaults -> instance config -> call-time overrides
+        integrate_kwargs = {"start_time": 1.0, "stop_time": 0.0} | self.integrate_kwargs | runtime_kwargs
+
+        num_items = ops.shape(conditions)[1]
+        mini_batch_size = integrate_kwargs.pop("mini_batch_size", max(num_items * 0.1, 2))
+        mini_batch_size = num_items if mini_batch_size is None else min(max(int(mini_batch_size), 1), num_items)
+        # jax cannot advance a SeedGenerator inside the solver loop
+        item_seed = seed.next() if keras.config.backend() == "jax" else seed
+
+        score_kwargs = {
+            "clip": integrate_kwargs.pop("clip", (-3, 3)),
+            "use_jac": integrate_kwargs.pop("use_jac", False),
+            "guidance_kwargs": integrate_kwargs.pop("guidance_kwargs", None),
+            "regularize_precision": integrate_kwargs.pop("regularize_precision", 1e-6),
+            # per-call bridge values, the instance defaults stay untouched
+            "bridge": (
+                float(integrate_kwargs.pop("compositional_bridge_d0", self.compositional_bridge_d0)),
+                float(integrate_kwargs.pop("compositional_bridge_d1", self.compositional_bridge_d1)),
+            ),
+        }
+        _, masks, repeated_masks = self._resolve_compositional(
+            z, conditions, mini_batch_size, score_kwargs["use_jac"] or compute_prior_score is None, kwargs
+        )
+
+        if integrate_kwargs["method"] == "langevin":  # Geffner et al. (2023)
+            z_scaling = num_items * score_kwargs["bridge"][1]
+            z = z / ops.sqrt(ops.cast(z_scaling, dtype=ops.dtype(z)))
+
+        z = self.mask_handler.maybe_apply(z, masks.fixed_target_mask, masks.fixed_target_value)
+
+        def velocity_fn(xz, time, stochastic_solver):
+            return self._compositional_velocity(
+                xz,
+                time=time,
+                stochastic_solver=stochastic_solver,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                mini_batch_size=mini_batch_size,
+                training=training,
+                seed=item_seed,
+                masks=masks,
+                repeated_masks=repeated_masks,
+                **score_kwargs,
+            )
+
+        def score_fn(xz, time):
+            return self._compositional_score(
+                xz=xz,
+                time=time,
+                conditions=conditions,
+                compute_prior_score=compute_prior_score,
+                mini_batch_size=mini_batch_size,
+                training=training,
+                seed=item_seed,
+                masks=masks,
+                repeated_masks=repeated_masks,
+                **score_kwargs,
+            )
+
+        x, trace = self._integrate(
+            z,
+            velocity_fn=velocity_fn,
+            score_fn=score_fn,
+            masks=masks,
+            integrate_kwargs=integrate_kwargs,
+            seed=seed,
+            training=training,
+            density=density,
+            hutchinson_steps=hutchinson_steps,
+        )
+        if not density:
+            return x
+        return x, self.base_distribution.log_prob(z, mask=masks.fixed_target_mask) - trace

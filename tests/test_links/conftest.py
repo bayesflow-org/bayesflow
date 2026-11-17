@@ -56,7 +56,7 @@ def num_quantiles():
 
 @pytest.fixture()
 def quantiles_np(num_quantiles):
-    return np.linspace(0, 1, num_quantiles + 2)[1:-1]
+    return np.linspace(0, 1, num_quantiles + 2, dtype="float32")[1:-1]
 
 
 @pytest.fixture()
@@ -82,3 +82,9 @@ def quantiles(request):
 @pytest.fixture()
 def unordered(batch_size, num_quantiles, num_variables):
     return keras.random.normal((batch_size, num_quantiles, num_variables))
+
+
+@pytest.fixture(params=[1, 2])
+def unordered_short(batch_size, num_variables, request):
+    length = request.param
+    return keras.random.normal((batch_size, length, num_variables))

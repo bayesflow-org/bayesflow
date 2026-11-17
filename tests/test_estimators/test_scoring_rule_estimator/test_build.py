@@ -1,0 +1,5 @@
+from tests.utils.estimator_checks import check_build
+
+
+def test_build(scoring_rule_estimator_any, simulator, batch_size, adapter):
+    check_build(scoring_rule_estimator_any, simulator, batch_size, adapter)

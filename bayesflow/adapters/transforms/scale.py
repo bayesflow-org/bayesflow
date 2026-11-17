@@ -1,27 +1,31 @@
-import numpy as np
+import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
+from bayesflow.types import Tensor
 
 from .elementwise_transform import ElementwiseTransform
 
 
 @serializable("bayesflow.adapters")
 class Scale(ElementwiseTransform):
-    def __init__(self, scale: np.typing.ArrayLike):
-        self.scale = np.array(scale)
+    def __init__(self, scale: float | Tensor):
+        self.scale = scale
 
     def get_config(self) -> dict:
         return serialize({"scale": self.scale})
 
-    def forward(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data * self.scale
+    def forward(self, data: Tensor, **kwargs) -> Tensor:
+        scale = ops.convert_to_tensor(self.scale, dtype=ops.dtype(data))
+        return ops.multiply(data, scale)
 
-    def inverse(self, data: np.ndarray, **kwargs) -> np.ndarray:
-        return data / self.scale
+    def inverse(self, data: Tensor, **kwargs) -> Tensor:
+        scale = ops.convert_to_tensor(self.scale, dtype=ops.dtype(data))
+        return ops.divide(data, scale)
 
-    def log_det_jac(self, data: np.ndarray, inverse: bool = False, **kwargs) -> np.ndarray:
-        ldj = np.log(np.abs(self.scale))
-        ldj = np.full(data.shape, ldj)
+    def log_det_jac(self, data: Tensor, inverse: bool = False, **kwargs) -> Tensor:
+        scale = ops.convert_to_tensor(self.scale, dtype=ops.dtype(data))
+        ldj = ops.log(ops.abs(scale))
+        ldj = ops.broadcast_to(ldj, ops.shape(data))
         if inverse:
             ldj = -ldj
-        return np.sum(ldj, axis=tuple(range(1, ldj.ndim)))
+        return self._sum_except_batch(ldj)

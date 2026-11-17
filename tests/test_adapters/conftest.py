@@ -33,12 +33,16 @@ def adapter():
         .standardize(exclude=["t1", "t2", "o1"], mean=0.0, std=1.0)
         .drop("d1")
         .one_hot("o1", 10)
-        .keep(["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2"])
+        .keep(
+            ["x", "y", "z1", "p1", "p2", "s1", "s2", "s3", "t1", "t2", "o1", "split_1", "split_2", "props1", "props2"]
+        )
         .rename("o1", "o2")
         .random_subsample("s3", sample_size=33, axis=0)
         .take("s3", indices=np.arange(0, 32), axis=0)
         .group(["p1", "p2"], into="ps", prefix="p")
         .ungroup("ps", prefix="p")
+        .as_simplex("props1")
+        .as_simplex("props2", method="stick")
     )
 
 
@@ -64,6 +68,8 @@ def random_data():
         "s3": np.random.standard_normal(size=(35, 2)),
         "u1": np.random.uniform(low=-1, high=2, size=(32, 1)),
         "key_to_split": np.random.standard_normal(size=(32, 10)),
+        "props1": np.random.dirichlet([1, 2, 1, 4], size=(32, 4, 4)),
+        "props2": np.random.dirichlet([2, 3, 1], size=(32, 3)),
     }
 
 
@@ -76,9 +82,9 @@ def adapter_log_det_jac():
         .scale("x1", by=2)
         .log("p1", p1=True)
         .sqrt("p2")
-        .constrain("p3", lower=0)
-        .constrain("n1", upper=1)
-        .constrain("u1", lower=-1, upper=2)
+        .constrain("p3", lower=0, inclusive="none")
+        .constrain("n1", upper=1, inclusive="none")
+        .constrain("u1", lower=-1, upper=2, inclusive="none")
         .concatenate(["p1", "p2", "p3"], into="p")
         .rename("u1", "u")
     )

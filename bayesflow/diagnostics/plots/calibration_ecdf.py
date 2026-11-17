@@ -37,10 +37,10 @@ def calibration_ecdf(
     as proposed by [1].
 
     For models with many parameters, use `stacked=True` to obtain an idea
-    of the overall calibration of a posterior approximator.
+    of the overall calibration of a posterior estimator.
 
     To compute ranks based on the Euclidean distance to the origin or a reference, use `rank_type='distance'` (and
-    pass a reference array, respectively). This can be used to check the joint calibration of the posterior approximator
+    pass a reference array, respectively). This can be used to check the joint calibration of the posterior estimator
     and might show potential biases in the posterior approximation which are not detected by the fractional ranks (e.g.,
     when the prior equals the posterior). This is motivated by [2].
 

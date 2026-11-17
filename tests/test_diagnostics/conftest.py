@@ -10,6 +10,21 @@ def var_names():
 
 
 @pytest.fixture()
+def pred_log_bayes_factors(true_models):
+    """Predicted log Bayes factors of shape (num_datasets, num_models - 1)."""
+    num_models = true_models.shape[-1]
+    raw = np.random.normal(loc=0, scale=2, size=(true_models.shape[0], num_models - 1))
+    return raw
+
+
+@pytest.fixture()
+def true_log_bayes_factors(true_models):
+    """Ground-truth log Bayes factors of shape (num_datasets, num_models - 1)."""
+    num_models = true_models.shape[-1]
+    return np.random.normal(loc=0, scale=2, size=(true_models.shape[0], num_models - 1))
+
+
+@pytest.fixture()
 def random_samples_a():
     return np.random.normal(loc=0, scale=1, size=(5000, 8))
 

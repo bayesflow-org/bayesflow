@@ -3,6 +3,39 @@ import keras
 import numpy as np
 
 
+def assert_unique_rows(array):
+    rows = np.reshape(array, (array.shape[0], -1))
+    assert np.unique(rows, axis=0).shape[0] == rows.shape[0]
+
+
+def test_sample_parallel_reseeds_worker_rngs():
+    pytest.importorskip("joblib")
+
+    from bayesflow.simulators import LambdaSimulator, SequentialSimulator
+
+    closure_rng = np.random.default_rng(123)
+
+    def closure_prior():
+        return {"closure": closure_rng.integers(0, 2**31 - 1, size=4)}
+
+    class AttributePrior:
+        def __init__(self):
+            self.rng = np.random.default_rng(456)
+
+        def sample(self, batch_shape, **kwargs):
+            return {"attribute": self.rng.integers(0, 2**31 - 1, size=tuple(batch_shape) + (4,))}
+
+    def make_simulator():
+        return SequentialSimulator([LambdaSimulator(closure_prior), AttributePrior()])
+
+    first = make_simulator().sample_parallel((12,), n_jobs=2, seed=789)
+    second = make_simulator().sample_parallel((12,), n_jobs=2, seed=789)
+
+    for key, value in first.items():
+        np.testing.assert_array_equal(value, second[key])
+        assert_unique_rows(value)
+
+
 def test_two_moons(two_moons_simulator, batch_size):
     samples = two_moons_simulator.sample((batch_size,))
 
@@ -89,3 +122,120 @@ def test_multimodel_key_conflicts_sample(multimodel_key_conflicts, batch_size):
     elif multimodel_key_conflicts.key_conflicts == "error":
         with pytest.raises(ValueError):
             samples = multimodel_key_conflicts.sample(batch_size)
+
+
+def test_multimodel_single_batch(multimodel_single_batch, batch_size):
+    samples = multimodel_single_batch.sample(batch_size)
+    # all samples in the batch come from the same model
+    assert {"mu", "y", "model_indices"}.issubset(set(samples))
+    assert samples["model_indices"].shape == (batch_size, 2)
+    # every row of model_indices must be identical (single model for whole batch)
+    assert np.all(samples["model_indices"] == samples["model_indices"][0])
+
+
+def test_multimodel_p_argument(batch_size):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+
+    def prior_0():
+        return dict(mu=0.0)
+
+    def prior_1():
+        return dict(mu=np.random.standard_normal())
+
+    def likelihood(mu):
+        return dict(y=np.random.normal(mu, 1, 4))
+
+    sim0 = make_simulator([prior_0, likelihood])
+    sim1 = make_simulator([prior_1, likelihood])
+
+    # valid probabilities must sum to 1
+    simulator = ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.3, 0.7])
+    samples = simulator.sample(batch_size)
+    assert set(samples) >= {"model_indices", "y"}
+
+    # invalid probabilities should raise
+    with pytest.raises(ValueError, match="sum to 1"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.3, 0.3])
+
+    # p and logits are mutually exclusive
+    with pytest.raises(ValueError, match="conflicting"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.5, 0.5], logits=[0.0, 0.0])
+
+    # non-positive probabilities must raise
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[0.0, 1.0])
+    with pytest.raises(ValueError, match="positive"):
+        ModelComparisonSimulator(simulators=[sim0, sim1], p=[-0.1, 1.1])
+
+
+def test_model_comparison_simulator_logits_length_mismatch():
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    sim = make_simulator([lambda: dict(x=np.random.normal())])
+    with pytest.raises(ValueError, match="[Ll]ength"):
+        ModelComparisonSimulator(simulators=[sim, sim], logits=[0.0, 0.0, 0.0])
+
+
+def test_model_comparison_simulator_shared_simulator_callable(batch_size):
+    from bayesflow.simulators import make_simulator, ModelComparisonSimulator
+    import numpy as np
+
+    def shared(batch_size):
+        return dict(shared=np.ones(batch_size))
+
+    def model():
+        return dict(x=np.random.normal())
+
+    sim = make_simulator([model])
+    mc_sim = ModelComparisonSimulator(simulators=[sim, sim], shared_simulator=shared)
+    samples = mc_sim.sample(batch_size)
+    assert "shared" in samples
+    assert "model_indices" in samples
+
+
+@pytest.mark.parametrize("as_mapping", [False, True])
+def test_make_simulator_distributes_obj_kwargs(as_mapping):
+    from bayesflow.simulators import make_simulator
+
+    def first(a=1):
+        return {"x": np.array(a)}
+
+    def second(batch_shape, b=1):
+        return {"y": np.full(batch_shape, b)}
+
+    objs = {"first": first, "second": second} if as_mapping else [first, second]
+    obj_kwargs = {"second": {"is_batched": True}}
+
+    simulator = make_simulator(objs, obj_kwargs=obj_kwargs)
+    samples = simulator.sample(3)
+
+    assert samples["x"].shape == (3, 1)
+    assert samples["y"].shape == (3, 1)
+
+
+def _constant_simulators(n):
+    from bayesflow.simulators import make_simulator
+
+    return [make_simulator([lambda i=i: {"x": np.float32(i)}]) for i in range(n)]
+
+
+@pytest.mark.parametrize("p", [[0.7, 0.3], [0.5, 0.3, 0.2]])
+def test_model_comparison_p_gives_probabilities(p):
+    from bayesflow.simulators import ModelComparisonSimulator
+    from bayesflow.utils.numpy_utils import softmax
+
+    simulator = ModelComparisonSimulator(_constant_simulators(len(p)), p=p)
+    np.testing.assert_allclose(softmax(np.asarray(simulator.logits)), p, atol=1e-6)
+
+    samples = simulator.sample(20_000)
+    np.testing.assert_allclose(samples["model_indices"].mean(axis=0), p, atol=0.02)
+
+
+def test_model_comparison_logits_equivalent_to_p():
+    from bayesflow.simulators import ModelComparisonSimulator
+
+    p = np.array([0.7, 0.3])
+    from_p = ModelComparisonSimulator(_constant_simulators(2), p=p)
+    from_logits = ModelComparisonSimulator(_constant_simulators(2), logits=np.log(p))
+    np.testing.assert_allclose(np.asarray(from_p.logits), np.asarray(from_logits.logits))

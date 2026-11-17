@@ -50,16 +50,16 @@ class MultiHeadAttention(keras.Layer):
         Whether to multiply the feedforward residual branch by a trainable scalar
         initialized to zero, by default True.
     flash_attention : bool or None, optional
-        FlashAttention policy for the fused attention path, which is used whenever dropout is
-        inactive (i.e., at inference or when ``dropout=0``). If None, defers to
-        ``keras.config.is_flash_attention_enabled()`` and the backend. If True, FlashAttention is
-        required and unsupported inputs raise an error. If False, FlashAttention is disabled while
-        fused dot-product attention is retained. By default None.
+        FlashAttention policy. FlashAttention is used whenever dropout is inactive (i.e., at
+        inference or when ``dropout=0``) and it is available, e.g., on a GPU with ``float16`` or
+        ``bfloat16`` inputs. If None, it is used whenever available unless disabled via
+        ``keras.config.disable_flash_attention()``. If True, it is required and unsupported inputs
+        raise an error. If False, standard Keras attention is used. By default None.
     attention_dtype : {"float16", "bfloat16"} or None, optional
-        Dtype of query, key and value on the fused attention path. The result is cast back to the
-        compute dtype, so the rest of the model stays in its dtype policy. FlashAttention kernels
-        typically require one of these dtypes. If None, no cast is performed. By default None.
-        ``"float16"`` is not supported in compiled functions on the XLA CPU backend (JAX).
+        Dtype of query, key and value when FlashAttention is used. The result is cast back to the
+        compute dtype, so the rest of the model stays in its dtype policy. Setting this enables
+        FlashAttention for ``float32`` models on supported hardware. If None, no cast is
+        performed. By default None.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """

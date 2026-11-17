@@ -5,15 +5,17 @@ from bayesflow.utils.serialization import serializable
 
 @serializable("bayesflow.networks")
 class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
-    """Multi-head attention with a fused inference path independent of training dropout.
+    """Multi-head attention that can use FlashAttention at inference despite training dropout.
 
     Keras only uses :func:`keras.ops.dot_product_attention`, which can dispatch to
     FlashAttention, when the layer's dropout rate is zero. Configuring dropout for training
-    therefore also disables fused attention during inference, even though dropout is inactive.
+    therefore also disables FlashAttention during inference, even though dropout is inactive.
 
-    This layer keeps standard dropout-enabled attention during training and uses fused
-    dot-product attention otherwise. Calls that request attention scores continue to use the
-    standard path.
+    This layer keeps standard dropout-enabled attention during training and uses FlashAttention
+    whenever dropout is inactive and FlashAttention is available (e.g., on a GPU with ``float16``
+    or ``bfloat16`` inputs). In all other cases, it behaves exactly like
+    ``keras.layers.MultiHeadAttention``. In particular, it never routes CPU calls through the
+    generic fused kernel, which is considerably slower than the standard path on CPU.
 
     Notes
     -----
@@ -26,15 +28,15 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
     dropout : float, optional
         Dropout applied to attention scores during training, by default 0.0.
     flash_attention : bool or None, optional
-        FlashAttention policy for fused calls. ``None`` defers to
-        ``keras.config.is_flash_attention_enabled()``, ``True`` requires FlashAttention and
-        ``False`` disables it while retaining fused dot-product attention. By default None.
+        FlashAttention policy. If None, FlashAttention is used whenever it is available, unless
+        it has been disabled via ``keras.config.disable_flash_attention()``. If True,
+        FlashAttention is required and unsupported inputs raise an error. If False, the layer
+        behaves exactly like ``keras.layers.MultiHeadAttention``. By default None.
     attention_dtype : {"float16", "bfloat16"} or None, optional
-        Dtype of query, key and value on the fused path. The attention output is cast back to
-        the layer's compute dtype, so reduced-precision attention does not require changing the
-        dtype policy of the rest of the model. If None, no cast is performed. By default None.
-        Note that the XLA CPU backend (JAX) does not support ``float16`` matrix products inside
-        compiled functions; use ``"bfloat16"`` there or keep None on CPU.
+        Dtype of query, key and value when FlashAttention is used. The attention output is cast
+        back to the layer's compute dtype, so reduced-precision attention does not require
+        changing the dtype policy of the rest of the model. FlashAttention kernels typically
+        require one of these dtypes. If None, no cast is performed. By default None.
     **kwargs
         Additional keyword arguments passed to ``keras.layers.MultiHeadAttention``.
     """
@@ -61,6 +63,34 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
         self._fast_path_flash_attention = flash_attention
         self._attention_dtype = attention_dtype
 
+    def _flash_attention_supported(self, query) -> bool:
+        """Whether FlashAttention can run for ``query`` on the current backend and device."""
+        dtype = self._attention_dtype or keras.backend.standardize_dtype(query.dtype)
+        if dtype not in ("float16", "bfloat16"):
+            return False
+
+        match keras.backend.backend():
+            case "jax":
+                import jax
+
+                return jax.default_backend() in ("gpu", "tpu")
+            case "torch":
+                return query.is_cuda
+            case _:
+                return False
+
+    def _resolve_flash_attention(self, query) -> bool | None:
+        """Returns False for the standard path, otherwise the policy passed to the fused kernel."""
+        flash_attention = self._fast_path_flash_attention
+        if flash_attention is not None:
+            return flash_attention
+
+        if keras.config.is_flash_attention_enabled() is False:
+            return False
+
+        # None lets the backend pick its FlashAttention kernel and fall back if inputs do not qualify
+        return None if self._flash_attention_supported(query) else False
+
     def _compute_attention(
         self,
         query,
@@ -71,7 +101,10 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
         return_attention_scores=False,
         use_causal_mask=False,
     ):
-        use_fast_path = not ((self._dropout > 0.0 and training) or return_attention_scores or len(query.shape) != 4)
+        flash_attention = self._resolve_flash_attention(query)
+        use_fast_path = flash_attention is not False and not (
+            (self._dropout > 0.0 and training) or return_attention_scores or len(query.shape) != 4
+        )
         if not use_fast_path:
             return super()._compute_attention(
                 query,
@@ -89,11 +122,6 @@ class FlashMultiHeadAttention(keras.layers.MultiHeadAttention):
             for _ in range(4 - len(attention_mask.shape)):
                 attention_mask = keras.ops.expand_dims(attention_mask, axis=mask_expansion_axis)
             attention_mask = keras.ops.cast(attention_mask, "bool")
-
-        flash_attention = self._fast_path_flash_attention
-        if flash_attention is None:
-            # `ops.dot_product_attention` does not consult the global setting itself
-            flash_attention = keras.config.is_flash_attention_enabled()
 
         output_dtype = query.dtype
         if self._attention_dtype is not None:

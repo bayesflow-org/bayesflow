@@ -38,8 +38,14 @@ def test_relied_upon_keras_internals_are_present():
     assert callable(getattr(keras.layers.MultiHeadAttention, "_compute_attention", None))
 
 
+@pytest.fixture()
+def flash_supported(monkeypatch):
+    """Pretend FlashAttention is available, so the fused path runs on CPU with the backend's generic kernel."""
+    monkeypatch.setattr(FlashMultiHeadAttention, "_flash_attention_supported", lambda self, query: True)
+
+
 class TestFastPathGating:
-    def test_training_with_dropout_never_uses_fast_path(self, monkeypatch, x):
+    def test_training_with_dropout_never_uses_fast_path(self, monkeypatch, flash_supported, x):
         block = MultiHeadAttention(embed_dim=8, num_heads=2, dropout=0.3, layer_norm=False)
         block(x, x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
@@ -47,15 +53,16 @@ class TestFastPathGating:
         block(x, x, training=True)
         assert calls["n"] == 0
 
-    def test_inference_with_nonzero_configured_dropout_uses_fast_path(self, monkeypatch, x):
+    def test_inference_with_nonzero_configured_dropout_uses_fast_path(self, monkeypatch, flash_supported, x):
         block = MultiHeadAttention(embed_dim=8, num_heads=2, dropout=0.3, layer_norm=False)
         block(x, x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
 
         block(x, x, training=False)
         assert calls["n"] == 1
+        assert calls["kwargs"]["flash_attention"] is None
 
-    def test_training_without_dropout_uses_fast_path(self, monkeypatch, x):
+    def test_training_without_dropout_uses_fast_path(self, monkeypatch, flash_supported, x):
         block = MultiHeadAttention(embed_dim=8, num_heads=2, dropout=0.0, layer_norm=False)
         block(x, x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
@@ -63,8 +70,8 @@ class TestFastPathGating:
         block(x, x, training=True)
         assert calls["n"] == 1
 
-    def test_return_attention_scores_never_uses_fast_path(self, monkeypatch, x):
-        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, dropout=0.0)
+    def test_return_attention_scores_never_uses_fast_path(self, monkeypatch, flash_supported, x):
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
         attn(query=x, key=x, value=x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
 
@@ -73,17 +80,25 @@ class TestFastPathGating:
         assert scores is not None
         assert keras.ops.shape(output)[:-1] == keras.ops.shape(x)[:-1]
 
-    def test_flash_attention_false_is_forwarded(self, monkeypatch, x):
+    def test_unsupported_hardware_uses_standard_path(self, monkeypatch, x):
+        # the generic fused kernel is much slower than the standard path on CPU, so it is never used there
+        monkeypatch.setattr(FlashMultiHeadAttention, "_flash_attention_supported", lambda self, query: False)
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, dropout=0.3)
+        attn(query=x, key=x, value=x, training=False)
+        calls = spy_on_dot_product_attention(monkeypatch)
+
+        attn(query=x, key=x, value=x, training=False)
+        assert calls["n"] == 0
+
+    def test_flash_attention_false_uses_standard_path(self, monkeypatch, flash_supported, x):
         attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=False)
         attn(query=x, key=x, value=x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
 
         attn(query=x, key=x, value=x, training=False)
-        assert calls["n"] == 1
-        assert calls["kwargs"]["flash_attention"] is False
+        assert calls["n"] == 0
 
-    def test_default_flash_attention_respects_global_disabling(self, monkeypatch, x):
-        # `ops.dot_product_attention` never consults the global setting on its own
+    def test_default_flash_attention_respects_global_disabling(self, monkeypatch, flash_supported, x):
         attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
         attn(query=x, key=x, value=x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
@@ -96,7 +111,7 @@ class TestFastPathGating:
             if previous is not False:
                 keras.config.enable_flash_attention()
 
-        assert calls["kwargs"]["flash_attention"] is False
+        assert calls["n"] == 0
 
     def test_construction_safe_under_global_flash_attention_enabled(self, x):
         previous = keras.config.is_flash_attention_enabled()
@@ -108,7 +123,7 @@ class TestFastPathGating:
             if previous is False:
                 keras.config.disable_flash_attention()
 
-    def test_call_with_cache_uses_fast_path(self, monkeypatch, x):
+    def test_call_with_cache_uses_fast_path(self, monkeypatch, flash_supported, x):
         block = MultiHeadAttention(embed_dim=8, num_heads=2, dropout=0.3, layer_norm=False)
         block(x, x, training=False)
         calls = spy_on_dot_product_attention(monkeypatch)
@@ -118,10 +133,25 @@ class TestFastPathGating:
         assert calls["n"] == 1
 
 
+class TestFlashAttentionSupport:
+    def test_float32_is_not_supported(self, x):
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
+        assert not attn._flash_attention_supported(x)
+
+    @pytest.mark.jax
+    def test_reduced_precision_is_not_supported_on_jax_cpu(self, x):
+        import jax
+
+        if jax.default_backend() != "cpu":
+            pytest.skip("requires a CPU-only JAX installation")
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, attention_dtype="bfloat16")
+        assert not attn._flash_attention_supported(x)
+
+
 class TestAttentionDtype:
     @pytest.mark.parametrize("attention_dtype", ["float16", "bfloat16"])
-    def test_casts_qkv_and_restores_output_dtype(self, monkeypatch, x, attention_dtype):
-        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=False, attention_dtype=attention_dtype)
+    def test_casts_qkv_and_restores_output_dtype(self, monkeypatch, flash_supported, x, attention_dtype):
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, attention_dtype=attention_dtype)
         calls = spy_on_dot_product_attention(monkeypatch)
 
         output = attn(query=x, key=x, value=x, training=False)
@@ -131,8 +161,8 @@ class TestAttentionDtype:
             assert keras.backend.standardize_dtype(calls["kwargs"][name].dtype) == attention_dtype
         assert output.dtype == x.dtype
 
-    def test_default_does_not_cast(self, monkeypatch, x):
-        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=False)
+    def test_default_does_not_cast(self, monkeypatch, flash_supported, x):
+        attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
         calls = spy_on_dot_product_attention(monkeypatch)
 
         output = attn(query=x, key=x, value=x, training=False)
@@ -142,11 +172,9 @@ class TestAttentionDtype:
         assert output.dtype == x.dtype
 
     @pytest.mark.parametrize("attention_dtype", ["float16", "bfloat16"])
-    def test_reduced_precision_is_close_to_float32(self, x, attention_dtype):
+    def test_reduced_precision_is_close_to_float32(self, flash_supported, x, attention_dtype):
         reference = FlashMultiHeadAttention(key_dim=8, num_heads=2, flash_attention=False)
-        reduced = FlashMultiHeadAttention(
-            key_dim=8, num_heads=2, flash_attention=False, attention_dtype=attention_dtype
-        )
+        reduced = FlashMultiHeadAttention(key_dim=8, num_heads=2, attention_dtype=attention_dtype)
         reference(query=x, key=x, value=x)
         reduced(query=x, key=x, value=x)
         reduced.set_weights(reference.get_weights())
@@ -171,7 +199,7 @@ def _manual_attention(attn, x, mask=None):
     return attn._output_dense(output)
 
 
-def test_fast_path_matches_reference_path(x):
+def test_fast_path_matches_reference_path(flash_supported, x):
     attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
     fast_output = attn(query=x, key=x, value=x, training=False)
 
@@ -180,7 +208,7 @@ def test_fast_path_matches_reference_path(x):
     )
 
 
-def test_attention_mask_matches_reference_path(x):
+def test_attention_mask_matches_reference_path(flash_supported, x):
     mask_np = np.ones((2, 6, 6), dtype=bool)
     mask_np[:, :, -1] = False
     mask = keras.ops.convert_to_tensor(mask_np)
@@ -195,7 +223,7 @@ def test_attention_mask_matches_reference_path(x):
     )
 
 
-def test_causal_mask_matches_reference_path(x):
+def test_causal_mask_matches_reference_path(flash_supported, x):
     attn = FlashMultiHeadAttention(key_dim=8, num_heads=2)
     fast_output = attn(query=x, key=x, value=x, training=False, use_causal_mask=True)
     causal_mask = keras.ops.convert_to_tensor(np.tril(np.ones((2, 6, 6), dtype=bool)))

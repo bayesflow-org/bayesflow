@@ -6,6 +6,7 @@ from bayesflow.utils import layer_kwargs
 from bayesflow.utils.serialization import serializable, serialize, deserialize
 
 from bayesflow.networks.helpers import FFN
+from .flash_multihead_attention import FlashMultiHeadAttention
 
 
 @serializable("bayesflow.networks")
@@ -48,6 +49,17 @@ class MultiHeadAttention(keras.Layer):
     gate_ffn : bool, optional
         Whether to multiply the feedforward residual branch by a trainable scalar
         initialized to zero, by default True.
+    flash_attention : bool or None, optional
+        FlashAttention policy. FlashAttention is used whenever dropout is inactive (i.e., at
+        inference or when ``dropout=0``) and it is available, e.g., on a GPU with ``float16`` or
+        ``bfloat16`` inputs. If None, it is used whenever available unless disabled via
+        ``keras.config.disable_flash_attention()``. If True, it is required and unsupported inputs
+        raise an error. If False, standard Keras attention is used. By default None.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Dtype of query, key and value when FlashAttention is used. The result is cast back to the
+        compute dtype, so the rest of the model stays in its dtype policy. Setting this enables
+        FlashAttention for ``float32`` models on supported hardware. If None, no cast is
+        performed. By default None.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -64,6 +76,8 @@ class MultiHeadAttention(keras.Layer):
         layer_norm: bool = True,
         gate_attention: bool = True,
         gate_ffn: bool = True,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -81,16 +95,20 @@ class MultiHeadAttention(keras.Layer):
         self.layer_norm = layer_norm
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
+        self.flash_attention = flash_attention
+        self.attention_dtype = attention_dtype
 
         self.input_projector = None
 
-        self.attention = layers.MultiHeadAttention(
+        self.attention = FlashMultiHeadAttention(
             key_dim=embed_dim // num_heads,
             num_heads=num_heads,
             dropout=dropout,
             use_bias=use_bias,
             output_shape=embed_dim,
             kernel_initializer=kernel_initializer,
+            flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
 
         self.feedforward = FFN(
@@ -278,6 +296,8 @@ class MultiHeadAttention(keras.Layer):
                 "layer_norm": self.layer_norm,
                 "gate_attention": self.gate_attention,
                 "gate_ffn": self.gate_ffn,
+                "flash_attention": self.flash_attention,
+                "attention_dtype": self.attention_dtype,
             }
         )
 

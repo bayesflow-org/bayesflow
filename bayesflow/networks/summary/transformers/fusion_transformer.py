@@ -55,6 +55,12 @@ class FusionTransformer(Transformer):
     downsample : int or None, optional
         Optional temporal downsampling factor applied before the recurrent
         template and transformer blocks. If None, no downsampling is applied.
+    flash_attention : bool or None, optional
+        FlashAttention policy for the fused attention path. See :class:`MultiHeadAttention`.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Dtype of query, key and value on the fused attention path, with outputs cast back to the
+        compute dtype. Set to ``"float16"`` or ``"bfloat16"`` to make FlashAttention available
+        while the rest of the model stays in ``float32``. See :class:`MultiHeadAttention`.
     """
 
     def __init__(
@@ -74,6 +80,8 @@ class FusionTransformer(Transformer):
         bidirectional: bool = True,
         template_dim: int = 128,
         downsample: int | None = None,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -105,6 +113,8 @@ class FusionTransformer(Transformer):
                 layer_norm=layer_norm,
                 gate_attention=gate_attention,
                 gate_ffn=gate_ffn,
+                flash_attention=flash_attention,
+                attention_dtype=attention_dtype,
             )
             self.attention_blocks.append(block)
 

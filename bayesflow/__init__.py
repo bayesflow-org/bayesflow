@@ -69,12 +69,12 @@ def setup():
     import keras
     from bayesflow.utils import logging
 
-    if keras.backend.backend().lower() != os.environ["KERAS_BACKEND"].lower():
+    if keras.config.backend().lower() != os.environ["KERAS_BACKEND"].lower():
         logging.warning("Automatic backend selection failed, most likely because Keras was imported before BayesFlow.")
 
-    logging.info(f"Using backend {keras.backend.backend()!r}")
+    logging.info(f"Using backend {keras.config.backend()!r}")
 
-    if keras.backend.backend() == "torch":
+    if keras.config.backend() == "torch":
         import torch
 
         torch.autograd.set_grad_enabled(False)

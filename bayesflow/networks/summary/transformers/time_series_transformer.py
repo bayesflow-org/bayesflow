@@ -58,6 +58,12 @@ class TimeSeriesTransformer(Transformer):
     return_sequences : bool, optional
         Whether to return one summary per time step. If False, returns a single
         summary vector from a learned summary token appended to the sequence.
+    flash_attention : bool or None, optional
+        FlashAttention policy for the fused attention path. See :class:`MultiHeadAttention`.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Dtype of query, key and value on the fused attention path, with outputs cast back to the
+        compute dtype. Set to ``"float16"`` or ``"bfloat16"`` to make FlashAttention available
+        while the rest of the model stays in ``float32``. See :class:`MultiHeadAttention`.
     """
 
     def __init__(
@@ -78,6 +84,8 @@ class TimeSeriesTransformer(Transformer):
         time_axis: int | None = None,
         downsample: int | None = None,
         return_sequences: bool = False,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -120,6 +128,8 @@ class TimeSeriesTransformer(Transformer):
                 layer_norm=layer_norm,
                 gate_attention=gate_attention,
                 gate_ffn=gate_ffn,
+                flash_attention=flash_attention,
+                attention_dtype=attention_dtype,
             )
             self.attention_blocks.append(block)
 
@@ -146,6 +156,8 @@ class TimeSeriesTransformer(Transformer):
         self.return_sequences = return_sequences
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
+        self.flash_attention = flash_attention
+        self.attention_dtype = attention_dtype
 
     @staticmethod
     def make_default_time(x: Tensor) -> Tensor:
@@ -258,5 +270,7 @@ class TimeSeriesTransformer(Transformer):
                 "time_axis": self.time_axis,
                 "downsample": self.downsample,
                 "return_sequences": self.return_sequences,
+                "flash_attention": self.flash_attention,
+                "attention_dtype": self.attention_dtype,
             }
         )

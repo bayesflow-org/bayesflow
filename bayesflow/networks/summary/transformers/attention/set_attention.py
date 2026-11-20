@@ -40,6 +40,10 @@ class SetAttention(keras.Layer):
         Whether to gate the attention residual branch, by default True.
     gate_ffn : bool, optional
         Whether to gate the feedforward residual branch, by default True.
+    flash_attention : bool or None, optional
+        FlashAttention policy for the fused attention path. See :class:`MultiHeadAttention`.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Dtype of the fused attention computation. See :class:`MultiHeadAttention`.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -56,6 +60,8 @@ class SetAttention(keras.Layer):
         layer_norm: bool = True,
         gate_attention: bool = True,
         gate_ffn: bool = True,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -70,6 +76,8 @@ class SetAttention(keras.Layer):
         self.layer_norm = layer_norm
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
+        self.flash_attention = flash_attention
+        self.attention_dtype = attention_dtype
 
         self.mab = MultiHeadAttention(
             embed_dim=embed_dim,
@@ -82,6 +90,8 @@ class SetAttention(keras.Layer):
             layer_norm=layer_norm,
             gate_attention=gate_attention,
             gate_ffn=gate_ffn,
+            flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
 
     def call(self, x: Tensor, training: bool = False, attention_mask: Tensor = None) -> Tensor:
@@ -124,6 +134,8 @@ class SetAttention(keras.Layer):
                 "layer_norm": self.layer_norm,
                 "gate_attention": self.gate_attention,
                 "gate_ffn": self.gate_ffn,
+                "flash_attention": self.flash_attention,
+                "attention_dtype": self.attention_dtype,
             }
         )
 

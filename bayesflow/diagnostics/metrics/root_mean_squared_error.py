@@ -2,8 +2,6 @@ from collections.abc import Sequence, Mapping, Callable
 
 import numpy as np
 
-from bayesflow.utils import logging
-
 from ...utils.dict_utils import dicts_to_arrays, compute_test_quantities
 
 
@@ -72,12 +70,6 @@ def root_mean_squared_error(
         - "variable_names" : str
             The (inferred) variable names.
     """
-
-    if normalize:
-        logging.warning(
-            "Using new default normalize='prior' for a more dynamic range. "
-            "To reproduce previous behavior, set normalize='range'."
-        )
 
     # Optionally, compute and prepend test quantities from draws
     if test_quantities is not None:

@@ -1,6 +1,7 @@
 import keras
 import numpy as np
 import pytest
+from scipy.spatial.distance import mahalanobis
 from scipy.special import expit
 from scipy.stats import binom
 
@@ -706,3 +707,83 @@ def test_mmd_comparison_estimator_incorrect_instance():
             num_null_samples=num_null_samples,
             comparison_fn=bf.metrics.functional.maximum_mean_discrepancy,
         )
+
+
+def test_mahalanobis_distance_matches_scipy():
+    """Test mahalanobis_distance against scipy."""
+    reference_samples = np.random.normal(size=(200, 3)) @ np.random.normal(size=(3, 3))
+    observed_samples = np.random.normal(size=(10, 3))
+
+    distance = bf.diagnostics.metrics.mahalanobis_distance(observed_samples, reference_samples)
+
+    inverse_covariance = np.linalg.inv(np.cov(reference_samples, rowvar=False))
+    expected = [mahalanobis(x, reference_samples.mean(axis=0), inverse_covariance) for x in observed_samples]
+
+    assert distance.shape == ()
+    np.testing.assert_allclose(distance, np.mean(expected), rtol=1e-6)
+
+
+def test_mahalanobis_distance_flattens_trailing_dims():
+    """Test that mahalanobis_distance flattens trailing dimensions."""
+    observed_samples = np.random.normal(size=(10, 2, 3))
+    reference_samples = np.random.normal(size=(100, 2, 3))
+
+    distance = bf.diagnostics.metrics.mahalanobis_distance(observed_samples, reference_samples)
+    expected = bf.diagnostics.metrics.mahalanobis_distance(
+        observed_samples.reshape(10, 6), reference_samples.reshape(100, 6)
+    )
+
+    np.testing.assert_allclose(distance, expected)
+
+
+def test_mahalanobis_distance_collinear_dimensions():
+    """Test that mahalanobis_distance ignores collinear and constant dimensions."""
+    reference_samples = np.random.normal(size=(100, 2))
+    observed_samples = np.random.normal(size=(10, 2))
+
+    def extend(x):
+        return np.concatenate([x, x[:, :1], np.ones((len(x), 1))], axis=-1)
+
+    distance = bf.diagnostics.metrics.mahalanobis_distance(observed_samples, reference_samples)
+    extended = bf.diagnostics.metrics.mahalanobis_distance(extend(observed_samples), extend(reference_samples))
+
+    np.testing.assert_allclose(extended, distance, rtol=1e-6)
+
+
+def test_mahalanobis_distance_mismatched_shapes():
+    """Test that mahalanobis_distance raises on mismatched shapes."""
+    with pytest.raises(ValueError):
+        bf.diagnostics.metrics.mahalanobis_distance(np.random.rand(10, 4), np.random.rand(100, 5))
+
+
+@pytest.mark.filterwarnings("ignore::DeprecationWarning")
+def test_mahalanobis_bootstrap_comparison_false_positive_rate():
+    """Test that bootstrap_comparison with mahalanobis_distance rejects about alpha of in-distribution data sets."""
+    reference_samples = np.random.normal(size=(1000, 4))
+
+    rejections = []
+    for _ in range(100):
+        distance_observed, distance_null = bf.diagnostics.metrics.bootstrap_comparison(
+            np.random.normal(size=(1, 4)), reference_samples, bf.diagnostics.metrics.mahalanobis_distance
+        )
+        rejections.append(distance_observed > np.quantile(distance_null, 0.9))
+
+    np.testing.assert_allclose(np.mean(rejections), 0.1, atol=0.06)
+
+
+def test_mahalanobis_summary_space_comparison_detects_shift(summary_network, adapter):
+    """Test that summary_space_comparison with mahalanobis_distance detects shifted data."""
+    observed_data = dict(observables=np.random.normal(loc=5.0, size=(10, 5)))
+    reference_data = dict(observables=np.random.normal(size=(100, 5)))
+
+    estimator = bf.estimators.BasicEstimator(adapter=adapter, inference_network=None, summary_network=summary_network)
+
+    distance_observed, distance_null = bf.diagnostics.metrics.summary_space_comparison(
+        observed_data=observed_data,
+        reference_data=reference_data,
+        estimator=estimator,
+        comparison_fn=bf.diagnostics.metrics.mahalanobis_distance,
+    )
+
+    assert distance_observed.shape == ()
+    assert distance_observed > np.max(distance_null)

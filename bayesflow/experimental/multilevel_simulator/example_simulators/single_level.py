@@ -25,8 +25,8 @@ def meta():
 
 def single_level_simulator():
     """
-    Simple single-level simulator that implements the same model as in
-    https://bayesflow.org/main/_examples/Linear_Regression_Starter.html
+    Simple single-level regression simulator. For a more general example, see
+    https://bayesflow.org/main/_examples/Bayesian_GLM.html
 
     The sample functions draw one sample per call.
     """

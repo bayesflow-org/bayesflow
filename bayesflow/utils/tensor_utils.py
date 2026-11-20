@@ -127,7 +127,7 @@ def is_symbolic_tensor(x: Tensor) -> bool:
     if keras.utils.is_keras_tensor(x):
         return True
 
-    match keras.backend.backend():
+    match keras.config.backend():
         case "jax":
             import jax
 
@@ -139,7 +139,7 @@ def is_symbolic_tensor(x: Tensor) -> bool:
         case "torch":
             return False
         case _:
-            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.backend.backend()!r}")
+            raise NotImplementedError(f"Symbolic tensor check not implemented for backend {keras.config.backend()!r}")
 
 
 def pad(x: Tensor, value: float | Tensor, n: int, axis: int, side: str = "both") -> Tensor:
@@ -198,7 +198,7 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
     Find indices where elements should be inserted to maintain order.
     """
 
-    match keras.backend.backend():
+    match keras.config.backend():
         case "jax":
             import jax
             import jax.numpy as jnp
@@ -239,7 +239,7 @@ def searchsorted(sorted_sequence: Tensor, values: Tensor, side: str = "left") ->
 
             return indices
         case _:
-            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.backend.backend()!r}")
+            raise NotImplementedError(f"Searchsorted not implemented for backend {keras.config.backend()!r}")
 
 
 def linsolve_batched(lambda_matrix: Tensor, rhs: Tensor) -> Tensor:

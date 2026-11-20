@@ -115,13 +115,14 @@ A few video tutorial videos are available as part of the [Learning Bayesian Stat
 9. {doc}`Compositional estimation <_examples/Compositional_Diffusion>` - Estimate hierarchical Bayesian models via composition.
 10. {doc}`Deep Ensembles <_examples/Ensembles>` - Train different networks at the same time and combine their inferences.
 11. {doc}`Self-consistency <_examples/Self_Consistency>` - Refine posterior estimates using unlabeled observations.
-12. {doc}`Model comparisons <_examples/One_Sample_TTest>` - Learn the basic workflow of Bayesian model comparison.
-13. {doc}`Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>` - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
-14. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
-15. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
-16. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
-17. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
-18. {doc}`Model predictive control <_examples/Model_Predictive_Control>` - Use posterior uncertainty to guide robust control of an inverted double pendulum.
+12. {doc}`Changing priors at inference time <_examples/Changing_Priors>` - Reuse a posterior estimator after a prior change with importance sampling.
+13. {doc}`Model comparisons <_examples/One_Sample_TTest>` - Learn the basic workflow of Bayesian model comparison.
+14. {doc}`Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>` - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+15. {doc}`Multimodal data <_examples/Multimodal_Data>` - Fuse different data types for more informative inference.
+16. {doc}`Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>` - From simple point estimates to fully Bayesian inference.
+17. {doc}`From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>` - Upgrade from sequential to amortized inference.
+18. {doc}`Bayesian experimental design <_examples/Bayesian_Experimental_Design>` - Perform adaptive sequential experiments.
+19. {doc}`Model predictive control <_examples/Model_Predictive_Control>` - Use posterior uncertainty to guide robust control of an inverted double pendulum.
 
 ### Tutorial papers
 

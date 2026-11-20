@@ -15,7 +15,6 @@ from .canonical_correlation_metric import canonical_correlation_metric
 from .accuracy import accuracy
 from .brier_score import brier_score
 from .accuracy_random_points import accuracy_random_points
-from .psis import pareto_smooth
 
 from ...utils._docs import _add_imports_to_all
 

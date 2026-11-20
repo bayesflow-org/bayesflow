@@ -151,6 +151,16 @@ def slice_maybe_nested(obj: Mapping | Tensor, start: int, end: int):
         return obj[start:end]
 
 
+def gather_maybe_nested(obj: Mapping | np.ndarray, indices: np.ndarray):
+    """Gather shared indices from an array or nested mapping of arrays."""
+    if isinstance(obj, Mapping):
+        return {key: gather_maybe_nested(value, indices) for key, value in obj.items()}
+
+    sample_axis = indices.ndim - 1
+    expanded_indices = indices[(...,) + (None,) * (obj.ndim - indices.ndim)]
+    return np.take_along_axis(obj, expanded_indices, axis=sample_axis)
+
+
 def split_arrays(data: Mapping[str, np.ndarray], axis: int = -1) -> Mapping[str, np.ndarray]:
     """Split tensors in the dictionary along the given axis."""
     result = {}

@@ -21,6 +21,7 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    Compositional estimation <_examples/Compositional_Diffusion>
    Deep Ensembles <_examples/Ensembles>
    Self-consistency <_examples/Self_Consistency>
+   Changing priors at inference time <_examples/Changing_Priors>
    Model comparisons <_examples/One_Sample_TTest>
    Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>
    Multimodal data <_examples/Multimodal_Data>

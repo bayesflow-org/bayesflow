@@ -121,13 +121,14 @@ Several video tutorials are available as part of the [Learning Bayesian Statisti
 9. [Compositional estimation](examples/Compositional_Diffusion.ipynb) - Estimate hierarchical Bayesian models via composition.
 10. [Deep Ensembles](examples/Ensembles.ipynb) - Train different networks at the same time and combine their inferences.
 11. [Self-consistency](examples/Self_Consistency.ipynb) - Refine posterior estimates using unlabeled observations.
-12. [Model comparisons](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
-13. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
-14. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
-15. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
-16. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
-17. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
-18. [Model predictive control](examples/Model_Predictive_Control.ipynb) - Use posterior uncertainty to guide robust control of an inverted double pendulum.
+12. [Changing priors at inference time](examples/Changing_Priors.ipynb) - Reuse a posterior estimator after a prior change with importance sampling.
+13. [Model comparisons](examples/One_Sample_TTest.ipynb) - Learn the basic workflow of Bayesian model comparison.
+14. [Model comparison deep dive](examples/Model_Comparison_Deep_Dive.ipynb) - Explore different approaches and scoring rules in the Bayesian model comparison workflow.
+15. [Multimodal data](examples/Multimodal_Data.ipynb) - Fuse different data types for more informative inference.
+16. [Bayes estimators](examples/Lotka_Volterra_Point_Estimation.ipynb) - From simple point estimates to fully Bayesian inference.
+17. [From ABC to BayesFlow](examples/From_ABC_to_BayesFlow.ipynb) - Upgrade from sequential to amortized inference.
+18. [Bayesian experimental design](examples/Bayesian_Experimental_Design.ipynb) - Perform adaptive sequential experiments.
+19. [Model predictive control](examples/Model_Predictive_Control.ipynb) - Use posterior uncertainty to guide robust control of an inverted double pendulum.
 
 ### Tutorial papers
 

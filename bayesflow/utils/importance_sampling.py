@@ -22,19 +22,10 @@ def importance_resample(
 
     ``log_ratio`` is the log density ratio between the target and current posterior,
     up to an additive normalization constant. It can be a precomputed array or a
-    callable receiving ``samples``. For posterior approximation correction, compute
-
-    .. code-block:: python
-
-        log_ratio = lambda samples: (
-            prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)
-        )
-
-    For a prior shift, the unchanged likelihood cancels, so compute
-
-    .. code-block:: python
-
-        log_ratio = lambda samples: new_prior_log_prob(samples) - old_prior_log_prob(samples)
+    callable receiving ``samples``. For posterior approximation correction, use
+    ``prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)``.
+    For a prior shift, the unchanged likelihood cancels, so use
+    ``new_prior_log_prob(samples) - old_prior_log_prob(samples)``.
 
     The ratio must have shape ``(*batch_shape, num_samples)``. Sample arrays must
     begin with the same dimensions, so native BayesFlow output with shape

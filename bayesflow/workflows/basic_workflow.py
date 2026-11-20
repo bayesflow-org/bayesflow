@@ -826,19 +826,11 @@ class BasicWorkflow(Workflow):
     ):
         """Thin workflow wrapper around :func:`bayesflow.utils.importance_resample`.
 
-        For posterior approximation correction, compute the log ratio as
+        For posterior approximation correction, use
+        ``prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)``.
 
-        .. code-block:: python
-
-            log_ratio = lambda samples: (
-                prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)
-            )
-
-        For a prior shift, compute
-
-        .. code-block:: python
-
-            log_ratio = lambda samples: new_prior_log_prob(samples) - old_prior_log_prob(samples)
+        For changing the prior during infernece, use
+        ``new_prior_log_prob(samples) - old_prior_log_prob(samples)``.
 
         Parameters are forwarded unchanged to the utility function.
         """

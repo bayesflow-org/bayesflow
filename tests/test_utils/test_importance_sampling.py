@@ -6,40 +6,35 @@ from scipy.stats import norm
 
 import bayesflow as bf
 from bayesflow.types import LogProb
-from bayesflow.utils import importance_resample, psis_resample
+from bayesflow.utils import importance_resample
 
 
 def test_public_exports():
     assert bf.types.LogProb is LogProb
-    assert bf.utils.importance_sampling.psis_resample is psis_resample
     assert bf.utils.importance_sampling.importance_resample is importance_resample
     assert "LogProb" in bf.types.__all__
     assert "importance_sampling" in bf.utils.__all__
+    assert "importance_resample" in bf.utils.__all__
+    assert not hasattr(bf.utils, "psis_resample")
 
 
 def test_importance_resample_accepts_callbacks_and_arrays():
     rng = np.random.default_rng(1)
     samples = rng.normal(size=(2, 500, 2))
-    old_log_prob = norm.logpdf(samples[..., 0])
-    new_log_prob = norm.logpdf(samples[..., 0], loc=0.5, scale=0.8)
+    log_ratio = norm.logpdf(samples[..., 0], loc=0.5, scale=0.8) - norm.logpdf(samples[..., 0])
 
-    from_arrays = importance_resample(
-        samples,
-        old_log_prob,
-        new_log_prob,
-        rng=np.random.default_rng(2),
-    )
+    from_arrays = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(2))
     from_callbacks = importance_resample(
         samples,
-        lambda value: norm.logpdf(value[..., 0]),
-        lambda value: norm.logpdf(value[..., 0], loc=0.5, scale=0.8),
+        lambda value: (norm.logpdf(value[..., 0], loc=0.5, scale=0.8) - norm.logpdf(value[..., 0])),
+        method="is",
         rng=np.random.default_rng(2),
     )
 
     np.testing.assert_array_equal(from_callbacks, from_arrays)
 
 
-def test_log_prob_callbacks_receive_the_sample_structure():
+def test_log_ratio_callback_receives_the_sample_structure():
     rng = np.random.default_rng(17)
     samples = {
         "theta": rng.normal(size=(2, 500, 1)),
@@ -48,8 +43,8 @@ def test_log_prob_callbacks_receive_the_sample_structure():
 
     result = importance_resample(
         samples,
-        lambda value: norm.logpdf(value["theta"][..., 0]),
-        lambda value: norm.logpdf(value["theta"][..., 0], loc=0.25),
+        lambda value: (norm.logpdf(value["theta"][..., 0], loc=0.25) - norm.logpdf(value["theta"][..., 0])),
+        method="is",
         rng=np.random.default_rng(18),
     )
 
@@ -57,28 +52,28 @@ def test_log_prob_callbacks_receive_the_sample_structure():
     assert result["auxiliary"].shape == samples["auxiliary"].shape
 
 
-def test_psis_resample_accepts_callbacks_and_arrays():
+def test_psis_accepts_callbacks_and_arrays():
     rng = np.random.default_rng(3)
     samples = rng.normal(size=(2, 1_000, 1))
-    prior = norm.logpdf(samples[..., 0], scale=2.0)
-    likelihood = norm.logpdf(0.5, loc=samples[..., 0])
-    posterior = norm.logpdf(samples[..., 0])
+    log_ratio = (
+        norm.logpdf(samples[..., 0], scale=2.0) + norm.logpdf(0.5, loc=samples[..., 0]) - norm.logpdf(samples[..., 0])
+    )
     original_samples = samples.copy()
-    original_log_probs = tuple(value.copy() for value in (prior, likelihood, posterior))
+    original_log_ratio = log_ratio.copy()
 
-    from_arrays, array_diagnostics = psis_resample(
+    from_arrays, array_diagnostics = importance_resample(
         samples,
-        prior,
-        likelihood,
-        posterior,
+        log_ratio,
+        method="psis",
         rng=np.random.default_rng(4),
         return_diagnostics=True,
     )
-    from_callbacks, callback_diagnostics = psis_resample(
+    from_callbacks, callback_diagnostics = importance_resample(
         samples,
-        lambda value: norm.logpdf(value[..., 0], scale=2.0),
-        lambda value: norm.logpdf(0.5, loc=value[..., 0]),
-        lambda value: norm.logpdf(value[..., 0]),
+        lambda value: (
+            norm.logpdf(value[..., 0], scale=2.0) + norm.logpdf(0.5, loc=value[..., 0]) - norm.logpdf(value[..., 0])
+        ),
+        method="psis",
         rng=np.random.default_rng(4),
         return_diagnostics=True,
     )
@@ -86,8 +81,28 @@ def test_psis_resample_accepts_callbacks_and_arrays():
     np.testing.assert_array_equal(from_callbacks, from_arrays)
     np.testing.assert_allclose(callback_diagnostics["pareto_k"], array_diagnostics["pareto_k"])
     np.testing.assert_array_equal(samples, original_samples)
-    for value, original in zip((prior, likelihood, posterior), original_log_probs):
-        np.testing.assert_array_equal(value, original)
+    np.testing.assert_array_equal(log_ratio, original_log_ratio)
+
+
+def test_psis_accepts_integer_log_ratios():
+    samples = np.arange(100)
+    log_ratio = np.arange(100) // 10
+
+    from_integers, integer_diagnostics = importance_resample(
+        samples,
+        log_ratio,
+        rng=np.random.default_rng(5),
+        return_diagnostics=True,
+    )
+    from_floats, float_diagnostics = importance_resample(
+        samples,
+        log_ratio.astype(float),
+        rng=np.random.default_rng(5),
+        return_diagnostics=True,
+    )
+
+    np.testing.assert_array_equal(from_integers, from_floats)
+    np.testing.assert_array_equal(integer_diagnostics["pareto_k"], float_diagnostics["pareto_k"])
 
 
 def test_mapping_samples_keep_joint_draws_and_are_reproducible():
@@ -106,21 +121,10 @@ def test_mapping_samples_keep_joint_draws_and_are_reproducible():
         "theta": samples["theta"].copy(),
         "nested": {key: value.copy() for key, value in samples["nested"].items()},
     }
-    old_log_prob = np.zeros((batch_size, num_samples))
-    new_log_prob = np.broadcast_to(np.linspace(-3.0, 0.0, num_samples), old_log_prob.shape).copy()
+    log_ratio = np.broadcast_to(np.linspace(-3.0, 0.0, num_samples), draw_id.shape).copy()
 
-    first = importance_resample(
-        samples,
-        old_log_prob,
-        new_log_prob,
-        rng=np.random.default_rng(5),
-    )
-    second = importance_resample(
-        samples,
-        old_log_prob,
-        new_log_prob,
-        rng=np.random.default_rng(5),
-    )
+    first = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(5))
+    second = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(5))
 
     np.testing.assert_array_equal(first["theta"], second["theta"])
     np.testing.assert_array_equal(first["nested"]["twice_theta"], 2 * first["theta"])
@@ -129,23 +133,20 @@ def test_mapping_samples_keep_joint_draws_and_are_reproducible():
     np.testing.assert_array_equal(samples["theta"], original["theta"])
     for key in samples["nested"]:
         np.testing.assert_array_equal(samples["nested"][key], original["nested"][key])
-    np.testing.assert_array_equal(old_log_prob, np.zeros_like(old_log_prob))
     np.testing.assert_array_equal(
-        new_log_prob,
-        np.broadcast_to(np.linspace(-3.0, 0.0, num_samples), new_log_prob.shape),
+        log_ratio,
+        np.broadcast_to(np.linspace(-3.0, 0.0, num_samples), log_ratio.shape),
     )
 
 
 def test_resampling_supports_multiple_batch_dimensions():
     rng = np.random.default_rng(6)
     samples = rng.normal(size=(2, 3, 400, 2))
-    old_log_prob = np.zeros((2, 3, 400))
-    new_log_prob = -0.5 * samples[..., 0] ** 2
 
     result = importance_resample(
         samples,
-        old_log_prob,
-        new_log_prob,
+        -0.5 * samples[..., 0] ** 2,
+        method="is",
         rng=np.random.default_rng(7),
     )
 
@@ -168,13 +169,11 @@ def test_importance_resample_recovers_posterior_under_new_prior():
         scale=np.sqrt(old_variance),
         size=(observations.size, num_samples, 1),
     )
-
-    shifted = importance_resample(
-        samples,
-        norm.logpdf(samples[..., 0], loc=old_prior_mean, scale=old_prior_scale),
-        norm.logpdf(samples[..., 0], loc=new_prior_mean, scale=new_prior_scale),
-        rng=np.random.default_rng(9),
+    log_ratio = norm.logpdf(samples[..., 0], loc=new_prior_mean, scale=new_prior_scale) - norm.logpdf(
+        samples[..., 0], loc=old_prior_mean, scale=old_prior_scale
     )
+
+    shifted = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(9))
 
     expected_variance = 1 / (1 / new_prior_scale**2 + 1 / likelihood_scale**2)
     expected_mean = expected_variance * (new_prior_mean / new_prior_scale**2 + observations / likelihood_scale**2)
@@ -182,7 +181,7 @@ def test_importance_resample_recovers_posterior_under_new_prior():
     np.testing.assert_allclose(shifted[..., 0].var(axis=1), expected_variance, atol=0.025)
 
 
-def test_psis_resample_recovers_analytic_posterior_and_returns_diagnostics():
+def test_psis_recovers_analytic_posterior_and_returns_diagnostics():
     rng = np.random.default_rng(10)
     observations = np.array([-0.5, 1.5])
     num_samples = 20_000
@@ -198,12 +197,15 @@ def test_psis_resample_recovers_analytic_posterior_and_returns_diagnostics():
         size=(observations.size, num_samples, 1),
     )
     theta = samples[..., 0]
+    log_ratio = (
+        norm.logpdf(theta, scale=prior_scale)
+        + norm.logpdf(observations[:, None], loc=theta)
+        - norm.logpdf(theta, loc=proposal_mean[:, None], scale=proposal_scale)
+    )
 
-    corrected, diagnostics = psis_resample(
+    corrected, diagnostics = importance_resample(
         samples,
-        norm.logpdf(theta, scale=prior_scale),
-        norm.logpdf(observations[:, None], loc=theta),
-        norm.logpdf(theta, loc=proposal_mean[:, None], scale=proposal_scale),
+        log_ratio,
         rng=np.random.default_rng(11),
         return_diagnostics=True,
     )
@@ -215,32 +217,23 @@ def test_psis_resample_recovers_analytic_posterior_and_returns_diagnostics():
     assert np.all(diagnostics["pareto_k"] < 0.7)
 
 
-def test_psis_resample_logs_unreliable_weights(caplog):
+def test_psis_logs_unreliable_weights(caplog):
     rng = np.random.default_rng(12)
-    num_samples = 2_000
-    samples = rng.normal(size=(1, num_samples, 1))
-    heavy_tailed_weights = rng.pareto(0.5, size=(1, num_samples)) + 1
+    samples = rng.normal(size=(1, 2_000, 1))
+    log_ratio = np.log(rng.pareto(0.5, size=(1, 2_000)) + 1)
 
     with caplog.at_level(logging.WARNING, logger="bayesflow"):
-        psis_resample(
-            samples,
-            np.log(heavy_tailed_weights),
-            np.zeros_like(heavy_tailed_weights),
-            np.zeros_like(heavy_tailed_weights),
-            rng=np.random.default_rng(13),
-        )
+        importance_resample(samples, log_ratio, rng=np.random.default_rng(13))
     assert "Pareto k" in caplog.text
 
 
 def test_psis_pareto_k_matches_reference(caplog):
-    log_ratios = np.concatenate((np.linspace(-3, 1, 45), [1.2, 1.5, 2.0, 3.0, 5.0]))
+    log_ratio = np.concatenate((np.linspace(-3, 1, 45), [1.2, 1.5, 2.0, 3.0, 5.0]))
 
     with caplog.at_level(logging.WARNING, logger="bayesflow"):
-        _, diagnostics = psis_resample(
-            np.arange(log_ratios.size),
-            log_ratios,
-            np.zeros_like(log_ratios),
-            np.zeros_like(log_ratios),
+        _, diagnostics = importance_resample(
+            np.arange(log_ratio.size),
+            log_ratio,
             rng=np.random.default_rng(20),
             return_diagnostics=True,
         )
@@ -250,57 +243,61 @@ def test_psis_pareto_k_matches_reference(caplog):
 
 
 @pytest.mark.parametrize(
-    "new_log_prob",
+    "log_ratio",
     [
         np.full((2, 100), np.nan),
+        np.full((2, 100), np.inf),
         np.full((2, 100), -np.inf),
     ],
 )
-def test_importance_resample_validates_log_weights(new_log_prob):
-    samples = np.zeros((2, 100, 1))
+def test_importance_resample_validates_log_ratio(log_ratio):
     with pytest.raises(ValueError):
         importance_resample(
-            samples,
-            np.zeros((2, 100)),
-            new_log_prob,
+            np.zeros((2, 100, 1)),
+            log_ratio,
+            method="is",
             rng=np.random.default_rng(14),
         )
 
 
-def test_psis_resample_validates_log_prob_shapes():
-    samples = np.zeros((2, 100, 1))
-
-    with pytest.raises(ValueError):
-        psis_resample(
-            samples,
-            np.zeros((2, 100)),
-            np.zeros((2, 99)),
-            np.zeros((2, 100)),
-            rng=np.random.default_rng(15),
+def test_importance_resample_rejects_unknown_method():
+    with pytest.raises(ValueError, match="method"):
+        importance_resample(
+            np.zeros((1, 100, 1)),
+            np.zeros((1, 100)),
+            method="unknown",
         )
 
 
-def test_importance_resample_validates_callback_output_shape():
-    samples = np.zeros((2, 100, 1))
-
+def test_psis_requires_enough_draws():
     with pytest.raises(ValueError):
         importance_resample(
-            samples,
-            lambda value: np.zeros(value.shape[:2]),
-            lambda value: np.zeros(value.shape[1]),
-            rng=np.random.default_rng(19),
-        )
-
-
-def test_psis_resample_requires_enough_draws():
-    samples = np.zeros((1, 4, 1))
-    log_prob = np.zeros((1, 4))
-
-    with pytest.raises(ValueError):
-        psis_resample(
-            samples,
-            log_prob,
-            log_prob,
-            log_prob,
+            np.zeros((1, 4, 1)),
+            np.zeros((1, 4)),
             rng=np.random.default_rng(16),
         )
+
+
+def test_is_supports_few_draws_and_returns_empty_diagnostics():
+    samples = np.arange(4)[None, :, None]
+    result, diagnostics = importance_resample(
+        samples,
+        np.zeros((1, 4)),
+        method="is",
+        rng=np.random.default_rng(19),
+        return_diagnostics=True,
+    )
+
+    assert result.shape == samples.shape
+    assert diagnostics == {}
+
+
+def test_workflow_importance_resample_matches_utility():
+    samples = np.arange(100)[None, :, None]
+    log_ratio = np.linspace(-2.0, 0.0, 100)[None, :]
+    workflow = object.__new__(bf.BasicWorkflow)
+
+    expected = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(21))
+    actual = workflow.importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(21))
+
+    np.testing.assert_array_equal(actual, expected)

@@ -58,7 +58,7 @@ from .git import (
 from .hparam_utils import find_batch_size, find_memory_budget
 from .integrate import integrate, integrate_stochastic, DETERMINISTIC_METHODS, STOCHASTIC_METHODS
 
-from .importance_sampling import importance_resample, psis_resample
+from .importance_sampling import importance_resample
 
 from .io import (
     pickle_load,

@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Literal
 
 import numpy as np
 from scipy.special import logsumexp
@@ -9,62 +9,63 @@ from . import logging
 from .dict_utils import gather_maybe_nested
 
 
-def psis_resample(
+def importance_resample(
     samples,
-    prior_log_prob: LogProb,
-    likelihood_log_prob: LogProb,
-    posterior_log_prob: LogProb,
+    log_ratio: LogProb,
     *,
+    method: Literal["psis", "is"] = "psis",
     r_eff: float = 1.0,
     rng: int | np.random.Generator | None = None,
     return_diagnostics: bool = False,
 ):
-    """Correct approximate posterior samples with Pareto-smoothed importance sampling.
+    """Correct posterior samples by importance resampling.
 
-    This is useful when an amortized posterior is fast to sample from but imperfect for
-    a particular observation, while the prior and likelihood can be evaluated. The
-    function forms the importance ratios
+    ``log_ratio`` is the log density ratio between the target and current posterior,
+    up to an additive normalization constant. It can be a precomputed array or a
+    callable receiving ``samples``. For posterior approximation correction, compute
 
-    ``prior * likelihood / approximate_posterior``,
+    .. code-block:: python
 
-    Pareto-smooths their upper tail, and resamples the joint draws. Large Pareto
-    :math:`k` values trigger a log warning because they indicate that the approximate
-    posterior has insufficient overlap with the target posterior.
+        log_ratio = lambda samples: (
+            prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)
+        )
 
-    Log-probability arguments can be arrays or callables receiving ``samples``. Their
-    output shape must be ``(*batch_shape, num_samples)``. Sample arrays must begin with
-    the same dimensions, so native BayesFlow output with shape
-    ``(num_conditions, num_samples, ...)`` works directly. If ``samples`` is a mapping,
-    all values are resampled with shared indices to preserve joint draws.
+    For a prior shift, the unchanged likelihood cancels, so compute
 
-    The posterior log density is required: prior and likelihood values alone do not
-    define importance ratios for draws from an approximate posterior. All three log
-    densities must be evaluated with respect to the same parameterization and measure;
-    callers are responsible for any model-specific transformations and Jacobians.
+    .. code-block:: python
+
+        log_ratio = lambda samples: (new_prior_log_prob(samples) - old_prior_log_prob(samples))
+
+    The ratio must have shape ``(*batch_shape, num_samples)``. Sample arrays must
+    begin with the same dimensions, so native BayesFlow output with shape
+    ``(num_conditions, num_samples, ...)`` works directly. Mapping values are
+    resampled with shared indices to preserve joint draws. Callers are responsible
+    for using a common parameterization and including model-specific Jacobians.
 
     Parameters
     ----------
     samples : np.ndarray or mapping of np.ndarray
-        Samples to correct. Leading dimensions must match the log-probability shape.
-    prior_log_prob : np.ndarray or callable
-        Prior log density at each draw.
-    likelihood_log_prob : np.ndarray or callable
-        Likelihood log density at each draw for the observation being conditioned on.
-    posterior_log_prob : np.ndarray or callable
-        Approximate-posterior log density at each draw.
+        Posterior samples to correct.
+    log_ratio : np.ndarray or callable
+        Target-to-current posterior log density ratio at each draw.
+    method : {"psis", "is"}, optional
+        ``"psis"`` Pareto-smooths the ratios before resampling. ``"is"`` uses
+        the normalized ratios directly. Default is ``"psis"``.
     r_eff : float, optional
-        Relative sampling efficiency used to select the Pareto tail size. Independent
-        BayesFlow samples use the default of ``1.0``.
+        Relative sampling efficiency used by ``method="psis"`` to select the
+        Pareto tail size. Independent BayesFlow samples use the default ``1.0``.
     rng : int or np.random.Generator, optional
         Local random generator or seed used for systematic resampling.
     return_diagnostics : bool, optional
-        If ``True``, also return a dictionary containing ``"pareto_k"`` with shape
-        ``batch_shape``.
+        If ``True``, also return diagnostics. For ``method="psis"``, these contain
+        ``"pareto_k"`` with shape ``batch_shape``; for ``method="is"``, the
+        diagnostics dictionary is empty.
 
     Returns
     -------
-    corrected_samples
-        Resampled values with the same structure and shapes as ``samples``.
+    resampled
+        Values with the same structure and shapes as ``samples``. Mapping values are
+        gathered with shared indices to preserve joint draws.
     diagnostics : dict, optional
         Returned only when ``return_diagnostics=True``.
 
@@ -73,97 +74,45 @@ def psis_resample(
     Vehtari, A., Simpson, D., Gelman, A., Yao, Y., & Gabry, J. (2024).
     Pareto smoothed importance sampling. Journal of Machine Learning Research, 25(72), 1-58.
     """
-    if not 0 < r_eff <= 1:
-        raise ValueError(f"r_eff must be in (0, 1], got {r_eff}.")
+    if method not in {"psis", "is"}:
+        raise ValueError(f"method must be 'psis' or 'is', got {method!r}.")
 
-    log_prior = _evaluate_log_prob(prior_log_prob, samples, "prior_log_prob")
-    log_likelihood = _evaluate_log_prob(likelihood_log_prob, samples, "likelihood_log_prob")
-    log_posterior = _evaluate_log_prob(posterior_log_prob, samples, "posterior_log_prob")
-    _check_log_prob_shapes(log_prior, log_likelihood, log_posterior)
+    log_ratio = _evaluate_log_ratio(log_ratio, samples)
+    diagnostics = {}
 
-    log_weights, pareto_k = _pareto_smooth(log_prior + log_likelihood - log_posterior, r_eff)
+    if method == "psis":
+        if not 0 < r_eff <= 1:
+            raise ValueError(f"r_eff must be in (0, 1], got {r_eff}.")
 
-    threshold = min(1 - 1 / np.log10(log_weights.shape[-1]), 0.7)
-    unreliable = np.isnan(pareto_k) | (pareto_k > threshold)
+        log_weights, pareto_k = _pareto_smooth(log_ratio, r_eff)
+        diagnostics["pareto_k"] = pareto_k
+        threshold = min(1 - 1 / np.log10(log_weights.shape[-1]), 0.7)
+        unreliable = np.isnan(pareto_k) | (pareto_k > threshold)
 
-    if np.any(unreliable):
-        logging.warning(
-            f"Pareto k exceeds {threshold:.2f} or could not be estimated for "
-            f"{np.count_nonzero(unreliable)} batch element(s); the PSIS correction may be unreliable.",
-        )
+        if np.any(unreliable):
+            logging.warning(
+                f"Pareto k exceeds {threshold:.2f} or could not be estimated for "
+                f"{np.count_nonzero(unreliable)} batch element(s); the PSIS correction may be unreliable.",
+            )
+    else:
+        log_weights = _normalize_log_weights(log_ratio)
 
     corrected = _resample(samples, log_weights, rng)
     if return_diagnostics:
-        return corrected, {"pareto_k": pareto_k}
+        return corrected, diagnostics
     return corrected
 
 
-def importance_resample(
-    samples,
-    old_prior_log_prob: LogProb,
-    new_prior_log_prob: LogProb,
-    *,
-    rng: int | np.random.Generator | None = None,
-):
-    """Reuse posterior samples after changing the prior.
-
-    If ``samples`` approximate a posterior under an old prior, reweighting by
-    ``new_prior / old_prior`` produces a sampling-importance-resampling approximation
-    to the posterior under the new prior without retraining the estimator. The
-    likelihood must remain unchanged, and the old prior must cover the support of the
-    new prior wherever the new posterior has appreciable mass.
-
-    Log-probability arguments can be arrays or callables receiving ``samples``. Their
-    output shape must be ``(*batch_shape, num_samples)``. Sample arrays must begin with
-    the same dimensions, so native BayesFlow output with shape
-    ``(num_conditions, num_samples, ...)`` works directly. Model-specific parameter
-    transformations and density Jacobians belong in the log-probability callables.
-
-    Parameters
-    ----------
-    samples : np.ndarray or mapping of np.ndarray
-        Posterior samples under the old prior.
-    old_prior_log_prob : np.ndarray or callable
-        Old-prior log density at each draw.
-    new_prior_log_prob : np.ndarray or callable
-        New-prior log density at each draw.
-    rng : int or np.random.Generator, optional
-        Local random generator or seed used for systematic resampling.
-
-    Returns
-    -------
-    resampled
-        Values with the same structure and shapes as ``samples``. Mapping values are
-        gathered with shared indices to preserve joint draws.
-    """
-    old_log_prob = _evaluate_log_prob(old_prior_log_prob, samples, "old_prior_log_prob")
-    new_log_prob = _evaluate_log_prob(new_prior_log_prob, samples, "new_prior_log_prob")
-    _check_log_prob_shapes(old_log_prob, new_log_prob)
-
-    log_weights = _normalize_log_weights(new_log_prob - old_log_prob)
-    return _resample(samples, log_weights, rng)
-
-
-def _evaluate_log_prob(log_prob: LogProb, samples, name: str) -> np.ndarray:
-    """Evaluate a callable log density or use precomputed values."""
-    values = log_prob(samples) if callable(log_prob) else log_prob
+def _evaluate_log_ratio(log_ratio: LogProb, samples) -> np.ndarray:
+    """Evaluate a callable log ratio or use precomputed values."""
+    values = log_ratio(samples) if callable(log_ratio) else log_ratio
     if values.ndim == 0:
-        raise ValueError(f"{name} must have a sample dimension.")
+        raise ValueError("log_ratio must have a sample dimension.")
     if np.any(np.isnan(values)):
-        raise ValueError(f"{name} contains NaN values.")
+        raise ValueError("log_ratio contains NaN values.")
     if np.any(np.isposinf(values)):
-        raise ValueError(f"{name} contains positive infinity.")
+        raise ValueError("log_ratio contains positive infinity.")
     return values
-
-
-def _check_log_prob_shapes(*log_probs: np.ndarray) -> None:
-    """Check that all log densities describe the same draws."""
-    expected = log_probs[0].shape
-    for log_prob in log_probs[1:]:
-        if log_prob.shape != expected:
-            raise ValueError(
-                f"All log-probability arrays must have the same shape, got {expected} and {log_prob.shape}."
-            )
 
 
 def _normalize_log_weights(log_weights: np.ndarray) -> np.ndarray:
@@ -200,7 +149,7 @@ def _pareto_smooth_row(log_ratios: np.ndarray, r_eff: float) -> tuple[np.ndarray
     if not np.any(finite):
         raise ValueError("Each batch element must contain at least one finite importance ratio.")
 
-    centered = log_ratios - np.max(log_ratios)
+    centered = log_ratios.astype(float, copy=False) - np.max(log_ratios)
     finite_values = centered[finite]
     if np.ptp(finite_values) <= np.finfo(float).eps:
         return _normalize_log_weights(centered), -np.inf

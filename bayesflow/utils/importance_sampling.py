@@ -34,7 +34,7 @@ def importance_resample(
 
     .. code-block:: python
 
-        log_ratio = lambda samples: (new_prior_log_prob(samples) - old_prior_log_prob(samples))
+        log_ratio = lambda samples: new_prior_log_prob(samples) - old_prior_log_prob(samples)
 
     The ratio must have shape ``(*batch_shape, num_samples)``. Sample arrays must
     begin with the same dimensions, so native BayesFlow output with shape

@@ -7,6 +7,7 @@ from scipy.stats import norm
 import bayesflow as bf
 from bayesflow.types import LogProb
 from bayesflow.utils import importance_resample
+from bayesflow.workflows.workflow import Workflow
 
 
 def test_public_exports():
@@ -26,7 +27,7 @@ def test_importance_resample_accepts_callbacks_and_arrays():
     from_arrays = importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(2))
     from_callbacks = importance_resample(
         samples,
-        lambda value: (norm.logpdf(value[..., 0], loc=0.5, scale=0.8) - norm.logpdf(value[..., 0])),
+        lambda value: norm.logpdf(value[..., 0], loc=0.5, scale=0.8) - norm.logpdf(value[..., 0]),
         method="is",
         rng=np.random.default_rng(2),
     )
@@ -43,7 +44,7 @@ def test_log_ratio_callback_receives_the_sample_structure():
 
     result = importance_resample(
         samples,
-        lambda value: (norm.logpdf(value["theta"][..., 0], loc=0.25) - norm.logpdf(value["theta"][..., 0])),
+        lambda value: norm.logpdf(value["theta"][..., 0], loc=0.25) - norm.logpdf(value["theta"][..., 0]),
         method="is",
         rng=np.random.default_rng(18),
     )
@@ -292,7 +293,7 @@ def test_is_supports_few_draws_and_returns_empty_diagnostics():
     assert diagnostics == {}
 
 
-def test_workflow_importance_resample_matches_utility():
+def test_basic_workflow_importance_resample_matches_utility():
     samples = np.arange(100)[None, :, None]
     log_ratio = np.linspace(-2.0, 0.0, 100)[None, :]
     workflow = object.__new__(bf.BasicWorkflow)
@@ -301,3 +302,7 @@ def test_workflow_importance_resample_matches_utility():
     actual = workflow.importance_resample(samples, log_ratio, method="is", rng=np.random.default_rng(21))
 
     np.testing.assert_array_equal(actual, expected)
+
+
+def test_importance_resample_is_not_defined_on_base_workflow():
+    assert not hasattr(Workflow, "importance_resample")

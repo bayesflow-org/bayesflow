@@ -15,8 +15,15 @@ from bayesflow.networks import InferenceNetwork, ScoringRuleNetwork, SummaryNetw
 from bayesflow.simulators import Simulator
 from bayesflow.adapters import Adapter
 from bayesflow.estimators import BasicEstimator, ScoringRuleEstimator
-from bayesflow.types import Shape, Tensor
-from bayesflow.utils import find_inference_network, find_summary_network, logging, format_duration, filter_kwargs
+from bayesflow.types import LogProb, Shape, Tensor
+from bayesflow.utils import (
+    filter_kwargs,
+    find_inference_network,
+    find_summary_network,
+    format_duration,
+    importance_resample,
+    logging,
+)
 from bayesflow.diagnostics import metrics as bf_metrics
 from bayesflow.diagnostics import plots as bf_plots
 
@@ -806,6 +813,43 @@ class BasicWorkflow(Workflow):
         elapsed = time.perf_counter() - start_time
         logging.info(f"Computing log probability completed in {format_duration(elapsed)}.")
         return log_prob
+
+    def importance_resample(
+        self,
+        samples,
+        log_ratio: LogProb,
+        *,
+        method: Literal["psis", "is"] = "psis",
+        r_eff: float = 1.0,
+        rng: int | np.random.Generator | None = None,
+        return_diagnostics: bool = False,
+    ):
+        """Thin workflow wrapper around :func:`bayesflow.utils.importance_resample`.
+
+        For posterior approximation correction, compute the log ratio as
+
+        .. code-block:: python
+
+            log_ratio = lambda samples: (
+                prior_log_prob(samples) + likelihood_log_prob(samples) - posterior_log_prob(samples)
+            )
+
+        For a prior shift, compute
+
+        .. code-block:: python
+
+            log_ratio = lambda samples: new_prior_log_prob(samples) - old_prior_log_prob(samples)
+
+        Parameters are forwarded unchanged to the utility function.
+        """
+        return importance_resample(
+            samples,
+            log_ratio,
+            method=method,
+            r_eff=r_eff,
+            rng=rng,
+            return_diagnostics=return_diagnostics,
+        )
 
     def plot_default_diagnostics(
         self,

@@ -529,8 +529,7 @@ class BasicWorkflow(Workflow):
     def build_optimizer(self, epochs: int, num_batches: int, strategy: str) -> keras.Optimizer | None:
         """
         Build and initialize the optimizer based on the training strategy. Uses a cosine decay learning rate schedule,
-        where the final learning rate is proportional to the square of the initial learning rate, as found to work
-        best in SBI.
+        where the final learning rate is zero, as found to work best in SBI.
 
         The default optimizer will use 5% of the epochs as warmup; during the warmup phase, the learning rate
         will be increased from 10% of the initial learning rate to initial learning rate supplied to the workflow.

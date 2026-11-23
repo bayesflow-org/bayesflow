@@ -27,7 +27,8 @@ class TransformerDecoder(keras.Layer):
     num_heads : int, optional
         Number of attention heads in each layer, by default 4.
     dropout : float, optional
-        Dropout rate applied inside attention sublayers, by default 0.05.
+        Dropout rate applied to projected attention outputs and inside FFN sublayers,
+        by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional

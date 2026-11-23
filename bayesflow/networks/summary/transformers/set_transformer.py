@@ -38,7 +38,8 @@ class SetTransformer(Transformer):
     num_seeds : int, optional
         Number of seed vectors used for PMA pooling, by default 4.
     dropout : float, optional
-        Dropout rate applied inside attention sublayers, by default 0.05.
+        Dropout rate applied to projected attention outputs and inside FFN sublayers,
+        by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -59,11 +60,13 @@ class SetTransformer(Transformer):
     seed_dim : int or None, optional
         Dimensionality of the PMA seed vectors. If None, defaults to ``embed_dims[-1]``.
     flash_attention : bool or None, optional
-        FlashAttention policy for the fused attention path. See :class:`MultiHeadAttention`.
+        FlashAttention policy forwarded to the underlying Keras attention layers. See
+        :class:`MultiHeadAttention`.
     attention_dtype : {"float16", "bfloat16"} or None, optional
-        Dtype of query, key and value on the fused attention path, with outputs cast back to the
-        compute dtype. Set to ``"float16"`` or ``"bfloat16"`` to make FlashAttention available
-        while the rest of the model stays in ``float32``. See :class:`MultiHeadAttention`.
+        Mixed compute dtype of the underlying Keras attention layers. Variables remain in
+        ``float32`` and outputs are restored to the residual dtype. Setting this can make
+        FlashAttention available while the rest of the model stays in ``float32``. See
+        :class:`MultiHeadAttention`.
     """
 
     def __init__(

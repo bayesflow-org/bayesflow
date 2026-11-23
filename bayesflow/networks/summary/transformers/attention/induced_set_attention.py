@@ -25,7 +25,8 @@ class InducedSetAttention(keras.Layer):
     num_heads : int, optional
         Number of attention heads, by default 4.
     dropout : float, optional
-        Dropout rate applied inside attention sublayers, by default 0.05.
+        Dropout rate applied to projected attention outputs and inside FFN sublayers,
+        by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -41,9 +42,11 @@ class InducedSetAttention(keras.Layer):
     gate_ffn : bool, optional
         Whether to gate the feedforward residual branch, by default True.
     flash_attention : bool or None, optional
-        FlashAttention policy for the fused attention path. See :class:`MultiHeadAttention`.
+        FlashAttention policy forwarded to the underlying Keras attention layers. See
+        :class:`MultiHeadAttention`.
     attention_dtype : {"float16", "bfloat16"} or None, optional
-        Dtype of the fused attention computation. See :class:`MultiHeadAttention`.
+        Mixed compute dtype of the underlying Keras attention layers. Variables remain in
+        ``float32`` and outputs are restored to the residual dtype. See :class:`MultiHeadAttention`.
     """
 
     def __init__(

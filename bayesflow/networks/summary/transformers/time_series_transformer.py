@@ -28,8 +28,7 @@ class TimeSeriesTransformer(Transformer):
     num_heads : tuple of int, optional
         Number of attention heads for each block, by default ``(4, 4)``.
     dropout : float, optional
-        Dropout rate applied to projected attention outputs and inside FFN sublayers,
-        by default 0.05.
+        Dropout rate applied inside attention sublayers, by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -59,14 +58,6 @@ class TimeSeriesTransformer(Transformer):
     return_sequences : bool, optional
         Whether to return one summary per time step. If False, returns a single
         summary vector from a learned summary token appended to the sequence.
-    flash_attention : bool or None, optional
-        FlashAttention policy forwarded to the underlying Keras attention layers. See
-        :class:`MultiHeadAttention`.
-    attention_dtype : {"float16", "bfloat16"} or None, optional
-        Mixed compute dtype of the underlying Keras attention layers. Variables remain in
-        ``float32`` and outputs are restored to the residual dtype. Setting this can make
-        FlashAttention available while the rest of the model stays in ``float32``. See
-        :class:`MultiHeadAttention`.
     """
 
     def __init__(
@@ -87,8 +78,6 @@ class TimeSeriesTransformer(Transformer):
         time_axis: int | None = None,
         downsample: int | None = None,
         return_sequences: bool = False,
-        flash_attention: bool | None = None,
-        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -131,8 +120,6 @@ class TimeSeriesTransformer(Transformer):
                 layer_norm=layer_norm,
                 gate_attention=gate_attention,
                 gate_ffn=gate_ffn,
-                flash_attention=flash_attention,
-                attention_dtype=attention_dtype,
             )
             self.attention_blocks.append(block)
 
@@ -159,8 +146,6 @@ class TimeSeriesTransformer(Transformer):
         self.return_sequences = return_sequences
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
-        self.flash_attention = flash_attention
-        self.attention_dtype = attention_dtype
 
     @staticmethod
     def make_default_time(x: Tensor) -> Tensor:
@@ -273,7 +258,5 @@ class TimeSeriesTransformer(Transformer):
                 "time_axis": self.time_axis,
                 "downsample": self.downsample,
                 "return_sequences": self.return_sequences,
-                "flash_attention": self.flash_attention,
-                "attention_dtype": self.attention_dtype,
             }
         )

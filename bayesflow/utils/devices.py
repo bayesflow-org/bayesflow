@@ -3,7 +3,7 @@ import keras
 
 def devices() -> list:
     """Returns a list of available GPU devices."""
-    match keras.config.backend():
+    match keras.backend.backend():
         case "jax":
             import jax
 
@@ -19,4 +19,4 @@ def devices() -> list:
         case "numpy":
             return []
         case _:
-            raise NotImplementedError(f"Backend {keras.config.backend()} not supported.")
+            raise NotImplementedError(f"Backend {keras.backend.backend()} not supported.")

@@ -1,7 +1,7 @@
 import keras
 
 
-match keras.config.backend():
+match keras.backend.backend():
     case "jax":
         from .jax_ratio import JAXRatio as BackendRatio
     case other:

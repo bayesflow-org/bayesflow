@@ -5,7 +5,6 @@ A collection of utility functions, mostly used for internal purposes.
 from .keras_utils import resolve_seed
 
 from . import (
-    importance_sampling,
     keras_utils,
     logging,
     numpy_utils,
@@ -57,8 +56,6 @@ from .git import (
 
 from .hparam_utils import find_batch_size, find_memory_budget
 from .integrate import integrate, integrate_stochastic, DETERMINISTIC_METHODS, STOCHASTIC_METHODS
-
-from .importance_sampling import importance_resample
 
 from .io import (
     pickle_load,
@@ -125,6 +122,4 @@ from ._docs import _add_imports_to_all
 
 from .logging import format_duration
 
-_add_imports_to_all(
-    include_modules=["importance_sampling", "keras_utils", "logging", "numpy_utils", "rng", "serialization", "tree"]
-)
+_add_imports_to_all(include_modules=["keras_utils", "logging", "numpy_utils", "rng", "serialization", "tree"])

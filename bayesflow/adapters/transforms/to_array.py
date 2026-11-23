@@ -1,5 +1,4 @@
 from numbers import Number
-from typing import ClassVar
 
 import keras.ops as ops
 
@@ -27,8 +26,6 @@ class ToArray(ElementwiseTransform):
         array([[1, 2],
             [3, 4]])
     """
-
-    has_permutation_jacobian: ClassVar[bool] = True
 
     def __init__(self, original_type: type = None):
         super().__init__()

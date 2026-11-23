@@ -55,7 +55,7 @@ class MambaBlock(keras.Layer):
 
         super().__init__(**layer_kwargs(kwargs))
 
-        if keras.config.backend() != "torch":
+        if keras.backend.backend() != "torch":
             raise RuntimeError("Mamba is only available using torch backend.")
 
         try:

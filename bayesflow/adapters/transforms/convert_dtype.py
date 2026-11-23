@@ -1,5 +1,3 @@
-from typing import ClassVar
-
 import keras.ops as ops
 
 from bayesflow.utils.serialization import serializable, serialize
@@ -20,8 +18,6 @@ class ConvertDType(ElementwiseTransform):
     to_dtype : str
         Target dtype
     """
-
-    has_permutation_jacobian: ClassVar[bool] = True
 
     def __init__(self, from_dtype: str, to_dtype: str):
         super().__init__()

@@ -25,8 +25,7 @@ class InducedSetAttention(keras.Layer):
     num_heads : int, optional
         Number of attention heads, by default 4.
     dropout : float, optional
-        Dropout rate applied to projected attention outputs and inside FFN sublayers,
-        by default 0.05.
+        Dropout rate applied inside attention sublayers, by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -41,12 +40,6 @@ class InducedSetAttention(keras.Layer):
         Whether to gate the attention residual branch, by default True.
     gate_ffn : bool, optional
         Whether to gate the feedforward residual branch, by default True.
-    flash_attention : bool or None, optional
-        FlashAttention policy forwarded to the underlying Keras attention layers. See
-        :class:`MultiHeadAttention`.
-    attention_dtype : {"float16", "bfloat16"} or None, optional
-        Mixed compute dtype of the underlying Keras attention layers. Variables remain in
-        ``float32`` and outputs are restored to the residual dtype. See :class:`MultiHeadAttention`.
     """
 
     def __init__(
@@ -62,8 +55,6 @@ class InducedSetAttention(keras.Layer):
         layer_norm: bool = True,
         gate_attention: bool = True,
         gate_ffn: bool = True,
-        flash_attention: bool | None = None,
-        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -79,8 +70,6 @@ class InducedSetAttention(keras.Layer):
         self.layer_norm = layer_norm
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
-        self.flash_attention = flash_attention
-        self.attention_dtype = attention_dtype
 
         self.inducing_points = self.add_weight(
             shape=(self.num_inducing_points, embed_dim),
@@ -99,8 +88,6 @@ class InducedSetAttention(keras.Layer):
             layer_norm=layer_norm,
             gate_attention=gate_attention,
             gate_ffn=gate_ffn,
-            flash_attention=flash_attention,
-            attention_dtype=attention_dtype,
         )
         self.mab0 = MultiHeadAttention(**mab_kwargs)
         self.mab1 = MultiHeadAttention(**mab_kwargs)
@@ -157,8 +144,6 @@ class InducedSetAttention(keras.Layer):
                 "layer_norm": self.layer_norm,
                 "gate_attention": self.gate_attention,
                 "gate_ffn": self.gate_ffn,
-                "flash_attention": self.flash_attention,
-                "attention_dtype": self.attention_dtype,
             }
         )
 

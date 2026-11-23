@@ -3,7 +3,7 @@ import keras
 from bayesflow.utils import filter_kwargs
 
 
-match keras.config.backend():
+match keras.backend.backend():
     case "jax":
         from .jax_estimator import JAXEstimator as BaseBackendEstimator
     case "tensorflow":

@@ -18,7 +18,6 @@ from .metrics import (
     brier_score,
     posterior_contraction,
     posterior_z_score,
-    mahalanobis_distance,
     root_mean_squared_error,
     summary_space_comparison,
     correlation,

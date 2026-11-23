@@ -3,6 +3,7 @@ import pytest
 from tests.utils import run_notebook
 
 
+@pytest.mark.skip(reason="requires setting up Stan")
 @pytest.mark.slow
 def test_bayesian_experimental_design(examples_path):
     run_notebook(examples_path / "Bayesian_Experimental_Design.ipynb")
@@ -15,8 +16,8 @@ def test_from_abc_to_bayesflow(examples_path):
 
 
 @pytest.mark.slow
-def test_bayesian_glm(examples_path):
-    run_notebook(examples_path / "Bayesian_GLM.ipynb")
+def test_linear_regression_starter(examples_path):
+    run_notebook(examples_path / "Linear_Regression_Starter.ipynb")
 
 
 @pytest.mark.slow

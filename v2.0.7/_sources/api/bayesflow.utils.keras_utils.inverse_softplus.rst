@@ -1,6 +1,0 @@
-inverse\_softplus
-=================
-
-.. currentmodule:: bayesflow.utils.keras_utils
-
-.. autofunction:: inverse_softplus

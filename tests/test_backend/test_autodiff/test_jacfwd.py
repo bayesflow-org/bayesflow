@@ -91,7 +91,7 @@ def test_jacfwd_binary_scalars(fn_binary_scalars, jit_compile, subtests):
 
 @pytest.mark.cpu_fallback_on_mps
 def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacfwd is not yet compatible with jit compilation for binary vector inputs.")
 
     x = keras.random.uniform((2,))
@@ -129,7 +129,7 @@ def test_jacfwd_binary_vectors(fn_binary_vectors, jit_compile, subtests):
 
 
 def test_jacfwd_with_aux(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacfwd with auxiliary outputs is not yet compatible with jit compilation.")
 
     w = keras.random.normal((4, 2))
@@ -153,7 +153,7 @@ def test_jacfwd_with_aux(jit_compile):
 
 
 def test_jacfwd_multiple_outputs(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's jacfwd with multiple outputs is not yet compatible with jit compilation.")
 
     w = keras.random.normal((3, 2))

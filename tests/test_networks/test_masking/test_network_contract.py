@@ -20,7 +20,7 @@ def _build(network, targets, conditions):
 def _skip_unsupported_torch_forward_ad(network_name, subnet):
     if network_name not in ("stable_consistency", "mean_flow") or subnet != "diffusion_transformer":
         return
-    if keras.backend.backend() != "torch":
+    if keras.config.backend() != "torch":
         return
 
     import torch

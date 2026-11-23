@@ -31,7 +31,9 @@ class MultiHeadAttention(keras.Layer):
     num_heads : int, optional
         Number of attention heads, by default 4.
     dropout : float, optional
-        Dropout rate applied inside attention sublayers, by default 0.05.
+        Dropout rate applied to the projected attention output and inside the FFN,
+        by default 0.05. Attention-probability dropout is always disabled so the
+        underlying Keras layer remains eligible for FlashAttention during training.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -48,6 +50,18 @@ class MultiHeadAttention(keras.Layer):
     gate_ffn : bool, optional
         Whether to multiply the feedforward residual branch by a trainable scalar
         initialized to zero, by default True.
+    flash_attention : bool or None, optional
+        FlashAttention policy forwarded to Keras. If None, FlashAttention is used whenever
+        available unless disabled via ``keras.config.disable_flash_attention()``. If True, it is
+        required and unsupported inputs raise an error. If False, FlashAttention is prohibited,
+        although the backend may still use another optimized attention implementation. By default
+        None.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Mixed compute dtype of the underlying Keras attention layer. Its variables remain in
+        ``float32``, while its projections and attention computation use the requested dtype. The
+        result is cast back to the residual dtype, so the rest of the model keeps its dtype policy.
+        Setting this can enable FlashAttention for ``float32`` models on supported hardware. If
+        None, the layer follows the current Keras dtype policy. By default None.
     **kwargs
         Additional keyword arguments passed to ``keras.Layer``.
     """
@@ -64,12 +78,19 @@ class MultiHeadAttention(keras.Layer):
         layer_norm: bool = True,
         gate_attention: bool = True,
         gate_ffn: bool = True,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
 
         if embed_dim % num_heads != 0:
             raise ValueError(f"embed_dim={embed_dim} must be divisible by num_heads={num_heads}.")
+        if attention_dtype not in (None, "float16", "bfloat16"):
+            raise ValueError(
+                "`attention_dtype` must be one of None, 'float16', or 'bfloat16'. "
+                f"Received: attention_dtype={attention_dtype!r}."
+            )
 
         self.embed_dim = embed_dim
         self.num_heads = num_heads
@@ -81,17 +102,28 @@ class MultiHeadAttention(keras.Layer):
         self.layer_norm = layer_norm
         self.gate_attention = gate_attention
         self.gate_ffn = gate_ffn
+        self.flash_attention = flash_attention
+        self.attention_dtype = attention_dtype
 
         self.input_projector = None
 
+        attention_policy = None if attention_dtype is None else f"mixed_{attention_dtype}"
         self.attention = layers.MultiHeadAttention(
             key_dim=embed_dim // num_heads,
             num_heads=num_heads,
-            dropout=dropout,
+            dropout=0.0,
             use_bias=use_bias,
             output_shape=embed_dim,
             kernel_initializer=kernel_initializer,
+            flash_attention=flash_attention,
+            dtype=attention_policy,
         )
+        # Keras 3.15 resolves ``False`` with ``flash_attention or global_policy``, which turns an
+        # explicit opt-out into automatic selection when the global policy is unset. Preserve the
+        # public BayesFlow contract until that behavior is fixed upstream.
+        if flash_attention is False:
+            self.attention._flash_attention = False
+        self.attention_dropout = layers.Dropout(dropout)
 
         self.feedforward = FFN(
             embed_dim=embed_dim,
@@ -157,6 +189,9 @@ class MultiHeadAttention(keras.Layer):
             attention_mask=attention_mask,
             use_causal_mask=use_causal_mask,
         )
+        attention_out = self.attention_dropout(attention_out, training=training)
+        attention_out = keras.ops.cast(attention_out, x.dtype)
+
         if self.attention_scale is not None:
             attention_out = self.attention_scale * attention_out
         x = x + attention_out
@@ -220,6 +255,8 @@ class MultiHeadAttention(keras.Layer):
             return_attention_scores=False,
         )
         attention_out = self.attention.output_dense(attended)
+        attention_out = self.attention_dropout(attention_out, training=training)
+        attention_out = keras.ops.cast(attention_out, x.dtype)
         if self.attention_scale is not None:
             attention_out = self.attention_scale * attention_out
         x = x + attention_out
@@ -255,6 +292,7 @@ class MultiHeadAttention(keras.Layer):
         self.attention.build(proj_shape, y_shape, y_shape)
 
         attn_out_shape = proj_shape
+        self.attention_dropout.build(attn_out_shape)
 
         if self.ln_ffn is not None:
             self.ln_ffn.build(attn_out_shape)
@@ -278,6 +316,8 @@ class MultiHeadAttention(keras.Layer):
                 "layer_norm": self.layer_norm,
                 "gate_attention": self.gate_attention,
                 "gate_ffn": self.gate_ffn,
+                "flash_attention": self.flash_attention,
+                "attention_dtype": self.attention_dtype,
             }
         )
 

@@ -292,7 +292,7 @@ class Adapter(MutableSequence[Transform]):
     @staticmethod
     def _warn_compile_failure(compile_error: Exception) -> None:
         warnings.warn(
-            f"Adapter JIT compilation failed on the {keras.backend.backend()!r} backend; "
+            f"Adapter JIT compilation failed on the {keras.config.backend()!r} backend; "
             f"falling back to eager transforms for this call signature. Compiler error: {compile_error}",
             RuntimeWarning,
             stacklevel=3,

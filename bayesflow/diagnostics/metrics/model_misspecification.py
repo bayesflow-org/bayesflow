@@ -153,3 +153,59 @@ def summary_space_comparison(
     )
 
     return distance_observed, distance_null
+
+
+def mahalanobis_distance(observed_samples: np.ndarray, reference_samples: np.ndarray) -> np.ndarray:
+    """Computes the mean Mahalanobis distance of the observed samples to the distribution of the reference samples.
+
+    Like :py:func:`~bayesflow.metrics.functional.maximum_mean_discrepancy`, it can be passed as ``comparison_fn`` to
+    :py:func:`bootstrap_comparison` and :py:func:`summary_space_comparison`. The Mahalanobis distance in summary
+    space follows [1]. Trailing dimensions are flattened. The covariance is inverted with the pseudo-inverse, so
+    deviations along directions in which the reference samples do not vary (e.g., constant or collinear dimensions)
+    do not contribute to the distance.
+
+    [1] Li, C., Vehtari, A., Bürkner, P.-C., Radev, S. T., Acerbi, L., & Schmitt, M. (2024). Amortized Bayesian
+    workflow. arXiv:2409.04332.
+
+    Parameters
+    ----------
+    observed_samples : np.ndarray
+        Observed samples, shape (num_observed, ...).
+    reference_samples : np.ndarray
+        Reference samples used to estimate the mean and covariance, shape (num_reference, ...).
+
+    Returns
+    -------
+    distance : np.ndarray
+        A scalar NumPy array containing the mean Mahalanobis distance (not squared) of the observed samples.
+
+    Raises
+    ------
+    ValueError
+        If the shapes of observed and reference samples do not match on dimensions besides the first one.
+
+    Examples
+    --------
+    >>> distance_observed, distance_null = bf.diagnostics.summary_space_comparison(
+    ...     observed_data, reference_data, estimator, comparison_fn=bf.diagnostics.mahalanobis_distance
+    ... )
+    """
+    observed_samples = keras.ops.convert_to_numpy(observed_samples)
+    reference_samples = keras.ops.convert_to_numpy(reference_samples)
+
+    if observed_samples.shape[1:] != reference_samples.shape[1:]:
+        raise ValueError(
+            f"Expected observed and reference samples to have the same shape, "
+            f"but got {observed_samples.shape[1:]} != {reference_samples.shape[1:]}."
+        )
+
+    observed_samples = observed_samples.reshape(observed_samples.shape[0], -1)
+    reference_samples = reference_samples.reshape(reference_samples.shape[0], -1)
+
+    mean = np.mean(reference_samples, axis=0)
+    covariance = np.atleast_2d(np.cov(reference_samples, rowvar=False))
+    centered = observed_samples - mean
+
+    squared_distances = np.einsum("ni,ij,nj->n", centered, np.linalg.pinv(covariance, hermitian=True), centered)
+
+    return np.mean(np.sqrt(np.maximum(squared_distances, 0.0)))

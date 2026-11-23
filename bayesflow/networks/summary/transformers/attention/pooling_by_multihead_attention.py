@@ -32,7 +32,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
     seed_dim : int or None, optional
         Dimensionality of each seed vector. If None, defaults to ``embed_dim``.
     dropout : float, optional
-        Dropout rate applied inside attention sublayers, by default 0.05.
+        Dropout rate applied to projected attention outputs and inside the FFN sublayer,
+        by default 0.05.
     expansion_factor : float, optional
         FFN intermediate width multiplier, by default 4.0.
     glu_variant : str, optional
@@ -43,6 +44,12 @@ class PoolingByMultiHeadAttention(keras.Layer):
         Whether to include bias terms in dense layers, by default False.
     layer_norm : bool, optional
         Whether to apply Pre-LN RMSNorm before each sublayer, by default True.
+    flash_attention : bool or None, optional
+        FlashAttention policy forwarded to the underlying Keras attention layer. See
+        :class:`MultiHeadAttention`.
+    attention_dtype : {"float16", "bfloat16"} or None, optional
+        Mixed compute dtype of the underlying Keras attention layer. Variables remain in
+        ``float32`` and outputs are restored to the residual dtype. See :class:`MultiHeadAttention`.
     **kwargs
         Additional keyword arguments passed to the Keras Layer base class.
     """
@@ -59,6 +66,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
         kernel_initializer: str = "orthogonal",
         use_bias: bool = False,
         layer_norm: bool = True,
+        flash_attention: bool | None = None,
+        attention_dtype: str | None = None,
         **kwargs,
     ):
         super().__init__(**layer_kwargs(kwargs))
@@ -73,6 +82,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
         self.kernel_initializer = kernel_initializer
         self.use_bias = use_bias
         self.layer_norm = layer_norm
+        self.flash_attention = flash_attention
+        self.attention_dtype = attention_dtype
 
         self.mab = MultiHeadAttention(
             embed_dim=embed_dim,
@@ -85,6 +96,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
             layer_norm=layer_norm,
             gate_attention=False,
             gate_ffn=True,
+            flash_attention=flash_attention,
+            attention_dtype=attention_dtype,
         )
 
         self.seed_vector = self.add_weight(
@@ -181,6 +194,8 @@ class PoolingByMultiHeadAttention(keras.Layer):
                 "kernel_initializer": self.kernel_initializer,
                 "use_bias": self.use_bias,
                 "layer_norm": self.layer_norm,
+                "flash_attention": self.flash_attention,
+                "attention_dtype": self.attention_dtype,
             }
         )
 

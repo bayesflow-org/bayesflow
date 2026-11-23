@@ -21,7 +21,7 @@ def _cpu_fallback_on_mps(request):
 
 def pytest_runtest_setup(item):
     """Skips backends by test markers. Unmarked tests are treated as backend-agnostic"""
-    backend = keras.backend.backend()
+    backend = keras.config.backend()
 
     if item.get_closest_marker("skip_on_mps") is not None:
         skip_torch_linalg_on_mps()
@@ -34,7 +34,7 @@ def pytest_runtest_setup(item):
     # always show full tracebacks
     keras.config.disable_traceback_filtering()
 
-    if keras.backend.backend() == "jax":
+    if keras.config.backend() == "jax":
         import jax
 
         jax.config.update("jax_traceback_filtering", "off")

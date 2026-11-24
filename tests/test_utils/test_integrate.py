@@ -75,6 +75,51 @@ def test_analytical_integration(method, atol):
     np.testing.assert_allclose(keras.ops.convert_to_numpy(result_adaptive), analytical_result, atol=atol, rtol=0.1)
 
 
+def test_adaptive_integration_low_precision_matmul(caplog):
+    """GPUs run float32 matmuls in TF32 by default (e.g. JAX on Ampere), which adds rounding noise to the
+    velocity. In a large batch, samples with near-zero components get a tolerance close to atol."""
+    import logging
+    import re
+
+    from scipy.linalg import expm
+
+    a = np.array([[-0.5, 1.0], [-1.0, -0.5]], dtype="float32")
+    x0 = np.random.default_rng(0).normal(size=(512, 2)).astype("float32")
+    exact = x0 @ expm(a)
+    a_tensor = keras.ops.convert_to_tensor(a)
+
+    def velocity(x):
+        def round_(y):
+            # Emulating GPU precision loss
+            return keras.ops.cast(keras.ops.cast(y, "float16"), "float32")
+
+        return keras.ops.matmul(round_(x), round_(a_tensor))
+
+    def fn(t, x):
+        return {"x": velocity(x)}
+
+    def fn_density(t, x):
+        return {"x": velocity(x), "trace": keras.ops.full_like(x[..., :1], float(np.trace(a)))}
+
+    # default
+    kwargs = dict(start_time=0.0, stop_time=1.0, steps="adaptive", method="tsit5")
+
+    caplog.set_level(logging.DEBUG, logger="bayesflow")
+    x = integrate(fn, {"x": keras.ops.convert_to_tensor(x0)}, **kwargs)["x"]
+    steps = [float(s) for s in re.findall(r"after ([\d.]+) steps", caplog.text)]
+    # the step count is only logged eagerly; TensorFlow traces the solver
+    if keras.config.backend() != "tensorflow":
+        assert steps and steps[-1] <= 60, f"adaptive integration took {steps} steps"
+
+    state = {"x": keras.ops.convert_to_tensor(x0), "trace": keras.ops.zeros((512, 1))}
+    state = integrate(fn_density, state, **kwargs)
+
+    # the rounding noise alone limits the accuracy to ~1e-3
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(x), exact, atol=1e-2, rtol=1e-2)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(state["x"]), exact, atol=1e-2, rtol=1e-2)
+    np.testing.assert_allclose(keras.ops.convert_to_numpy(state["trace"]), np.trace(a), atol=1e-2, rtol=1e-2)
+
+
 @pytest.mark.parametrize(
     "method, atol", [("euler", TOLERANCE_EULER), ("rk45", TOLERANCE_ADAPTIVE), ("tsit5", TOLERANCE_ADAPTIVE)]
 )

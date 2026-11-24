@@ -7,7 +7,7 @@ from bayesflow._backend import jacrev as jacobian, vjp, jit
 
 
 def test_vjp_unary_scalar(fn_unary_scalar, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     x = keras.random.uniform(())
@@ -37,7 +37,7 @@ def test_vjp_unary_scalar(fn_unary_scalar, jit_compile):
 
 
 def test_vjp_unary_vector(fn_unary_vector, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))
@@ -68,7 +68,7 @@ def test_vjp_unary_vector(fn_unary_vector, jit_compile):
 
 
 def test_vjp_binary_scalars(fn_binary_scalars, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     primals = [keras.random.uniform(()), keras.random.uniform(())]
@@ -101,7 +101,7 @@ def test_vjp_binary_scalars(fn_binary_scalars, jit_compile):
 
 
 def test_vjp_binary_vectors(fn_binary_vectors, jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     primals = [keras.random.uniform((2,)), keras.random.uniform((2,))]
@@ -134,7 +134,7 @@ def test_vjp_binary_vectors(fn_binary_vectors, jit_compile):
 
 
 def test_vjp_with_aux(jit_compile):
-    if jit_compile and keras.backend.backend() == "torch":
+    if jit_compile and keras.config.backend() == "torch":
         pytest.skip("torch's vjp is not yet compatible with jit compilation.")
 
     x = keras.random.uniform((2,))

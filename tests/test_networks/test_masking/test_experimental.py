@@ -139,7 +139,7 @@ def test_generated_masks_are_resolved_once_and_routed(targets, conditions):
 
     assert keras.ops.isfinite(metrics["loss"])
     for subnet in (encoder, decoder):
-        assert keras.backend.standardize_dtype(subnet.fixed_target_mask.dtype) == "float32"
+        assert keras.utils.standardize_dtype(subnet.fixed_target_mask.dtype) == "float32"
         assert keras.ops.all(keras.ops.sum(subnet.fixed_target_mask, axis=-1) == 1)
         assert keras.ops.all(subnet.infer_target_mask == subnet.fixed_target_mask)
         assert keras.ops.all(subnet.observed_condition_mask == 0)

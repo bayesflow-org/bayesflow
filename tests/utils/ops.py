@@ -9,7 +9,7 @@ def on_torch_mps():
 
     Useful to guard tests that fail because of MPS limitations, e.g. its lack of float64 support.
     """
-    if keras.backend.backend() != "torch":
+    if keras.config.backend() != "torch":
         return False
 
     return keras.ops.convert_to_tensor(0.0).device.type == "mps"

@@ -132,7 +132,7 @@ Several video tutorials are available as part of the [Learning Bayesian Statisti
 
 ### Tutorial papers
 
-1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2025). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *arXiv preprint arXiv:2512.20685; accepted in Transactions on Machine Learning Research (TMLR) with Survey Certification*. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://arxiv.org/abs/2512.20685)
+1. Arruda, J., Bracher, N., Köthe, U., Hasenauer, J., & Radev, S. T. (2026). Diffusion Models in Simulation-Based Inference: A Tutorial Review. *Transactions on Machine Learning Research*. Survey Certification. [Project page](https://bayesflow-org.github.io/diffusion-experiments/). [Paper](https://openreview.net/forum?id=86Q261z005)
 
 More tutorials are always welcome! Please consider submitting a pull request if you have a cool application that you want to contribute.
 

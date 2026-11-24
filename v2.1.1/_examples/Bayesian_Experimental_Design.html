@@ -1,0 +1,1098 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>18. Bayesian Experimental Design with BayesFlow and PyTorch &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=fc09bec8"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Bayesian_Experimental_Design';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Bayesian_Experimental_Design.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="19. Model Predictive Control of an Inverted Double Pendulum" href="Model_Predictive_Control.html" />
+    <link rel="prev" title="17. From ABC to BayesFlow" href="From_ABC_to_BayesFlow.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.1" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">2. Minimal amortized workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bivariate_Smoothing.html">3. Time-varying parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">4. Image or other spatial data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_GLM.html">5. Generalized linear models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Foundation_Models.html">6. Foundation models as backbones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">7. Neural likelihood estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">8. Neural ratio estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">9. Compositional estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">10. Deep Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Self_Consistency.html">11. Self-consistency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changing_Priors.html">12. Changing priors at inference time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">13. Model comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Comparison_Deep_Dive.html">14. Model comparison deep dive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">15. Multimodal data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">16. Bayes estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">17. From ABC to BayesFlow</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">18. Bayesian experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Predictive_Control.html">19. Model predictive control</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">18. </span>Bayesian Experimental Design with BayesFlow and PyTorch</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="bayesian-experimental-design-with-bayesflow-and-pytorch">
+<h1><span class="section-number">18. </span>Bayesian Experimental Design with BayesFlow and PyTorch<a class="headerlink" href="#bayesian-experimental-design-with-bayesflow-and-pytorch" title="Link to this heading">#</a></h1>
+<p><em>Author: Desi R. Ivanova</em></p>
+<p>Which measurements would teach us the most about a system? Bayesian experimental design chooses experiments that reduce uncertainty about its parameters.</p>
+<p>We will choose seven substrate concentrations for an enzyme reaction. A BayesFlow coupling flow learns the posterior, while PyTorch differentiates through the simulator to improve the concentrations. We first train with fixed designs, then learn the designs together with the posterior.</p>
+<p>This tutorial uses a custom training loop. It requires the PyTorch backend and uses a GPU when available. No external sampler is needed: with two parameters, we can check the posterior on a numerical grid.</p>
+<section id="short-intro-to-bed">
+<h2><span class="section-number">18.1. </span>Short intro to BED<a class="headerlink" href="#short-intro-to-bed" title="Link to this heading">#</a></h2>
+<p>(<em>For a longer, more comprehensive overview, please see [1] or [2], or <a class="reference external" href="https://desirivanova.com/post/boed-intro/">this blogpost</a> for a slightly longer introduction.</em>)</p>
+<p>BED is a model-based approach to designing optimal experiments.
+We start with a Bayesian model (or simulator) <span class="math notranslate nohighlight">\(p(\theta)\,p(y \mid \xi, \theta)\)</span> of the underlying process we’re interested in.
+The model has parameters <span class="math notranslate nohighlight">\(\theta\)</span> with prior <span class="math notranslate nohighlight">\(p(\theta)\)</span>: these are the quantities we’d like to learn or infer.
+The data model <span class="math notranslate nohighlight">\(p(y \mid \xi, \theta)\)</span> describes (or simulates) how the data <span class="math notranslate nohighlight">\(y\)</span> are generated given the parameters <span class="math notranslate nohighlight">\(\theta\)</span> and the design variables <span class="math notranslate nohighlight">\(\xi\)</span>.</p>
+<p>The optimal design <span class="math notranslate nohighlight">\(\xi^*\)</span> is the one that maximises the expected information gain (EIG) about the parameters <span class="math notranslate nohighlight">\(\theta\)</span>.
+The EIG is the expected reduction in Shannon entropy from the prior <span class="math notranslate nohighlight">\(p(\theta)\)</span> to the posterior <span class="math notranslate nohighlight">\(p(\theta \mid y, \xi)\)</span> that results from the experiment with design <span class="math notranslate nohighlight">\(\xi\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[\text{EIG}_\theta(\xi) = H[p(\theta)] - \mathbb{E}_{p(y \mid \xi)} \big[ H[p(\theta \mid y, \xi)] \big] = I(\theta; y \mid \xi).\]</div>
+<p>The EIG is equivalent to the mutual information (MI) between the parameters and the outcomes for a given design.
+With some Bayes rule gymnastics, we can write the EIG in the following equivalent forms:</p>
+<div class="math notranslate nohighlight">
+\[\text{EIG}(\xi) = \mathbb{E}_{p(\theta, y \mid \xi)} \left[ \log \frac{p(\theta, y \mid \xi)}{p(\theta)p(y \mid \xi)} \right] =  \mathbb{E}_{p(\theta, y \mid \xi)} \left[ \log \frac{p(y \mid  \theta, \xi)}{p(y \mid \xi)} \right] = \mathbb{E}_{p(\theta, y \mid \xi)} \left[ \log \frac{p(\theta \mid y, \xi)}{p(\theta)} \right].\]</div>
+<p>In general, the EIG is difficult to estimate and optimise regardless of which form we pick: we either have to deal with an expectation of a non-linear function (<span class="math notranslate nohighlight">\(\log\)</span>) of the intractable marginal <span class="math notranslate nohighlight">\(p(y \mid \xi)\)</span>, or alternatively with an intractable posterior <span class="math notranslate nohighlight">\(p(\theta \mid y, \xi)\)</span>.</p>
+<p>In this tutorial we are going to use the Barber-Agakov estimator [3, 4]—a popular variational lower bound on the mutual information:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{L}(\xi, q) :=  \mathbb{E}_{p(\theta, y \mid \xi)} \left[ \log \frac{q(\theta \mid y, \xi)}{p(\theta)} \right] \leq I(\theta; y \mid \xi),\]</div>
+<p>where <span class="math notranslate nohighlight">\(q(\cdot)\)</span> is any distribution over the parameters <span class="math notranslate nohighlight">\(\theta\)</span>. The optimal <span class="math notranslate nohighlight">\(q(\cdot)\)</span>, which makes the bound tight, is the true posterior <span class="math notranslate nohighlight">\(p(\theta \mid y, \xi)\)</span>.</p>
+<p>Notice that the prior <span class="math notranslate nohighlight">\(p(\theta)\)</span> is independent of the designs <span class="math notranslate nohighlight">\(\xi\)</span> and the variational distribution <span class="math notranslate nohighlight">\(q(\theta \mid y, \xi)\)</span>, so maximising the objective <span class="math notranslate nohighlight">\(\mathcal{L}(\xi, q)\)</span> is equivalent to minimising:</p>
+<div class="math notranslate nohighlight">
+\[\mathcal{J}(\xi, q) := -\mathbb{E}_{p(\theta, y \mid \xi)} \big[ \log q(\theta \mid y, \xi)\big],\]</div>
+<p>which is very similar to the standard cross-entropy objective we use to train our neural posterior estimators (NPEs)! The <strong>key difference</strong> is that we are now also optimising over the designs <span class="math notranslate nohighlight">\(\xi\)</span>, which also appear in the expectation. We can use the <a class="reference external" href="https://en.wikipedia.org/wiki/Reparameterization_trick">reparameterisation trick</a> to optimise <span class="math notranslate nohighlight">\(\xi\)</span> jointly with the parameters of our neural posterior estimator <span class="math notranslate nohighlight">\(q(\cdot)\)</span>.</p>
+<p>Let’s see how this works in practice!</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"torch"</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.distributions</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">dist</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pd</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tqdm.auto</span><span class="w"> </span><span class="kn">import</span> <span class="n">trange</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="s2">"cuda"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Training on </span><span class="si">{</span><span class="n">device</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend 'torch'
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:
+When using torch backend, we need to disable autograd by default to avoid excessive memory usage. Use
+
+with torch.enable_grad():
+    ...
+
+in contexts where you need gradients (e.g. custom training loops).
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Training on cuda
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">colors</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"initial"</span><span class="p">:</span> <span class="s2">"#3C5488"</span><span class="p">,</span> <span class="s2">"optimized"</span><span class="p">:</span> <span class="s2">"#008B8B"</span><span class="p">,</span> <span class="s2">"reference"</span><span class="p">:</span> <span class="s2">"#C58B39"</span><span class="p">}</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span><span class="s2">"axes.spines.top"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"axes.spines.right"</span><span class="p">:</span> <span class="kc">False</span><span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="michaelismenten-kinetics">
+<h2><span class="section-number">18.2. </span>Michaelis–Menten kinetics<a class="headerlink" href="#michaelismenten-kinetics" title="Link to this heading">#</a></h2>
+<p>We use a Hill-type extension of Michaelis–Menten kinetics:</p>
+<div class="math notranslate nohighlight">
+\[y_d \sim \mathcal{N}\left(\frac{(400\xi_d)^4 a}{(400\xi_d)^4 + b^4},\;5^2\right),
+\qquad (a,b) = 20 + 180\theta,
+\qquad \theta \sim \mathcal{N}(0.5\mathbf{1},\;0.1^2 I).\]</div>
+<p>Here <span class="math notranslate nohighlight">\(a\)</span> is the maximum reaction rate and <span class="math notranslate nohighlight">\(b\)</span> is the half-saturation concentration. The seven design variables <span class="math notranslate nohighlight">\(\xi_d\in(0,1)\)</span> control the substrate concentrations. We optimize their logits, so the concentrations stay in range.</p>
+<p>The simulator uses <code class="docutils literal notranslate"><span class="pre">rsample()</span></code> for the observations. This keeps the gradient from the posterior loss back to the designs. Scaling the outcomes by 200 keeps the network inputs near one.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">class</span><span class="w"> </span><span class="nc">MichaelisMenten</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">design_logits</span><span class="p">,</span> <span class="n">learn_designs</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">design_logits</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Parameter</span><span class="p">(</span><span class="n">design_logits</span><span class="o">.</span><span class="n">clone</span><span class="p">(),</span> <span class="n">requires_grad</span><span class="o">=</span><span class="n">learn_designs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">register_buffer</span><span class="p">(</span><span class="s2">"prior_loc"</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="mi">2</span><span class="p">,),</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">design_logits</span><span class="o">.</span><span class="n">device</span><span class="p">))</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Independent</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">prior_loc</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">,</span> <span class="n">concentrations</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+        <span class="n">concentrations</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">design_logits</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()</span> <span class="k">if</span> <span class="n">concentrations</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">concentrations</span>
+        <span class="n">a</span><span class="p">,</span> <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="mi">20</span> <span class="o">+</span> <span class="mi">180</span> <span class="o">*</span> <span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">substrate</span> <span class="o">=</span> <span class="p">(</span><span class="mi">400</span> <span class="o">*</span> <span class="n">concentrations</span><span class="p">)</span> <span class="o">**</span> <span class="mi">4</span>
+        <span class="k">return</span> <span class="n">a</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">*</span> <span class="n">substrate</span> <span class="o">/</span> <span class="p">(</span><span class="n">substrate</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span> <span class="o">**</span> <span class="mi">4</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">theta</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">dist</span><span class="o">.</span><span class="n">Independent</span><span class="p">(</span><span class="n">dist</span><span class="o">.</span><span class="n">Normal</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">theta</span><span class="p">),</span> <span class="mf">5.0</span><span class="p">),</span> <span class="mi">1</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">):</span>
+        <span class="n">theta</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">prior</span><span class="p">()</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="n">batch_size</span><span class="p">,))</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">theta</span><span class="p">)</span><span class="o">.</span><span class="n">rsample</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">theta</span><span class="p">,</span> <span class="n">y</span>
+
+
+<span class="n">initial_logits</span> <span class="o">=</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">fixed_simulator</span> <span class="o">=</span> <span class="n">MichaelisMenten</span><span class="p">(</span><span class="n">initial_logits</span><span class="p">)</span>
+<span class="n">design_simulator</span> <span class="o">=</span> <span class="n">MichaelisMenten</span><span class="p">(</span><span class="n">initial_logits</span><span class="p">,</span> <span class="n">learn_designs</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">test_theta</span> <span class="o">=</span> <span class="n">fixed_simulator</span><span class="o">.</span><span class="n">prior</span><span class="p">()</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">3</span><span class="p">,))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="learn-the-posterior-and-the-designs">
+<h2><span class="section-number">18.3. </span>Learn the posterior and the designs<a class="headerlink" href="#learn-the-posterior-and-the-designs" title="Link to this heading">#</a></h2>
+<p>The same short training loop handles both cases. For fixed designs, the optimizer only updates the flow. For learned designs, it also updates the simulator’s design logits.</p>
+<p>Each gradient step uses another simulated batch. The flow receives the seven scaled observations and learns standardized parameters, <code class="docutils literal notranslate"><span class="pre">(theta</span> <span class="pre">-</span> <span class="pre">0.5)</span> <span class="pre">/</span> <span class="pre">0.1</span></code>. We fit a separate flow for each design, so the design itself does not need to be an input. For a posterior shared across different experiments, include the designs in <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code> too.</p>
+<p>Validation uses held-out parameters and fixed observation noise. As the designs change, we recompute these observations at the current concentrations. The validation loss estimates the same objective on independent data.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">validation_theta</span> <span class="o">=</span> <span class="n">fixed_simulator</span><span class="o">.</span><span class="n">prior</span><span class="p">()</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">1024</span><span class="p">,))</span>
+<span class="n">validation_noise</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">1024</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+
+
+<span class="nd">@torch</span><span class="o">.</span><span class="n">enable_grad</span><span class="p">()</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">train_posterior</span><span class="p">(</span><span class="n">simulator</span><span class="p">):</span>
+    <span class="n">posterior</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span> <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"widths"</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">]},</span>
+    <span class="p">)</span>
+    <span class="n">posterior</span><span class="o">.</span><span class="n">build</span><span class="p">((</span><span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="mi">7</span><span class="p">))</span>
+    <span class="n">posterior</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">optimizer</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">optim</span><span class="o">.</span><span class="n">Adam</span><span class="p">([</span>
+        <span class="p">{</span><span class="s2">"params"</span><span class="p">:</span> <span class="n">posterior</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="s2">"lr"</span><span class="p">:</span> <span class="mf">1e-3</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">"params"</span><span class="p">:</span> <span class="n">simulator</span><span class="o">.</span><span class="n">parameters</span><span class="p">(),</span> <span class="s2">"lr"</span><span class="p">:</span> <span class="mf">5e-3</span><span class="p">},</span>
+    <span class="p">])</span>
+    <span class="n">history</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">callbacks</span><span class="o">.</span><span class="n">History</span><span class="p">()</span>
+    <span class="n">history</span><span class="o">.</span><span class="n">history</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"loss"</span><span class="p">:</span> <span class="p">[],</span> <span class="s2">"val_loss"</span><span class="p">:</span> <span class="p">[]}</span>
+    <span class="n">progress</span> <span class="o">=</span> <span class="n">trange</span><span class="p">(</span><span class="mi">40</span><span class="p">,</span> <span class="n">desc</span><span class="o">=</span><span class="s2">"Training"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">epoch</span> <span class="ow">in</span> <span class="n">progress</span><span class="p">:</span>
+        <span class="n">losses</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">50</span><span class="p">):</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="n">theta</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="n">simulator</span><span class="p">(</span><span class="mi">256</span><span class="p">)</span>
+            <span class="n">loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">posterior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">((</span><span class="n">theta</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">y</span> <span class="o">/</span> <span class="mi">200</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="n">losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+        <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+            <span class="n">y_val</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">validation_theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">validation_noise</span>
+            <span class="n">val_loss</span> <span class="o">=</span> <span class="o">-</span><span class="n">posterior</span><span class="o">.</span><span class="n">log_prob</span><span class="p">((</span><span class="n">validation_theta</span> <span class="o">-</span> <span class="mf">0.5</span><span class="p">)</span> <span class="o">/</span> <span class="mf">0.1</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">y_val</span> <span class="o">/</span> <span class="mi">200</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">losses</span><span class="p">)</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s2">"val_loss"</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val_loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+        <span class="n">progress</span><span class="o">.</span><span class="n">set_postfix</span><span class="p">(</span><span class="n">loss</span><span class="o">=</span><span class="n">history</span><span class="o">.</span><span class="n">history</span><span class="p">[</span><span class="s2">"loss"</span><span class="p">][</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">val_loss</span><span class="o">=</span><span class="n">val_loss</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
+    <span class="k">return</span> <span class="n">posterior</span><span class="p">,</span> <span class="n">history</span>
+
+
+<span class="n">fixed_posterior</span><span class="p">,</span> <span class="n">fixed_history</span> <span class="o">=</span> <span class="n">train_posterior</span><span class="p">(</span><span class="n">fixed_simulator</span><span class="p">)</span>
+<span class="n">design_posterior</span><span class="p">,</span> <span class="n">design_history</span> <span class="o">=</span> <span class="n">train_posterior</span><span class="p">(</span><span class="n">design_simulator</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">title</span><span class="p">,</span> <span class="n">history</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[</span>
+    <span class="p">(</span><span class="s2">"Fixed designs"</span><span class="p">,</span> <span class="n">fixed_history</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"initial"</span><span class="p">]),</span>
+    <span class="p">(</span><span class="s2">"Learned designs"</span><span class="p">,</span> <span class="n">design_history</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"optimized"</span><span class="p">]),</span>
+<span class="p">]:</span>
+    <span class="n">fig</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">,</span> <span class="n">train_color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">val_color</span><span class="o">=</span><span class="s2">"#606770"</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">title</span><span class="p">)</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/d862a2931ed669b14dab4c0e0d8818bb4b6479e4457630fb3830d203577b93e8.png" src="../_images/d862a2931ed669b14dab4c0e0d8818bb4b6479e4457630fb3830d203577b93e8.png" />
+<img alt="../_images/1b03a24b6d2d587dc871f78b9272e67d4d548c66c56e14aebabc4b42e2246ab6.png" src="../_images/1b03a24b6d2d587dc871f78b9272e67d4d548c66c56e14aebabc4b42e2246ab6.png" />
+</div>
+</div>
+</section>
+<section id="where-should-we-measure">
+<h2><span class="section-number">18.4. </span>Where should we measure?<a class="headerlink" href="#where-should-we-measure" title="Link to this heading">#</a></h2>
+<p>The initial concentrations are close together. Compare them with the learned concentrations below. Measuring near the rising part of the curve helps identify the half-saturation parameter. Measuring near the plateau helps identify the maximum reaction rate.</p>
+<p>These are the designs found by this optimization run, not a guarantee of a global optimum.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">concentrations</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.01</span><span class="p">,</span> <span class="mf">0.99</span><span class="p">,</span> <span class="mi">200</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">curves</span> <span class="o">=</span> <span class="n">fixed_simulator</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">test_theta</span><span class="p">,</span> <span class="n">concentrations</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mi">4</span><span class="p">),</span> <span class="n">sharex</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">title</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">fixed_simulator</span><span class="p">,</span> <span class="s2">"Initial concentrations"</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"initial"</span><span class="p">]),</span>
+        <span class="p">(</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">design_simulator</span><span class="p">,</span> <span class="s2">"Learned concentrations"</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"optimized"</span><span class="p">]),</span>
+    <span class="p">]:</span>
+        <span class="n">xi</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">design_logits</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">outcomes</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">test_theta</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">curve</span><span class="p">,</span> <span class="n">outcome</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">curves</span><span class="p">,</span> <span class="n">outcomes</span><span class="p">):</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">concentrations</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">curve</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.45</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">scatter</span><span class="p">(</span><span class="n">xi</span><span class="p">,</span> <span class="n">outcome</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">s</span><span class="o">=</span><span class="mi">30</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">"Substrate concentration"</span><span class="p">)</span>
+    <span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Mean reaction rate"</span><span class="p">)</span>
+    <span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+
+<span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">({</span>
+    <span class="s2">"Initial concentration"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">fixed_simulator</span><span class="o">.</span><span class="n">design_logits</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()),</span>
+    <span class="s2">"Learned concentration"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">design_simulator</span><span class="o">.</span><span class="n">design_logits</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()),</span>
+<span class="p">})</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/399dd5fcf1f55a1155e0f16973ac3ca2c146486969264f3ac1bb02ea18bf4789.png" src="../_images/399dd5fcf1f55a1155e0f16973ac3ca2c146486969264f3ac1bb02ea18bf4789.png" />
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Initial concentration</th>
+      <th>Learned concentration</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>0.467</td>
+      <td>0.263</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>0.478</td>
+      <td>0.265</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>0.487</td>
+      <td>0.267</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>0.488</td>
+      <td>0.273</td>
+    </tr>
+    <tr>
+      <th>4</th>
+      <td>0.496</td>
+      <td>0.580</td>
+    </tr>
+    <tr>
+      <th>5</th>
+      <td>0.501</td>
+      <td>0.793</td>
+    </tr>
+    <tr>
+      <th>6</th>
+      <td>0.538</td>
+      <td>0.966</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+</section>
+<section id="check-the-posterior">
+<h2><span class="section-number">18.5. </span>Check the posterior<a class="headerlink" href="#check-the-posterior" title="Link to this heading">#</a></h2>
+<p>With only two parameters, we can evaluate the prior times the likelihood on a dense grid and normalize the result. The grid covers <span class="math notranslate nohighlight">\([0,1]^2\)</span>, or five prior standard deviations in each direction. This gives a numerical reference for these examples without installing an MCMC sampler. Grid calculations become impractical as the number of parameters grows.</p>
+<p>We compare both designs at the same three parameter values, using the same observation noise. BayesFlow samples are shown with the numerical reference overlaid in gold. The table below compares posterior standard deviations across the three examples.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axis</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">401</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">grid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">meshgrid</span><span class="p">(</span><span class="n">axis</span><span class="p">,</span> <span class="n">axis</span><span class="p">,</span> <span class="n">indexing</span><span class="o">=</span><span class="s2">"ij"</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+<span class="n">test_noise</span> <span class="o">=</span> <span class="mi">5</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+<span class="n">posterior_samples</span><span class="p">,</span> <span class="n">reference_weights</span><span class="p">,</span> <span class="n">observed_data</span> <span class="o">=</span> <span class="p">{},</span> <span class="p">{},</span> <span class="p">{}</span>
+
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">simulator</span><span class="p">,</span> <span class="n">posterior</span> <span class="ow">in</span> <span class="p">[</span>
+        <span class="p">(</span><span class="s2">"Initial"</span><span class="p">,</span> <span class="n">fixed_simulator</span><span class="p">,</span> <span class="n">fixed_posterior</span><span class="p">),</span>
+        <span class="p">(</span><span class="s2">"Learned"</span><span class="p">,</span> <span class="n">design_simulator</span><span class="p">,</span> <span class="n">design_posterior</span><span class="p">),</span>
+    <span class="p">]:</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">test_theta</span><span class="p">)</span> <span class="o">+</span> <span class="n">test_noise</span>
+        <span class="n">conditions</span> <span class="o">=</span> <span class="p">(</span><span class="n">y</span> <span class="o">/</span> <span class="mi">200</span><span class="p">)[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2000</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">samples</span> <span class="o">=</span> <span class="mf">0.5</span> <span class="o">+</span> <span class="mf">0.1</span> <span class="o">*</span> <span class="n">posterior</span><span class="o">.</span><span class="n">sample</span><span class="p">((</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span> <span class="n">conditions</span><span class="o">=</span><span class="n">conditions</span><span class="p">)</span>
+        <span class="n">log_joint</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">prior</span><span class="p">()</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">grid</span><span class="p">)[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+</span> <span class="n">simulator</span><span class="o">.</span><span class="n">likelihood</span><span class="p">(</span><span class="n">grid</span><span class="p">)</span><span class="o">.</span><span class="n">log_prob</span><span class="p">(</span><span class="n">y</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="n">posterior_samples</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">samples</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">reference_weights</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">log_joint</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">observed_data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">axis_np</span> <span class="o">=</span> <span class="n">axis</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">spacing</span> <span class="o">=</span> <span class="n">axis_np</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">axis_np</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+
+<span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">color</span> <span class="ow">in</span> <span class="p">[(</span><span class="s2">"Initial"</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"initial"</span><span class="p">]),</span> <span class="p">(</span><span class="s2">"Learned"</span><span class="p">,</span> <span class="n">colors</span><span class="p">[</span><span class="s2">"optimized"</span><span class="p">])]:</span>
+
+    <span class="n">g</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+        <span class="n">posterior_samples</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">],</span> <span class="n">targets</span><span class="o">=</span><span class="n">test_theta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span>
+        <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="sa">r</span><span class="s2">"$\theta_1$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\theta_2$"</span><span class="p">],</span> <span class="n">post_color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span>
+        <span class="n">target_color</span><span class="o">=</span><span class="s2">"#42464D"</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.3</span><span class="p">,</span> <span class="n">height</span><span class="o">=</span><span class="mf">2.6</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="n">limits</span> <span class="o">=</span> <span class="p">[</span><span class="n">ax</span><span class="o">.</span><span class="n">get_xlim</span><span class="p">()</span> <span class="k">for</span> <span class="n">ax</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">diag_axes</span><span class="p">]</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">reference_weights</span><span class="p">[</span><span class="n">name</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">axis_np</span><span class="p">),</span> <span class="nb">len</span><span class="p">(</span><span class="n">axis_np</span><span class="p">))</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">diag_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis_np</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="n">spacing</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"reference"</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Grid reference"</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">diag_axes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">axis_np</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span> <span class="o">/</span> <span class="n">spacing</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"reference"</span><span class="p">])</span>
+    <span class="n">levels</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.1</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.9</span><span class="p">])</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">axis_np</span><span class="p">,</span> <span class="n">axis_np</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">levels</span><span class="o">=</span><span class="n">levels</span><span class="p">,</span> <span class="n">colors</span><span class="o">=</span><span class="n">colors</span><span class="p">[</span><span class="s2">"reference"</span><span class="p">],</span> <span class="n">linewidths</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">axes</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">(</span><span class="n">limits</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">diag_axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">9</span><span class="p">)</span>
+    <span class="n">g</span><span class="o">.</span><span class="n">figure</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="sa">f</span><span class="s2">"</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s2"> designs: first test experiment"</span><span class="p">,</span> <span class="n">y</span><span class="o">=</span><span class="mf">1.02</span><span class="p">)</span>
+    
+    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/003b579acfa8aa54882651320ee496d16fe3aac6ad020bd5bb5b3f9252553e3c.png" src="../_images/003b579acfa8aa54882651320ee496d16fe3aac6ad020bd5bb5b3f9252553e3c.png" />
+<img alt="../_images/9fc23d145e5808b8d4052f3c8420e497ac41d46e138fb666a35fd9df7cc41d81.png" src="../_images/9fc23d145e5808b8d4052f3c8420e497ac41d46e138fb666a35fd9df7cc41d81.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">grid_np</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+<span class="n">rows</span> <span class="o">=</span> <span class="p">[]</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">posterior_samples</span><span class="p">:</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">reference_weights</span><span class="p">[</span><span class="n">name</span><span class="p">]</span>
+    <span class="n">reference_mean</span> <span class="o">=</span> <span class="n">weights</span> <span class="o">@</span> <span class="n">grid_np</span>
+    <span class="n">reference_sd</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">maximum</span><span class="p">(</span><span class="n">weights</span> <span class="o">@</span> <span class="n">grid_np</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">reference_mean</span><span class="o">**</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">))</span>
+    <span class="n">flow_sd</span> <span class="o">=</span> <span class="n">posterior_samples</span><span class="p">[</span><span class="n">name</span><span class="p">]</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">):</span>
+        <span class="n">rows</span><span class="o">.</span><span class="n">append</span><span class="p">({</span>
+            <span class="s2">"Design"</span><span class="p">:</span> <span class="n">name</span><span class="p">,</span> <span class="s2">"Parameter"</span><span class="p">:</span> <span class="sa">f</span><span class="s2">"theta_</span><span class="si">{</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+            <span class="s2">"Prior SD"</span><span class="p">:</span> <span class="mf">0.1</span><span class="p">,</span> <span class="s2">"Flow SD"</span><span class="p">:</span> <span class="n">flow_sd</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+            <span class="s2">"Grid SD"</span><span class="p">:</span> <span class="n">reference_sd</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span>
+        <span class="p">})</span>
+<span class="n">pd</span><span class="o">.</span><span class="n">DataFrame</span><span class="p">(</span><span class="n">rows</span><span class="p">)</span><span class="o">.</span><span class="n">round</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_html"><div>
+<style scoped>
+    .dataframe tbody tr th:only-of-type {
+        vertical-align: middle;
+    }
+
+    .dataframe tbody tr th {
+        vertical-align: top;
+    }
+
+    .dataframe thead th {
+        text-align: right;
+    }
+</style>
+<table border="1" class="dataframe">
+  <thead>
+    <tr style="text-align: right;">
+      <th></th>
+      <th>Design</th>
+      <th>Parameter</th>
+      <th>Prior SD</th>
+      <th>Flow SD</th>
+      <th>Grid SD</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <th>0</th>
+      <td>Initial</td>
+      <td>theta_1</td>
+      <td>0.1</td>
+      <td>0.035</td>
+      <td>0.039</td>
+    </tr>
+    <tr>
+      <th>1</th>
+      <td>Initial</td>
+      <td>theta_2</td>
+      <td>0.1</td>
+      <td>0.084</td>
+      <td>0.084</td>
+    </tr>
+    <tr>
+      <th>2</th>
+      <td>Learned</td>
+      <td>theta_1</td>
+      <td>0.1</td>
+      <td>0.019</td>
+      <td>0.017</td>
+    </tr>
+    <tr>
+      <th>3</th>
+      <td>Learned</td>
+      <td>theta_2</td>
+      <td>0.1</td>
+      <td>0.017</td>
+      <td>0.016</td>
+    </tr>
+  </tbody>
+</table>
+</div></div></div>
+</div>
+<p>The comparison separates two questions: does the flow approximate the posterior, and do the learned designs reduce uncertainty? Agreement with the grid addresses the first. The change in posterior spread addresses the second for these examples. The held-out loss above provides a broader check of the design objective.</p>
+<p>The main ingredients are a differentiable simulator, a BayesFlow inference network, and an optimizer that updates both the network and the design variables. <code class="docutils literal notranslate"><span class="pre">rsample()</span></code> connects them.</p>
+<section id="references">
+<h3><span class="section-number">18.5.1. </span>References<a class="headerlink" href="#references" title="Link to this heading">#</a></h3>
+<p>[1] Rainforth, T., Foster, A., Ivanova, D. R., &amp; Bickford Smith, F. (2024). Modern Bayesian experimental design. Statistical Science, 39(1), 100-114.</p>
+<p>[2] Huan, X., Jagalur, J., &amp; Marzouk, Y. (2024). Optimal experimental design: Formulations and computations. Acta Numerica, 33, 715-840.</p>
+<p>[3] Barber, D., &amp; Agakov, F. (2004). The im algorithm: a variational approach to information maximization. Advances in neural information processing systems, 16(320), 201.</p>
+<p>[4] Foster, A., Jankowiak, M., O’Meara, M., Teh, Y. W., &amp; Rainforth, T. (2020, June). A unified stochastic gradient approach to designing bayesian-optimal experiments. In International Conference on Artificial Intelligence and Statistics (pp. 2959-2969). PMLR.</p>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="From_ABC_to_BayesFlow.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">17. </span>From ABC to BayesFlow</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Model_Predictive_Control.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">19. </span>Model Predictive Control of an Inverted Double Pendulum</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#short-intro-to-bed">18.1. Short intro to BED</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#michaelismenten-kinetics">18.2. Michaelis–Menten kinetics</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#learn-the-posterior-and-the-designs">18.3. Learn the posterior and the designs</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#where-should-we-measure">18.4. Where should we measure?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#check-the-posterior">18.5. Check the posterior</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#references">18.5.1. References</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.1/docsrc/source/_examples/Bayesian_Experimental_Design.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

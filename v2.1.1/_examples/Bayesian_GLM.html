@@ -1,0 +1,1353 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>5. Generalized linear models &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=fc09bec8"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Bayesian_GLM';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Bayesian_GLM.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="6. Foundation models for amortized inference" href="Foundation_Models.html" />
+    <link rel="prev" title="4. Image data: Inference on Spatial Data and Parameters" href="Spatial_Data_and_Parameters.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.1" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">2. Minimal amortized workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bivariate_Smoothing.html">3. Time-varying parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">4. Image or other spatial data</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">5. Generalized linear models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Foundation_Models.html">6. Foundation models as backbones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">7. Neural likelihood estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">8. Neural ratio estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">9. Compositional estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">10. Deep Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Self_Consistency.html">11. Self-consistency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changing_Priors.html">12. Changing priors at inference time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">13. Model comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Comparison_Deep_Dive.html">14. Model comparison deep dive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">15. Multimodal data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">16. Bayes estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">17. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">18. Bayesian experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Predictive_Control.html">19. Model predictive control</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">5. </span>Generalized linear models</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="generalized-linear-models">
+<h1><span class="section-number">5. </span>Generalized linear models<a class="headerlink" href="#generalized-linear-models" title="Link to this heading">#</a></h1>
+<p><em>Authors: Paul Bürkner, Lars Kühmichel, Stefan T. Radev</em></p>
+<section id="introduction">
+<h2><span class="section-number">5.1. </span>Introduction<a class="headerlink" href="#introduction" title="Link to this heading">#</a></h2>
+<p>We will estimate a Gaussian generalized linear model with two predictors, a sinusoidal feature, an interaction, and predictor-dependent noise. The mean is linear in the regression coefficients, with an identity link and known variance weights.</p>
+<p>This is the same model used in <a class="reference internal" href="Foundation_Models.html"><span class="std std-doc">Foundation models as backbones</span></a>. Here, we learn a summary network jointly with the posterior estimator. That notebook replaces the summary network with pretrained embeddings.</p>
+<p>We keep the usual workflow: define a simulator, build an adapter, train the networks, and check the posterior. Training covers different numbers of observations, so one estimator can handle datasets of different sizes. We prefer the <code class="docutils literal notranslate"><span class="pre">torch</span></code> backend, as naively passing dynamic batch sizes through JAX triggers recompilation and can be slow in early epochs.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s2">"KERAS_BACKEND"</span><span class="p">]</span> <span class="o">=</span> <span class="s2">"torch"</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend 'torch'
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:
+When using torch backend, we need to disable autograd by default to avoid excessive memory usage. Use
+
+with torch.enable_grad():
+    ...
+
+in contexts where you need gradients (e.g. custom training loops).
+</pre></div>
+</div>
+</div>
+</div>
+<p>BayesFlow separates simulation, preprocessing, and inference:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">simulators</span></code> combine priors, likelihoods, and context variables.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">adapters</span></code> prepare data for the networks.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">networks</span></code> provide summary and inference architectures.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">estimators</span></code> connect the networks and define their training objectives.</p></li>
+</ul>
+<p>A <code class="docutils literal notranslate"><span class="pre">BasicWorkflow</span></code> brings these pieces together.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># avoid scientific notation for outputs</span>
+<span class="n">np</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">suppress</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="generative-model">
+<h2><span class="section-number">5.2. </span>Generative model<a class="headerlink" href="#generative-model" title="Link to this heading">#</a></h2>
+<p>For two predictors <span class="math notranslate nohighlight">\(x_1,x_2\)</span>, our model is</p>
+<div class="math notranslate nohighlight">
+\[y_i = \beta_0 + \beta_1\sin(1.5x_{i1}) + \beta_2x_{i1}x_{i2} + 0.5x_{i2} + \epsilon_i,\]</div>
+<div class="math notranslate nohighlight">
+\[\epsilon_i \sim \mathcal N\!\left(0, [\sigma(1+0.4|x_{i2}|)]^2\right).\]</div>
+<p>The <span class="math notranslate nohighlight">\(0.5x_2\)</span> term is a known offset. We infer three coefficients and the noise scale <span class="math notranslate nohighlight">\(\sigma\)</span>. The foundation-model example uses the equivalent parameter <span class="math notranslate nohighlight">\(\ell=\log\sigma\)</span>.</p>
+<p>We use the same fixed 100-row predictor table as that example. A dataset with <span class="math notranslate nohighlight">\(N\)</span> observations uses its first <span class="math notranslate nohighlight">\(N\)</span> rows.</p>
+<p>We will start with our data simulator:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">2026</span><span class="p">)</span>
+
+<span class="n">design</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">likelihood</span><span class="p">(</span><span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">N</span><span class="p">):</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="n">design</span><span class="p">[:</span><span class="n">N</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">beta</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">beta</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">beta</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale</span><span class="p">)</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">y</span><span class="o">=</span><span class="n">y</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The likelihood takes the coefficients <code class="docutils literal notranslate"><span class="pre">beta</span></code>, the noise scale <code class="docutils literal notranslate"><span class="pre">sigma</span></code>, and the number of observations <code class="docutils literal notranslate"><span class="pre">N</span></code>. Each row contains two predictor values and one response.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">data_draws</span> <span class="o">=</span> <span class="n">likelihood</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="p">[</span><span class="mf">0.3</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">],</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.6</span><span class="p">,</span> <span class="n">N</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">data_draws</span><span class="p">[</span><span class="s2">"x"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">,</span> <span class="n">data_draws</span><span class="p">[</span><span class="s2">"y"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(3, 2) (3,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we define our prior simulator to sample draws of the model parameters <code class="docutils literal notranslate"><span class="pre">beta</span></code> and <code class="docutils literal notranslate"><span class="pre">sigma</span></code>:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">():</span>
+    <span class="n">beta</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="mf">0.7</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">0.6</span><span class="p">])</span>
+    <span class="n">sigma</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">(</span><span class="n">rng</span><span class="o">.</span><span class="n">lognormal</span><span class="p">(</span><span class="n">mean</span><span class="o">=-</span><span class="mf">0.5</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="mf">0.3</span><span class="p">))</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">beta</span><span class="o">=</span><span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="o">=</span><span class="n">sigma</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior_draws</span> <span class="o">=</span> <span class="n">prior</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prior_draws</span><span class="p">[</span><span class="s2">"beta"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">prior_draws</span><span class="p">[</span><span class="s2">"beta"</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(3,)
+[0.54466904 0.21256238 0.12237344]
+</pre></div>
+</div>
+</div>
+</div>
+<p>We train over sample sizes from 20 to 100. The <code class="docutils literal notranslate"><span class="pre">meta</span></code> function draws one sample size per batch, so all datasets within that batch have the same shape.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">meta</span><span class="p">():</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">N</span><span class="o">=</span><span class="n">rng</span><span class="o">.</span><span class="n">integers</span><span class="p">(</span><span class="mi">20</span><span class="p">,</span> <span class="mi">101</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">meta_draws</span> <span class="o">=</span> <span class="n">meta</span><span class="p">()</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">meta_draws</span><span class="p">[</span><span class="s2">"N"</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>53
+</pre></div>
+</div>
+</div>
+</div>
+<p>Combine the prior, likelihood, and sample-size distribution:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior</span><span class="p">,</span> <span class="n">likelihood</span><span class="p">],</span> <span class="n">meta_fn</span><span class="o">=</span><span class="n">meta</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s draw a batch of 500 datasets:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim_draws</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">500</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"N:"</span><span class="p">,</span> <span class="n">sim_draws</span><span class="p">[</span><span class="s2">"N"</span><span class="p">])</span>
+<span class="nb">print</span><span class="p">({</span><span class="n">key</span><span class="p">:</span> <span class="n">sim_draws</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"beta"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">]})</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>N: 37
+{'beta': (500, 3), 'sigma': (500, 1), 'x': (500, 37, 2), 'y': (500, 37)}
+</pre></div>
+</div>
+</div>
+</div>
+<p>Let’s define the parameter key and corresponding names of individual parameters for easy filtering and plotting down the line.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">par_keys</span> <span class="o">=</span> <span class="p">[</span><span class="s2">"beta"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">]</span>
+<span class="n">par_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">"$\beta_0$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\beta_1$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\beta_2$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\sigma$"</span><span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_samples</span><span class="p">(</span>
+    <span class="n">samples</span><span class="o">=</span><span class="n">sim_draws</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="n">par_keys</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/0db96050d5011873dcf8838300f7ed52a42a31f9a45d8f06befb660e9f556d5d.png" src="../_images/0db96050d5011873dcf8838300f7ed52a42a31f9a45d8f06befb660e9f556d5d.png" />
+</div>
+</div>
+</section>
+<section id="adapter">
+<h2><span class="section-number">5.3. </span>Adapter<a class="headerlink" href="#adapter" title="Link to this heading">#</a></h2>
+<p>The adapter collects the parameters into <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>, the observation rows into <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code>, and the sample size into <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">broadcast</span><span class="p">(</span><span class="s2">"N"</span><span class="p">,</span> <span class="n">to</span><span class="o">=</span><span class="s2">"y"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">as_set</span><span class="p">([</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">])</span>
+    <span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="s2">"sigma"</span><span class="p">,</span> <span class="n">lower</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="s2">"N"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">"beta"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">"summary_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"N"</span><span class="p">,</span> <span class="s2">"inference_conditions"</span><span class="p">)</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The adapter broadcasts the batch’s scalar <code class="docutils literal notranslate"><span class="pre">N</span></code>, then uses <span class="math notranslate nohighlight">\(\sqrt{N}\)</span> as a condition. <code class="docutils literal notranslate"><span class="pre">as_set</span></code> gives the response a feature axis so it can be concatenated with the two predictors. The summary network handles joint permutations of the observation rows.</p>
+<p><code class="docutils literal notranslate"><span class="pre">constrain(&quot;sigma&quot;,</span> <span class="pre">lower=0)</span></code> maps the positive noise scale to an unconstrained training space and maps posterior samples back to positive values.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">processed_draws</span> <span class="o">=</span> <span class="n">adapter</span><span class="p">(</span><span class="n">sim_draws</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">processed_draws</span><span class="p">[</span><span class="s2">"summary_variables"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">processed_draws</span><span class="p">[</span><span class="s2">"inference_conditions"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="n">processed_draws</span><span class="p">[</span><span class="s2">"inference_variables"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>torch.Size([500, 37, 3])
+torch.Size([500, 1])
+torch.Size([500, 4])
+</pre></div>
+</div>
+</div>
+</div>
+<p>The processed shapes are:</p>
+<ul class="simple">
+<li><p><code class="docutils literal notranslate"><span class="pre">summary_variables</span></code>: <code class="docutils literal notranslate"><span class="pre">(500,</span> <span class="pre">N,</span> <span class="pre">3)</span></code> for two predictors and one response.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code>: <code class="docutils literal notranslate"><span class="pre">(500,</span> <span class="pre">1)</span></code> for the sample size.</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>: <code class="docutils literal notranslate"><span class="pre">(500,</span> <span class="pre">4)</span></code> for three coefficients and the noise scale.</p></li>
+</ul>
+</section>
+<section id="neural-estimator">
+<h2><span class="section-number">5.4. </span>Neural estimator<a class="headerlink" href="#neural-estimator" title="Link to this heading">#</a></h2>
+<p>The summary network compresses each dataset into a vector. The inference network uses that vector and the sample size to approximate the parameter posterior.</p>
+<section id="summary-network">
+<h3><span class="section-number">5.4.1. </span>Summary network<a class="headerlink" href="#summary-network" title="Link to this heading">#</a></h3>
+<p>A <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> respects the fact that jointly reordering the predictor–response rows does not change the posterior. It maps <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">N,</span> <span class="pre">3)</span></code> to <code class="docutils literal notranslate"><span class="pre">(batch_size,</span> <span class="pre">summary_dim)</span></code>. We use a small network with 16 summary features.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">summary_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SetTransformer</span><span class="p">(</span><span class="n">summary_dim</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">embed_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">),</span> <span class="n">num_heads</span><span class="o">=</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="inference-network">
+<h3><span class="section-number">5.4.2. </span>Inference network<a class="headerlink" href="#inference-network" title="Link to this heading">#</a></h3>
+<p>A two-layer spline coupling flow models the four-dimensional posterior.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">inference_network</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span> <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"widths"</span><span class="p">:</span> <span class="p">[</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">]})</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="workflow">
+<h3><span class="section-number">5.4.3. </span>Workflow<a class="headerlink" href="#workflow" title="Link to this heading">#</a></h3>
+<p>Workflow objects make life easier by combining inference networks and summary networks into estimators (internally).</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">inference_network</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">summary_network</span><span class="p">,</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We train on simulations generated during each epoch and monitor a separate validation batch. Torch handles the changing sample sizes without the shape-dependent recompilation encountered with JAX.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_online</span><span class="p">(</span><span class="n">epochs</span><span class="o">=</span><span class="mi">60</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">num_batches_per_epoch</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OnlineDataset.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 5.24 minutes.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/60
+100/100 - 8s - 76ms/step - loss: 4.9383 - val_loss: 3.2981
+Epoch 2/60
+100/100 - 6s - 62ms/step - loss: 2.8052 - val_loss: 1.9665
+Epoch 3/60
+100/100 - 6s - 64ms/step - loss: 2.0253 - val_loss: 0.6803
+Epoch 4/60
+100/100 - 6s - 61ms/step - loss: 1.7459 - val_loss: 0.2184
+Epoch 5/60
+100/100 - 6s - 61ms/step - loss: 1.1599 - val_loss: 0.2523
+Epoch 6/60
+100/100 - 6s - 63ms/step - loss: 0.9701 - val_loss: -2.4383e-01
+Epoch 7/60
+100/100 - 6s - 59ms/step - loss: 0.9402 - val_loss: -1.0082e-01
+Epoch 8/60
+100/100 - 6s - 58ms/step - loss: 0.7201 - val_loss: -1.0748e-01
+Epoch 9/60
+100/100 - 6s - 60ms/step - loss: 0.6728 - val_loss: -5.2487e-01
+Epoch 10/60
+100/100 - 6s - 58ms/step - loss: 0.6926 - val_loss: -6.2547e-01
+Epoch 11/60
+100/100 - 6s - 56ms/step - loss: 0.7346 - val_loss: -3.3659e-01
+Epoch 12/60
+100/100 - 6s - 57ms/step - loss: 0.6113 - val_loss: -5.5821e-01
+Epoch 13/60
+100/100 - 6s - 56ms/step - loss: 0.5577 - val_loss: -5.6818e-01
+Epoch 14/60
+100/100 - 6s - 57ms/step - loss: 0.5109 - val_loss: -7.8808e-01
+Epoch 15/60
+100/100 - 6s - 59ms/step - loss: 0.2832 - val_loss: -7.2583e-01
+Epoch 16/60
+100/100 - 6s - 58ms/step - loss: 0.3966 - val_loss: -8.0702e-01
+Epoch 17/60
+100/100 - 6s - 57ms/step - loss: 0.4350 - val_loss: -9.3629e-01
+Epoch 18/60
+100/100 - 6s - 58ms/step - loss: 0.4853 - val_loss: -9.6659e-01
+Epoch 19/60
+100/100 - 6s - 58ms/step - loss: 0.3063 - val_loss: -9.6380e-01
+Epoch 20/60
+100/100 - 6s - 62ms/step - loss: 0.3687 - val_loss: -1.1114e+00
+Epoch 21/60
+100/100 - 6s - 60ms/step - loss: 0.3053 - val_loss: -1.0491e+00
+Epoch 22/60
+100/100 - 6s - 59ms/step - loss: 0.1740 - val_loss: -1.0150e+00
+Epoch 23/60
+100/100 - 6s - 59ms/step - loss: 0.1130 - val_loss: -9.6418e-01
+Epoch 24/60
+100/100 - 6s - 62ms/step - loss: 0.1932 - val_loss: -5.8879e-01
+Epoch 25/60
+100/100 - 6s - 60ms/step - loss: 0.2271 - val_loss: -9.2394e-01
+Epoch 26/60
+100/100 - 6s - 60ms/step - loss: 0.2491 - val_loss: -9.1746e-01
+Epoch 27/60
+100/100 - 6s - 58ms/step - loss: 0.0221 - val_loss: -1.0152e+00
+Epoch 28/60
+100/100 - 5s - 53ms/step - loss: 0.2053 - val_loss: -1.2953e+00
+Epoch 29/60
+100/100 - 5s - 51ms/step - loss: 0.2186 - val_loss: -1.2231e+00
+Epoch 30/60
+100/100 - 6s - 58ms/step - loss: 0.1647 - val_loss: -1.2089e+00
+Epoch 31/60
+100/100 - 6s - 58ms/step - loss: -4.1033e-02 - val_loss: -1.1276e+00
+Epoch 32/60
+100/100 - 6s - 58ms/step - loss: 0.1229 - val_loss: -1.4137e+00
+Epoch 33/60
+100/100 - 6s - 59ms/step - loss: 0.0565 - val_loss: -1.3360e+00
+Epoch 34/60
+100/100 - 6s - 58ms/step - loss: -2.1374e-02 - val_loss: -1.3312e+00
+Epoch 35/60
+100/100 - 6s - 58ms/step - loss: -5.0003e-02 - val_loss: -1.2243e+00
+Epoch 36/60
+100/100 - 6s - 58ms/step - loss: 0.0375 - val_loss: -1.3471e+00
+Epoch 37/60
+100/100 - 6s - 61ms/step - loss: -2.7967e-02 - val_loss: -1.2698e+00
+Epoch 38/60
+100/100 - 6s - 64ms/step - loss: 0.0158 - val_loss: -1.4153e+00
+Epoch 39/60
+100/100 - 4s - 42ms/step - loss: 0.1293 - val_loss: -1.3443e+00
+Epoch 40/60
+100/100 - 4s - 40ms/step - loss: -1.4102e-01 - val_loss: -1.1937e+00
+Epoch 41/60
+100/100 - 4s - 40ms/step - loss: 0.0383 - val_loss: -1.4411e+00
+Epoch 42/60
+100/100 - 4s - 40ms/step - loss: -1.4660e-01 - val_loss: -1.4873e+00
+Epoch 43/60
+100/100 - 4s - 40ms/step - loss: -1.6949e-01 - val_loss: -1.4817e+00
+Epoch 44/60
+100/100 - 4s - 40ms/step - loss: -7.3320e-02 - val_loss: -1.2819e+00
+Epoch 45/60
+100/100 - 4s - 41ms/step - loss: 0.0136 - val_loss: -1.4890e+00
+Epoch 46/60
+100/100 - 4s - 40ms/step - loss: -2.5869e-01 - val_loss: -1.5462e+00
+Epoch 47/60
+100/100 - 4s - 40ms/step - loss: -1.9986e-01 - val_loss: -1.5176e+00
+Epoch 48/60
+100/100 - 4s - 40ms/step - loss: -1.4998e-01 - val_loss: -1.5412e+00
+Epoch 49/60
+100/100 - 4s - 40ms/step - loss: -2.0934e-01 - val_loss: -1.5728e+00
+Epoch 50/60
+100/100 - 4s - 40ms/step - loss: -2.8883e-01 - val_loss: -1.5837e+00
+Epoch 51/60
+100/100 - 4s - 40ms/step - loss: -1.7974e-01 - val_loss: -1.5100e+00
+Epoch 52/60
+100/100 - 4s - 39ms/step - loss: -1.3435e-01 - val_loss: -1.5815e+00
+Epoch 53/60
+100/100 - 4s - 40ms/step - loss: -6.7913e-02 - val_loss: -1.5867e+00
+Epoch 54/60
+100/100 - 4s - 40ms/step - loss: -3.0223e-01 - val_loss: -1.5681e+00
+Epoch 55/60
+100/100 - 4s - 44ms/step - loss: -2.1107e-01 - val_loss: -1.6040e+00
+Epoch 56/60
+100/100 - 4s - 39ms/step - loss: -2.7979e-01 - val_loss: -1.5969e+00
+Epoch 57/60
+100/100 - 4s - 40ms/step - loss: -1.6991e-01 - val_loss: -1.6032e+00
+Epoch 58/60
+100/100 - 4s - 40ms/step - loss: -2.8225e-01 - val_loss: -1.6071e+00
+Epoch 59/60
+100/100 - 4s - 41ms/step - loss: -3.1963e-01 - val_loss: -1.6075e+00
+Epoch 60/60
+100/100 - 4s - 42ms/step - loss: -3.5247e-01 - val_loss: -1.6081e+00
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3be68c561559d496bc16245ace195d0b72c9768f6778a130c00ec7b4fbb24fef.png" src="../_images/3be68c561559d496bc16245ace195d0b72c9768f6778a130c00ec7b4fbb24fef.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="diagnostics">
+<h2><span class="section-number">5.5. </span>Diagnostics<a class="headerlink" href="#diagnostics" title="Link to this heading">#</a></h2>
+<p>Draw posterior samples for 200 test datasets. These were not used to train the estimator or monitor validation loss.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_samples</span> <span class="o">=</span> <span class="mi">500</span>
+<span class="n">val_sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+<span class="n">post_draws</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+<span class="n">post_draws</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 0.12 seconds.
+</pre></div>
+</div>
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>dict_keys(['beta', 'sigma'])
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="n">post_draws</span><span class="p">[</span><span class="s2">"beta"</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(200, 500, 3)
+</pre></div>
+</div>
+</div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">post_draws[&quot;beta&quot;]</span></code> has shape <code class="docutils literal notranslate"><span class="pre">(200,</span> <span class="pre">500,</span> <span class="pre">3)</span></code>: datasets, posterior draws, and regression coefficients.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">post_draws</span><span class="p">[</span><span class="s2">"sigma"</span><span class="p">]</span><span class="o">.</span><span class="n">min</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>np.float32(0.20866281)
+</pre></div>
+</div>
+</div>
+</div>
+<p>The adapter maps posterior samples of <code class="docutils literal notranslate"><span class="pre">sigma</span></code> back to its positive domain.</p>
+<p>First, inspect the joint posterior for one dataset:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/a83facee657b7c25c278eb6c465566d1b4fcfa8a5aba408ebc55215398f2f200.png" src="../_images/a83facee657b7c25c278eb6c465566d1b4fcfa8a5aba408ebc55215398f2f200.png" />
+</div>
+</div>
+<p>Next, check parameter recovery across the test datasets. This batch has one sample size; repeat the check at other sizes when assessing the full training range.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/690c670ef7b134c9263723cff5372f04757242724bdc28b4eeccb13de86c2b44.png" src="../_images/690c670ef7b134c9263723cff5372f04757242724bdc28b4eeccb13de86c2b44.png" />
+</div>
+</div>
+<p>Parameter recovery alone does not establish calibration. In simulation-based calibration (SBC), parameters are drawn from the prior and data from the likelihood. A calibrated posterior produces uniform ranks for these parameter draws among posterior samples.</p>
+<p>BayesFlow can display the rank distribution as histograms:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_histogram</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>WARNING:bayesflow:The ratio of simulations / posterior draws should be &gt; 20 for reliable variance reduction, but your ratio is 0. Confidence intervals might be unreliable!
+</pre></div>
+</div>
+<img alt="../_images/c7e0b24edf771e06b70017102689b463551f5dc715126b107351415a07a22ac7.png" src="../_images/c7e0b24edf771e06b70017102689b463551f5dc715126b107351415a07a22ac7.png" />
+</div>
+</div>
+<p>An ECDF plot makes systematic deviations easier to see. The shaded region shows the expected sampling variation under uniform ranks.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">,</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">rank_type</span><span class="o">=</span><span class="s2">"distance"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/efbf670e0ea405c4c16f214eaa6782233465e2385777d8756eb6e25bc746cb5c.png" src="../_images/efbf670e0ea405c4c16f214eaa6782233465e2385777d8756eb6e25bc746cb5c.png" />
+</div>
+</div>
+<section id="custom-test-quantities-for-sbc">
+<h3><span class="section-number">5.5.1. </span>Custom test quantities for SBC<a class="headerlink" href="#custom-test-quantities-for-sbc" title="Link to this heading">#</a></h3>
+<p>SBC also applies to functions of the parameters, including functions that depend on the observations. The joint log likelihood can reveal errors that marginal parameter checks miss.</p>
+<p>Our Gaussian model has an analytic likelihood. The function below accepts batched parameters and observations and returns one log-likelihood value per dataset.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">joint_log_likelihood</span><span class="p">(</span><span class="n">data</span><span class="p">):</span>
+    <span class="n">beta</span><span class="p">,</span> <span class="n">sigma</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span> <span class="o">=</span> <span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"beta"</span><span class="p">,</span> <span class="s2">"sigma"</span><span class="p">,</span> <span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">])</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="p">(</span><span class="n">beta</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">beta</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="o">+</span> <span class="n">beta</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:</span><span class="mi">3</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">sigma</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="o">-</span><span class="mf">0.5</span> <span class="o">*</span> <span class="p">((</span><span class="n">y</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">scale</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span> <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span> <span class="o">-</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="mi">2</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">joint_log_likelihood</span><span class="p">(</span><span class="n">val_sims</span><span class="p">)</span><span class="o">.</span><span class="n">shape</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>(200,)
+</pre></div>
+</div>
+</div>
+</div>
+<p>Repeat the observations along the posterior-sample axis so each draw can be paired with its dataset.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">val_sims_conditions</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">key</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">val_sims</span><span class="p">[</span><span class="n">key</span><span class="p">][:,</span> <span class="kc">None</span><span class="p">],</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">"x"</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">]</span>
+<span class="p">}</span>
+<span class="n">post_draws_conditions</span> <span class="o">=</span> <span class="n">post_draws</span> <span class="o">|</span> <span class="n">val_sims_conditions</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">arr</span> <span class="ow">in</span> <span class="n">post_draws_conditions</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Shape of </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="n">arr</span><span class="o">.</span><span class="n">shape</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Shape of beta: (200, 500, 3)
+Shape of sigma: (200, 500, 1)
+Shape of x: (200, 500, 91, 2)
+Shape of y: (200, 500, 91)
+</pre></div>
+</div>
+</div>
+</div>
+<p>We check both the sum of the first two coefficients and the joint log likelihood:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws_conditions</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">test_quantities</span><span class="o">=</span><span class="p">{</span>
+        <span class="sa">r</span><span class="s2">"$\beta_0 + \beta_1$"</span><span class="p">:</span> <span class="k">lambda</span> <span class="n">data</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="s2">"beta"</span><span class="p">][:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">),</span>
+        <span class="sa">r</span><span class="s2">"$\log p(y\mid x,\beta,\sigma)$"</span><span class="p">:</span> <span class="n">joint_log_likelihood</span><span class="p">,</span>
+    <span class="p">},</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="p">[],</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+    <span class="n">rank_type</span><span class="o">=</span><span class="s2">"distance"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/dc6cc9e91f181c3eb0ec60084a4d2790823a255fc59c141927d86a19a33651cb.png" src="../_images/dc6cc9e91f181c3eb0ec60084a4d2790823a255fc59c141927d86a19a33651cb.png" />
+</div>
+</div>
+<p>The joint-likelihood diagnostic is demanding: it can detect small errors shared across parameters. Use the plots to decide whether more training or a different summary network is needed.</p>
+</section>
+<section id="checking-posterior-concentration">
+<h3><span class="section-number">5.5.2. </span>Checking Posterior Concentration<a class="headerlink" href="#checking-posterior-concentration" title="Link to this heading">#</a></h3>
+<p>Posterior contraction measures the reduction in variance relative to the prior. The z-score measures the distance between the posterior mean and the generating parameter, in posterior standard deviations. We show the three regression coefficients.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">z_score_contraction</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"beta"</span><span class="p">],</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">[:</span><span class="mi">3</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/f2fd55bcc26d65a4339cc8e44ee926eeac577b1c61271ee13076026e64ef3d63.png" src="../_images/f2fd55bcc26d65a4339cc8e44ee926eeac577b1c61271ee13076026e64ef3d63.png" />
+</div>
+</div>
+<p>Strong contraction indicates that the data are informative. Large absolute z-scores can indicate a poorly approximated posterior and should be considered alongside the calibration plots.</p>
+</section>
+<section id="saving-and-loading-the-trained-networks">
+<h3><span class="section-number">5.5.3. </span>Saving and Loading the Trained Networks<a class="headerlink" href="#saving-and-loading-the-trained-networks" title="Link to this heading">#</a></h3>
+<p>Save the full estimator, including its adapter and standardization statistics:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">filepath</span> <span class="o">=</span> <span class="n">Path</span><span class="p">(</span><span class="s2">"checkpoints"</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"glm.keras"</span>
+<span class="n">filepath</span><span class="o">.</span><span class="n">parent</span><span class="o">.</span><span class="n">mkdir</span><span class="p">(</span><span class="n">exist_ok</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">workflow</span><span class="o">.</span><span class="n">estimator</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>For loading, we then use:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="n">estimator</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">saving</span><span class="o">.</span><span class="n">load_model</span><span class="p">(</span><span class="n">filepath</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The loaded estimator supports the same sampling and diagnostic calls:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">post_draws</span> <span class="o">=</span> <span class="n">estimator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">post_draws</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">val_sims</span><span class="p">,</span> <span class="n">variable_names</span><span class="o">=</span><span class="n">par_names</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/1cee915c20dce6bf9ae7b90f9d402babe833f027e58ec3dde820cc7cd5cc8aba.png" src="../_images/1cee915c20dce6bf9ae7b90f9d402babe833f027e58ec3dde820cc7cd5cc8aba.png" />
+</div>
+</div>
+</section>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Spatial_Data_and_Parameters.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">4. </span>Image data: Inference on Spatial Data and Parameters</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Foundation_Models.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">6. </span>Foundation models for amortized inference</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#introduction">5.1. Introduction</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#generative-model">5.2. Generative model</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#adapter">5.3. Adapter</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#neural-estimator">5.4. Neural estimator</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#summary-network">5.4.1. Summary network</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-network">5.4.2. Inference network</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#workflow">5.4.3. Workflow</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#diagnostics">5.5. Diagnostics</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#custom-test-quantities-for-sbc">5.5.1. Custom test quantities for SBC</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#checking-posterior-concentration">5.5.2. Checking Posterior Concentration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#saving-and-loading-the-trained-networks">5.5.3. Saving and Loading the Trained Networks</a></li>
+</ul>
+</li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.1/docsrc/source/_examples/Bayesian_GLM.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

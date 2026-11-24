@@ -1,0 +1,1341 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>17. From ABC to BayesFlow &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=fc09bec8"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/From_ABC_to_BayesFlow';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/From_ABC_to_BayesFlow.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="18. Bayesian Experimental Design with BayesFlow and PyTorch" href="Bayesian_Experimental_Design.html" />
+    <link rel="prev" title="16. Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics" href="Lotka_Volterra_Point_Estimation.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.1" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">2. Minimal amortized workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bivariate_Smoothing.html">3. Time-varying parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">4. Image or other spatial data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_GLM.html">5. Generalized linear models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Foundation_Models.html">6. Foundation models as backbones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">7. Neural likelihood estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">8. Neural ratio estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">9. Compositional estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">10. Deep Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Self_Consistency.html">11. Self-consistency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changing_Priors.html">12. Changing priors at inference time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">13. Model comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Comparison_Deep_Dive.html">14. Model comparison deep dive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">15. Multimodal data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">16. Bayes estimators</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">17. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">18. Bayesian experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Predictive_Control.html">19. Model predictive control</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">17. </span>From ABC to BayesFlow</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="from-abc-to-bayesflow">
+<h1><span class="section-number">17. </span>From ABC to BayesFlow<a class="headerlink" href="#from-abc-to-bayesflow" title="Link to this heading">#</a></h1>
+<p><em>Author: Jonas Arruda</em></p>
+<p>We infer a reaction rate from stochastic chemical kinetics using ABC, then reuse the same simulator and prior in BayesFlow.</p>
+<p>ABC fits one observed dataset at a time. It compares simulations with observations using a distance function. BayesFlow trains an estimator across the prior, so the trained estimator can analyze additional datasets without retraining. An adapter maps the simulator output to inference variables and conditions.</p>
+<p>This example follows the <a class="reference external" href="https://pyabc.readthedocs.io/en/latest/examples/chemical_reaction.html">pyABC chemical reaction tutorial</a>. Install <a class="reference external" href="https://github.com/icb-dcm/pyabc">pyABC</a> to run the first part. Readers familiar with ABC can skip to the BayesFlow workflow.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Run once if needed: %pip install pyabc</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tempfile</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pathlib</span><span class="w"> </span><span class="kn">import</span> <span class="n">Path</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="p">[</span><span class="s2">"axes.prop_cycle"</span><span class="p">]</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">"#216869"</span><span class="p">,</span> <span class="s2">"#C17C54"</span><span class="p">,</span> <span class="s2">"#77618D"</span><span class="p">,</span> <span class="s2">"#587A9C"</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">pyabc</span><span class="w"> </span><span class="kn">import</span> <span class="n">RV</span><span class="p">,</span> <span class="n">Distribution</span><span class="p">,</span> <span class="n">ABCSMC</span><span class="p">,</span> <span class="n">weighted_statistics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyabc.sampler</span><span class="w"> </span><span class="kn">import</span> <span class="n">SingleCoreSampler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">pyabc.visualization</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_kde_1d</span><span class="p">,</span> <span class="n">plot_sample_numbers</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="simulator">
+<h2><span class="section-number">17.1. </span>Simulator<a class="headerlink" href="#simulator" title="Link to this heading">#</a></h2>
+<p>We consider a Markov jump process model <span class="math notranslate nohighlight">\(m_1\)</span> for conversion of (chemical) species <span class="math notranslate nohighlight">\(X\)</span> to species <span class="math notranslate nohighlight">\(Y\)</span>:</p>
+<div class="math notranslate nohighlight">
+\[   X + Y \xrightarrow{k} 2Y.\]</div>
+<p>The model is equipped with a single rate parameter <span class="math notranslate nohighlight">\(k\)</span>. To simulate this model, we define a simple Gillespie simulator:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">helper</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pre</span><span class="p">,</span> <span class="n">c</span><span class="p">):</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">x</span><span class="o">**</span><span class="n">pre</span><span class="p">)</span><span class="o">.</span><span class="n">prod</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">*</span> <span class="n">c</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">gillespie</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">pre</span><span class="p">,</span> <span class="n">post</span><span class="p">,</span> <span class="n">max_t</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""</span>
+<span class="sd">    Gillespie forward simulation.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x: 1D array of size n_species</span>
+<span class="sd">        The initial numbers.</span>
+<span class="sd">    c: 1D array of size n_reactions</span>
+<span class="sd">        The reaction rates.</span>
+<span class="sd">    pre: array of size n_reactions x n_species</span>
+<span class="sd">        What is to be consumed.</span>
+<span class="sd">    post: array of size n_reactions x n_species</span>
+<span class="sd">        What is to be produced</span>
+<span class="sd">    max_t: int</span>
+<span class="sd">        Simulate up to time max_t</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    t, X: 1d array, 2d array, with t: The time points. X: The history </span>
+<span class="sd">        of the species. ``X.shape == (t.size, x.size)``</span>
+<span class="sd">    """</span>
+    <span class="n">t</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="n">t_store</span> <span class="o">=</span> <span class="p">[</span><span class="n">t</span><span class="p">]</span>
+    <span class="n">x_store</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="o">.</span><span class="n">copy</span><span class="p">()]</span>
+    <span class="n">S</span> <span class="o">=</span> <span class="n">post</span> <span class="o">-</span> <span class="n">pre</span>
+
+    <span class="k">while</span> <span class="n">t</span> <span class="o">&lt;</span> <span class="n">max_t</span><span class="p">:</span>
+        <span class="n">h_vec</span> <span class="o">=</span> <span class="n">helper</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">pre</span><span class="p">,</span> <span class="n">c</span><span class="p">)</span>
+        <span class="n">h0</span> <span class="o">=</span> <span class="n">h_vec</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">h0</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">delta_t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">exponential</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">h0</span><span class="p">)</span>
+        <span class="c1"># no reaction can occur any more</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isfinite</span><span class="p">(</span><span class="n">delta_t</span><span class="p">):</span>
+            <span class="n">t_store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">max_t</span><span class="p">)</span>
+            <span class="n">x_store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+            <span class="k">break</span>
+        <span class="n">reaction</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">(</span><span class="n">c</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">h_vec</span> <span class="o">/</span> <span class="n">h0</span><span class="p">)</span>
+        <span class="n">t</span> <span class="o">=</span> <span class="n">t</span> <span class="o">+</span> <span class="n">delta_t</span>
+        <span class="n">x</span> <span class="o">=</span> <span class="n">x</span> <span class="o">+</span> <span class="n">S</span><span class="p">[</span><span class="n">reaction</span><span class="p">]</span>
+
+        <span class="n">t_store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">t</span><span class="p">)</span>
+        <span class="n">x_store</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">t_store</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">x_store</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we define the model in terms of the initial molecule numbers <span class="math notranslate nohighlight">\(x_0\)</span>, an array <code class="docutils literal notranslate"><span class="pre">pre</span></code> which determines what is to be consumed (the LHS of the reaction equations) and an array <code class="docutils literal notranslate"><span class="pre">post</span></code> which determines what is to be produced (the RHS of the reaction equations). Further, we define that the simulation time should not exceed <code class="docutils literal notranslate"><span class="pre">MAX_T</span></code> seconds.</p>
+<p>The simulation starts with initial concentrations <span class="math notranslate nohighlight">\(X=40\)</span> and <span class="math notranslate nohighlight">\(Y=3\)</span>.
+The reaction <span class="math notranslate nohighlight">\(X + Y \rightarrow 2Y\)</span> is encoded in <code class="docutils literal notranslate"><span class="pre">pre</span> <span class="pre">=</span> <span class="pre">[[1,</span> <span class="pre">1]]</span></code> and <code class="docutils literal notranslate"><span class="pre">post</span> <span class="pre">=</span> <span class="pre">[[0,</span> <span class="pre">2]]</span></code>.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">MAX_T</span> <span class="o">=</span> <span class="mf">0.1</span>
+
+<span class="k">class</span><span class="w"> </span><span class="nc">StochasticModel</span><span class="p">:</span>
+    <span class="vm">__name__</span> <span class="o">=</span> <span class="s2">"StochasticModel"</span>
+    <span class="n">x0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">40</span><span class="p">,</span> <span class="mi">3</span><span class="p">])</span>  <span class="c1"># Initial molecule numbers</span>
+    <span class="n">pre</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+    <span class="n">post</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">par</span><span class="p">):</span>
+        <span class="n">rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">np</span><span class="o">.</span><span class="n">power</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">par</span><span class="p">[</span><span class="s2">"rate"</span><span class="p">])])</span>
+        <span class="n">t</span><span class="p">,</span> <span class="n">X</span> <span class="o">=</span> <span class="n">gillespie</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">x0</span><span class="p">,</span> <span class="n">rate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">pre</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">post</span><span class="p">,</span> <span class="n">MAX_T</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="p">{</span><span class="s2">"t"</span><span class="p">:</span> <span class="n">t</span><span class="p">,</span> <span class="s2">"X"</span><span class="p">:</span> <span class="n">X</span><span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Below, we draw one stochastic simulation from the model (the <code class="docutils literal notranslate"><span class="pre">Observation</span></code>) and visualize it:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">true_rate</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">log10</span><span class="p">(</span><span class="mf">2.3</span><span class="p">)</span>
+<span class="n">observations</span> <span class="o">=</span> <span class="n">StochasticModel</span><span class="p">()({</span><span class="s2">"rate"</span><span class="p">:</span> <span class="n">true_rate</span><span class="p">})</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">ncols</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">6</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">step</span><span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">observations</span><span class="p">[</span><span class="s2">"X"</span><span class="p">])</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">([</span><span class="s2">"Species X"</span><span class="p">,</span> <span class="s2">"Species Y"</span><span class="p">])</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"Time"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"Concentration"</span><span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Observation"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/cce8b971d8e61dcee432d9d00a16aa4cdcdd20db8ec2b9ac20ec1eba2e563d99.png" src="../_images/cce8b971d8e61dcee432d9d00a16aa4cdcdd20db8ec2b9ac20ec1eba2e563d99.png" />
+</div>
+</div>
+<p>We observe that species <span class="math notranslate nohighlight">\(X\)</span> is converted into species <span class="math notranslate nohighlight">\(Y\)</span>.</p>
+<p>In <code class="docutils literal notranslate"><span class="pre">pyABC</span></code>, we need to define a distance function as <span class="math notranslate nohighlight">\(L_1\)</span> norm of two trajectories, evaluated at 20 time points. This is not needed for <code class="docutils literal notranslate"><span class="pre">BayesFlow</span></code>.</p>
+<div class="math notranslate nohighlight">
+\[  \mathrm{distance}(X_1, X_2) =
+     \frac{1}{N}\sum_{n=1}^{N} 
+           \left  |X_1(t_n) -X_2(t_n) 
+           \right|, \quad t_n = \frac{n}{N}T, \quad  N=20 \,.\]</div>
+<p>We only consider the concentration of species <span class="math notranslate nohighlight">\(Y\)</span> in the distance calculation and not every time point which we simulate is actually observed. In code, this translates to:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">N_TEST_TIMES</span> <span class="o">=</span> <span class="mi">20</span>
+<span class="n">t_test_times</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">MAX_T</span><span class="p">,</span> <span class="n">N_TEST_TIMES</span><span class="p">)</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">distance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">):</span>
+    <span class="n">xt_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">t_test_times</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">yt_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">y</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">t_test_times</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">error</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">absolute</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="s2">"X"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">xt_ind</span><span class="p">]</span> <span class="o">-</span> <span class="n">y</span><span class="p">[</span><span class="s2">"X"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">yt_ind</span><span class="p">])</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
+        <span class="o">/</span> <span class="n">t_test_times</span><span class="o">.</span><span class="n">size</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">error</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We choose a uniform prior over the interval <span class="math notranslate nohighlight">\([-1, 1]\)</span> in <span class="math notranslate nohighlight">\(\log_{10}\)</span> space for the single rate parameter. The two numbers passed to <code class="docutils literal notranslate"><span class="pre">RV(&quot;uniform&quot;,</span> <span class="pre">...)</span></code> are the lower bound and interval width:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">prior</span> <span class="o">=</span> <span class="n">Distribution</span><span class="p">(</span><span class="n">rate</span><span class="o">=</span><span class="n">RV</span><span class="p">(</span><span class="s2">"uniform"</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We initialize <code class="docutils literal notranslate"><span class="pre">ABCSMC</span></code> with the same model, prior, and distance function. We use 200 particles per population and a single-core sampler to keep the example easy to run in a notebook. The observed data are the trajectory generated above.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">abc</span> <span class="o">=</span> <span class="n">ABCSMC</span><span class="p">(</span>
+    <span class="n">models</span><span class="o">=</span><span class="n">StochasticModel</span><span class="p">(),</span>
+    <span class="n">parameter_priors</span><span class="o">=</span><span class="n">prior</span><span class="p">,</span>
+    <span class="n">distance_function</span><span class="o">=</span><span class="n">distance</span><span class="p">,</span>
+    <span class="n">population_size</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span>
+    <span class="n">sampler</span><span class="o">=</span><span class="n">SingleCoreSampler</span><span class="p">(),</span>
+<span class="p">)</span>
+
+<span class="n">db_dir</span> <span class="o">=</span> <span class="n">tempfile</span><span class="o">.</span><span class="n">TemporaryDirectory</span><span class="p">()</span>
+<span class="n">abc</span><span class="o">.</span><span class="n">new</span><span class="p">(</span><span class="s2">"sqlite:///"</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">Path</span><span class="p">(</span><span class="n">db_dir</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">/</span> <span class="s2">"mjp.db"</span><span class="p">),</span> <span class="n">observations</span><span class="p">);</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ABC.History INFO: Start &lt;ABCSMC id=1, start_time=2026-10-23 12:57:13&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">abc_history</span> <span class="o">=</span> <span class="n">abc</span><span class="o">.</span><span class="n">run</span><span class="p">(</span><span class="n">minimum_epsilon</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">max_nr_populations</span><span class="o">=</span><span class="mi">10</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>ABC INFO: Calibration sample t = -1.
+ABC INFO: t: 0, eps: 1.47500000e+01.
+ABC INFO: Accepted: 200 / 384 = 5.2083e-01, ESS: 2.0000e+02.
+ABC INFO: Timing t=0 [s]: total=0.207, simulation=0.138 (67%), pipeline-setup=0.00239, prepare-next=0.0145 (population-size=0.0062, distance=0.00108).
+ABC INFO: t: 1, eps: 6.62500000e+00.
+ABC INFO: Accepted: 200 / 372 = 5.3763e-01, ESS: 1.9701e+02.
+ABC INFO: Timing t=1 [s]: total=0.385, simulation=0.257 (67%), pipeline-setup=0.00208, prepare-next=0.0146 (population-size=0.00647, distance=0.00129).
+ABC INFO: t: 2, eps: 3.85000000e+00.
+ABC INFO: Accepted: 200 / 479 = 4.1754e-01, ESS: 1.9704e+02.
+ABC INFO: Timing t=2 [s]: total=0.38, simulation=0.315 (83%), pipeline-setup=0.00226, prepare-next=0.0137 (population-size=0.0062, distance=0.00123).
+ABC INFO: t: 3, eps: 2.29645163e+00.
+ABC INFO: Accepted: 200 / 619 = 3.2310e-01, ESS: 1.8488e+02.
+ABC INFO: Timing t=3 [s]: total=0.444, simulation=0.392 (88%), pipeline-setup=0.00191, prepare-next=0.0132 (population-size=0.00544, distance=0.00116).
+ABC INFO: t: 4, eps: 1.65000000e+00.
+ABC INFO: Accepted: 200 / 920 = 2.1739e-01, ESS: 1.1356e+02.
+ABC INFO: Timing t=4 [s]: total=0.684, simulation=0.568 (83%), pipeline-setup=0.00165, prepare-next=0.014 (population-size=0.00687, distance=0.00117).
+ABC INFO: t: 5, eps: 1.35000000e+00.
+ABC INFO: Accepted: 200 / 1836 = 1.0893e-01, ESS: 1.6897e+02.
+ABC INFO: Timing t=5 [s]: total=1.16, simulation=1.09 (94%), pipeline-setup=0.00176, prepare-next=0.0153 (population-size=0.00701, distance=0.00127).
+ABC INFO: t: 6, eps: 1.15000000e+00.
+ABC INFO: Accepted: 200 / 2644 = 7.5643e-02, ESS: 1.8011e+02.
+ABC INFO: Timing t=6 [s]: total=1.64, simulation=1.58 (97%), pipeline-setup=0.00223, prepare-next=0.0131 (population-size=0.00564, distance=0.00132).
+ABC INFO: t: 7, eps: 1.00000000e+00.
+ABC INFO: Accepted: 200 / 4089 = 4.8912e-02, ESS: 1.7034e+02.
+ABC INFO: Timing t=7 [s]: total=2.44, simulation=2.38 (98%), pipeline-setup=0.002, prepare-next=0.0146 (population-size=0.00581, distance=0.00168).
+ABC INFO: Stop: Minimum epsilon.
+ABC.History INFO: Done &lt;ABCSMC id=1, duration=0:00:07.520377, end_time=2026-10-23 12:57:21&gt;
+</pre></div>
+</div>
+</div>
+</div>
+<p>We then inspect the distribution of the rate parameter:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">set_size_inches</span><span class="p">((</span><span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">true_rate</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s2">"black"</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s2">"dotted"</span><span class="p">)</span>
+<span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">abc_history</span><span class="o">.</span><span class="n">n_populations</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+    <span class="n">df</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">abc_history</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">(</span><span class="n">m</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">t</span><span class="o">=</span><span class="n">t</span><span class="p">)</span>
+    <span class="n">plot_kde_1d</span><span class="p">(</span>
+        <span class="n">df</span><span class="p">,</span>
+        <span class="n">w</span><span class="p">,</span>
+        <span class="s2">"rate"</span><span class="p">,</span>
+        <span class="n">xmin</span><span class="o">=-</span><span class="mi">1</span><span class="p">,</span> <span class="n">xmax</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+        <span class="n">ax</span><span class="o">=</span><span class="n">axes</span><span class="p">,</span>
+        <span class="n">label</span><span class="o">=</span><span class="sa">f</span><span class="s2">"t=</span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">"</span><span class="p">,</span>
+    <span class="p">)</span>
+<span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Generation"</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="s2">"upper left"</span><span class="p">,</span> <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/52132eaf9323e71ac9821935391da46033de6654165abcb098479d7fcfaab3c0.png" src="../_images/52132eaf9323e71ac9821935391da46033de6654165abcb098479d7fcfaab3c0.png" />
+</div>
+</div>
+<p>We can see that the posterior distribution is centered around the true rate parameter value. So the ABC run was successful for this single dataset.</p>
+</section>
+<section id="transitioning-to-bayesflow">
+<h2><span class="section-number">17.2. </span>Transitioning to BayesFlow<a class="headerlink" href="#transitioning-to-bayesflow" title="Link to this heading">#</a></h2>
+<p>We let BayesFlow select the backend automatically.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Multiple Keras-compatible backends detected (JAX, PyTorch, TensorFlow). Defaulting to JAX.
+To override, set the KERAS_BACKEND environment variable before importing bayesflow.
+See: https://keras.io/getting_started/#configuring-your-backend
+INFO:jax._src.xla_bridge:Unable to initialize backend 'tpu': INTERNAL: Failed to open libtpu.so: libtpu.so: cannot open shared object file: No such file or directory
+INFO:bayesflow:Using backend 'jax'
+</pre></div>
+</div>
+</div>
+</div>
+<p>We reuse the same prior and simulator in BayesFlow. The 20 observations of species <span class="math notranslate nohighlight">\(Y\)</span> become the inference conditions. In pyABC, we selected these observations inside the distance function.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">sim</span> <span class="o">=</span> <span class="n">StochasticModel</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">prior_helper</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">"""The ABC prior returns a Parameter Object from pyabc which we convert to a dict."""</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">rate</span><span class="o">=</span><span class="n">prior</span><span class="o">.</span><span class="n">rvs</span><span class="p">()[</span><span class="s2">"rate"</span><span class="p">])</span>
+
+<span class="k">def</span><span class="w"> </span><span class="nf">sim_helper</span><span class="p">(</span><span class="n">rate</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""The simulator returns a dict, we extract the output at the test times."""</span>
+    <span class="n">temp</span> <span class="o">=</span> <span class="n">sim</span><span class="p">({</span><span class="s2">"rate"</span><span class="p">:</span> <span class="n">rate</span><span class="p">})</span>
+    <span class="n">xt_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">temp</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">t_test_times</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="n">obs</span> <span class="o">=</span> <span class="n">temp</span><span class="p">[</span><span class="s2">"X"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">xt_ind</span><span class="p">]</span>
+    <span class="k">return</span> <span class="nb">dict</span><span class="p">(</span><span class="n">obs</span><span class="o">=</span><span class="n">obs</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We create a simulator from the helper functions</span>
+<span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">([</span><span class="n">prior_helper</span><span class="p">,</span> <span class="n">sim_helper</span><span class="p">])</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>The workflow builds an adapter from <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code> and <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code>. Here, the observations are already a small vector, so we do not need a summary network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">num_simulations</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">14</span>
+<span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_simulations</span><span class="p">)</span>
+<span class="n">epochs</span> <span class="o">=</span> <span class="mi">100</span>
+<span class="n">batch_size</span> <span class="o">=</span> <span class="mi">64</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We use a <code class="docutils literal notranslate"><span class="pre">StableConsistencyModel</span></code> as the inference network. The workflow standardizes both the rate parameter and the observations during training.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="s2">"rate"</span><span class="p">,</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="s2">"obs"</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">StableConsistencyModel</span><span class="p">(</span>
+        <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">128</span><span class="p">,)</span><span class="o">*</span><span class="mi">3</span><span class="p">},</span>
+    <span class="p">),</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Offline training reuses the same 16,384 simulations for 100 epochs. We simulate a separate set of 256 datasets for validation. The trained estimator can then infer the rate for many datasets without retraining.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">data</span><span class="o">=</span><span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="n">epochs</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="mi">256</span><span class="p">,</span>
+    <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Fitting on dataset instance of OfflineDataset.
+INFO:bayesflow:Building on a test batch.
+</pre></div>
+</div>
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Epoch 1/100
+256/256 - 4s - 14ms/step - loss: 0.8308 - val_loss: 0.8413
+Epoch 2/100
+256/256 - 0s - 774us/step - loss: 0.7449 - val_loss: 0.5168
+Epoch 3/100
+256/256 - 0s - 816us/step - loss: 0.2574 - val_loss: 0.1331
+Epoch 4/100
+256/256 - 0s - 768us/step - loss: 0.1599 - val_loss: 0.4147
+Epoch 5/100
+256/256 - 0s - 758us/step - loss: 0.1748 - val_loss: -1.1376e-02
+Epoch 6/100
+256/256 - 0s - 767us/step - loss: 0.2091 - val_loss: 0.1164
+Epoch 7/100
+256/256 - 0s - 757us/step - loss: 0.1796 - val_loss: 0.4111
+Epoch 8/100
+256/256 - 0s - 757us/step - loss: 0.1125 - val_loss: 0.1505
+Epoch 9/100
+256/256 - 0s - 775us/step - loss: 0.1318 - val_loss: 0.2210
+Epoch 10/100
+256/256 - 0s - 797us/step - loss: 0.1733 - val_loss: 0.1654
+Epoch 11/100
+256/256 - 0s - 924us/step - loss: 0.1213 - val_loss: 0.2711
+Epoch 12/100
+256/256 - 0s - 780us/step - loss: 0.1382 - val_loss: 0.1252
+Epoch 13/100
+256/256 - 0s - 857us/step - loss: 0.0519 - val_loss: -1.3193e-01
+Epoch 14/100
+256/256 - 0s - 913us/step - loss: 0.0825 - val_loss: 0.1974
+Epoch 15/100
+256/256 - 0s - 882us/step - loss: 0.1091 - val_loss: 0.3057
+Epoch 16/100
+256/256 - 0s - 842us/step - loss: 0.1386 - val_loss: 0.0987
+Epoch 17/100
+256/256 - 0s - 844us/step - loss: 0.0605 - val_loss: 0.2814
+Epoch 18/100
+256/256 - 0s - 839us/step - loss: 0.0862 - val_loss: 0.0353
+Epoch 19/100
+256/256 - 0s - 810us/step - loss: 0.0897 - val_loss: 0.2106
+Epoch 20/100
+256/256 - 0s - 808us/step - loss: 0.0873 - val_loss: -8.5136e-02
+Epoch 21/100
+256/256 - 0s - 817us/step - loss: -1.7064e-02 - val_loss: -1.2026e-01
+Epoch 22/100
+256/256 - 0s - 838us/step - loss: -1.4367e-02 - val_loss: 0.0046
+Epoch 23/100
+256/256 - 0s - 833us/step - loss: -4.4439e-02 - val_loss: 0.0232
+Epoch 24/100
+256/256 - 0s - 799us/step - loss: 0.0013 - val_loss: -1.0140e-01
+Epoch 25/100
+256/256 - 0s - 812us/step - loss: 0.0143 - val_loss: -5.8642e-02
+Epoch 26/100
+256/256 - 0s - 799us/step - loss: -1.7727e-02 - val_loss: 0.1452
+Epoch 27/100
+256/256 - 0s - 820us/step - loss: -2.4493e-02 - val_loss: 0.1226
+Epoch 28/100
+256/256 - 0s - 839us/step - loss: -2.7799e-02 - val_loss: 0.0088
+Epoch 29/100
+256/256 - 0s - 825us/step - loss: -1.6460e-02 - val_loss: 0.0170
+Epoch 30/100
+256/256 - 0s - 829us/step - loss: -6.6154e-02 - val_loss: -2.3593e-01
+Epoch 31/100
+256/256 - 0s - 848us/step - loss: 0.0151 - val_loss: -1.9559e-01
+Epoch 32/100
+256/256 - 0s - 838us/step - loss: -4.7425e-02 - val_loss: -1.3674e-01
+Epoch 33/100
+256/256 - 0s - 756us/step - loss: -3.9527e-02 - val_loss: -2.2441e-01
+Epoch 34/100
+256/256 - 0s - 783us/step - loss: -4.1447e-02 - val_loss: 7.8928e-04
+Epoch 35/100
+256/256 - 0s - 808us/step - loss: -7.9101e-02 - val_loss: -9.4258e-03
+Epoch 36/100
+256/256 - 0s - 832us/step - loss: -5.1248e-02 - val_loss: -5.2661e-02
+Epoch 37/100
+256/256 - 0s - 844us/step - loss: -6.1778e-02 - val_loss: 0.1218
+Epoch 38/100
+256/256 - 0s - 890us/step - loss: -1.4178e-01 - val_loss: 0.1394
+Epoch 39/100
+256/256 - 0s - 851us/step - loss: -1.1472e-01 - val_loss: 0.0152
+Epoch 40/100
+256/256 - 0s - 791us/step - loss: -5.1220e-02 - val_loss: -1.5656e-01
+Epoch 41/100
+256/256 - 0s - 785us/step - loss: -1.2798e-01 - val_loss: -4.3144e-02
+Epoch 42/100
+256/256 - 0s - 783us/step - loss: -1.2666e-01 - val_loss: 0.0655
+Epoch 43/100
+256/256 - 0s - 806us/step - loss: -1.4579e-01 - val_loss: -6.9625e-02
+Epoch 44/100
+256/256 - 0s - 835us/step - loss: -1.6922e-01 - val_loss: -1.0522e-01
+Epoch 45/100
+256/256 - 0s - 823us/step - loss: -1.3460e-01 - val_loss: -7.1752e-02
+Epoch 46/100
+256/256 - 0s - 825us/step - loss: -1.4576e-01 - val_loss: -4.7627e-02
+Epoch 47/100
+256/256 - 0s - 795us/step - loss: -1.8069e-01 - val_loss: -1.7443e-01
+Epoch 48/100
+256/256 - 0s - 818us/step - loss: -1.9508e-01 - val_loss: -2.8478e-01
+Epoch 49/100
+256/256 - 0s - 859us/step - loss: -1.8603e-01 - val_loss: -1.0997e-01
+Epoch 50/100
+256/256 - 0s - 828us/step - loss: -2.0263e-01 - val_loss: -2.4530e-01
+Epoch 51/100
+256/256 - 0s - 782us/step - loss: -1.6425e-01 - val_loss: -3.1135e-01
+Epoch 52/100
+256/256 - 0s - 817us/step - loss: -1.8400e-01 - val_loss: -2.2131e-01
+Epoch 53/100
+256/256 - 0s - 842us/step - loss: -2.1569e-01 - val_loss: -1.6648e-01
+Epoch 54/100
+256/256 - 0s - 968us/step - loss: -2.0084e-01 - val_loss: -1.2337e-01
+Epoch 55/100
+256/256 - 0s - 843us/step - loss: -2.2333e-01 - val_loss: -2.1314e-01
+Epoch 56/100
+256/256 - 0s - 838us/step - loss: -2.2497e-01 - val_loss: -1.8655e-01
+Epoch 57/100
+256/256 - 0s - 832us/step - loss: -1.7608e-01 - val_loss: -1.9376e-01
+Epoch 58/100
+256/256 - 0s - 852us/step - loss: -2.0013e-01 - val_loss: -1.1150e-01
+Epoch 59/100
+256/256 - 0s - 808us/step - loss: -2.0175e-01 - val_loss: -1.0222e-01
+Epoch 60/100
+256/256 - 0s - 819us/step - loss: -2.1624e-01 - val_loss: -3.0738e-01
+Epoch 61/100
+256/256 - 0s - 793us/step - loss: -2.2254e-01 - val_loss: -6.9157e-02
+Epoch 62/100
+256/256 - 0s - 819us/step - loss: -2.1894e-01 - val_loss: -2.0092e-01
+Epoch 63/100
+256/256 - 0s - 808us/step - loss: -2.3355e-01 - val_loss: -4.3529e-01
+Epoch 64/100
+256/256 - 0s - 795us/step - loss: -2.6478e-01 - val_loss: -2.8005e-01
+Epoch 65/100
+256/256 - 0s - 787us/step - loss: -2.5369e-01 - val_loss: -3.3658e-01
+Epoch 66/100
+256/256 - 0s - 799us/step - loss: -2.4852e-01 - val_loss: -4.8263e-01
+Epoch 67/100
+256/256 - 0s - 806us/step - loss: -2.3363e-01 - val_loss: -1.1262e-01
+Epoch 68/100
+256/256 - 0s - 840us/step - loss: -2.0909e-01 - val_loss: -3.1851e-01
+Epoch 69/100
+256/256 - 0s - 864us/step - loss: -2.1638e-01 - val_loss: -1.4754e-01
+Epoch 70/100
+256/256 - 0s - 817us/step - loss: -2.8597e-01 - val_loss: -3.4728e-01
+Epoch 71/100
+256/256 - 0s - 832us/step - loss: -3.1242e-01 - val_loss: -3.4310e-01
+Epoch 72/100
+256/256 - 0s - 849us/step - loss: -2.8868e-01 - val_loss: -1.6597e-01
+Epoch 73/100
+256/256 - 0s - 840us/step - loss: -2.6083e-01 - val_loss: -2.4214e-01
+Epoch 74/100
+256/256 - 0s - 861us/step - loss: -2.2754e-01 - val_loss: -2.0446e-01
+Epoch 75/100
+256/256 - 0s - 853us/step - loss: -2.3321e-01 - val_loss: -1.1498e-01
+Epoch 76/100
+256/256 - 0s - 815us/step - loss: -2.4049e-01 - val_loss: -1.5858e-01
+Epoch 77/100
+256/256 - 0s - 793us/step - loss: -2.5602e-01 - val_loss: -1.3474e-01
+Epoch 78/100
+256/256 - 0s - 763us/step - loss: -2.7351e-01 - val_loss: -2.5998e-01
+Epoch 79/100
+256/256 - 0s - 772us/step - loss: -3.0239e-01 - val_loss: -2.8100e-01
+Epoch 80/100
+256/256 - 0s - 785us/step - loss: -3.1095e-01 - val_loss: -3.0211e-01
+Epoch 81/100
+256/256 - 0s - 766us/step - loss: -2.7705e-01 - val_loss: -1.9351e-01
+Epoch 82/100
+256/256 - 0s - 777us/step - loss: -3.4709e-01 - val_loss: -3.6628e-01
+Epoch 83/100
+256/256 - 0s - 978us/step - loss: -3.8338e-01 - val_loss: -3.1405e-01
+Epoch 84/100
+256/256 - 0s - 781us/step - loss: -3.6869e-01 - val_loss: -3.4195e-01
+Epoch 85/100
+256/256 - 0s - 774us/step - loss: -3.3370e-01 - val_loss: -3.3353e-01
+Epoch 86/100
+256/256 - 0s - 786us/step - loss: -3.3100e-01 - val_loss: -4.2975e-01
+Epoch 87/100
+256/256 - 0s - 770us/step - loss: -3.3503e-01 - val_loss: -4.3107e-01
+Epoch 88/100
+256/256 - 0s - 768us/step - loss: -3.5179e-01 - val_loss: -2.9990e-01
+Epoch 89/100
+256/256 - 0s - 783us/step - loss: -3.1862e-01 - val_loss: -2.0089e-01
+Epoch 90/100
+256/256 - 0s - 798us/step - loss: -3.2323e-01 - val_loss: -3.5884e-01
+Epoch 91/100
+256/256 - 0s - 792us/step - loss: -3.3864e-01 - val_loss: -4.4364e-01
+Epoch 92/100
+256/256 - 0s - 821us/step - loss: -3.4524e-01 - val_loss: -3.5966e-01
+Epoch 93/100
+256/256 - 0s - 838us/step - loss: -3.1954e-01 - val_loss: -4.8760e-01
+Epoch 94/100
+256/256 - 0s - 818us/step - loss: -3.3983e-01 - val_loss: -5.5466e-01
+Epoch 95/100
+256/256 - 0s - 769us/step - loss: -3.4063e-01 - val_loss: -2.3343e-01
+Epoch 96/100
+256/256 - 0s - 967us/step - loss: -3.2509e-01 - val_loss: -4.1806e-01
+Epoch 97/100
+256/256 - 0s - 791us/step - loss: -3.3911e-01 - val_loss: -1.9683e-01
+Epoch 98/100
+256/256 - 0s - 854us/step - loss: -3.1924e-01 - val_loss: -3.3262e-01
+Epoch 99/100
+256/256 - 0s - 807us/step - loss: -3.3532e-01 - val_loss: -2.2082e-01
+Epoch 100/100
+256/256 - 0s - 806us/step - loss: -3.3093e-01 - val_loss: -3.7551e-01
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Training completed in 25.96 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/a3282f54b5a148003bd4275d296a505da0c07fb4d37637cfdc996e6a8092911c.png" src="../_images/a3282f54b5a148003bd4275d296a505da0c07fb4d37637cfdc996e6a8092911c.png" />
+</div>
+</div>
+</section>
+<section id="validation-phase">
+<h2><span class="section-number">17.3. </span>Validation Phase<a class="headerlink" href="#validation-phase" title="Link to this heading">#</a></h2>
+<p>Check parameter recovery and simulation-based calibration on simulations not used for training. These diagnostics are inexpensive after amortized training. With ABC, we would need a separate fit for each validation dataset.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># Set the number of posterior draws you want to get</span>
+<span class="n">num_samples</span> <span class="o">=</span> <span class="mi">1000</span>
+
+<span class="c1"># Simulate 300 scenarios and extract simulations and ground truth parameters</span>
+<span class="n">test_sims</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">300</span><span class="p">)</span>
+<span class="n">test_sims_params</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">test_sims</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">prior</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+<span class="n">test_sims_data</span> <span class="o">=</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">v</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">v</span> <span class="ow">in</span> <span class="n">test_sims</span><span class="o">.</span><span class="n">items</span><span class="p">()</span> <span class="k">if</span> <span class="n">k</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prior</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+
+<span class="c1"># Obtain 1000 samples</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">test_sims_data</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 5.71 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">test_sims_params</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/b0097f985b2f1d99c8dabf4796e1d979a2270aa4b3dfa2a539c920e66a1ef1d1.png" src="../_images/b0097f985b2f1d99c8dabf4796e1d979a2270aa4b3dfa2a539c920e66a1ef1d1.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">test_sims_params</span><span class="p">,</span> <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/57fcf40cfc5d2f46e5430893580359261a798f0b9bee3b1547628e2eaee2ad73.png" src="../_images/57fcf40cfc5d2f46e5430893580359261a798f0b9bee3b1547628e2eaee2ad73.png" />
+</div>
+</div>
+</section>
+<section id="inference-phase">
+<h2><span class="section-number">17.4. </span>Inference Phase<a class="headerlink" href="#inference-phase" title="Link to this heading">#</a></h2>
+<p>We now compare the BayesFlow and ABC posteriors for the observed trajectory. Both are approximations: ABC depends on its distance tolerance, and BayesFlow depends on training. Agreement between them is useful, but it does not replace the recovery and calibration checks above.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># We bring the observation into the right format</span>
+<span class="n">xt_ind</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">searchsorted</span><span class="p">(</span><span class="n">observations</span><span class="p">[</span><span class="s2">"t"</span><span class="p">],</span> <span class="n">t_test_times</span><span class="p">,</span> <span class="n">side</span><span class="o">=</span><span class="s2">"right"</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+<span class="n">obs</span> <span class="o">=</span> <span class="n">observations</span><span class="p">[</span><span class="s2">"X"</span><span class="p">][:,</span> <span class="mi">1</span><span class="p">][</span><span class="n">xt_ind</span><span class="p">]</span>
+
+<span class="c1"># Obtain 1000 posterior samples</span>
+<span class="n">samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"obs"</span><span class="p">:</span> <span class="n">obs</span><span class="p">[</span><span class="kc">None</span><span class="p">,</span> <span class="p">:]},</span> <span class="n">num_samples</span><span class="o">=</span><span class="n">num_samples</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 3.96 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span><span class="n">samples</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">true_rate</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/3eff9312ccbaa645a3330cb07cc06436a9c1159bee8b745169d3f759702a0896.png" src="../_images/3eff9312ccbaa645a3330cb07cc06436a9c1159bee8b745169d3f759702a0896.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="c1"># abc gives us weighted samples, we resample them to get comparable samples</span>
+<span class="n">df</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="n">abc_history</span><span class="o">.</span><span class="n">get_distribution</span><span class="p">()</span>
+<span class="n">abc_samples</span> <span class="o">=</span> <span class="n">weighted_statistics</span><span class="o">.</span><span class="n">resample</span><span class="p">(</span><span class="n">df</span><span class="p">[</span><span class="s2">"rate"</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="mi">1000</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">({</span><span class="s2">"rate"</span><span class="p">:</span> <span class="n">abc_samples</span><span class="p">},</span> <span class="n">targets</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">true_rate</span><span class="p">]))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/d954efbbf0a994d27ab9ef5d23ad374ccbe383d937f3a293451d8345de8fa9a5.png" src="../_images/d954efbbf0a994d27ab9ef5d23ad374ccbe383d937f3a293451d8345de8fa9a5.png" />
+</div>
+</div>
+<p>Compare the simulation budgets below. BayesFlow uses 16,384 training simulations, plus 256 for validation and 300 for the diagnostics above. Repeating training epochs adds no simulations. ABC fits this one dataset, while BayesFlow’s training cost is shared across every dataset we analyze with the trained estimator.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"BayesFlow training simulations: </span><span class="si">{</span><span class="n">num_simulations</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"Number of simulations in ABC: </span><span class="si">{</span><span class="n">abc_history</span><span class="o">.</span><span class="n">total_nr_simulations</span><span class="si">}</span><span class="s2">"</span><span class="p">)</span>
+
+<span class="n">ax</span> <span class="o">=</span> <span class="n">plot_sample_numbers</span><span class="p">(</span><span class="n">abc_history</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">([])</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="s2">"Simulations per Generation of ABC"</span><span class="p">)</span>
+<span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>BayesFlow training simulations: 16384
+Number of simulations in ABC: 11543
+</pre></div>
+</div>
+<img alt="../_images/a0fce48c72c49c73d6d2ad8b6a5554358603aca79ec0f341878a999bb18ab62a.png" src="../_images/a0fce48c72c49c73d6d2ad8b6a5554358603aca79ec0f341878a999bb18ab62a.png" />
+</div>
+</div>
+<p>For higher-dimensional observations, we can train a summary network jointly with the inference network. The same workflow then learns both how to summarize the data and how to infer the parameters.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Lotka_Volterra_Point_Estimation.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">16. </span>Rapid Iteration with Point Estimation - Lotka-Volterra Dynamics</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Bayesian_Experimental_Design.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">18. </span>Bayesian Experimental Design with BayesFlow and PyTorch</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#simulator">17.1. Simulator</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#transitioning-to-bayesflow">17.2. Transitioning to BayesFlow</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#validation-phase">17.3. Validation Phase</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-phase">17.4. Inference Phase</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.1/docsrc/source/_examples/From_ABC_to_BayesFlow.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

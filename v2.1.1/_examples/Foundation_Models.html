@@ -1,0 +1,1429 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>6. Foundation models for amortized inference &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=fc09bec8"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script type="application/vnd.jupyter.widget-state+json">{"state": {"1e0ea280366140b9944c22587fe917c1": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "249e38d3125341318a1488424d2c41ca": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "386fc531b3cd4603b5b06dcc07dd5c19": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "ProgressStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "ProgressStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "bar_color": null, "description_width": ""}}, "3f08fe5782404d25aa1793bf8a1b3fda": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLStyleModel", "state": {"_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLStyleModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "StyleView", "background": null, "description_width": "", "font_size": null, "text_color": null}}, "3fcb18bb16ef40c0966ea491a335aed7": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "74e1a2353651419ab3f1d1b51cf3abd6": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_1e0ea280366140b9944c22587fe917c1", "placeholder": "\u200b", "style": "IPY_MODEL_249e38d3125341318a1488424d2c41ca", "tabbable": null, "tooltip": null, "value": "Loading\u2007weights:\u2007100%"}}, "77d3e0c722344d4e8956a0d8e1966440": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HBoxModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HBoxModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HBoxView", "box_style": "", "children": ["IPY_MODEL_74e1a2353651419ab3f1d1b51cf3abd6", "IPY_MODEL_f4cd38b5c07042ffb5d9851dfbfb7ffc", "IPY_MODEL_889463201c4c4de3a7535c7a47fc473f"], "layout": "IPY_MODEL_3fcb18bb16ef40c0966ea491a335aed7", "tabbable": null, "tooltip": null}}, "889463201c4c4de3a7535c7a47fc473f": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "HTMLModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "HTMLModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "HTMLView", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_90f8ac3347754e44adaab20783abaa3f", "placeholder": "\u200b", "style": "IPY_MODEL_3f08fe5782404d25aa1793bf8a1b3fda", "tabbable": null, "tooltip": null, "value": "\u2007170/170\u2007[00:00&lt;00:00,\u200713453.17it/s]"}}, "8baa1843ed3743b7a1e827d4fb5ffe8b": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "90f8ac3347754e44adaab20783abaa3f": {"model_module": "@jupyter-widgets/base", "model_module_version": "2.0.0", "model_name": "LayoutModel", "state": {"_model_module": "@jupyter-widgets/base", "_model_module_version": "2.0.0", "_model_name": "LayoutModel", "_view_count": null, "_view_module": "@jupyter-widgets/base", "_view_module_version": "2.0.0", "_view_name": "LayoutView", "align_content": null, "align_items": null, "align_self": null, "border_bottom": null, "border_left": null, "border_right": null, "border_top": null, "bottom": null, "display": null, "flex": null, "flex_flow": null, "grid_area": null, "grid_auto_columns": null, "grid_auto_flow": null, "grid_auto_rows": null, "grid_column": null, "grid_gap": null, "grid_row": null, "grid_template_areas": null, "grid_template_columns": null, "grid_template_rows": null, "height": null, "justify_content": null, "justify_items": null, "left": null, "margin": null, "max_height": null, "max_width": null, "min_height": null, "min_width": null, "object_fit": null, "object_position": null, "order": null, "overflow": null, "padding": null, "right": null, "top": null, "visibility": null, "width": null}}, "f4cd38b5c07042ffb5d9851dfbfb7ffc": {"model_module": "@jupyter-widgets/controls", "model_module_version": "2.0.0", "model_name": "FloatProgressModel", "state": {"_dom_classes": [], "_model_module": "@jupyter-widgets/controls", "_model_module_version": "2.0.0", "_model_name": "FloatProgressModel", "_view_count": null, "_view_module": "@jupyter-widgets/controls", "_view_module_version": "2.0.0", "_view_name": "ProgressView", "bar_style": "success", "description": "", "description_allow_html": false, "layout": "IPY_MODEL_8baa1843ed3743b7a1e827d4fb5ffe8b", "max": 170, "min": 0, "orientation": "horizontal", "style": "IPY_MODEL_386fc531b3cd4603b5b06dcc07dd5c19", "tabbable": null, "tooltip": null, "value": 170}}}, "version_major": 2, "version_minor": 0}</script>
+    <script crossorigin="anonymous" integrity="sha256-Ae2Vz/4ePdIu6ZyI/5ZGsYnb+m0JlOmKPjt6XZ9JJkA=" src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.4/require.min.js"></script>
+    <script crossorigin="anonymous" data-jupyter-widgets-cdn="https://cdn.jsdelivr.net/npm/" src="https://cdn.jsdelivr.net/npm/@jupyter-widgets/html-manager@1.0.6/dist/embed-amd.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Foundation_Models';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Foundation_Models.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="7. Likelihood Estimation for the g-and-k Distribution" href="Likelihood_Estimation.html" />
+    <link rel="prev" title="5. Generalized linear models" href="Bayesian_GLM.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.1" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">2. Minimal amortized workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bivariate_Smoothing.html">3. Time-varying parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">4. Image or other spatial data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_GLM.html">5. Generalized linear models</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">6. Foundation models as backbones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">7. Neural likelihood estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">8. Neural ratio estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">9. Compositional estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">10. Deep Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Self_Consistency.html">11. Self-consistency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changing_Priors.html">12. Changing priors at inference time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">13. Model comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Comparison_Deep_Dive.html">14. Model comparison deep dive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">15. Multimodal data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">16. Bayes estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">17. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">18. Bayesian experimental design</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Predictive_Control.html">19. Model predictive control</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">6. </span>Foundation models for amortized inference</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="foundation-models-for-amortized-inference">
+<h1><span class="section-number">6. </span>Foundation models for amortized inference<a class="headerlink" href="#foundation-models-for-amortized-inference" title="Link to this heading">#</a></h1>
+<p><em>Authors: Stefan T. Radev, Paul Christian-Bürkner, Jonas Arruda</em></p>
+<section id="the-two-problems-in-amortized-bayesian-inference">
+<h2><span class="section-number">6.1. </span>The two problems in amortized Bayesian inference<a class="headerlink" href="#the-two-problems-in-amortized-bayesian-inference" title="Link to this heading">#</a></h2>
+<p>Amortized Bayesian inference tries to solve two problems at the same time: <strong>representation learning</strong> and <strong>probabilistic inference</strong>. The former is a means to an end. The latter is our end goal.</p>
+<p>In BayesFlow, we make a conceptual distinction between these two problems at the level of the neural architecture. Accordingly, our estimators typically consist of a <strong>summary network</strong> (sometimes called an embedding network) and an <strong>inference network</strong>, although they can sometimes get blurred in composite architectures (e.g., <a class="reference internal" href="Spatial_Data_and_Parameters.html"><span class="std std-doc">UNets for diffusion models</span></a>). The summary network does the representation learning. The inference network does the inference.</p>
+<p>For example, to estimate a posterior distribution <span class="math notranslate nohighlight">\(p(\theta \mid x_1,\dots,x_N)\)</span> over <span class="math notranslate nohighlight">\(N\)</span> IID observations, we may want to train a function <span class="math notranslate nohighlight">\(s = h(x_1,\dots,x_N)\)</span> that only retains the information necessary to estimate the posterior of <span class="math notranslate nohighlight">\(\theta\)</span>. In other words, the summary network is not an encoder in the conventional sense, as it does not need to be sufficient for the data; it only needs to be sufficient for <span class="math notranslate nohighlight">\(\theta\)</span>, that is <span class="math notranslate nohighlight">\(p(\theta \mid x_1,\dots,x_N) = p(\theta \mid s)\)</span>.</p>
+<p>Learning informative representations for downstream inference is useful and necessary in many cases. These include:</p>
+<ul class="simple">
+<li><p>The data tensor varies in shape or size (e.g., the sample size <span class="math notranslate nohighlight">\(N\)</span> varies or the data is a matrix with varying rows and columns).</p></li>
+<li><p>The data tensor has more dimensions than the parameter tensor (e.g., parameters are vectors but the data comprises a sequence of images and cannot be naively concatenated).</p></li>
+<li><p>The data tensor is too high dimensional for direct inference in likelihood estimation, that is, when the aim is to estimate <span class="math notranslate nohighlight">\(p(x \mid \theta)\)</span>.</p></li>
+<li><p>The data contains invariances or symmetries which need to be represented by the posterior.</p></li>
+</ul>
+<p>In many cases, however, learning these representations can be anything but easy. We call the failure to learn useful representations a <strong>representation gap</strong> [1], and we’ve recently shown cases where suboptimal training dynamics can lead to such gaps. Additionally, when simulation budgets are tight (e.g., when working with expensive simulators) or the data dimensionality is high, a lot of engineering may need to be invested in the design of the summary network.</p>
+<blockquote>
+<div><p>Wouldn’t it be dreamy if somebody else could do the representation learning for us, while we focus on inference?</p>
+</div></blockquote>
+<p>In the following, we showcase the utility of foundation models as both summary and inference components in amortized Bayes. We focus primarily on the ease with which foundation model encoders can be plugged into BayesFlow workflows as “frozen” summary networks, to which we attach an inference head. Essentially, we treat the frozen encoder as a capable feature engineer. This approach is illustrated in the figure below.</p>
+<p><img alt="Example workflow with foundation-model encoders and embeddings" src="../_images/embedding_workflow.png" /></p>
+<p>In the final part of the tutorial, we demonstrate how to use a foundation model as an inference network, as explored in [2]. Both approaches have many moving parts and trade-offs, and this tutorial tries to contribute some conceptual clarity.</p>
+<ul class="simple">
+<li><p>[1] Olischläger, H., Jedhoff, S., Kucharský, Š., Mishra, A., Radev, S. T., &amp; Bürkner, P. (2026). <a class="reference external" href="https://arxiv.org/abs/2609.39525">Mitigating representation gaps in amortized Bayesian inference with auxiliary supervision</a>. <em>arXiv preprint arXiv:2609.39525</em>.</p></li>
+<li><p>[2] Vetter, J., Gloeckler, M., Gedon, D., &amp; Macke, J. H. (2026). <a class="reference external" href="https://proceedings.neurips.cc/paper_files/paper/2025/hash/770cabd044c4eacb6dc5924d9a686dce-Abstract-Conference.html">Effortless, simulation-efficient Bayesian inference using tabular foundation models</a>. <em>Advances in Neural Information Processing Systems, 38</em>, 82685-82724.</p></li>
+</ul>
+</section>
+<section id="how-does-a-foundation-model-connect-to-bayesflow">
+<h2><span class="section-number">6.2. </span>How does a foundation model connect to BayesFlow?<a class="headerlink" href="#how-does-a-foundation-model-connect-to-bayesflow" title="Link to this heading">#</a></h2>
+<p>Foundation models typically consist of an encoder and a decoder. The encoder supplies data representations (called embeddings or hidden states) that the decoder uses to generate an output of a given modality (e.g., text, images, tabular entries). Encoder-only and decoder-only models can also extract data embeddings, even though these can be more difficult to localize in the architecture. We can distinguish the following approaches.</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Approach</p></th>
+<th class="head"><p>BayesFlow input</p></th>
+<th class="head"><p>What is trained?</p></th>
+<th class="head"><p>Used here?</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>Cached hidden states as a direct condition</p></td>
+<td><p>Cached <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code></p></td>
+<td><p>Inference network</p></td>
+<td><p>TabPFN example</p></td>
+</tr>
+<tr class="row-odd"><td><p>Cached hidden states through a summary network</p></td>
+<td><p>Cached <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code></p></td>
+<td><p>Small summary network and inference network</p></td>
+<td><p>Chronos-2 example</p></td>
+</tr>
+<tr class="row-even"><td><p>Frozen encoder called during training</p></td>
+<td><p>Raw <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code></p></td>
+<td><p>Inference network; encoder stays frozen</p></td>
+<td><p>Not used</p></td>
+</tr>
+<tr class="row-odd"><td><p>Fine-tuned encoder</p></td>
+<td><p>Raw <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code></p></td>
+<td><p>Selected encoder layers and inference network</p></td>
+<td><p>Not used</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<p>The first two rows differ only in whether BayesFlow learns an additional summary network. A summary network can adapt a large embedding to the inference task, but it cannot reconstruct information already removed by the frozen encoder.</p>
+<p>Backend compatibility matters only when the encoder is called inside the trainable BayesFlow model. A wrapped PyTorch encoder requires the Torch backend and a differentiable tensor path. In this notebook the encoders run separately and return cached NumPy arrays, so BayesFlow can use any automatically detected Keras backend.</p>
+<blockquote>
+<div><p>Note: A frozen encoder should run in evaluation mode and without gradient tracking. Fine-tuning instead requires training mode for the selected layers and must avoid NumPy conversion between the encoder and BayesFlow.</p>
+</div></blockquote>
+</section>
+<section id="how-to-extract-an-embedding">
+<h2><span class="section-number">6.3. </span>How to extract an embedding<a class="headerlink" href="#how-to-extract-an-embedding" title="Link to this heading">#</a></h2>
+<p>The original task head answers the foundation model’s pretraining task. It produces a forecast, class probability, regression distribution, or generated token. That output can be low-dimensional and may discard information about simulator parameters. We therefore want hidden features immediately before the task head, obtained through a documented embedding method or the base encoder API.</p>
+<p>For every foundation model, we have to:</p>
+<ol class="arabic simple">
+<li><p>Identify the original task head and the hidden tensor that feeds it.</p></li>
+<li><p>Check the meaning of every tensor axis: rows, time steps, channels, patches, or tokens.</p></li>
+<li><p>Remove padding or task-specific tokens with the documented mask.</p></li>
+<li><p>Pool only axes that should be exchangeable; preserve identities such as channel or feature order when they carry information.</p></li>
+<li><p>Retain normalization statistics when location or scale may depend on the simulator parameters.</p></li>
+<li><p>Confirm the resulting shape, then test the embedding through parameter recovery and calibration.</p></li>
+</ol>
+<p>The two concrete extraction points used below are consistent:</p>
+<div class="pst-scrollable-table-container"><table class="table">
+<thead>
+<tr class="row-odd"><th class="head"><p>Encoder</p></th>
+<th class="head"><p>Task head we bypass</p></th>
+<th class="head"><p>Embedding we extract</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><a class="reference external" href="https://github.com/PriorLabs/TabPFN">TabPFN v2</a></p></td>
+<td><p>Tabular predictive distribution</p></td>
+<td><p>Design-weighted moments of the context-row hidden features from <code class="docutils literal notranslate"><span class="pre">get_embeddings(...,</span> <span class="pre">data_source=&quot;train&quot;)</span></code>, together with the response mean and scale.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference external" href="https://huggingface.co/amazon/chronos-2">Chronos-2</a></p></td>
+<td><p>Forecasting output</p></td>
+<td><p>Context encoder tokens from <code class="docutils literal notranslate"><span class="pre">embed</span></code>; pool time tokens separately by channel and retain normalization statistics.</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<section id="aside-using-pretrained-encoders-from-hugging-face">
+<h3><span class="section-number">6.3.1. </span>Aside: Using pretrained encoders from Hugging Face<a class="headerlink" href="#aside-using-pretrained-encoders-from-hugging-face" title="Link to this heading">#</a></h3>
+<p>The <a class="reference external" href="https://huggingface.co/models">Hugging Face Hub</a> provides pretrained encoders that can be used to extract features from high-dimensional observations, such as images. For example, we can load a pretrained DINOv2 vision encoder and use it to obtain fixed-size vectors:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">transformers</span><span class="w"> </span><span class="kn">import</span> <span class="n">AutoImageProcessor</span><span class="p">,</span> <span class="n">AutoModel</span>
+
+<span class="c1"># Load a pretrained image encoder</span>
+<span class="n">checkpoint</span> <span class="o">=</span> <span class="s2">"facebook/dinov2-small"</span>
+<span class="n">processor</span> <span class="o">=</span> <span class="n">AutoImageProcessor</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span>
+<span class="n">encoder</span> <span class="o">=</span> <span class="n">AutoModel</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span><span class="n">checkpoint</span><span class="p">)</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Example batch of image observations (replace with simulated data)</span>
+<span class="n">images</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="p">(</span><span class="mi">4</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">3</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">uint8</span><span class="p">)</span>
+
+<span class="c1"># Extract embeddings</span>
+<span class="n">inputs</span> <span class="o">=</span> <span class="n">processor</span><span class="p">(</span><span class="n">images</span><span class="o">=</span><span class="nb">list</span><span class="p">(</span><span class="n">images</span><span class="p">),</span> <span class="n">return_tensors</span><span class="o">=</span><span class="s2">"pt"</span><span class="p">)</span>
+<span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+    <span class="n">embeddings</span> <span class="o">=</span> <span class="n">encoder</span><span class="p">(</span><span class="o">**</span><span class="n">inputs</span><span class="p">)</span><span class="o">.</span><span class="n">last_hidden_state</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+<span class="nb">print</span><span class="p">(</span><span class="n">embeddings</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>  <span class="c1"># (4, 384)</span>
+</pre></div>
+</div>
+<p>The resulting embeddings provide a 384-dimensional representation of each image and can be used as conditioning variables for amortized inference in BayesFlow. The encoder (or parts thereof) can be used offline or fine-tuned together with an inference head.</p>
+</section>
+</section>
+<section id="setup">
+<h2><span class="section-number">6.4. </span>Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<p>Install the BayesFlow repository and the two external model packages before starting the notebook. From the repository root:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>-e<span class="w"> </span>.
+uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span><span class="s2">"tabpfn==9.2.0"</span><span class="w"> </span><span class="s2">"chronos-forecasting==2.3.2"</span><span class="w"> </span><span class="s2">"transformers&gt;=4.41,&lt;6"</span>
+</pre></div>
+</div>
+<p>Transformers is listed explicitly because the example above imports it directly. The first run also needs internet access to download the public model checkpoints; subsequent runs use the local model cache. The foundation models use CUDA when available. Their outputs are converted to NumPy before BayesFlow sees them, so no manual Keras-backend selection is needed in this notebook.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">keras</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabpfn</span><span class="w"> </span><span class="kn">import</span> <span class="n">TabPFNRegressor</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">tabpfn.constants</span><span class="w"> </span><span class="kn">import</span> <span class="n">ModelVersion</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Multiple Keras-compatible backends detected (JAX, PyTorch, TensorFlow). Defaulting to JAX.
+To override, set the KERAS_BACKEND environment variable before importing bayesflow.
+See: https://keras.io/getting_started/#configuring-your-backend
+</pre></div>
+</div>
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Using backend 'jax'
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">rng</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">default_rng</span><span class="p">(</span><span class="mi">2026</span><span class="p">)</span>
+
+<span class="n">device</span> <span class="o">=</span> <span class="s2">"cuda"</span> <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">()</span> <span class="k">else</span> <span class="s2">"cpu"</span>
+
+<span class="n">plt</span><span class="o">.</span><span class="n">rcParams</span><span class="o">.</span><span class="n">update</span><span class="p">({</span>
+    <span class="s2">"axes.spines.top"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span> <span class="s2">"axes.spines.right"</span><span class="p">:</span> <span class="kc">False</span><span class="p">,</span>
+    <span class="s2">"axes.titleweight"</span><span class="p">:</span> <span class="s2">"bold"</span><span class="p">,</span> <span class="s2">"figure.dpi"</span><span class="p">:</span> <span class="mi">110</span><span class="p">,</span>
+    <span class="s2">"axes.prop_cycle"</span><span class="p">:</span> <span class="n">plt</span><span class="o">.</span><span class="n">cycler</span><span class="p">(</span><span class="n">color</span><span class="o">=</span><span class="p">[</span><span class="s2">"#287D8E"</span><span class="p">,</span> <span class="s2">"#D58B40"</span><span class="p">,</span> <span class="s2">"#596A85"</span><span class="p">]),</span>
+<span class="p">})</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="tabpfn-nonlinear-regression-with-unequal-noise">
+<h2><span class="section-number">6.5. </span>1. TabPFN: nonlinear regression with unequal noise<a class="headerlink" href="#tabpfn-nonlinear-regression-with-unequal-noise" title="Link to this heading">#</a></h2>
+<p>We use the model from the <a class="reference internal" href="Bayesian_GLM.html"><span class="std std-doc">generalized linear models tutorial</span></a>, now with a pretrained encoder. Each dataset has 100 rows and two predictors. We keep the design matrix fixed across simulations and observations. The response has a sinusoidal effect, an interaction, and noise that increases with the second predictor:</p>
+<div class="math notranslate nohighlight">
+\[y_i = b + a\sin(1.5 x_{i1}) + c x_{i1}x_{i2} + 0.5x_{i2} + \epsilon_i,\]</div>
+<div class="math notranslate nohighlight">
+\[\epsilon_i \sim \mathcal N\!\left(0,\,[\exp(\ell)(1+0.4|x_{i2}|)]^2\right).\]</div>
+<p>We infer the intercept <span class="math notranslate nohighlight">\(b\)</span>, sine coefficient <span class="math notranslate nohighlight">\(a\)</span>, interaction coefficient <span class="math notranslate nohighlight">\(c\)</span>, and the log baseline noise scale <span class="math notranslate nohighlight">\(\ell\)</span>. Exponentiating <span class="math notranslate nohighlight">\(\ell\)</span> keeps the noise scale positive; the other independent normal priors allow positive and negative effects. TabPFN will process all observed predictors and responses, while the BayesFlow inference network learns their four-parameter posterior.</p>
+<p>We train the inference network on <strong>4,096 simulated datasets</strong>, compared with <strong>384,000</strong> (<code class="docutils literal notranslate"><span class="pre">60</span> <span class="pre">×</span> <span class="pre">100</span> <span class="pre">×</span> <span class="pre">64</span></code>) in the GLM notebook where we learned our own <code class="docutils literal notranslate"><span class="pre">SetTransformer</span></code> summary network. This results in about 94 times fewer training simulations. We want to create a more “stingy” setup, as we assume that we are now only solving an inference problem.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">REGRESSION_PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"intercept"</span><span class="p">,</span> <span class="s2">"sine_effect"</span><span class="p">,</span> <span class="s2">"interaction"</span><span class="p">,</span> <span class="s2">"log_noise"</span><span class="p">)</span>
+
+<span class="n">x</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">100</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
+<span class="n">prior_mean</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"intercept"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"sine_effect"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"interaction"</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span> <span class="s2">"log_noise"</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">}</span>
+<span class="n">prior_std</span> <span class="o">=</span> <span class="p">{</span><span class="s2">"intercept"</span><span class="p">:</span> <span class="mf">0.7</span><span class="p">,</span> <span class="s2">"sine_effect"</span><span class="p">:</span> <span class="mf">0.8</span><span class="p">,</span> <span class="s2">"interaction"</span><span class="p">:</span> <span class="mf">0.6</span><span class="p">,</span> <span class="s2">"log_noise"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">regression_response</span><span class="p">(</span><span class="n">intercept</span><span class="p">,</span> <span class="n">sine_effect</span><span class="p">,</span> <span class="n">interaction</span><span class="p">,</span> <span class="n">log_noise</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="n">intercept</span>
+        <span class="o">+</span> <span class="n">sine_effect</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="o">+</span> <span class="n">interaction</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="p">)</span>
+    <span class="n">scale</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">exp</span><span class="p">(</span><span class="n">log_noise</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="k">return</span> <span class="n">mean</span> <span class="o">+</span> <span class="n">scale</span> <span class="o">*</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">mean</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_regression</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">parameter_names</span><span class="p">,</span> <span class="n">prior_mean</span><span class="p">,</span> <span class="n">prior_std</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="n">parameters</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">prior_mean</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">prior_std</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">parameter_names</span>
+    <span class="p">}</span>
+    <span class="k">return</span> <span class="p">{</span><span class="o">**</span><span class="n">parameters</span><span class="p">,</span> <span class="s2">"y"</span><span class="p">:</span> <span class="n">regression_response</span><span class="p">(</span><span class="o">**</span><span class="n">parameters</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)}</span>
+
+<span class="n">train_raw</span><span class="p">,</span> <span class="n">val_raw</span><span class="p">,</span> <span class="n">test_raw</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="n">simulate_regression</span><span class="p">(</span>
+        <span class="n">n</span><span class="p">,</span>
+        <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span>
+        <span class="n">parameter_names</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+        <span class="n">prior_mean</span><span class="o">=</span><span class="n">prior_mean</span><span class="p">,</span>
+        <span class="n">prior_std</span><span class="o">=</span><span class="n">prior_std</span><span class="p">,</span>
+        <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">,</span>
+    <span class="p">)</span>
+    <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">4096</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">128</span><span class="p">)</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="compute-each-frozen-embedding-before-training">
+<h3><span class="section-number">6.5.1. </span>Compute each frozen embedding before training<a class="headerlink" href="#compute-each-frozen-embedding-before-training" title="Link to this heading">#</a></h3>
+<p><a class="reference external" href="https://github.com/PriorLabs/TabPFN">TabPFN’s <code class="docutils literal notranslate"><span class="pre">fit</span></code></a> prepares a dataset as in-context input; it does not optimize the pretrained weights. We reuse one encoder with one ensemble member and call <code class="docutils literal notranslate"><span class="pre">fit</span></code> and <code class="docutils literal notranslate"><span class="pre">get_embeddings</span></code> for each dataset. The public method returns one hidden state <span class="math notranslate nohighlight">\(h_i\)</span> per context row as a NumPy array, which is exactly what offline BayesFlow training needs.</p>
+<p>The simulator mean contains an intercept and three known design terms: <span class="math notranslate nohighlight">\(\sin(1.5x_{i1})\)</span>, <span class="math notranslate nohighlight">\(x_{i1}x_{i2}\)</span>, and <span class="math notranslate nohighlight">\(x_{i2}\)</span>. For each term <span class="math notranslate nohighlight">\(z_{ik}\)</span>, we compute the design-weighted moment <span class="math notranslate nohighlight">\(N^{-1}\sum_i z_{ik}h_i\)</span>. The nonconstant design columns are centered and scaled once, and the unweighted moment uses <span class="math notranslate nohighlight">\(z_{i0}=1\)</span>. Concatenating these four moments retains signed associations between the row embeddings and the predictor design. This goes to show that some embeddings may require a bit of postprocessing before entering the inference head.</p>
+<p>TabPFN <a class="reference external" href="https://github.com/PriorLabs/TabPFN/blob/main/src/tabpfn/regressor.py">standardizes each dataset’s response</a>. We also append the response mean and standard deviation so that location and scale information remain available.</p>
+<p>Each simulated or observed <code class="docutils literal notranslate"><span class="pre">(x,</span> <span class="pre">y)</span></code> pair is one complete dataset for parameter inference. After <code class="docutils literal notranslate"><span class="pre">fit(x,</span> <span class="pre">y)</span></code>, its 100 rows are TabPFN’s context, or <code class="docutils literal notranslate"><span class="pre">train</span></code>, rows. We need hidden features for those context rows, so we request <code class="docutils literal notranslate"><span class="pre">data_source=&quot;train&quot;</span></code>. By contrast, <code class="docutils literal notranslate"><span class="pre">data_source=&quot;test&quot;</span></code> would return hidden features for query rows whose unknown responses TabPFN is meant to predict.</p>
+<p>Although <code class="docutils literal notranslate"><span class="pre">get_embeddings</span></code> requires nonempty query features to run its forward pass, <code class="docutils literal notranslate"><span class="pre">data_source=&quot;train&quot;</span></code> selects the fitted context rows, not those query rows. We pass <code class="docutils literal notranslate"><span class="pre">x[:1]</span></code>, a duplicate of one context row, as the smallest valid query. In TabPFN v2, context rows cannot attend to query rows, and this duplicate adds no new feature variation to the preprocessing masks. Using <code class="docutils literal notranslate"><span class="pre">data_source=&quot;test&quot;</span></code> would instead return representations of unknown-response query tokens, so it is not an equivalent shortcut.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">tabpfn_encoder</span> <span class="o">=</span> <span class="n">TabPFNRegressor</span><span class="o">.</span><span class="n">create_default_for_version</span><span class="p">(</span>
+    <span class="n">ModelVersion</span><span class="o">.</span><span class="n">V2</span><span class="p">,</span> 
+    <span class="n">n_estimators</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> 
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">fit_mode</span><span class="o">=</span><span class="s2">"fit_preprocessors"</span>
+<span class="p">)</span>
+
+<span class="n">design_basis</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)),</span>
+    <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="mf">1.5</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span>
+    <span class="n">x</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+    <span class="n">x</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span>
+<span class="p">))</span>
+
+<span class="n">design_basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">design_basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">design_basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+<span class="p">)</span> <span class="o">/</span> <span class="n">design_basis</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">:]</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">tabpfn_embedding</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">design_basis</span><span class="p">,</span> <span class="n">encoder</span><span class="p">):</span>
+    <span class="n">embeddings</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">y</span> <span class="ow">in</span> <span class="n">responses</span><span class="p">:</span>
+        <span class="n">encoder</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+        <span class="c1"># The API needs a nonempty query to run the forward pass. A duplicate</span>
+        <span class="c1"># context row is the minimum; `train` still returns all context states.</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">get_embeddings</span><span class="p">(</span><span class="n">x</span><span class="p">[:</span><span class="mi">1</span><span class="p">],</span> <span class="n">data_source</span><span class="o">=</span><span class="s2">"train"</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">pooled</span> <span class="o">=</span> <span class="n">design_basis</span><span class="o">.</span><span class="n">T</span> <span class="o">@</span> <span class="n">rows</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+        <span class="n">embeddings</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">r_</span><span class="p">[</span><span class="n">pooled</span><span class="o">.</span><span class="n">ravel</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">mean</span><span class="p">(),</span> <span class="n">y</span><span class="o">.</span><span class="n">std</span><span class="p">()])</span>
+
+    <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
+
+
+<span class="n">train</span><span class="p">,</span> <span class="n">val</span><span class="p">,</span> <span class="n">test</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span>
+        <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">data</span><span class="p">[</span><span class="n">name</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">},</span>
+        <span class="s2">"embedding"</span><span class="p">:</span> <span class="n">tabpfn_embedding</span><span class="p">(</span>
+            <span class="n">data</span><span class="p">[</span><span class="s2">"y"</span><span class="p">],</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">design_basis</span><span class="o">=</span><span class="n">design_basis</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">tabpfn_encoder</span>
+        <span class="p">),</span>
+    <span class="p">}</span>
+    <span class="k">for</span> <span class="n">data</span> <span class="ow">in</span> <span class="p">(</span><span class="n">train_raw</span><span class="p">,</span> <span class="n">val_raw</span><span class="p">,</span> <span class="n">test_raw</span><span class="p">)</span>
+<span class="p">]</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="attach-and-train-a-small-inference-head">
+<h3><span class="section-number">6.5.2. </span>Attach and train a small inference head<a class="headerlink" href="#attach-and-train-a-small-inference-head" title="Link to this heading">#</a></h3>
+<p>The BayesFlow variable slots are now as follows:</p>
+<ul class="simple">
+<li><p>the cached <code class="docutils literal notranslate"><span class="pre">embedding</span></code> becomes <code class="docutils literal notranslate"><span class="pre">inference_conditions</span></code></p></li>
+<li><p>the four parameters are the <code class="docutils literal notranslate"><span class="pre">inference_variables</span></code>.</p></li>
+</ul>
+<p>Our inference head is a two-layer spline coupling flow with small subnets and dropout. BayesFlow standardizes targets and conditions using the training data. We monitor validation loss over a fixed number of epochs. Dropout is active during training, so training loss can be higher than validation loss.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">inference_variables</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+    <span class="n">inference_conditions</span><span class="o">=</span><span class="s2">"embedding"</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span>
+        <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span> <span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">},</span>
+    <span class="p">),</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span><span class="n">train</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">val</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="loss-parameter-recovery-and-calibration">
+<h3><span class="section-number">6.5.3. </span>Loss, parameter recovery, and calibration<a class="headerlink" href="#loss-parameter-recovery-and-calibration" title="Link to this heading">#</a></h3>
+<p>We can use BayesFlow’s diagnostics to inspect losses, parameter recovery, and calibration on test simulations. Recovery uses posterior medians and central 90% credible intervals. The rank ECDF below each recovery plot checks calibration: systematic departures from the zero line indicate a biased or miscalibrated posterior.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span>
+    <span class="n">history</span><span class="p">,</span> 
+    <span class="n">smoothing_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">val_marker</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">),</span>
+<span class="p">)</span>
+
+<span class="n">posterior_samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"embedding"</span><span class="p">:</span> <span class="n">test</span><span class="p">[</span><span class="s2">"embedding"</span><span class="p">]},</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">posterior_samples</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">test</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">uncertainty_agg_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"prob"</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">},</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">),</span> 
+    <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">posterior_samples</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">test</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">),</span> 
+    <span class="n">rank_ecdf_color</span><span class="o">=</span><span class="s2">"#287D8E"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 2.49 seconds.
+</pre></div>
+</div>
+<img alt="../_images/3c5c8e8e60195b6166f07db0583f76521289c7c76234cd750f5ba41c454c6d63.png" src="../_images/3c5c8e8e60195b6166f07db0583f76521289c7c76234cd750f5ba41c454c6d63.png" />
+<img alt="../_images/ac4824e55d73793de5b2c981412b0694eb0d4a4a0512d7288e9b7cfe034c09f7.png" src="../_images/ac4824e55d73793de5b2c981412b0694eb0d4a4a0512d7288e9b7cfe034c09f7.png" />
+<img alt="../_images/3860cd080fea9bfe77efaf128b721e430a139851486e3e9dbad60f34663ea200.png" src="../_images/3860cd080fea9bfe77efaf128b721e430a139851486e3e9dbad60f34663ea200.png" />
+</div>
+</div>
+</section>
+<section id="inference-on-a-single-observation">
+<h3><span class="section-number">6.5.4. </span>Inference on a single observation<a class="headerlink" href="#inference-on-a-single-observation" title="Link to this heading">#</a></h3>
+<p>Below, we create one synthetic observed dataset so its true parameters are known. For real data, you can now replace <code class="docutils literal notranslate"><span class="pre">observed_y</span></code> with the actual observed responses on the same design. Design amortization can be achieved by varying the design matrix during training.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">observed_parameters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"intercept"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.3</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"sine_effect"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">1.0</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"interaction"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.5</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"log_noise"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.6</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+<span class="p">}</span>
+
+<span class="n">observed_y</span> <span class="o">=</span> <span class="n">regression_response</span><span class="p">(</span><span class="o">**</span><span class="n">observed_parameters</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+<span class="n">observed_embedding</span> <span class="o">=</span> <span class="n">tabpfn_embedding</span><span class="p">(</span>
+    <span class="n">observed_y</span><span class="p">,</span> <span class="n">x</span><span class="o">=</span><span class="n">x</span><span class="p">,</span> <span class="n">design_basis</span><span class="o">=</span><span class="n">design_basis</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">tabpfn_encoder</span>
+<span class="p">)</span>
+
+<span class="n">observed_posterior</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"embedding"</span><span class="p">:</span> <span class="n">observed_embedding</span><span class="p">},</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">2000</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+    <span class="n">estimates</span> <span class="o">=</span> <span class="n">observed_posterior</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">observed_parameters</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">post_color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span> 
+    <span class="n">target_color</span><span class="o">=</span><span class="s2">"#D58B40"</span><span class="p">,</span>
+    <span class="n">height</span><span class="o">=</span><span class="mf">2.2</span><span class="p">,</span> 
+    <span class="n">place_legend_below</span><span class="o">=</span><span class="kc">True</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 1.74 seconds.
+</pre></div>
+</div>
+<img alt="../_images/3f71fbc97e35c7ab5cad2871e72d5a48be45b639f69f2c8219800426e389ebf4.png" src="../_images/3f71fbc97e35c7ab5cad2871e72d5a48be45b639f69f2c8219800426e389ebf4.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="chronos-2-inference-on-time-series">
+<h2><span class="section-number">6.6. </span>2. Chronos-2: inference on time series<a class="headerlink" href="#chronos-2-inference-on-time-series" title="Link to this heading">#</a></h2>
+<p>The same workflow works for time series. Consider a VAR model for two coupled sequences:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}x_t = A x_{t-1} + 0.4\epsilon_t,\qquad A = \begin{pmatrix}a_{11} &amp; a_{12} \\ a_{21} &amp; a_{22}\end{pmatrix},\qquad \epsilon_t\sim\mathcal N(0,I).\end{split}\]</div>
+<p>As a summary network, we will use <a class="reference external" href="https://huggingface.co/amazon/chronos-2">Chronos-2</a>, which has a public multivariate <code class="docutils literal notranslate"><span class="pre">embed</span></code> method. Its encoder can process multivariate time series, so its hidden features can contain cross-channel relationships needed to infer the off-diagonal coefficients as well as each channel’s persistence.</p>
+<p>We infer all four entries of <span class="math notranslate nohighlight">\(A\)</span>, with independent <span class="math notranslate nohighlight">\(a_{ij}\sim\mathcal U(-0.45,0.45)\)</span>. The matrix stays fixed within each dataset. Its maximum absolute row sum is below 0.9, so every prior draw is stable. Each dataset has 128 observations after a short burn-in. We use 4,096 training simulations, 512 validation simulations, and 128 test simulations.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">VAR_PARAMETER_NAMES</span> <span class="o">=</span> <span class="p">(</span><span class="s2">"a11"</span><span class="p">,</span> <span class="s2">"a12"</span><span class="p">,</span> <span class="s2">"a21"</span><span class="p">,</span> <span class="s2">"a22"</span><span class="p">)</span>
+<span class="n">var_names</span> <span class="o">=</span> <span class="p">[</span><span class="sa">r</span><span class="s2">"$a_</span><span class="si">{11}</span><span class="s2">$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$a_</span><span class="si">{12}</span><span class="s2">$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$a_</span><span class="si">{21}</span><span class="s2">$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$a_</span><span class="si">{22}</span><span class="s2">$"</span><span class="p">]</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">simulate_var</span><span class="p">(</span><span class="n">a11</span><span class="p">,</span> <span class="n">a12</span><span class="p">,</span> <span class="n">a21</span><span class="p">,</span> <span class="n">a22</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="n">burn_in</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">rng</span><span class="p">):</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">a11</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">a12</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">a21</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">a22</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">matrix</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">matrix</span><span class="p">),</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="n">series</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">matrix</span><span class="p">),</span> <span class="mi">2</span><span class="p">,</span> <span class="n">n_steps</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_steps</span> <span class="o">+</span> <span class="n">burn_in</span><span class="p">):</span>
+        <span class="n">innovations</span> <span class="o">=</span> <span class="n">rng</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="n">state</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
+        <span class="n">state</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s2">"bij,bj-&gt;bi"</span><span class="p">,</span> <span class="n">matrix</span><span class="p">,</span> <span class="n">state</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.4</span> <span class="o">*</span> <span class="n">innovations</span>
+        <span class="k">if</span> <span class="n">t</span> <span class="o">&gt;=</span> <span class="n">burn_in</span><span class="p">:</span>
+            <span class="n">series</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">t</span> <span class="o">-</span> <span class="n">burn_in</span><span class="p">]</span> <span class="o">=</span> <span class="n">state</span>
+    <span class="k">return</span> <span class="n">series</span>
+
+
+<span class="n">var_parameters</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="n">name</span><span class="p">:</span> <span class="n">rng</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">0.45</span><span class="p">,</span> <span class="mf">0.45</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">4096</span> <span class="o">+</span> <span class="mi">512</span> <span class="o">+</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">VAR_PARAMETER_NAMES</span>
+<span class="p">}</span>
+<span class="n">var_prior_draws</span> <span class="o">=</span> <span class="n">var_parameters</span>
+<span class="n">var_series</span> <span class="o">=</span> <span class="n">simulate_var</span><span class="p">(</span><span class="o">**</span><span class="n">var_parameters</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span><span class="w"> </span><span class="nn">chronos</span><span class="w"> </span><span class="kn">import</span> <span class="n">Chronos2Pipeline</span>
+
+<span class="n">chronos</span> <span class="o">=</span> <span class="n">Chronos2Pipeline</span><span class="o">.</span><span class="n">from_pretrained</span><span class="p">(</span>
+    <span class="s2">"amazon/chronos-2"</span><span class="p">,</span>
+    <span class="n">device_map</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+    <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span>
+<span class="p">)</span>
+<span class="n">chronos</span><span class="o">.</span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="encode-once-then-train-summary-and-inference-networks">
+<h3><span class="section-number">6.6.1. </span>Encode once, then train summary and inference networks<a class="headerlink" href="#encode-once-then-train-summary-and-inference-networks" title="Link to this heading">#</a></h3>
+<p>The <a class="reference external" href="https://github.com/amazon-science/chronos-forecasting/blob/main/src/chronos/chronos2/pipeline.py">public <code class="docutils literal notranslate"><span class="pre">embed</span></code> method</a> accepts <code class="docutils literal notranslate"><span class="pre">(datasets,</span> <span class="pre">channels,</span> <span class="pre">time)</span></code> arrays and handles batching. It returns encoder tokens and normalization statistics on the CPU, without running the forecasting head.</p>
+<p>We average the observed-context tokens separately for each channel, excluding the final <code class="docutils literal notranslate"><span class="pre">[REG]</span></code> and masked forecast tokens. Concatenating both channel embeddings and their location and scale statistics gives 1,540 features per dataset.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">embed_var</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">encoder</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">):</span>
+    <span class="n">tokens</span><span class="p">,</span> <span class="n">loc_scale</span> <span class="o">=</span> <span class="n">encoder</span><span class="o">.</span><span class="n">embed</span><span class="p">(</span><span class="n">series</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="n">pooled</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">item</span><span class="p">[:,</span> <span class="p">:</span><span class="o">-</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">item</span> <span class="ow">in</span> <span class="n">tokens</span><span class="p">])</span>
+    <span class="n">stats</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">pair</span><span class="p">,</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">flatten</span><span class="p">()</span> <span class="k">for</span> <span class="n">pair</span> <span class="ow">in</span> <span class="n">loc_scale</span><span class="p">])</span>
+    <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">pooled</span><span class="p">,</span> <span class="n">stats</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+
+
+<span class="n">var_embedding</span> <span class="o">=</span> <span class="n">embed_var</span><span class="p">(</span><span class="n">var_series</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">chronos</span><span class="p">)</span>
+
+<span class="n">var_train</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">values</span><span class="p">[:</span><span class="mi">4096</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">var_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+    <span class="s2">"embedding"</span><span class="p">:</span> <span class="n">var_embedding</span><span class="p">[:</span><span class="mi">4096</span><span class="p">],</span>
+<span class="p">}</span>
+<span class="n">var_validation</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">values</span><span class="p">[</span><span class="mi">4096</span><span class="p">:</span><span class="mi">4608</span><span class="p">]</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">var_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+    <span class="s2">"embedding"</span><span class="p">:</span> <span class="n">var_embedding</span><span class="p">[</span><span class="mi">4096</span><span class="p">:</span><span class="mi">4608</span><span class="p">],</span>
+<span class="p">}</span>
+<span class="n">var_test</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="o">**</span><span class="p">{</span><span class="n">name</span><span class="p">:</span> <span class="n">values</span><span class="p">[</span><span class="mi">4608</span><span class="p">:]</span> <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">values</span> <span class="ow">in</span> <span class="n">var_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()},</span>
+    <span class="s2">"embedding"</span><span class="p">:</span> <span class="n">var_embedding</span><span class="p">[</span><span class="mi">4608</span><span class="p">:],</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>Next, we route the cached embeddings to <code class="docutils literal notranslate"><span class="pre">summary_variables</span></code>. A small <code class="docutils literal notranslate"><span class="pre">SummaryNetwork</span></code> maps them to 16 summary statistics using one 32-unit hidden layer with L2 regularization and dropout, followed by a linear output layer.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="nd">@bf</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">serialization</span><span class="o">.</span><span class="n">serializable</span><span class="p">(</span><span class="s2">"custom"</span><span class="p">)</span>
+<span class="k">class</span><span class="w"> </span><span class="nc">EmbeddingSummaryNetwork</span><span class="p">(</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">SummaryNetwork</span><span class="p">):</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span>
+            <span class="mi">32</span><span class="p">,</span> <span class="n">activation</span><span class="o">=</span><span class="s2">"swish"</span><span class="p">,</span> <span class="n">kernel_regularizer</span><span class="o">=</span><span class="n">keras</span><span class="o">.</span><span class="n">regularizers</span><span class="o">.</span><span class="n">L2</span><span class="p">(</span><span class="mf">1e-3</span><span class="p">)</span>
+        <span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dropout</span><span class="p">(</span><span class="mf">0.5</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span> <span class="o">=</span> <span class="n">keras</span><span class="o">.</span><span class="n">layers</span><span class="o">.</span><span class="n">Dense</span><span class="p">(</span><span class="mi">16</span><span class="p">)</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">call</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">embeddings</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">hidden</span><span class="p">(</span><span class="n">embeddings</span><span class="p">)</span>
+        <span class="n">hidden</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dropout</span><span class="p">(</span><span class="n">hidden</span><span class="p">,</span> <span class="n">training</span><span class="o">=</span><span class="n">training</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">summary_stats</span><span class="p">(</span><span class="n">hidden</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">var_adapter</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+<span class="k">for</span> <span class="n">name</span> <span class="ow">in</span> <span class="n">VAR_PARAMETER_NAMES</span><span class="p">:</span>
+    <span class="n">var_adapter</span><span class="o">.</span><span class="n">constrain</span><span class="p">(</span><span class="n">name</span><span class="p">,</span> <span class="n">lower</span><span class="o">=-</span><span class="mf">0.45</span><span class="p">,</span> <span class="n">upper</span><span class="o">=</span><span class="mf">0.45</span><span class="p">)</span>
+
+<span class="n">var_adapter</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">VAR_PARAMETER_NAMES</span><span class="p">,</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+<span class="n">var_adapter</span><span class="o">.</span><span class="n">rename</span><span class="p">(</span><span class="s2">"embedding"</span><span class="p">,</span> <span class="s2">"summary_variables"</span><span class="p">)</span>
+
+<span class="n">var_workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">var_adapter</span><span class="p">,</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">EmbeddingSummaryNetwork</span><span class="p">(),</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> 
+        <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span>
+        <span class="n">subnet_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"widths"</span><span class="p">:</span> <span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">),</span> <span class="s2">"dropout"</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">},</span>
+    <span class="p">),</span>
+    <span class="n">standardize</span><span class="o">=</span><span class="s2">"all"</span><span class="p">,</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">var_history</span> <span class="o">=</span> <span class="n">var_workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">var_train</span><span class="p">,</span> <span class="n">validation_data</span><span class="o">=</span><span class="n">var_validation</span><span class="p">,</span> <span class="n">epochs</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span> <span class="n">verbose</span><span class="o">=</span><span class="mi">2</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">var_history</span><span class="p">,</span> <span class="n">smoothing_factor</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">val_marker</span><span class="o">=</span><span class="s2">""</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mf">3.5</span><span class="p">))</span>
+
+<span class="n">var_samples</span> <span class="o">=</span> <span class="n">var_workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"embedding"</span><span class="p">:</span> <span class="n">var_test</span><span class="p">[</span><span class="s2">"embedding"</span><span class="p">]},</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">var_samples</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">var_test</span><span class="p">,</span> 
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">var_names</span><span class="p">,</span>
+    <span class="n">uncertainty_agg_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"prob"</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">},</span> 
+    <span class="n">color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> 
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">)</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">var_samples</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">var_test</span><span class="p">,</span> 
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">var_names</span><span class="p">,</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">),</span> 
+    <span class="n">rank_ecdf_color</span><span class="o">=</span><span class="s2">"#287D8E"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 0.55 seconds.
+</pre></div>
+</div>
+<img alt="../_images/e741b18d88eebe045b7d392c0baa7d499b8c4f7db300678e257c86d9198876c9.png" src="../_images/e741b18d88eebe045b7d392c0baa7d499b8c4f7db300678e257c86d9198876c9.png" />
+<img alt="../_images/f5db7c03937b804950a73dc4a612e1ffac9b7484866dcfeedad2e726a6d023ac.png" src="../_images/f5db7c03937b804950a73dc4a612e1ffac9b7484866dcfeedad2e726a6d023ac.png" />
+<img alt="../_images/17e68a761f9b6fabe3d06157cf74993a74ea4270373be89417c2ee75a6fb77fe.png" src="../_images/17e68a761f9b6fabe3d06157cf74993a74ea4270373be89417c2ee75a6fb77fe.png" />
+</div>
+</div>
+</section>
+<section id="interpretation">
+<h3><span class="section-number">6.6.2. </span>Interpretation<a class="headerlink" href="#interpretation" title="Link to this heading">#</a></h3>
+<p>The diagonal coefficients are recovered more reliably than the two off-diagonal coefficients. Within-channel persistence produces a strong autocorrelation signal, whereas a directional cross-channel effect must be separated from noise, the reverse direction, and both diagonal effects in only 128 time points. Useful follow-ups are longer trajectories, more simulations, lag-aware pooling or domain summaries, a trainable raw-sequence summary network, or encoder fine-tuning.</p>
+</section>
+<section id="a-new-observed-trajectory">
+<h3><span class="section-number">6.6.3. </span>A new observed trajectory<a class="headerlink" href="#a-new-observed-trajectory" title="Link to this heading">#</a></h3>
+<p>For an observed dataset, we run the same frozen encoder once and reuse the trained summary and inference networks. Here we simulate one observation at known coefficients so that we can compare its posterior with the generating values. The training, validation, and test datasets above used independent prior draws.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">var_truth</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"a11"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.40</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"a12"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="mf">0.20</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"a21"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.15</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="s2">"a22"</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="o">-</span><span class="mf">0.35</span><span class="p">]],</span> <span class="n">dtype</span><span class="o">=</span><span class="s2">"float32"</span><span class="p">),</span>
+<span class="p">}</span>
+<span class="n">var_observed</span> <span class="o">=</span> <span class="n">simulate_var</span><span class="p">(</span><span class="o">**</span><span class="n">var_truth</span><span class="p">,</span> <span class="n">rng</span><span class="o">=</span><span class="n">rng</span><span class="p">)</span>
+
+<span class="n">var_observed_posterior</span> <span class="o">=</span> <span class="n">var_workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span>
+    <span class="n">conditions</span><span class="o">=</span><span class="p">{</span><span class="s2">"embedding"</span><span class="p">:</span> <span class="n">embed_var</span><span class="p">(</span><span class="n">var_observed</span><span class="p">,</span> <span class="n">encoder</span><span class="o">=</span><span class="n">chronos</span><span class="p">)},</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">2000</span>
+<span class="p">)</span>
+
+<span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="mi">3</span><span class="p">))</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">var_observed</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Channel 1"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">var_observed</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s2">"Channel 2"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">set</span><span class="p">(</span><span class="n">title</span><span class="o">=</span><span class="s2">"Observed trajectory"</span><span class="p">,</span> <span class="n">xlabel</span><span class="o">=</span><span class="s2">"Time"</span><span class="p">,</span> <span class="n">ylabel</span><span class="o">=</span><span class="s2">"Value"</span><span class="p">)</span>
+<span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">frameon</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">var_observed_posterior</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">var_truth</span><span class="p">,</span>
+    <span class="n">priors</span><span class="o">=</span><span class="n">var_prior_draws</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="n">VAR_PARAMETER_NAMES</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="n">var_names</span><span class="p">,</span>
+    <span class="n">post_color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+    <span class="n">target_color</span><span class="o">=</span><span class="s2">"#D58B40"</span><span class="p">,</span>
+    <span class="n">place_legend_below</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+</section>
+<section id="tabpfn-as-a-posterior-estimator">
+<h2><span class="section-number">6.7. </span>3. TabPFN as a posterior estimator<a class="headerlink" href="#tabpfn-as-a-posterior-estimator" title="Link to this heading">#</a></h2>
+<p>So far, a frozen encoder produced an embedding and a BayesFlow inference network learned the posterior. We can instead use TabPFN itself as a posterior estimator, following the idea of <a class="reference external" href="https://arxiv.org/abs/2504.17660">NPE-PFN</a>. This does not instantiate BayesFlow’s <code class="docutils literal notranslate"><span class="pre">InferenceNetwork</span></code> interface. It <strong>reframes simulation-based inference as in-context tabular regression</strong>.</p>
+<p>A simulator draw gives one paired example <span class="math notranslate nohighlight">\((y, b, a, c, \ell)\)</span> from the joint prior-predictive distribution. For the first factor, each TabPFN context row uses the 100 responses <span class="math notranslate nohighlight">\(y\)</span> as features and the intercept <span class="math notranslate nohighlight">\(b\)</span> as its regression target. For later factors, the true preceding parameters from that simulation are appended to the context features.</p>
+<p>Writing <span class="math notranslate nohighlight">\(\mathcal D_{\mathrm{sim}}\)</span> for the context simulations, the autoregressive approximation is</p>
+<div class="math notranslate nohighlight">
+\[p(\theta \mid y) \approx q(\theta \mid y, \mathcal D_{\mathrm{sim}})=\prod_{j=1}^{4} q_j(\theta_j \mid y, \theta_{&lt;j}, \mathcal D_{\mathrm{sim}}).\]</div>
+<p>At query time, TabPFN returns a predictive distribution for the first parameter. We sample from it, append that draw to the query features, and request the next conditional distribution. Repeating this for all four parameters produces one joint posterior draw. The code batches all requested draws, so there are four autoregressive prediction calls rather than four separate calls per draw.</p>
+<p><code class="docutils literal notranslate"><span class="pre">fit</span></code> below only installs 100 simulations as in-context examples and prepares their preprocessing; it does not update TabPFN’s weights. The result will necessarily depends on the finite context and TabPFN’s pretraining distribution and preprocessing, the parameter order, and the number of posterior draws.Recovery and calibration are therefore just as necessary as for a trained inference network.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">posterior_model</span> <span class="o">=</span> <span class="n">TabPFNRegressor</span><span class="o">.</span><span class="n">create_default_for_version</span><span class="p">(</span>
+    <span class="n">ModelVersion</span><span class="o">.</span><span class="n">V2</span><span class="p">,</span>
+    <span class="n">n_estimators</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span>
+<span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">tabpfn_posterior</span><span class="p">(</span>
+    <span class="n">responses</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="p">,</span>
+    <span class="n">n_context</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">context_data</span><span class="p">,</span>
+    <span class="n">model</span><span class="p">,</span>
+    <span class="n">parameter_names</span><span class="p">,</span>
+<span class="p">):</span>
+    <span class="n">query_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="n">responses</span><span class="p">,</span> <span class="n">num_samples</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameter_names</span><span class="p">):</span>
+        <span class="c1"># Each context row contains responses and any preceding parameters.</span>
+        <span class="n">previous_parameters</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="n">context_data</span><span class="p">[</span><span class="n">previous</span><span class="p">][:</span><span class="n">n_context</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">previous</span> <span class="ow">in</span> <span class="n">parameter_names</span><span class="p">[:</span><span class="n">j</span><span class="p">]</span>
+        <span class="p">]</span>
+        <span class="n">context_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">(</span>
+            <span class="p">[</span><span class="n">context_data</span><span class="p">[</span><span class="s2">"y"</span><span class="p">][:</span><span class="n">n_context</span><span class="p">],</span> <span class="o">*</span><span class="n">previous_parameters</span><span class="p">]</span>
+        <span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">fit</span><span class="p">(</span>
+            <span class="n">context_features</span><span class="p">,</span>
+            <span class="n">context_data</span><span class="p">[</span><span class="n">name</span><span class="p">][:</span><span class="n">n_context</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span>
+        <span class="p">)</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">predict</span><span class="p">(</span><span class="n">query_features</span><span class="p">,</span> <span class="n">output_type</span><span class="o">=</span><span class="s2">"full"</span><span class="p">)</span>
+        <span class="n">draws</span> <span class="o">=</span> <span class="n">output</span><span class="p">[</span><span class="s2">"criterion"</span><span class="p">]</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="s2">"logits"</span><span class="p">])</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="n">query_features</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">query_features</span><span class="p">,</span> <span class="n">draws</span><span class="p">))</span>
+
+    <span class="n">samples</span> <span class="o">=</span> <span class="n">query_features</span><span class="p">[:,</span> <span class="n">responses</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">responses</span><span class="p">),</span> <span class="n">num_samples</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="n">name</span><span class="p">:</span> <span class="n">samples</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">i</span><span class="p">:</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">parameter_names</span><span class="p">)</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<section id="recovery-and-calibration-without-training">
+<h3><span class="section-number">6.7.1. </span>Recovery and calibration without training<a class="headerlink" href="#recovery-and-calibration-without-training" title="Link to this heading">#</a></h3>
+<p>We can run the same diagnostics on the same test simulations as in the first example. The context contains only the first 100 training simulations, and we use 100 posterior draws per test dataset to keep the CPU cost manageable.</p>
+<p>More context simulations and draws can improve the approximation but increase the in-context prediction cost.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pfn_samples</span> <span class="o">=</span> <span class="n">tabpfn_posterior</span><span class="p">(</span>
+    <span class="n">test_raw</span><span class="p">[</span><span class="s2">"y"</span><span class="p">],</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">context_data</span><span class="o">=</span><span class="n">train_raw</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">posterior_model</span><span class="p">,</span>
+    <span class="n">parameter_names</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">pfn_samples</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">test_raw</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">uncertainty_agg_kwargs</span><span class="o">=</span><span class="p">{</span><span class="s2">"prob"</span><span class="p">:</span> <span class="mf">0.9</span><span class="p">},</span> <span class="n">color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span>
+    <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">),</span>
+    <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">pfn_samples</span><span class="p">,</span> 
+    <span class="n">targets</span><span class="o">=</span><span class="n">test_raw</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">difference</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> 
+    <span class="n">num_col</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">12</span><span class="p">,</span> <span class="mf">3.2</span><span class="p">),</span> 
+    <span class="n">rank_ecdf_color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/7fd2726a2a313516e7857356606c584c8eb56dd479fb8594bc976fa7302a0618.png" src="../_images/7fd2726a2a313516e7857356606c584c8eb56dd479fb8594bc976fa7302a0618.png" />
+<img alt="../_images/769a40c9bec9fc96b1b064f5aa1c68a0ed1fc8e8b8698be4ae06a385be14f7bc.png" src="../_images/769a40c9bec9fc96b1b064f5aa1c68a0ed1fc8e8b8698be4ae06a385be14f7bc.png" />
+</div>
+</div>
+<p>The direct TabPFN inference recovers the intercept, sine effect, and interaction term well in this experiment. However, recovery of the log-noise parameter is much weaker and may need more context simulations. The rank ECDF also shows visible miscalibration, especially for the interaction and log noise.</p>
+<p>Thus, in-context autoregressive prediction does not automatically guarantee an accurate posterior.</p>
+</section>
+<section id="the-same-observation">
+<h3><span class="section-number">6.7.2. </span>The same observation<a class="headerlink" href="#the-same-observation" title="Link to this heading">#</a></h3>
+<p>The observed response vector from the first example is now the TabPFN query row. No embedding or BayesFlow network is involved: the sequential predictive distributions described above produce the parameter draws directly.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">pfn_observed_samples</span> <span class="o">=</span> <span class="n">tabpfn_posterior</span><span class="p">(</span>
+    <span class="n">observed_y</span><span class="p">,</span>
+    <span class="n">num_samples</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">context_data</span><span class="o">=</span><span class="n">train_raw</span><span class="p">,</span>
+    <span class="n">model</span><span class="o">=</span><span class="n">posterior_model</span><span class="p">,</span>
+    <span class="n">parameter_names</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+    <span class="n">estimates</span><span class="o">=</span><span class="n">pfn_observed_samples</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">observed_parameters</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="n">REGRESSION_PARAMETER_NAMES</span><span class="p">,</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"Intercept"</span><span class="p">,</span> <span class="s2">"Sine effect"</span><span class="p">,</span> <span class="s2">"Interaction"</span><span class="p">,</span> <span class="s2">"Log noise"</span><span class="p">],</span>
+    <span class="n">post_color</span><span class="o">=</span><span class="s2">"#287D8E"</span><span class="p">,</span> <span class="n">target_color</span><span class="o">=</span><span class="s2">"#D58B40"</span><span class="p">,</span>
+    <span class="n">height</span><span class="o">=</span><span class="mf">2.2</span><span class="p">,</span> <span class="n">place_legend_below</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/1e304927c9c59603dbd4ac66f7cdb54502d5c78fa9b6e44c865d1dab893939d4.png" src="../_images/1e304927c9c59603dbd4ac66f7cdb54502d5c78fa9b6e44c865d1dab893939d4.png" />
+</div>
+</div>
+<p>The posterior for this one simulated observation is plausible, but much broader than the one obtained with a custom BayesFlow head (as expected given the global recovery results). Moreover, repeated autoregressive prediction calls become expensive as the number of parameters, query datasets, or posterior draws grows. This tradeoff can be attractive for small simulation budgets and a few observations, but it is definitely not an amortized solution for large numbers of observed datasets.</p>
+</section>
+</section>
+<section id="what-to-keep-in-mind-and-try-next">
+<h2><span class="section-number">6.8. </span>What to keep in mind and try next<a class="headerlink" href="#what-to-keep-in-mind-and-try-next" title="Link to this heading">#</a></h2>
+<p>Across all three examples, foundation models take on one of two jobs:</p>
+<ol class="arabic simple">
+<li><p>a frozen encoder generates representations (aka summary statistics) while BayesFlow learns the posterior, or</p></li>
+<li><p>a Prior-Fitted Network (PFN) generates the posterior predictions directly.</p></li>
+</ol>
+<p>Both routes should be used to reduce task-specific training. However, neither eliminates the key question: <strong>have we retained what matters for the inference targets, and is the resulting distribution accurate?</strong></p>
+<p>Crucially, when working with a pre-trained encoder, more training of the inference head cannot recover what the representations already discarded. In a sense, the latter should be treated as potentially leaky expert summary statistics with one difference: (parts of) the encoder can be fine-tuned with task-specific gradients to recover the information needed to solve the inference task.</p>
+<p>A useful next experiment is to put the alternatives on equal footing: keep the simulator, simulation budget, and diagnostics fixed, then compare a learned summary network, a frozen foundation-model embedding, and direct PFN inference. If a frozen embedding misses an effect, try a pooling rule tied to that effect or fine-tune the encoder (potentially costly). For direct PFN inference, vary the context size, number of posterior draws, and parameter order, and let recovery, calibration, cost, and posterior predictive checks decide whether the shortcut is worth it.</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Bayesian_GLM.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">5. </span>Generalized linear models</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="Likelihood_Estimation.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title"><span class="section-number">7. </span>Likelihood Estimation for the g-and-k Distribution</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-two-problems-in-amortized-bayesian-inference">6.1. The two problems in amortized Bayesian inference</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-does-a-foundation-model-connect-to-bayesflow">6.2. How does a foundation model connect to BayesFlow?</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#how-to-extract-an-embedding">6.3. How to extract an embedding</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#aside-using-pretrained-encoders-from-hugging-face">6.3.1. Aside: Using pretrained encoders from Hugging Face</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">6.4. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tabpfn-nonlinear-regression-with-unequal-noise">6.5. 1. TabPFN: nonlinear regression with unequal noise</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#compute-each-frozen-embedding-before-training">6.5.1. Compute each frozen embedding before training</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#attach-and-train-a-small-inference-head">6.5.2. Attach and train a small inference head</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#loss-parameter-recovery-and-calibration">6.5.3. Loss, parameter recovery, and calibration</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#inference-on-a-single-observation">6.5.4. Inference on a single observation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#chronos-2-inference-on-time-series">6.6. 2. Chronos-2: inference on time series</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#encode-once-then-train-summary-and-inference-networks">6.6.1. Encode once, then train summary and inference networks</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#interpretation">6.6.2. Interpretation</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#a-new-observed-trajectory">6.6.3. A new observed trajectory</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#tabpfn-as-a-posterior-estimator">6.7. 3. TabPFN as a posterior estimator</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#recovery-and-calibration-without-training">6.7.1. Recovery and calibration without training</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#the-same-observation">6.7.2. The same observation</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#what-to-keep-in-mind-and-try-next">6.8. What to keep in mind and try next</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.1/docsrc/source/_examples/Foundation_Models.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

@@ -1,0 +1,1131 @@
+<!DOCTYPE html>
+
+
+<html lang="en" data-content_root="../" >
+
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>19. Model Predictive Control of an Inverted Double Pendulum &#8212; BayesFlow: Amortized Bayesian Inference</title>
+  
+  
+  
+  <script data-cfasync="false">
+    document.documentElement.dataset.mode = localStorage.getItem("mode") || "";
+    document.documentElement.dataset.theme = localStorage.getItem("theme") || "";
+  </script>
+  <!--
+    this give us a css class that will be invisible only if js is disabled
+  -->
+  <noscript>
+    <style>
+      .pst-js-only { display: none !important; }
+
+    </style>
+  </noscript>
+  
+  <!-- Loaded before other Sphinx assets -->
+  <link href="../_static/styles/theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+<link href="../_static/styles/pydata-sphinx-theme.css?digest=75c7c72ae941e8b558d8" rel="stylesheet" />
+
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=8f2a1f02" />
+    <link rel="stylesheet" type="text/css" href="../_static/mystnb.11b39860a7a0cbfd473a3ad8a317855267ff0bd372690045ca344a6b62be495e.css" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx-design.min.css?v=6a604523" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=c7f430e1" />
+  
+  <!-- So that users can add custom icons -->
+  <script defer src="../_static/scripts/fontawesome.js?digest=75c7c72ae941e8b558d8"></script>
+  <!-- Pre-loaded scripts that we'll load fully later -->
+  <link rel="preload" as="script" href="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8" />
+<link rel="preload" as="script" href="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8" />
+
+    <script src="../_static/documentation_options.js?v=fc09bec8"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script data-sd-tabs-storage-prefix="sphinx-design-tab-id-" src="../_static/design-tabs.js?v=fcb327ea"></script>
+    <script>window.MathJax = {"options": {"processHtmlClass": "tex2jax_process|mathjax_process|math|output_area"}}</script>
+    <script defer="defer" src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+    <script>DOCUMENTATION_OPTIONS.pagename = '_examples/Model_Predictive_Control';</script>
+    <script>
+        DOCUMENTATION_OPTIONS.theme_version = '0.24.0';
+        DOCUMENTATION_OPTIONS.theme_switcher_json_url = '/versions.json';
+        DOCUMENTATION_OPTIONS.theme_switcher_version_match = 'v2.1.1';
+        DOCUMENTATION_OPTIONS.show_version_warning_banner =
+            true;
+        </script>
+    <script>DOCUMENTATION_OPTIONS.search_as_you_type = false;</script>
+    <link rel="canonical" href="https://www.bayesflow.org/_examples/Model_Predictive_Control.html" />
+    <link rel="icon" href="../_static/bayesflow_hex.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="User Guide" href="../user_guide/index.html" />
+    <link rel="prev" title="18. Bayesian Experimental Design with BayesFlow and PyTorch" href="Bayesian_Experimental_Design.html" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="color-scheme" content="light dark"/>
+  <meta name="docsearch:language" content="en"/>
+  <meta name="docsearch:version" content="v2.1.1" />
+  
+    
+    <script src="../_static/searchtools.js"></script>
+    <script src="../_static/language_data.js"></script>
+    <script src="../searchindex.js"></script>
+  
+  </head>
+  <body data-default-mode="">
+  
+  
+  <div id="pst-skip-link" class="skip-link d-print-none"><a href="#main-content">Skip to main content</a></div>
+
+  
+  <div id="pst-scroll-pixel-helper"></div>
+  
+  <button type="button" class="btn rounded-pill" id="pst-back-to-top">
+    <i class="fa-solid fa-arrow-up"></i>Back to top</button>
+  
+  
+  
+  
+  <dialog id="pst-search-dialog">
+    
+<form class="bd-search d-flex align-items-center"
+      action="../search.html"
+      method="get">
+  <i class="fa-solid fa-magnifying-glass"></i>
+  <input type="search"
+         class="form-control"
+         name="q"
+         placeholder="Search the docs ..."
+         aria-label="Search the docs ..."
+         autocomplete="off"
+         autocorrect="off"
+         autocapitalize="off"
+         spellcheck="false"/>
+  <span class="search-button__kbd-shortcut"><kbd class="kbd-shortcut__modifier">Ctrl</kbd>+<kbd>K</kbd></span>
+</form>
+  </dialog>
+
+  <div class="pst-async-banner-revealer d-none">
+  <aside id="bd-header-version-warning" class="d-none d-print-none" aria-label="Version warning"></aside>
+</div>
+
+  
+    <header id="pst-header" class="bd-header navbar navbar-expand-lg bd-navbar d-print-none">
+<div class="bd-header__inner bd-page-width">
+  <button type="button" class="pst-navbar-icon sidebar-toggle primary-toggle" aria-label="Site navigation" aria-expanded="false" aria-controls="pst-primary-sidebar-modal">
+    <span class="fa-solid fa-bars"></span>
+  </button>
+  
+  
+  <div class=" navbar-header-items__start">
+    
+      <div class="navbar-item">
+
+  
+    
+  
+
+<a class="navbar-brand logo" href="../index.html">
+  
+  
+  
+  
+  
+    
+    
+      
+    
+    
+    <img src="../_static/bayesflow_hor.png" class="logo__image only-light" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+    <img src="../_static/bayesflow_hor_dark.png" class="logo__image only-dark pst-js-only" alt="BayesFlow: Amortized Bayesian Inference - Home"/>
+  
+  
+</a></div>
+    
+  </div>
+  
+  <div class=" navbar-header-items">
+    
+    <div class="me-auto navbar-header-items__center">
+      
+        <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+      
+    </div>
+    
+    
+    <div class="navbar-header-items__end">
+      
+        <div class="navbar-item navbar-persistent--container">
+          
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+        </div>
+      
+      
+        <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+      
+        <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+      
+        <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-2"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-2"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-2"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-2">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+      
+    </div>
+    
+  </div>
+  
+  
+    <div class="navbar-persistent--mobile">
+
+<button type="button" class="btn btn-sm pst-navbar-icon search-button search-button__button pst-js-only" title="Search" aria-label="Search" data-bs-placement="bottom" data-bs-toggle="tooltip">
+    <i class="fa-solid fa-magnifying-glass fa-lg"></i>
+</button>
+    </div>
+  
+
+  
+    <button type="button" class="pst-navbar-icon sidebar-toggle secondary-toggle" aria-label="On this page" aria-expanded="false" aria-controls="pst-secondary-sidebar-modal">
+      <span class="fa-solid fa-outdent"></span>
+    </button>
+  
+</div>
+
+    </header>
+  
+
+  <div class="bd-container">
+    <div class="bd-container__inner bd-page-width">
+      
+      
+      
+      <dialog id="pst-primary-sidebar-modal" tabindex="-1"></dialog>
+      <div id="pst-primary-sidebar" class="bd-sidebar-primary bd-sidebar">
+        
+
+  
+  <div class="sidebar-header-items sidebar-primary__section">
+    
+    
+      <div class="sidebar-header-items__center">
+        
+          
+          
+            <div class="navbar-item">
+<nav>
+  <ul class="bd-navbar-elements navbar-nav">
+    
+<li class="nav-item current active">
+  <a class="nav-link nav-internal" href="../examples.html">
+    Examples
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../user_guide/index.html">
+    User Guide
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../api/bayesflow.html">
+    API Reference
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../about.html">
+    About Us
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../contributing.html">
+    Contributing
+  </a>
+</li>
+
+
+<li class="nav-item ">
+  <a class="nav-link nav-internal" href="../development/index.html">
+    Developer Docs
+  </a>
+</li>
+
+  </ul>
+</nav></div>
+          
+        
+      </div>
+    
+    
+    
+      <div class="sidebar-header-items__end">
+        
+          <div class="navbar-item">
+
+<div class="theme-switch-container dropdown pst-js-only" data-bs-toggle="tooltip" data-bs-placement="bottom" title="Color mode">
+  <button type="button" class="btn btn-sm nav-link pst-navbar-icon theme-switch-button dropdown-toggle" aria-label="Color mode" data-bs-toggle="dropdown">
+    <i class="theme-switch fa-solid fa-sun fa-lg" data-mode="light" title="Light"></i>
+    <i class="theme-switch fa-solid fa-moon fa-lg" data-mode="dark" title="Dark"></i>
+    <i class="theme-switch fa-solid fa-circle-half-stroke fa-lg" data-mode="auto" title="System Settings"></i>
+  </button>
+  <ul class="dropdown-menu dropdown-menu-end">
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="auto"><i class="fa-solid fa-circle-half-stroke fa-lg me-1"></i>System Settings</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="light"><i class="fa-solid fa-sun fa-lg me-1"></i>Light</button></li>
+    <li><button type="button" class="dropdown-item d-flex align-items-center theme-change-button" data-mode="dark"><i class="fa-solid fa-moon fa-lg me-1"></i>Dark</button></li>
+  </ul>
+</div></div>
+        
+          <div class="navbar-item"><ul class="navbar-icon-links"
+    aria-label="Icon Links">
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://github.com/bayesflow-org/bayesflow" title="GitHub" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-square-github fa-lg" aria-hidden="true"></i><span class="visually-hidden">GitHub</span></a>
+        </li>
+        <li class="nav-item">
+          
+          
+          
+          
+          
+          
+          
+          
+          <a href="https://discuss.bayesflow.org/" title="Discourse Forum" class="nav-link pst-navbar-icon" rel="noopener" target="_blank" data-bs-toggle="tooltip" data-bs-placement="bottom"><i class="fa-brands fa-discourse fa-lg" aria-hidden="true"></i><span class="visually-hidden">Discourse Forum</span></a>
+        </li>
+</ul></div>
+        
+          <div class="navbar-item">
+<div class="version-switcher__container dropdown pst-js-only">
+  <button id="pst-version-switcher-button-3"
+    type="button"
+    class="version-switcher__button btn btn-sm dropdown-toggle"
+    data-bs-toggle="dropdown"
+    aria-haspopup="listbox"
+    aria-controls="pst-version-switcher-list-3"
+    aria-label="Version switcher list"
+  >
+    Choose version  <!-- this text may get changed later by javascript -->
+    <span class="caret"></span>
+  </button>
+  <div id="pst-version-switcher-list-3"
+    class="version-switcher__menu dropdown-menu list-group-flush py-0"
+    role="listbox" aria-labelledby="pst-version-switcher-button-3">
+    <!-- dropdown will be populated by javascript on page load -->
+  </div>
+</div></div>
+        
+      </div>
+    
+  </div>
+  
+    <div class="sidebar-primary-items__start sidebar-primary__section">
+        <div class="sidebar-primary-item pst-sidebar-collapse"><button type="button" id="pst-collapse-sidebar-button" aria-expanded="true" aria-controls="pst-primary-sidebar">
+  <svg class="pst-icon" role="img" aria-hidden="true" focusable="false" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg">
+    <path fill="currentColor" d="M3 15.5C2.36232 15.5 1.74874 15.2564 1.28478 14.8189C0.820828 14.3815 0.541576 13.7832 0.504167 13.1467L0.5 13L0.5 3C0.499965 2.36232 0.743605 1.74874 1.18107 1.28478C1.61854 0.820828 2.21676 0.541576 2.85333 0.504167L3 0.5L13 0.5C13.6377 0.499965 14.2513 0.743605 14.7152 1.18107C15.1792 1.61854 15.4584 2.21676 15.4958 2.85333L15.5 3L15.5 13C15.5 13.6377 15.2564 14.2513 14.8189 14.7152C14.3815 15.1792 13.7832 15.4584 13.1467 15.4958L13 15.5L3 15.5ZM3 13.8333L10.5 13.8333L10.5 2.16667L3 2.16667C2.79589 2.16669 2.59889 2.24163 2.44636 2.37726C2.29383 2.5129 2.19638 2.69979 2.1725 2.9025L2.16667 3L2.16667 13C2.16669 13.2041 2.24163 13.4011 2.37726 13.5536C2.5129 13.7062 2.69979 13.8036 2.9025 13.8275L3 13.8333ZM6.65583 10.325L6.5775 10.2558L4.91083 8.58917C4.76735 8.44567 4.68116 8.25476 4.66843 8.05223C4.65569 7.84971 4.71729 7.6495 4.84167 7.48917L4.91083 7.41083L6.5775 5.74417C6.72747 5.59471 6.9287 5.50794 7.14032 5.50148C7.35194 5.49502 7.55809 5.56935 7.7169 5.70937C7.8757 5.8494 7.97525 6.04463 7.99533 6.25539C8.01541 6.46616 7.95451 6.67667 7.825 6.84417L7.75583 6.9225L6.67917 8L7.75583 9.0775C7.89931 9.22099 7.98551 9.41191 7.99824 9.61443C8.01097 9.81695 7.94938 10.0172 7.825 10.1775L7.75583 10.2558C7.61234 10.3993 7.42142 10.4855 7.2189 10.4982C7.01638 10.511 6.81617 10.4494 6.65583 10.325Z"/>
+  </svg>
+  <span class="pst-collapse-sidebar-label">Collapse Sidebar</span>
+  <span class="pst-expand-sidebar-label">Expand Sidebar</span>
+</button></div>
+        <div class="sidebar-primary-item">
+
+<nav class="bd-docs-nav bd-links"
+     aria-label="Section Navigation">
+  <p class="bd-links__title" role="heading" aria-level="1">Section Navigation</p>
+  <div class="bd-toc-item navbar-nav"><ul class="current nav bd-sidenav">
+<li class="toctree-l1"><a class="reference internal" href="Diffusion_Models.html">1. Diffusion starter</a></li>
+<li class="toctree-l1"><a class="reference internal" href="SIR_Posterior_Estimation.html">2. Minimal amortized workflow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bivariate_Smoothing.html">3. Time-varying parameters</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Spatial_Data_and_Parameters.html">4. Image or other spatial data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_GLM.html">5. Generalized linear models</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Foundation_Models.html">6. Foundation models as backbones</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Likelihood_Estimation.html">7. Neural likelihood estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ratio_Estimation.html">8. Neural ratio estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Compositional_Diffusion.html">9. Compositional estimation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Ensembles.html">10. Deep Ensembles</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Self_Consistency.html">11. Self-consistency</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Changing_Priors.html">12. Changing priors at inference time</a></li>
+<li class="toctree-l1"><a class="reference internal" href="One_Sample_TTest.html">13. Model comparisons</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Model_Comparison_Deep_Dive.html">14. Model comparison deep dive</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Multimodal_Data.html">15. Multimodal data</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Lotka_Volterra_Point_Estimation.html">16. Bayes estimators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="From_ABC_to_BayesFlow.html">17. From ABC to BayesFlow</a></li>
+<li class="toctree-l1"><a class="reference internal" href="Bayesian_Experimental_Design.html">18. Bayesian experimental design</a></li>
+<li class="toctree-l1 current active"><a aria-current="page" class="current reference internal" href="#">19. Model predictive control</a></li>
+</ul>
+</div>
+</nav></div>
+    </div>
+  
+  
+  <div class="sidebar-primary-items__end sidebar-primary__section">
+      <div class="sidebar-primary-item">
+<div id="ethical-ad-placement"
+      class="flat"
+      data-ea-publisher="readthedocs"
+      data-ea-type="readthedocs-sidebar"
+      data-ea-manual="true">
+</div></div>
+  </div>
+
+
+      </div>
+      
+      <main id="main-content" class="bd-main" role="main">
+        
+        
+          <div class="bd-content">
+            <div class="bd-article-container">
+              
+              <div class="bd-header-article d-print-none">
+<div class="header-article-items header-article__inner">
+  
+    <div class="header-article-items__start">
+      
+        <div class="header-article-item">
+
+<nav aria-label="Breadcrumb" class="d-print-none">
+  <ul class="bd-breadcrumbs">
+    
+    <li class="breadcrumb-item breadcrumb-home">
+      <a href="../index.html" class="nav-link" aria-label="Home">
+        <i class="fa-solid fa-house"></i>
+      </a>
+    </li>
+    
+    <li class="breadcrumb-item"><a href="../examples.html" class="nav-link">Examples</a></li>
+    
+    <li class="breadcrumb-item active" aria-current="page"><span class="ellipsis"><span class="section-number">19. </span>Model Predictive Control of an Inverted Double Pendulum</span></li>
+  </ul>
+</nav>
+</div>
+      
+    </div>
+  
+  
+</div>
+</div>
+              
+              
+              
+                
+<div id="searchbox"></div>
+                <article class="bd-article">
+                  
+  <section class="tex2jax_ignore mathjax_ignore" id="model-predictive-control-of-an-inverted-double-pendulum">
+<h1><span class="section-number">19. </span>Model Predictive Control of an Inverted Double Pendulum<a class="headerlink" href="#model-predictive-control-of-an-inverted-double-pendulum" title="Link to this heading">#</a></h1>
+<p><em>Author: Hans Olischläger and Jerry M. Huang</em></p>
+<p>In this notebook, we use BayesFlow to connect Bayesian parameter inference with model
+predictive control (MPC). We train an amortized posterior estimator on simulated
+double-pendulum trajectories, then use it to infer the two rod masses from observed
+motion. The resulting approximate posterior represents uncertainty about the masses
+and supplies plausible parameter values for the controller to consider.</p>
+<p>A double pendulum consists of two rods joined end to end, with the first attached to a
+pivot. Here, we first observe its free motion around a fixed pivot, then consider a
+control task in which the pivot moves with a cart. The workflow has two stages:</p>
+<ol class="arabic simple">
+<li><p><strong>Identification.</strong> A double pendulum swings freely from near-horizontal under gravity.
+We observe the two joint angles over time and infer the rod masses <span class="math notranslate nohighlight">\(m_1, m_2\)</span> with a
+BayesFlow posterior estimator.</p></li>
+<li><p><strong>Robust control.</strong> The same pendulum is mounted on a cart, hanging down, and must be
+swung up and balanced. The controller does not know the true masses, so it optimizes
+over a <em>scenario tree</em> built from the posterior instead of a single point estimate.</p></li>
+</ol>
+<p>The posterior does more than quantify uncertainty: it connects BayesFlow’s
+inference results to control decisions by supplying representative mass scenarios for
+the controller’s predictions.</p>
+<p>You can find the control implementation in <code class="docutils literal notranslate"><span class="pre">misc/mpc/dp_control_helper.py</span></code> which uses <a class="reference external" href="https://www.do-mpc.com/">do-mpc</a>, an awesome library for model-predictive control based on <a class="reference external" href="https://web.casadi.org/">CasADi</a>.</p>
+<p>The control implementation is adapted from the do-mpc example gallery:
+<a class="reference external" href="https://www.do-mpc.com/en/latest/example_gallery/DIP.html">https://www.do-mpc.com/en/latest/example_gallery/DIP.html</a></p>
+<p>The final posterior-informed controller swings the pendulum upright while replanning
+over representative mass scenarios:</p>
+<p><img alt="Robust swing-up of the inverted double pendulum" src="../_images/control.gif" /></p>
+<section id="setup">
+<h2><span class="section-number">19.1. </span>Setup<a class="headerlink" href="#setup" title="Link to this heading">#</a></h2>
+<p>The robust-control section uses <code class="docutils literal notranslate"><span class="pre">do-mpc</span></code> and <code class="docutils literal notranslate"><span class="pre">scikit-learn</span></code>, optional dependencies that
+are not installed with BayesFlow. Install them into the active environment from the
+repository root with
+<a class="reference external" href="https://docs.astral.sh/uv/">uv</a>:</p>
+<div class="highlight-bash notranslate"><div class="highlight"><pre><span></span>uv<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>do-mpc<span class="w"> </span>scikit-learn
+</pre></div>
+</div>
+<p>Restart the notebook kernel after installation if the import below does not pick it up.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+
+<span class="kn">import</span><span class="w"> </span><span class="nn">bayesflow</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">bf</span>
+
+<span class="kn">from</span><span class="w"> </span><span class="nn">misc.mpc</span><span class="w"> </span><span class="kn">import</span> <span class="n">dp_control_helper</span> <span class="k">as</span> <span class="n">ctrl</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="model-specification">
+<h2><span class="section-number">19.2. </span>Model specification<a class="headerlink" href="#model-specification" title="Link to this heading">#</a></h2>
+<p>We model a double pendulum swinging freely around a fixed pivot. The simulator describes
+two uniform rigid rods of lengths
+<span class="math notranslate nohighlight">\(l_1\)</span> and <span class="math notranslate nohighlight">\(l_2\)</span>, moving under gravity without friction or external forcing. Both angles
+<span class="math notranslate nohighlight">\(\theta_1(t)\)</span> and <span class="math notranslate nohighlight">\(\theta_2(t)\)</span> are measured relative to the downward vertical, so
+<span class="math notranslate nohighlight">\(\theta_1=\theta_2=0\)</span> is the hanging configuration.</p>
+<section id="equations-of-motion">
+<h3><span class="section-number">19.2.1. </span>Equations of motion<a class="headerlink" href="#equations-of-motion" title="Link to this heading">#</a></h3>
+<p>Let <span class="math notranslate nohighlight">\(\delta=\theta_1-\theta_2\)</span>. The coupled Euler–Lagrange equations can be written as</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{pmatrix}
+h_4 &amp; h_5\cos\delta \\
+h_5\cos\delta &amp; h_6
+\end{pmatrix}
+\begin{pmatrix}
+\ddot\theta_1 \\
+\ddot\theta_2
+\end{pmatrix}
+=
+\begin{pmatrix}
+-h_7\sin\theta_1-h_5\dot\theta_2^{\,2}\sin\delta \\
+-h_8\sin\theta_2+h_5\dot\theta_1^{\,2}\sin\delta
+\end{pmatrix},\end{split}\]</div>
+<p>where the coefficients are defined as:</p>
+<div class="math notranslate nohighlight">
+\[\begin{split}\begin{aligned}
+h_4 &amp;= l_1^2\left(\frac{m_1}{3}+m_2\right), &amp;
+h_5 &amp;= \frac{m_2l_1l_2}{2}, &amp;
+h_6 &amp;= \frac{m_2l_2^2}{3}, \\
+h_7 &amp;= gl_1\left(\frac{m_1}{2}+m_2\right), &amp;
+h_8 &amp;= \frac{gm_2l_2}{2}.
+\end{aligned}\end{split}\]</div>
+<p>The matrix on the left describes the rods’ inertia and their coupling; the right-hand
+side contains the gravitational and velocity-dependent terms. Solving this <span class="math notranslate nohighlight">\(2\times2\)</span>
+system gives the angular accelerations. Together with <span class="math notranslate nohighlight">\(\dot\theta_i=\omega_i\)</span>, these
+form a first-order ODE for the state <span class="math notranslate nohighlight">\((\theta_1,\omega_1,\theta_2,\omega_2)\)</span>, which we
+integrate using fourth-order Runge–Kutta (RK4).</p>
+</section>
+<section id="priors-and-initial-conditions">
+<h3><span class="section-number">19.2.2. </span>Priors and initial conditions<a class="headerlink" href="#priors-and-initial-conditions" title="Link to this heading">#</a></h3>
+<p>For each simulation, we independently draw the masses, lengths, and gravitational acceleration from bounded normal priors. The initial angles are drawn from the von Mises distribution concentrated around <span class="math notranslate nohighlight">\(\pi/2\)</span> (near-horizontal), and both initial angular velocities are zero.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="k">def</span><span class="w"> </span><span class="nf">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">,</span> <span class="n">low</span><span class="o">=-</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">inf</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Normal(mean, std) truncated to [low, high], bounds in original units."""</span>
+    <span class="n">a</span> <span class="o">=</span> <span class="p">(</span><span class="n">low</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="p">(</span><span class="n">high</span> <span class="o">-</span> <span class="n">mean</span><span class="p">)</span> <span class="o">/</span> <span class="n">std</span>
+    <span class="k">return</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">truncnorm</span><span class="p">(</span><span class="n">a</span><span class="o">=</span><span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="o">=</span><span class="n">b</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">mean</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">std</span><span class="p">)</span>
+
+
+<span class="n">PRIOR</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">"g"</span><span class="p">:</span> <span class="n">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">9.81</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.01</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="s2">"l1"</span><span class="p">:</span> <span class="n">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="s2">"l2"</span><span class="p">:</span> <span class="n">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="s2">"m1"</span><span class="p">:</span> <span class="n">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="s2">"m2"</span><span class="p">:</span> <span class="n">bounded_normal</span><span class="p">(</span><span class="n">mean</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span> <span class="n">low</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span>
+    <span class="s2">"theta1"</span><span class="p">:</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">vonmises</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+    <span class="s2">"theta2"</span><span class="p">:</span> <span class="n">scipy</span><span class="o">.</span><span class="n">stats</span><span class="o">.</span><span class="n">vonmises</span><span class="p">(</span><span class="n">kappa</span><span class="o">=</span><span class="mf">100.0</span><span class="p">,</span> <span class="n">loc</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">pi</span> <span class="o">/</span> <span class="mi">2</span><span class="p">),</span>
+<span class="p">}</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">prior</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">):</span>
+    <span class="n">n</span> <span class="o">=</span> <span class="n">batch_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">return</span> <span class="p">{</span><span class="n">k</span><span class="p">:</span> <span class="n">rv</span><span class="o">.</span><span class="n">rvs</span><span class="p">(</span><span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="n">n</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">rv</span> <span class="ow">in</span> <span class="n">PRIOR</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="observation-model">
+<h3><span class="section-number">19.2.3. </span>Observation model<a class="headerlink" href="#observation-model" title="Link to this heading">#</a></h3>
+<p>The observed data are the two angle trajectories,</p>
+<div class="math notranslate nohighlight">
+\[x=\big\{\big(\theta_1(t_k),\theta_2(t_k)\big)\big\}_{k=0}^{N-1},
+\qquad t_k=k\,\Delta t,\]</div>
+<p>with <span class="math notranslate nohighlight">\(\Delta t=0.05\,\mathrm{s}\)</span> and <span class="math notranslate nohighlight">\(N=200\)</span>. No measurement noise is added in this example:
+given the parameters and initial conditions, the simulator returns a deterministic
+trajectory. The adapter later subsamples these trajectories before passing them to BayesFlow.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">T</span> <span class="o">=</span> <span class="mf">10.0</span>
+<span class="n">DT</span> <span class="o">=</span> <span class="mf">0.05</span>
+<span class="n">NUM_STEPS</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">T</span> <span class="o">/</span> <span class="n">DT</span><span class="p">)</span>
+
+
+<span class="k">def</span><span class="w"> </span><span class="nf">observation_model</span><span class="p">(</span><span class="n">batch_shape</span><span class="p">,</span> <span class="n">g</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">,</span> <span class="n">theta1</span><span class="p">,</span> <span class="n">theta2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">"""Integrate the free double pendulum with RK4 and return both angle trajectories."""</span>
+    <span class="n">g</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">v</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">v</span> <span class="ow">in</span> <span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">l1</span><span class="p">,</span> <span class="n">l2</span><span class="p">,</span> <span class="n">m1</span><span class="p">,</span> <span class="n">m2</span><span class="p">))</span>
+
+    <span class="c1"># coefficients of the Euler-Lagrange equations</span>
+    <span class="n">h4</span> <span class="o">=</span> <span class="n">l1</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="p">(</span><span class="n">m1</span> <span class="o">/</span> <span class="mf">3.0</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">h5</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">l1</span> <span class="o">*</span> <span class="n">l2</span> <span class="o">/</span> <span class="mf">2.0</span>
+    <span class="n">h6</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">l2</span><span class="o">**</span><span class="mi">2</span> <span class="o">/</span> <span class="mf">3.0</span>
+    <span class="n">h7</span> <span class="o">=</span> <span class="n">l1</span> <span class="o">*</span> <span class="n">g</span> <span class="o">*</span> <span class="p">(</span><span class="n">m1</span> <span class="o">/</span> <span class="mf">2.0</span> <span class="o">+</span> <span class="n">m2</span><span class="p">)</span>
+    <span class="n">h8</span> <span class="o">=</span> <span class="n">m2</span> <span class="o">*</span> <span class="n">g</span> <span class="o">*</span> <span class="n">l2</span> <span class="o">/</span> <span class="mf">2.0</span>
+
+    <span class="k">def</span><span class="w"> </span><span class="nf">derivs</span><span class="p">(</span><span class="n">y</span><span class="p">):</span>
+        <span class="n">ph1</span><span class="p">,</span> <span class="n">w1</span><span class="p">,</span> <span class="n">ph2</span><span class="p">,</span> <span class="n">w2</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">],</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span>
+        <span class="n">delta</span> <span class="o">=</span> <span class="n">ph1</span> <span class="o">-</span> <span class="n">ph2</span>
+        <span class="n">cos_d</span><span class="p">,</span> <span class="n">sin_d</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">delta</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">delta</span><span class="p">)</span>
+        <span class="n">det</span> <span class="o">=</span> <span class="n">h4</span> <span class="o">*</span> <span class="n">h6</span> <span class="o">-</span> <span class="n">h5</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">cos_d</span><span class="o">**</span><span class="mi">2</span>
+        <span class="n">rhs1</span> <span class="o">=</span> <span class="o">-</span><span class="n">h7</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ph1</span><span class="p">)</span> <span class="o">-</span> <span class="n">h5</span> <span class="o">*</span> <span class="n">w2</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sin_d</span>
+        <span class="n">rhs2</span> <span class="o">=</span> <span class="n">h5</span> <span class="o">*</span> <span class="n">w1</span><span class="o">**</span><span class="mi">2</span> <span class="o">*</span> <span class="n">sin_d</span> <span class="o">-</span> <span class="n">h8</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">ph2</span><span class="p">)</span>
+        <span class="n">dydt</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty_like</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">dydt</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">w1</span>
+        <span class="n">dydt</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">h6</span> <span class="o">*</span> <span class="n">rhs1</span> <span class="o">-</span> <span class="n">h5</span> <span class="o">*</span> <span class="n">cos_d</span> <span class="o">*</span> <span class="n">rhs2</span><span class="p">)</span> <span class="o">/</span> <span class="n">det</span>
+        <span class="n">dydt</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">w2</span>
+        <span class="n">dydt</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">h4</span> <span class="o">*</span> <span class="n">rhs2</span> <span class="o">-</span> <span class="n">h5</span> <span class="o">*</span> <span class="n">cos_d</span> <span class="o">*</span> <span class="n">rhs1</span><span class="p">)</span> <span class="o">/</span> <span class="n">det</span>
+        <span class="k">return</span> <span class="n">dydt</span>
+
+    <span class="n">n</span> <span class="o">=</span> <span class="n">batch_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="mi">4</span><span class="p">))</span>
+    <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta1</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">asarray</span><span class="p">(</span><span class="n">theta2</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">float64</span><span class="p">)[</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+    <span class="n">theta1_traj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">NUM_STEPS</span><span class="p">))</span>
+    <span class="n">theta2_traj</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="n">n</span><span class="p">,</span> <span class="n">NUM_STEPS</span><span class="p">))</span>
+    <span class="n">theta1_traj</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">theta2_traj</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">NUM_STEPS</span><span class="p">):</span>
+        <span class="n">k1</span> <span class="o">=</span> <span class="n">derivs</span><span class="p">(</span><span class="n">y</span><span class="p">)</span>
+        <span class="n">k2</span> <span class="o">=</span> <span class="n">derivs</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">DT</span> <span class="o">*</span> <span class="n">k1</span><span class="p">)</span>
+        <span class="n">k3</span> <span class="o">=</span> <span class="n">derivs</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="mf">0.5</span> <span class="o">*</span> <span class="n">DT</span> <span class="o">*</span> <span class="n">k2</span><span class="p">)</span>
+        <span class="n">k4</span> <span class="o">=</span> <span class="n">derivs</span><span class="p">(</span><span class="n">y</span> <span class="o">+</span> <span class="n">DT</span> <span class="o">*</span> <span class="n">k3</span><span class="p">)</span>
+        <span class="n">y</span> <span class="o">=</span> <span class="n">y</span> <span class="o">+</span> <span class="p">(</span><span class="n">DT</span> <span class="o">/</span> <span class="mf">6.0</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">k1</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">k2</span> <span class="o">+</span> <span class="mf">2.0</span> <span class="o">*</span> <span class="n">k3</span> <span class="o">+</span> <span class="n">k4</span><span class="p">)</span>
+        <span class="n">theta1_traj</span><span class="p">[:,</span> <span class="n">i</span><span class="p">],</span> <span class="n">theta2_traj</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">y</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span>
+
+    <span class="k">return</span> <span class="p">{</span>
+        <span class="s2">"theta1_traj"</span><span class="p">:</span> <span class="n">theta1_traj</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">),</span>
+        <span class="s2">"theta2_traj"</span><span class="p">:</span> <span class="n">theta2_traj</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="kc">None</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="s2">"float32"</span><span class="p">),</span>
+    <span class="p">}</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We use BayesFlow’s <code class="docutils literal notranslate"><span class="pre">make_simulator()</span></code> to encapsulate the entire data-generating process:</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">simulator</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">make_simulator</span><span class="p">(</span>
+  <span class="p">[</span><span class="n">prior</span><span class="p">,</span> <span class="n">observation_model</span><span class="p">],</span>
+  <span class="n">obj_kwargs</span><span class="o">=</span><span class="p">{</span>
+      <span class="s2">"prior"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"is_batched"</span><span class="p">:</span> <span class="kc">True</span><span class="p">},</span>
+      <span class="s2">"observation_model"</span><span class="p">:</span> <span class="p">{</span><span class="s2">"is_batched"</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+  <span class="p">},</span>
+<span class="p">)</span>
+
+<span class="n">sims</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="prior-predictive-check">
+<h3><span class="section-number">19.2.4. </span>Prior predictive check<a class="headerlink" href="#prior-predictive-check" title="Link to this heading">#</a></h3>
+<p>The trajectories below are draws from the <strong>prior predictive distribution</strong>, generated
+by sampling parameters from the priors and running the simulator. Before training BayesFlow,
+we check whether their angle ranges, oscillation timescales, and variability are plausible
+for the intended experiment.
+Thick lines show the ensemble mean; shaded regions indicate ± one standard deviation.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">t</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">NUM_STEPS</span><span class="p">)</span> <span class="o">*</span> <span class="n">DT</span>
+<span class="n">color</span> <span class="o">=</span> <span class="s2">"#3979A9"</span>
+<span class="n">fig</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">11</span><span class="p">,</span> <span class="mf">3.6</span><span class="p">),</span> <span class="n">sharey</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+
+<span class="k">for</span> <span class="n">ax</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">name</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">axes</span><span class="p">,</span> <span class="p">[</span><span class="s2">"theta1_traj"</span><span class="p">,</span> <span class="s2">"theta2_traj"</span><span class="p">],</span> <span class="p">[</span><span class="sa">r</span><span class="s2">"$\theta_1$"</span><span class="p">,</span> <span class="sa">r</span><span class="s2">"$\theta_2$"</span><span class="p">]):</span>
+    <span class="n">trajectories</span> <span class="o">=</span> <span class="n">sims</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="o">...</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">trajectories</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">trajectories</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+
+    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">t</span><span class="p">,</span> <span class="n">trajectories</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">color</span><span class="p">,</span> <span class="n">alpha</span><span class="o">=</span><span class="mf">0.18</span><span class="p">,</span> <span class="n">lw</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">zorder</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s2">"$t$ [s]"</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_title</span><span class="p">(</span><span class="n">name</span><span class="p">)</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">(</span><span class="n">t</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">t</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">ax</span><span class="o">.</span><span class="n">spines</span><span class="p">[[</span><span class="s2">"top"</span><span class="p">,</span> <span class="s2">"right"</span><span class="p">]]</span><span class="o">.</span><span class="n">set_visible</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+
+<span class="n">axes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s2">"angle [rad]"</span><span class="p">)</span>
+<span class="n">fig</span><span class="o">.</span><span class="n">tight_layout</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/4c102425b2983dbe9ca5ef381f26cb6be7d786a5e12d4be3f2b0a65375ca1cf6.png" src="../_images/4c102425b2983dbe9ca5ef381f26cb6be7d786a5e12d4be3f2b0a65375ca1cf6.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="the-identification-problem">
+<h2><span class="section-number">19.3. </span>The identification problem<a class="headerlink" href="#the-identification-problem" title="Link to this heading">#</a></h2>
+<p>Given the angle trajectories <span class="math notranslate nohighlight">\(x\)</span>, BayesFlow learns an approximate posterior over the rod masses:</p>
+<div class="math notranslate nohighlight">
+\[q_\phi(m_1,m_2\mid x)\approx p(m_1,m_2\mid x).\]</div>
+<p>Gravity, rod lengths, and initial angles vary across simulations and are marginalized as nuisance parameters. Scaling both masses by the same factor leaves the free motion unchanged. The trajectories can constrain the mass ratio <span class="math notranslate nohighlight">\(m_1/m_2\)</span>, but not the overall mass scale, so inference about the absolute masses remains dependent on the priors.</p>
+<section id="amortized-posterior-over-the-rod-masses">
+<h3><span class="section-number">19.3.1. </span>Amortized posterior over the rod masses<a class="headerlink" href="#amortized-posterior-over-the-rod-masses" title="Link to this heading">#</a></h3>
+<p>The trajectories are subsampled to every fifth step before they reach the summary network,
+and only <span class="math notranslate nohighlight">\(m_1, m_2\)</span> are inferred. The remaining parameters are treated as known at control
+time.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">adapter</span> <span class="o">=</span> <span class="p">(</span>
+    <span class="n">bf</span><span class="o">.</span><span class="n">Adapter</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">to_array</span><span class="p">()</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">"theta1_traj"</span><span class="p">,</span> <span class="s2">"theta2_traj"</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">"summary_variables"</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">take</span><span class="p">(</span><span class="s2">"summary_variables"</span><span class="p">,</span> <span class="n">indices</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">NUM_STEPS</span><span class="p">,</span> <span class="mi">5</span><span class="p">),</span> <span class="n">axis</span><span class="o">=-</span><span class="mi">2</span><span class="p">)</span>
+    <span class="o">.</span><span class="n">concatenate</span><span class="p">([</span><span class="s2">"m1"</span><span class="p">,</span> <span class="s2">"m2"</span><span class="p">],</span> <span class="n">into</span><span class="o">=</span><span class="s2">"inference_variables"</span><span class="p">)</span>
+<span class="p">)</span>
+<span class="n">adapter</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output text_plain highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>Adapter([0: ToArray -&gt; 1: Concatenate(['theta1_traj', 'theta2_traj'] -&gt; 'summary_variables') -&gt; 2: Take(include=['summary_variables']) -&gt; 3: Concatenate(['m1', 'm2'] -&gt; 'inference_variables') -&gt; 4: Drop(['g', 'l1', 'l2', 'theta1', 'theta2'])])
+</pre></div>
+</div>
+</div>
+</div>
+<p>We use BayesFlow’s <code class="docutils literal notranslate"><span class="pre">BasicWorkflow</span></code> object to set up offline training and validation,
+using a recurrent summary network and a spline-based coupling flow for inference.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">NUM_TRAINING_SIMS</span> <span class="o">=</span> <span class="mi">10_000</span>
+
+<span class="n">training_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">NUM_TRAINING_SIMS</span><span class="p">)</span>
+<span class="n">validation_data</span> <span class="o">=</span> <span class="n">simulator</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="mi">200</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">workflow</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">BasicWorkflow</span><span class="p">(</span>
+    <span class="n">simulator</span><span class="o">=</span><span class="n">simulator</span><span class="p">,</span>
+    <span class="n">adapter</span><span class="o">=</span><span class="n">adapter</span><span class="p">,</span>
+    <span class="n">inference_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">CouplingFlow</span><span class="p">(</span>
+        <span class="n">transform</span><span class="o">=</span><span class="s2">"spline"</span><span class="p">,</span>
+        <span class="n">depth</span><span class="o">=</span><span class="mi">2</span>
+    <span class="p">),</span>
+    <span class="n">summary_network</span><span class="o">=</span><span class="n">bf</span><span class="o">.</span><span class="n">networks</span><span class="o">.</span><span class="n">RecurrentNetwork</span><span class="p">(</span><span class="n">hidden_dim</span><span class="o">=</span><span class="mi">64</span><span class="p">),</span>
+    <span class="n">initial_learning_rate</span><span class="o">=</span><span class="mf">1e-3</span>
+<span class="p">)</span>
+
+<span class="n">history</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">fit_offline</span><span class="p">(</span>
+    <span class="n">training_data</span><span class="p">,</span>
+    <span class="n">epochs</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">batch_size</span><span class="o">=</span><span class="mi">64</span><span class="p">,</span>
+    <span class="n">validation_data</span><span class="o">=</span><span class="n">validation_data</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>We can visualize the loss along with other diagnostics for estimating the rod masses.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">loss</span><span class="p">(</span><span class="n">history</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/1a09af257ba877e94347d20fb0a48c234df9fdb89cd69105225e29dd0c8b3502.png" src="../_images/1a09af257ba877e94347d20fb0a48c234df9fdb89cd69105225e29dd0c8b3502.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">posterior_samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">conditions</span><span class="o">=</span><span class="n">validation_data</span><span class="p">,</span> <span class="n">num_samples</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 0.73 seconds.
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">recovery</span><span class="p">(</span><span class="n">posterior_samples</span><span class="p">,</span> <span class="n">validation_data</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/b3db61db0edb8cf250c562389ebb9ab7c485207853b66614727cc3c3f253451d.png" src="../_images/b3db61db0edb8cf250c562389ebb9ab7c485207853b66614727cc3c3f253451d.png" />
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">_</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">calibration_ecdf</span><span class="p">(</span><span class="n">posterior_samples</span><span class="p">,</span> <span class="n">validation_data</span><span class="p">,</span> <span class="n">figsize</span><span class="o">=</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">5</span><span class="p">))</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<img alt="../_images/a6c284730dda98d41b9c9b771adab899bfe774c19e39a0731224a9c8142fd7a2.png" src="../_images/a6c284730dda98d41b9c9b771adab899bfe774c19e39a0731224a9c8142fd7a2.png" />
+</div>
+</div>
+</section>
+</section>
+<section id="posterior-for-a-single-observation">
+<h2><span class="section-number">19.4. </span>Posterior for a single observation<a class="headerlink" href="#posterior-for-a-single-observation" title="Link to this heading">#</a></h2>
+<p>For one new simulated trajectory, we visualize the inferred mass posterior together
+with the true masses used to generate it.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">observation</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">simulate</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+
+<span class="n">posterior_samples</span> <span class="o">=</span> <span class="n">workflow</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">num_samples</span><span class="o">=</span><span class="mi">500</span><span class="p">,</span> <span class="n">conditions</span><span class="o">=</span><span class="n">observation</span><span class="p">)</span>
+
+<span class="n">f</span> <span class="o">=</span> <span class="n">bf</span><span class="o">.</span><span class="n">diagnostics</span><span class="o">.</span><span class="n">plots</span><span class="o">.</span><span class="n">pairs_posterior</span><span class="p">(</span>
+    <span class="n">posterior_samples</span><span class="p">,</span>
+    <span class="n">targets</span><span class="o">=</span><span class="n">observation</span><span class="p">,</span>
+    <span class="n">dataset_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+    <span class="n">variable_keys</span><span class="o">=</span><span class="p">[</span><span class="s2">"m1"</span><span class="p">,</span> <span class="s2">"m2"</span><span class="p">],</span>
+    <span class="n">variable_names</span><span class="o">=</span><span class="p">[</span><span class="s2">"$m_1$"</span><span class="p">,</span> <span class="s2">"$m_2$"</span><span class="p">],</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stderr highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>INFO:bayesflow:Sampling completed in 0.16 seconds.
+</pre></div>
+</div>
+<img alt="../_images/fd744fbabffaae87713a6d8a92e38333571b09968fd553d416b4078dab9dacd1.png" src="../_images/fd744fbabffaae87713a6d8a92e38333571b09968fd553d416b4078dab9dacd1.png" />
+</div>
+</div>
+<p>The near-perfect positive correlation in the posterior is a structural feature of the inverse problem. In the unforced, frictionless model, all inertial and gravitational terms are linear in the masses. Multiplying both <span class="math notranslate nohighlight">\(m_1\)</span> and <span class="math notranslate nohighlight">\(m_2\)</span> by the same constant therefore leaves the angle trajectories unchanged after the common factor cancels from the equations of motion.</p>
+<p>The observations identify the mass ratio <span class="math notranslate nohighlight">\(m_1/m_2\)</span> much more strongly than the absolute mass scale, so posterior draws with nearly the same ratio form the diagonal ridge in the plot. The priors determine how far that ridge can extend. An input of known magnitude, a force or torque measurement, or fixing one mass would provide information about the missing absolute scale.</p>
+</section>
+<section id="robust-swing-up">
+<h2><span class="section-number">19.5. </span>Robust swing-up<a class="headerlink" href="#robust-swing-up" title="Link to this heading">#</a></h2>
+<p>We now pass BayesFlow’s posterior for the observed free swing to the controller.
+<code class="docutils literal notranslate"><span class="pre">pick_scenarios</span></code> clusters the joint posterior samples into three representative
+<span class="math notranslate nohighlight">\((m_1,m_2)\)</span> pairs, which define the scenarios in do-mpc’s prediction tree.</p>
+<p>Rod lengths and gravity are assumed known at control time. The controller plans cart
+forces across the mass scenarios, while the simulated pendulum evolves with the true
+masses from the same observation. At each step, MPC applies the first planned force,
+receives the updated state, and replans to swing up and balance the pendulum.</p>
+<p><code class="docutils literal notranslate"><span class="pre">n_robust=1</span></code> uses one branching level; additional levels enlarge the scenario tree and
+increase computation. In the control model, angles are measured from the upward vertical,
+so the upright target is zero.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">M0</span> <span class="o">=</span> <span class="mf">0.6</span>  <span class="c1"># cart mass [kg]</span>
+<span class="n">X0</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.99</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">0.99</span> <span class="o">*</span> <span class="n">np</span><span class="o">.</span><span class="n">pi</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">])</span>  <span class="c1"># hanging down, at rest</span>
+
+<span class="n">MPC_KWARGS</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span>
+    <span class="n">n_horizon</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">n_robust</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+    <span class="n">t_step</span><span class="o">=</span><span class="mf">0.04</span><span class="p">,</span>
+    <span class="n">w_F</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+    <span class="n">F_max</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span>
+    <span class="n">x_bound</span><span class="o">=</span><span class="mf">1.3</span><span class="p">,</span>
+<span class="p">)</span>
+
+<span class="n">g_true</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">"g"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">l1_true</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">"l1"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">l2_true</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">"l2"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">m1_true</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">"m1"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+<span class="n">m2_true</span> <span class="o">=</span> <span class="n">observation</span><span class="p">[</span><span class="s2">"m2"</span><span class="p">][</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span>
+
+<span class="n">scenarios</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">pick_scenarios</span><span class="p">({</span><span class="n">k</span><span class="p">:</span> <span class="n">posterior_samples</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="p">(</span><span class="s2">"m1"</span><span class="p">,</span> <span class="s2">"m2"</span><span class="p">)},</span> <span class="mi">3</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="s2">"scenario masses (m1, m2):</span><span class="se">\n</span><span class="s2">"</span><span class="p">,</span> <span class="n">scenarios</span><span class="p">)</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">"true masses: (</span><span class="si">{</span><span class="n">m1_true</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">, </span><span class="si">{</span><span class="n">m2_true</span><span class="si">:</span><span class="s2">.3f</span><span class="si">}</span><span class="s2">)"</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+<div class="cell_output docutils container">
+<div class="output stream highlight-myst-ansi notranslate"><div class="highlight"><pre><span></span>scenario masses (m1, m2):
+ [[1.042599   0.9250405 ]
+ [1.1464391  1.0146881 ]
+ [0.936249   0.84211445]]
+true masses: (1.095, 0.955)
+</pre></div>
+</div>
+</div>
+</div>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">model</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">build_model</span><span class="p">(</span><span class="n">M0</span><span class="p">,</span> <span class="n">l1_true</span><span class="p">,</span> <span class="n">l2_true</span><span class="p">,</span> <span class="n">g_true</span><span class="p">)</span>
+<span class="n">mpc</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">build_mpc</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">scenarios</span><span class="p">,</span> <span class="o">**</span><span class="n">MPC_KWARGS</span><span class="p">)</span>
+<span class="n">sim</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">build_simulator</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">m1_true</span><span class="p">,</span> <span class="n">m2_true</span><span class="p">,</span> <span class="n">t_step</span><span class="o">=</span><span class="n">MPC_KWARGS</span><span class="p">[</span><span class="s2">"t_step"</span><span class="p">])</span>
+<span class="n">est</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">build_estimator</span><span class="p">(</span><span class="n">model</span><span class="p">)</span>
+
+<span class="n">result</span> <span class="o">=</span> <span class="n">ctrl</span><span class="o">.</span><span class="n">run_closed_loop</span><span class="p">(</span><span class="n">mpc</span><span class="p">,</span> <span class="n">sim</span><span class="p">,</span> <span class="n">est</span><span class="p">,</span> <span class="n">X0</span><span class="p">,</span> <span class="n">n_steps</span><span class="o">=</span><span class="mi">100</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+</section>
+<section id="reproduce-the-animation">
+<h2><span class="section-number">19.6. </span>Reproduce the animation<a class="headerlink" href="#reproduce-the-animation" title="Link to this heading">#</a></h2>
+<p>The animation at the top shows how the posterior-informed control actions move the
+simulated pendulum (left). On the right, black curves trace the realized angles and
+applied force, while blue curves show the controller’s predictions for the three posterior
+mass scenarios. These
+predictions are updated at every control step, connecting BayesFlow’s inferred mass
+uncertainty to the evolving control plan.</p>
+<p>After running the control cells above, here is how to generate the GIF. Rendering is
+optional, so this cell is intentionally left unexecuted.</p>
+<div class="cell docutils container">
+<div class="cell_input docutils container">
+<div class="highlight-ipython3 notranslate"><div class="highlight"><pre><span></span><span class="n">ctrl</span><span class="o">.</span><span class="n">animate_with_predictions</span><span class="p">(</span>
+    <span class="n">result</span><span class="p">,</span> <span class="n">l1_true</span><span class="p">,</span> <span class="n">l2_true</span><span class="p">,</span> <span class="n">skip</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s2">"control.gif"</span>
+<span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</div>
+<p>That’s it for this notebook! We learned how to use BayesFlow to infer a posterior over the
+rod masses from observed motion and use that uncertainty to guide robust control. Now make
+your own application that puts posterior uncertainty to work in predictions and decisions!</p>
+</section>
+</section>
+
+
+                </article>
+              
+              
+              
+              
+              
+                <footer class="prev-next-footer d-print-none">
+                  
+<div class="prev-next-area">
+    <a class="left-prev"
+       href="Bayesian_Experimental_Design.html"
+       title="previous page">
+      <i class="fa-solid fa-angle-left"></i>
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">previous</p>
+        <p class="prev-next-title"><span class="section-number">18. </span>Bayesian Experimental Design with BayesFlow and PyTorch</p>
+      </div>
+    </a>
+    <a class="right-next"
+       href="../user_guide/index.html"
+       title="next page">
+      <div class="prev-next-info">
+        <p class="prev-next-subtitle">next</p>
+        <p class="prev-next-title">User Guide</p>
+      </div>
+      <i class="fa-solid fa-angle-right"></i>
+    </a>
+</div>
+                </footer>
+              
+            </div>
+            
+            
+              
+                <dialog id="pst-secondary-sidebar-modal" tabindex="-1"></dialog>
+                <div id="pst-secondary-sidebar" class="bd-sidebar-secondary bd-toc"><div class="sidebar-secondary-items sidebar-secondary__inner">
+
+
+  <div class="sidebar-secondary-item">
+<div
+    id="pst-page-navigation-heading-2"
+    class="page-toc tocsection onthispage">
+    <i class="fa-solid fa-list"></i> On this page
+  </div>
+  <nav id="pst-page-toc-nav" class="page-toc" aria-labelledby="pst-page-navigation-heading-2">
+    <ul class="pst-show_toc_level nav section-nav flex-column">
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#setup">19.1. Setup</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#model-specification">19.2. Model specification</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#equations-of-motion">19.2.1. Equations of motion</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#priors-and-initial-conditions">19.2.2. Priors and initial conditions</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#observation-model">19.2.3. Observation model</a></li>
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#prior-predictive-check">19.2.4. Prior predictive check</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#the-identification-problem">19.3. The identification problem</a><ul class="nav section-nav flex-column">
+<li class="toc-h3 nav-item toc-entry"><a class="reference internal nav-link" href="#amortized-posterior-over-the-rod-masses">19.3.1. Amortized posterior over the rod masses</a></li>
+</ul>
+</li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#posterior-for-a-single-observation">19.4. Posterior for a single observation</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#robust-swing-up">19.5. Robust swing-up</a></li>
+<li class="toc-h2 nav-item toc-entry"><a class="reference internal nav-link" href="#reproduce-the-animation">19.6. Reproduce the animation</a></li>
+</ul>
+  </nav></div>
+
+  <div class="sidebar-secondary-item">
+
+  
+  <div class="tocsection editthispage">
+    <a href="https://github.com/bayesflow-org/bayesflow/edit/v2.1.1/docsrc/source/_examples/Model_Predictive_Control.ipynb">
+      <i class="fa-solid fa-pencil"></i>
+      
+      
+        
+          Edit on GitHub
+        
+      
+    </a>
+  </div>
+</div>
+
+</div></div>
+              
+            
+          </div>
+          <footer class="bd-footer-content">
+            
+          </footer>
+        
+      </main>
+    </div>
+  </div>
+  
+  <!-- Scripts loaded after <body> so the DOM is not blocked -->
+  <script defer src="../_static/scripts/bootstrap.js?digest=75c7c72ae941e8b558d8"></script>
+<script defer src="../_static/scripts/pydata-sphinx-theme.js?digest=75c7c72ae941e8b558d8"></script>
+
+  <footer class="bd-footer">
+<div class="bd-footer__inner bd-page-width">
+  
+    <div class="footer-items__start">
+      
+        <div class="footer-item">
+
+  <p class="copyright">
+    
+      © Copyright 2023-2026, BayesFlow authors (lead maintainer: Stefan T. Radev).
+      <br/>
+    
+  </p>
+</div>
+      
+        <div class="footer-item">
+
+  <p class="sphinx-version">
+    Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.2.0.
+  </p>
+</div>
+      
+    </div>
+  
+  
+  
+    <div class="footer-items__end">
+      
+        <div class="footer-item">
+<p class="theme-version">
+  <!-- # L10n: Setting the PST URL as an argument as this does not need to be localized -->
+  Built with the <a href="https://pydata-sphinx-theme.readthedocs.io/en/stable/index.html">PyData Sphinx Theme</a> 0.24.0.
+</p></div>
+      
+    </div>
+  
+</div>
+
+  </footer>
+  </body>
+</html>

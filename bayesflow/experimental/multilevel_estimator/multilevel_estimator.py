@@ -56,7 +56,7 @@ class MultilevelEstimator(Estimator):
         encoders: list[dict[str, keras.Layer]], optional
             Only needed to customize the encoders. An encoder summarizes the rows
             of a node, producing one summary per row of the network's own node.
-            The arguments expects one dictionary per inference network, in
+            The argument expects one dictionary per inference network, in
             the order of ``graph.networks()``, that maps node names to encoders.
             By default, each node that needs summarizing gets a
             :py:class:`MultilevelEncoder`.

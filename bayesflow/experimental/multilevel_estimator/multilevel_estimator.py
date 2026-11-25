@@ -54,13 +54,11 @@ class MultilevelEstimator(Estimator):
             :py:meth:`networks` method of the `InvertedGraph` for an overview
             of how variables are assigned to inference networks.
         encoders: list[dict[str, keras.Layer]], optional
-            Only needed to customize the encoders. The layers that summarize
-            the observed data, so it can be used to condition an inference
-            network (default is an :py:class:`MultilevelEncoder` for every
-            node an inference network conditions on). Give one dictionary per
-            inference network, in the order of ``graph.networks()``, that maps
-            each data node the network conditions on to its encoder.
-            An encoder must return one encoding per row, like
+            Only needed to customize the encoders. An encoder summarizes the rows
+            of a node, producing one summary per row of the network's own node.
+            The arguments expects one dictionary per inference network, in
+            the order of ``graph.networks()``, that maps node names to encoders.
+            By default, each node that needs summarizing gets a
             :py:class:`MultilevelEncoder`.
         adapter: bayesflow.adapters.Adapter, optional
             Adapter for data processing (default is an empty Adapter).
@@ -90,6 +88,7 @@ class MultilevelEstimator(Estimator):
                 )
 
         self.condition_nodes = []
+        self.summarized_nodes = []
         self.sequential = []
 
         for i, target_nodes in enumerate(self.networks):
@@ -105,19 +104,25 @@ class MultilevelEstimator(Estimator):
 
                 self.sequential.append(target_nodes[0])
 
-            self.condition_nodes.append(graph.conditions(target_nodes))
+            condition_nodes = graph.conditions(target_nodes)
+            below = nx.descendants(simulation_graph, target_nodes[0])
+            summarized = [node for node in condition_nodes if node in self.data_nodes or node in below]
 
-        if encoders is None:
-            encoders = []
+            reachable = nx.ancestors(simulation_graph, target_nodes[0])
+            for node in summarized:
+                reachable |= nx.ancestors(simulation_graph, node)
 
-            for condition_nodes in self.condition_nodes:
-                network_encoders = {}
+            for node in condition_nodes:
+                if node not in summarized and node not in reachable:
+                    raise NotImplementedError(f"The network for {target_nodes} cannot condition on {node}.")
 
-                for node in condition_nodes:
-                    if node in self.data_nodes:
-                        network_encoders[node] = MultilevelEncoder()
+            self.condition_nodes.append(condition_nodes)
+            self.summarized_nodes.append(summarized)
 
-                encoders.append(network_encoders)
+        encoders = encoders or [{} for _ in self.networks]
+        for network_encoders, summarized in zip(encoders, self.summarized_nodes):
+            for node in summarized:
+                network_encoders.setdefault(node, MultilevelEncoder())
 
         self.encoders = encoders
 
@@ -428,41 +433,36 @@ class MultilevelEstimator(Estimator):
         return to_batch(samples, self.graph, adapter or self.adapter, padded)
 
     def network_conditions(self, batch: dict, i: int, training: bool = False):
-        # the nodes of a network share their rows, so the first one stands in for all of them
+        # the nodes of a network share their rows, so we access the first one
         target = self.networks[i][0]
         target_indices = batch[target]["indices"]
         num_target_rows = keras.ops.shape(target_indices[target])[0]
 
-        latent = []
-        observed = []
-        for node in self.condition_nodes[i]:
-            if node in self.data_nodes:
-                observed.append(node)
-            else:
-                latent.append(node)
+        summarized = self.summarized_nodes[i]
+        latent = [node for node in self.condition_nodes[i] if node not in summarized]
 
         conditions = []
 
-        for data_node in observed:
-            data_indices = batch[data_node]["indices"]
+        for summarized_node in summarized:
+            node_indices = batch[summarized_node]["indices"]
 
-            if target not in data_indices:
-                raise NotImplementedError(f"{target} conditions on {data_node}")
+            if target not in node_indices:
+                raise NotImplementedError(f"{target} conditions on {summarized_node}")
 
-            features = [node_values(batch, data_node)]
+            features = [node_values(batch, summarized_node)]
             for node in latent:
-                if node in data_indices:
+                if node in node_indices:
                     values = node_values(batch, node)
-                    features.append(gather(values, data_indices[node]))
+                    features.append(gather(values, node_indices[node]))
 
             groups = []
-            for name in sorted(batch[data_node]["groups"]):
-                groups.append(batch[data_node]["groups"][name])
+            for name in sorted(batch[summarized_node].get("groups", {})):
+                groups.append(batch[summarized_node]["groups"][name])
 
             observations = keras.ops.concatenate(features, axis=-1)
-            encoded = self.encoders[i][data_node](observations, groups, training=training)
+            encoded = self.encoders[i][summarized_node](observations, groups, training=training)
 
-            target_ids = data_indices[target]
+            target_ids = node_indices[target]
             pooled = segment_mean(encoded, target_ids, num_target_rows)
             counts = segment_count(target_ids, num_target_rows, pooled.dtype)
 

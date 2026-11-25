@@ -117,3 +117,26 @@ def test_conditions_are_paired_with_the_data(crossed_design_irt_simulator):
     in_dataset_0 = batch["students"]["indices"]["dataset"] == 0
     assert not np.allclose(before[students][in_dataset_0], after[students][in_dataset_0])
     np.testing.assert_allclose(before[students][~in_dataset_0], after[students][~in_dataset_0], rtol=1e-4, atol=1e-4)
+
+
+def test_latent_children_are_summarized(nested_survey_simulator):
+    estimator = small_estimator(nested_survey_simulator)
+    graph = estimator.graph
+    regions = estimator.networks.index(["regions"])
+    assert "squares" in graph.conditions(["regions"])
+    assert estimator.summarized_nodes[regions] == ["squares"]
+
+    batch = estimator.to_batch(nested_survey_simulator.sample(2))
+    before = all_conditions(estimator, batch)
+
+    assert before[regions].shape[-1] > 1
+    first_square = np.flatnonzero(batch["squares"]["indices"]["regions"] == 0)[0]
+    alpha = keras.ops.convert_to_numpy(batch["squares"]["values"]["alpha"]).copy()
+    alpha[first_square] += 1.0
+    batch["squares"]["values"]["alpha"] = alpha
+
+    after = all_conditions(estimator, batch)
+    region_of_square = batch["squares"]["indices"]["regions"][first_square]
+    changed = np.arange(before[regions].shape[0]) == region_of_square
+    assert not np.allclose(before[regions][changed], after[regions][changed])
+    np.testing.assert_allclose(before[regions][~changed], after[regions][~changed], rtol=1e-4, atol=1e-4)

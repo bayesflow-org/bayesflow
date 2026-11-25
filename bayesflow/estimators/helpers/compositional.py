@@ -60,7 +60,7 @@ def build_prior_score_fn(
         std = mean = None
 
     # adapters that only move values around have a permutation Jacobian (J^T = J^-1, log |det J| = 0),
-    permutation_adapter = all(transform.is_permutation for transform in adapter.transforms)
+    permutation_adapter = all(transform.has_permutation_jacobian for transform in adapter.transforms)
 
     def _prior_score(adapted_samples: dict[str, Tensor], time: Tensor) -> dict[str, Tensor]:
         if prior_has_time:

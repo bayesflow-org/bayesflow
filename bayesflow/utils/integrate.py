@@ -71,8 +71,9 @@ def _error_ratio(
 ) -> ArrayLike:
     """Normalize a local error estimate by a per-component tolerance.
 
-    The error of an entry is reduced with a root-mean-square norm, which keeps the criterion independent of
-    the number of components.
+    Each entry is reduced with a root-mean-square norm over all its elements, batch included. Averaging
+    over the batch keeps a few samples with near-zero components, whose tolerance is close to ``atol``,
+    from setting the step size for the whole batch.
 
     Parameters
     ----------
@@ -95,7 +96,7 @@ def _error_ratio(
     ratio = None
     for key, err in err_state.items():
         scale = atol + rtol * keras.ops.maximum(keras.ops.abs(state[key]), keras.ops.abs(new_state[key]))
-        key_ratio = keras.ops.max(keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale), axis=-1)))
+        key_ratio = keras.ops.sqrt(keras.ops.mean(keras.ops.square(err / scale)))
         ratio = key_ratio if ratio is None else keras.ops.maximum(ratio, key_ratio)
 
     return ratio
@@ -508,7 +509,7 @@ def _compile_loop_integrator(func: Callable) -> Callable:
     iteration per solver step. Tracing the whole integration once removes the per-step
     Python and GradientTape overhead.
     """
-    if keras.backend.backend() != "tensorflow":
+    if keras.config.backend() != "tensorflow":
         return func
 
     import tensorflow as tf
@@ -1175,7 +1176,7 @@ def integrate_stochastic_adaptive(
     Performs adaptive-step SDE integration.
     """
     initial_loop_state = (keras.ops.zeros((), dtype="int32"), state, start_time, initial_step, state)
-    seed_body = None if keras.backend.backend() == "jax" else seed
+    seed_body = None if keras.config.backend() == "jax" else seed
 
     def cond(i, current_state, current_time, current_step, last_state):
         time_remaining = keras.ops.sign(stop_time - start_time) * (stop_time - (current_time + current_step))
@@ -1804,7 +1805,7 @@ def integrate_stochastic(
     if corrector_steps > 0:
         if score_fn is None or noise_schedule is None:
             raise ValueError("Please provide both score_fn and noise_schedule when using corrector_steps > 0.")
-        if keras.backend.backend() == "jax":
+        if keras.config.backend() == "jax":
             corrector_noise_history = {}
             for key, val in state.items():
                 shape = keras.ops.shape(val)
@@ -1830,7 +1831,7 @@ def integrate_stochastic(
                 raise ValueError("Langevin sampling does not support adaptive steps.")
 
             z_history = None
-            if keras.backend.backend() == "jax":
+            if keras.config.backend() == "jax":
                 warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
                 z_history = {}
                 for key, val in state.items():
@@ -1868,7 +1869,7 @@ def integrate_stochastic(
     # Pre-generate standard normals for the predictor step (up to max_steps)
     z_history = None
     z_extra_history = None if method not in ["sea", "shark"] else {}
-    if keras.backend.backend() == "jax":
+    if keras.config.backend() == "jax":
         warning(f"JAX backend needs to preallocate random samples for 'max_steps={loop_steps}'.")
         z_history = {}
         for key, val in state.items():

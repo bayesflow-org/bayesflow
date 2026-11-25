@@ -2,7 +2,7 @@ import keras
 import numpy as np
 from typing import TypeVar
 
-match keras.backend.backend():
+match keras.config.backend():
     case "numpy":
         BackendTensor = np.ndarray
     case "jax":

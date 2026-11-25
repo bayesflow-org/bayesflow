@@ -21,9 +21,11 @@ The corresponding Jupyter Notebooks are available :mainbranch:`here <examples/>`
    Compositional estimation <_examples/Compositional_Diffusion>
    Deep Ensembles <_examples/Ensembles>
    Self-consistency <_examples/Self_Consistency>
+   Changing priors at inference time <_examples/Changing_Priors>
    Model comparisons <_examples/One_Sample_TTest>
    Model comparison deep dive <_examples/Model_Comparison_Deep_Dive>
    Multimodal data <_examples/Multimodal_Data>
    Bayes estimators <_examples/Lotka_Volterra_Point_Estimation>
    From ABC to BayesFlow <_examples/From_ABC_to_BayesFlow>
    Bayesian experimental design <_examples/Bayesian_Experimental_Design>
+   Model predictive control <_examples/Model_Predictive_Control>

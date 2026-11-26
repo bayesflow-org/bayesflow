@@ -1,3 +1,4 @@
 from .set_transformer import SetTransformer
+from .space_time_transformer import SpaceTimeTransformer
 from .time_series_transformer import TimeSeriesTransformer
 from .fusion_transformer import FusionTransformer

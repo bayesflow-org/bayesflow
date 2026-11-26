@@ -30,6 +30,11 @@ def _(name: str, *args, **kwargs):
 
             return TimeSeriesTransformer(*args, **kwargs)
 
+        case "space_time_transformer":
+            from bayesflow.networks import SpaceTimeTransformer
+
+            return SpaceTimeTransformer(*args, **kwargs)
+
         case "time_series_network":
             from bayesflow.networks import TimeSeriesNetwork
 

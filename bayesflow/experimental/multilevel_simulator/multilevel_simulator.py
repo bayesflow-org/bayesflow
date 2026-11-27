@@ -1,6 +1,7 @@
 import inspect
 from typing import Any, Callable
 
+import keras
 import networkx as nx
 import numpy as np
 
@@ -40,6 +41,7 @@ class MultilevelSimulator:
         self,
         node: str,
         sample_fn: Callable[..., dict[str, Any]],
+        log_prob_fn: Callable[..., Any] | None = None,
         reps: int | str | Callable = 1,
         is_batched: bool | None = None,
     ):
@@ -54,6 +56,12 @@ class MultilevelSimulator:
             Function returning a dict that maps variable names to sampled values.
             Each ``sample_fn`` of a node can accept arguments that are named
             by either the variable names of the node's parents or the meta data.
+        log_prob_fn: Callable, optional
+            Function returning the log density of the node's variables given its
+            parents, with one value per sample. It can accept arguments that are
+            named by the variable names of the node and its parents, and must be
+            written with ``keras.ops``, so that it works on batches of tensors.
+            Required for ``prior`` and ``likelihood``. Default is None.
         reps : int, str or Callable, optional
             Number of repetitions of the node per combination of its parents'
             values. Used to vary the number of groups for each simulated dataset.
@@ -74,7 +82,7 @@ class MultilevelSimulator:
         if is_batched is None:
             is_batched = self.is_batched
 
-        self.graph.add_node(node, sample_fn=sample_fn, reps=reps, is_batched=is_batched)
+        self.graph.add_node(node, sample_fn=sample_fn, log_prob_fn=log_prob_fn, reps=reps, is_batched=is_batched)
 
     def add_edge(self, from_node: str, to_node: str):
         """
@@ -89,6 +97,22 @@ class MultilevelSimulator:
             Child node, which is repeated for every sample of the parent.
         """
         self.graph.add_edge(from_node, to_node)
+
+    @property
+    def prior(self) -> "GraphDensity":
+        """
+        The prior density of all latent nodes, from their ``log_prob_fn``.
+        """
+        latent = [node for node in nx.lexicographical_topological_sort(self.graph) if self.graph.out_degree(node) > 0]
+
+        return GraphDensity(self.graph, latent)
+
+    @property
+    def likelihood(self) -> "GraphDensity":
+        """
+        The likelihood of all data nodes given the latent nodes, from their ``log_prob_fn``.
+        """
+        return GraphDensity(self.graph, data_nodes(self.graph))
 
     def sample(self, num_datasets: int, meta: dict[str, Any] | None = None) -> GraphSamples:
         """
@@ -130,6 +154,62 @@ class MultilevelSimulator:
             simulation[node] = NodeSamples(indices, values)
 
         return simulation
+
+
+class GraphDensity:
+    """
+    The joint density of some nodes of a MultilevelSimulator, given their parents.
+
+    Created by ``MultilevelSimulator.prior`` and ``MultilevelSimulator.likelihood``.
+
+    Parameters
+    ----------
+    graph : SimulationGraph
+        The graph of the simulator.
+    nodes : list[str]
+        The nodes whose ``log_prob_fn`` are summed.
+    """
+
+    def __init__(self, graph: SimulationGraph, nodes: list[str]):
+        for node in nodes:
+            if graph.nodes[node].get("log_prob_fn") is None:
+                raise ValueError(f"Node '{node}' has no log_prob_fn.")
+
+        self.graph = graph
+        self.nodes = nodes
+
+    def log_prob(self, **batch):
+        """
+        Evaluates the log density of every dataset in a batch.
+
+        Parameters
+        ----------
+        **batch
+            The batch, as returned by ``MultilevelEstimator.to_batch`` without padding.
+
+        Returns
+        -------
+        log_prob : Tensor
+            The log density of every dataset, of shape (num_datasets,).
+        """
+        root = next(node for node in self.graph if self.graph.in_degree(node) == 0)
+        num_datasets = keras.ops.shape(batch[root]["indices"][root])[0]
+        log_prob = 0
+
+        for node in self.nodes:
+            indices = batch[node]["indices"]
+            arguments = {}
+            for variable, value in batch[node]["values"].items():
+                arguments[variable] = keras.ops.cast(value, keras.config.floatx())
+            for parent in self.graph.predecessors(node):
+                for variable, value in batch[parent]["values"].items():
+                    value = keras.ops.cast(value, keras.config.floatx())
+                    arguments[variable] = keras.ops.take(value, indices[parent], axis=0)
+
+            row_log_prob = call(self.graph.nodes[node]["log_prob_fn"], arguments)
+            log_prob += keras.ops.segment_sum(row_log_prob, indices["dataset"], num_segments=num_datasets)
+
+        return log_prob
 
 
 def from_table(graph: SimulationGraph, table, groups: dict[str, str]) -> GraphSamples:

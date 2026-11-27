@@ -2,8 +2,10 @@ import keras
 import numpy as np
 import pytest
 
-from bayesflow.experimental.multilevel_estimator import MultilevelDataset
+from bayesflow.adapters import Adapter
+from bayesflow.experimental.multilevel_estimator import MultilevelDataset, MultilevelEstimator
 from bayesflow.experimental.self_consistency import MultiDataset, SelfConsistencyLoss, SemiSupervisedEstimator
+from bayesflow.networks import CouplingFlow
 
 from .conftest import estimator_for
 
@@ -17,8 +19,17 @@ class ZeroDensity:
     def __init__(self, graph):
         self.root = next(node for node in graph if graph.in_degree(node) == 0)
 
-    def __call__(self, **batch):
+    def log_prob(self, **batch):
         return keras.ops.zeros(keras.ops.shape(batch[self.root]["indices"][self.root])[0])
+
+
+def densities(simulator):
+    if "hypers" in simulator.graph:
+        return {"prior": simulator.prior, "likelihood": simulator.likelihood}
+
+    density = ZeroDensity(simulator.graph)
+
+    return {"prior": density, "likelihood": density}
 
 
 def test_build_from_shapes_matches_build_from_data(simulator):
@@ -34,9 +45,10 @@ def test_build_from_shapes_matches_build_from_data(simulator):
 
 
 def test_fit_with_unbuilt_posterior(simulator):
-    posterior = estimator_for(simulator)
-    density = ZeroDensity(simulator.graph)
-    estimator = SemiSupervisedEstimator(estimators={"prior": density, "likelihood": density, "posterior": posterior})
+    graph = simulator.graph.expand().invert()
+    adapter = Adapter().log(["hyper_std", "shared_std"]) if "hypers" in simulator.graph else Adapter()
+    posterior = MultilevelEstimator(graph, inference_networks=[CouplingFlow() for _ in graph.networks()], adapter=adapter)
+    estimator = SemiSupervisedEstimator(estimators=densities(simulator) | {"posterior": posterior})
     estimator.compile(
         optimizer=keras.optimizers.Adam(1e-4),
         estimator_metrics={"labeled": ["posterior"]},

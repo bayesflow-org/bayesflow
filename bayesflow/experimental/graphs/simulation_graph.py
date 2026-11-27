@@ -12,7 +12,7 @@ class SimulationGraph(nx.DiGraph):
     The directed acyclic graph of a MultilevelSimulator.
 
     Every node of the graph is a node of the simulator, with its
-    ``sample_fn``, ``reps`` and ``is_batched`` stored as node attributes, and
+    ``sample_fn``, ``log_prob_fn``, ``reps`` and ``is_batched`` stored as node attributes, and
     every edge points from a parent to its child.
     Nodes without children hold the data, all other nodes are latent.
 

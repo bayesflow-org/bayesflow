@@ -408,7 +408,7 @@ class MultilevelEstimator(Estimator):
 
         simulation_graph = self.graph.expanded_graph.simulation_graph
         samples = placeholder_samples(simulation_graph, self.variable_dims)
-        batch = self.to_batch(samples, adapter=Adapter())
+        batch = self.to_batch(samples)
 
         for i, network in enumerate(self.inference_networks):
             if not network.built:
@@ -429,8 +429,58 @@ class MultilevelEstimator(Estimator):
 
         return variables, conditions
 
-    def to_batch(self, samples: GraphSamples, adapter: Adapter | None = None, padded: bool = False) -> dict:
-        return to_batch(samples, self.graph, adapter or self.adapter, padded)
+    def to_batch(self, samples: GraphSamples, padded: bool = False) -> dict:
+        return to_batch(samples, self.graph, self.adapt, padded)
+
+    def adapt(self, batch: dict, inverse: bool = False, log_det_jac: bool = False, **kwargs):
+        """
+        Applies the adapter to the values of every node of a batch.
+
+        Indices, groups and steps are left unchanged.
+
+        Parameters
+        ----------
+        batch : dict
+            A batch as returned by :py:meth:`to_batch`.
+        inverse : bool, optional
+            Whether to apply the inverse of the adapter (default is False).
+        log_det_jac : bool, optional
+            Whether to also return the log-determinants of the adapter
+            (default is False).
+        **kwargs
+            Additional keyword arguments passed to the adapter.
+
+        Returns
+        -------
+        dict or tuple[dict, dict[str, Tensor]]
+            The adapted batch. With `log_det_jac`, also the log-determinant of
+            every node, summed per dataset, with shape `(num_datasets,)`.
+        """
+        simulation_graph = self.graph.expanded_graph.simulation_graph
+        root = next(node for node in simulation_graph if simulation_graph.in_degree(node) == 0)
+        datasets = keras.ops.shape(batch[root]["indices"][root])[0]
+        result = {}
+        jacobians = {}
+
+        for node, entries in batch.items():
+            if log_det_jac:
+                values, node_jacobians = self.adapter(
+                    entries["values"], inverse=inverse, strict=False, log_det_jac=True, **kwargs
+                )
+                jacobians[node] = keras.ops.zeros(datasets)
+
+                for value in node_jacobians.values():
+                    value = keras.ops.cast(value, keras.config.floatx())
+                    jacobians[node] += sum_per_dataset(value, entries["indices"]["dataset"], datasets)
+            else:
+                values = self.adapter(entries["values"], inverse=inverse, strict=False, **kwargs)
+
+            result[node] = entries | {"values": values}
+
+        if log_det_jac:
+            return result, jacobians
+
+        return result
 
     def network_conditions(self, batch: dict, i: int, training: bool = False):
         # the nodes of a network share their rows, so we access the first one

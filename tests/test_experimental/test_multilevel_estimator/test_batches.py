@@ -1,7 +1,6 @@
 import keras
 import numpy as np
 
-from bayesflow.adapters import Adapter
 from bayesflow.experimental.multilevel_estimator.batches import (
     SimulationDataset,
     add_sequence_summaries,
@@ -20,7 +19,7 @@ def test_groupings(two_level_simulator, three_level_simulator, crossed_design_ir
 
 def test_groups(crossed_design_irt_simulator):
     graph = crossed_design_irt_simulator.graph.expand().invert()
-    batch = to_batch(crossed_design_irt_simulator.sample(2), graph, Adapter())
+    batch = to_batch(crossed_design_irt_simulator.sample(2), graph)
     groups = batch["observations"]["groups"]
     rows = batch["observations"]["indices"]
 
@@ -85,8 +84,8 @@ def test_bucket():
 def test_pad(two_level_simulator):
     simulation = two_level_simulator.sample(3)
     graph = two_level_simulator.graph.expand().invert()
-    batch = to_batch(simulation, graph, Adapter())
-    padded = to_batch(simulation, graph, Adapter(), padded=True)
+    batch = to_batch(simulation, graph)
+    padded = to_batch(simulation, graph, padded=True)
 
     for node, entries in batch.items():
         rows = len(entries["indices"][node])

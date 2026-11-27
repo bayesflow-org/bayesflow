@@ -6,8 +6,6 @@ import keras
 import networkx as nx
 import numpy as np
 
-from bayesflow.adapters import Adapter
-
 from ..multilevel_simulator import MultilevelSimulator
 from ..multilevel_simulator.indexing_helpers import concatenated_ranges, group_ids
 from ..multilevel_simulator.samples import GraphSamples, num_datasets, select
@@ -55,7 +53,7 @@ class SimulationDataset(keras.utils.PyDataset):
             self.order = np.random.permutation(num_datasets(self.source))
 
 
-def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter, padded: bool = False) -> dict:
+def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter=None, padded: bool = False) -> dict:
     # Adds groups and steps to the samples and runs the adapter.
     # This is the input that inference networks use
     simulation_graph = graph.expanded_graph.simulation_graph
@@ -72,8 +70,8 @@ def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter, padd
     if padded:
         batch = pad(batch)
 
-    for entries in batch.values():
-        entries["values"] = adapter(entries["values"], strict=False)
+    if adapter is not None:
+        batch = adapter(batch)
 
     return batch
 

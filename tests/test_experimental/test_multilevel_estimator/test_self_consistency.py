@@ -57,7 +57,7 @@ def test_fit_with_unbuilt_posterior(simulator):
     )
     dataset = MultiDataset(
         labeled=MultilevelDataset(simulator.sample(8), posterior.graph, batch_size=4),
-        unlabeled=MultilevelDataset(simulator.sample(2), posterior.graph, batch_size=2, padded=False),
+        unlabeled=MultilevelDataset(simulator.sample(2), posterior.graph, batch_size=2),
     )
 
     history = estimator.fit(dataset=dataset, epochs=1, verbose=0)

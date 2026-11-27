@@ -153,8 +153,9 @@ class MultilevelEstimator(Estimator):
             simulations of the MultilevelSimulator, as returned by its
             :py:meth:`sample` method.
             Can also be an unadapted and unpadded batch of them, as returned by a
-            :py:class:`MultilevelDataset` without adapter and with ``padded=False``,
-            which is the form used by the self-consistency loss.
+            :py:class:`MultilevelDataset` without adapter that holds all observed
+            datasets in a single batch, which is the form used by the
+            self-consistency loss.
             Only the values of the data nodes are used.
         format : {"long", "tensor"}, optional
             The format of the samples (default is "long"). The long format
@@ -196,7 +197,9 @@ class MultilevelEstimator(Estimator):
         batch = conditions if is_batch else to_batch(conditions, self.graph)
 
         if any("weights" in entries for entries in batch.values()):
-            raise ValueError("Cannot sample from a padded batch. Use a MultilevelDataset with padded=False.")
+            raise ValueError(
+                "Cannot sample from a padded batch. Put the observed data in a single batch, or use padded=False."
+            )
 
         observed = {}
         for node, entries in batch.items():

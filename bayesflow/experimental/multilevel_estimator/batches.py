@@ -40,8 +40,8 @@ class MultilevelDataset(keras.utils.PyDataset):
         itself.
     padded : bool, optional
         Whether to pad the batches to a few sizes, so that compiled training
-        steps are reused (default is True). Use False for observed data in
-        self-consistency training, where padded datasets would enter the loss.
+        steps are reused. By default, batches are padded if their sizes can
+        change, that is if `source` is a simulator.
     **kwargs
         Additional keyword arguments passed to :py:class:`keras.utils.PyDataset`.
     """
@@ -53,7 +53,7 @@ class MultilevelDataset(keras.utils.PyDataset):
         batch_size: int,
         num_batches: int | None = None,
         adapter: Adapter | None = None,
-        padded: bool = True,
+        padded: bool | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
@@ -61,7 +61,6 @@ class MultilevelDataset(keras.utils.PyDataset):
         self.graph = graph
         self.batch_size = batch_size
         self.adapter = adapter
-        self.padded = padded
 
         if isinstance(source, MultilevelSimulator):
             self.length = num_batches
@@ -69,6 +68,10 @@ class MultilevelDataset(keras.utils.PyDataset):
             datasets = num_datasets(source)
             self.length = math.ceil(datasets / batch_size)
             self.order = np.random.permutation(datasets)
+
+        if padded is None:
+            padded = isinstance(source, MultilevelSimulator) or self.length > 1
+        self.padded = padded
 
     def __len__(self) -> int:
         return self.length

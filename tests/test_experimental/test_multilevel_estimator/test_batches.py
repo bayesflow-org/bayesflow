@@ -142,7 +142,7 @@ def test_dataset_applies_adapter_and_padding(two_level_simulator):
     graph = two_level_simulator.graph.expand().invert()
     adapter = Adapter().log("hyper_std")
 
-    padded = MultilevelDataset(simulation, graph, batch_size=3, adapter=adapter)[0]
+    padded = MultilevelDataset(simulation, graph, batch_size=3, adapter=adapter, padded=True)[0]
     unpadded = MultilevelDataset(simulation, graph, batch_size=3, adapter=adapter, padded=False)[0]
     raw = MultilevelDataset(simulation, graph, batch_size=3, padded=False)[0]
 
@@ -153,3 +153,13 @@ def test_dataset_applies_adapter_and_padding(two_level_simulator):
     expected = np.sort(np.log(raw["hypers"]["values"]["hyper_std"]).ravel())
     adapted = np.sort(keras.ops.convert_to_numpy(unpadded["hypers"]["values"]["hyper_std"]).ravel())
     np.testing.assert_allclose(adapted, expected, rtol=1e-5)
+
+
+def test_dataset_pads_only_when_batch_sizes_can_change(two_level_simulator):
+    graph = two_level_simulator.graph.expand().invert()
+    simulation = two_level_simulator.sample(4)
+
+    assert not MultilevelDataset(simulation, graph, batch_size=4).padded
+    assert MultilevelDataset(simulation, graph, batch_size=2).padded
+    assert MultilevelDataset(two_level_simulator, graph, batch_size=4, num_batches=1).padded
+    assert "weights" not in MultilevelDataset(simulation, graph, batch_size=4)[0]["hypers"]

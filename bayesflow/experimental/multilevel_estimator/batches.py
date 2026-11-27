@@ -1,6 +1,5 @@
 import itertools
 import math
-from typing import Callable
 
 import keras
 import networkx as nx
@@ -13,22 +12,55 @@ from ..multilevel_simulator.indexing_helpers import concatenated_ranges, group_i
 from ..multilevel_simulator.samples import GraphSamples, num_datasets, select
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import is_exchangeable, is_interior
-from .encoder import gather, segment_mean
+from .encoder import gather, segment_mean, sum_per_dataset
 
 
-class SimulationDataset(keras.utils.PyDataset):
+class MultilevelDataset(keras.utils.PyDataset):
+    """
+    Batches of simulations or observed data for the MultilevelEstimator.
+
+    Each batch holds the rows of `batch_size` datasets, with the indices,
+    groups and steps that the MultilevelEstimator needs, as returned by
+    :py:func:`to_batch`.
+
+    Parameters
+    ----------
+    source : MultilevelSimulator or GraphSamples
+        A simulator, which draws new datasets for every batch, or fixed
+        datasets, which are shuffled before every epoch.
+    graph : InvertedGraph
+        The graph of the MultilevelEstimator, usually ``estimator.graph``.
+    batch_size : int
+        Number of datasets per batch.
+    num_batches : int, optional
+        Number of batches per epoch. Required if `source` is a simulator.
+    adapter : Adapter, optional
+        Applied to the values of every node. If None (default), the values
+        are left unchanged, for example when an estimator adapts the batches
+        itself.
+    padded : bool, optional
+        Whether to pad the batches to a few sizes, so that compiled training
+        steps are reused. By default, batches are padded if their sizes can
+        change, that is if `source` is a simulator.
+    **kwargs
+        Additional keyword arguments passed to :py:class:`keras.utils.PyDataset`.
+    """
+
     def __init__(
         self,
         source: MultilevelSimulator | GraphSamples,
+        graph: InvertedGraph,
         batch_size: int,
-        to_batch: Callable[[GraphSamples], dict],
         num_batches: int | None = None,
+        adapter: Adapter | None = None,
+        padded: bool | None = None,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.source = source
+        self.graph = graph
         self.batch_size = batch_size
-        self.to_batch = to_batch
+        self.adapter = adapter
 
         if isinstance(source, MultilevelSimulator):
             self.length = num_batches
@@ -37,25 +69,29 @@ class SimulationDataset(keras.utils.PyDataset):
             self.length = math.ceil(datasets / batch_size)
             self.order = np.random.permutation(datasets)
 
+        if padded is None:
+            padded = isinstance(source, MultilevelSimulator) or self.length > 1
+        self.padded = padded
+
     def __len__(self) -> int:
         return self.length
 
     def __getitem__(self, i: int) -> dict:
         if isinstance(self.source, MultilevelSimulator):
             simulation = self.source.sample(self.batch_size)
-            return self.to_batch(simulation, padded=True)
+            return to_batch(simulation, self.graph, self.adapter, self.padded)
 
         datasets = self.order[i * self.batch_size : (i + 1) * self.batch_size]
         simulation = select(self.source, datasets)
 
-        return self.to_batch(simulation, padded=True)
+        return to_batch(simulation, self.graph, self.adapter, self.padded)
 
     def on_epoch_end(self) -> None:
         if not isinstance(self.source, MultilevelSimulator):
             self.order = np.random.permutation(num_datasets(self.source))
 
 
-def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter, padded: bool = False) -> dict:
+def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter | None = None, padded: bool = False) -> dict:
     # Adds groups and steps to the samples and runs the adapter.
     # This is the input that inference networks use
     simulation_graph = graph.expanded_graph.simulation_graph
@@ -68,14 +104,93 @@ def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter, padd
             batch[node]["groups"] = groups(simulation_graph, node, node_samples.indices)
         elif not graph.is_amortizable(node):
             batch[node]["steps"] = steps(node, node_samples.indices)
+            if not padded:
+                counts = batch[node]["steps"]["counts"]
+                batch[node]["steps"]["sequence_steps"] = np.arange(np.max(counts, initial=0))[None]
 
     if padded:
         batch = pad(batch)
 
-    for entries in batch.values():
-        entries["values"] = adapter(entries["values"], strict=False)
+    if adapter is not None:
+        batch = adapt(batch, adapter, simulation_graph)
 
     return batch
+
+
+def adapt(
+    batch: dict, adapter: Adapter, graph: SimulationGraph, inverse: bool = False, log_det_jac: bool = False, **kwargs
+):
+    # Applies the adapter to the values of every node, and sums the log-determinants per node and dataset
+    root = next(node for node in graph if graph.in_degree(node) == 0)
+    datasets = keras.ops.shape(batch[root]["indices"][root])[0]
+    result = {}
+    jacobians = {}
+
+    for node, entries in batch.items():
+        if log_det_jac:
+            values, node_jacobians = adapter(
+                entries["values"], inverse=inverse, strict=False, log_det_jac=True, **kwargs
+            )
+            jacobians[node] = keras.ops.zeros(datasets)
+
+            for value in node_jacobians.values():
+                value = keras.ops.cast(value, keras.config.floatx())
+                jacobians[node] += sum_per_dataset(value, entries["indices"]["dataset"], datasets)
+        else:
+            values = adapter(entries["values"], inverse=inverse, strict=False, **kwargs)
+
+        result[node] = entries | {"values": values}
+
+    if log_det_jac:
+        return result, jacobians
+
+    return result
+
+
+def tile_batch(batch: dict, copies: int) -> dict:
+    # Repeats every dataset of the batch, so that copy k of dataset d becomes dataset d * copies + k.
+    batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
+    rows = {node: keras.ops.shape(entries["indices"][node])[0] for node, entries in batch.items()}
+    tiled = {}
+
+    for node, entries in batch.items():
+        indices = {}
+        for column, ids in entries["indices"].items():
+            if column == "dataset":
+                indices[column] = keras.ops.concatenate([ids * copies + k for k in range(copies)])
+            else:
+                offset = keras.ops.cast(rows[column], ids.dtype)
+                indices[column] = keras.ops.concatenate([ids + k * offset for k in range(copies)])
+
+        values = {}
+        for variable, value in entries["values"].items():
+            values[variable] = keras.ops.concatenate([value] * copies)
+
+        tiled[node] = {"indices": indices, "values": values}
+
+        if "groups" in entries:
+            tiled[node]["groups"] = {}
+            for name, group in entries["groups"].items():
+                num_groups = keras.ops.cast(keras.ops.shape(group["counts"])[0], group["ids"].dtype)
+                tiled[node]["groups"][name] = {
+                    "ids": keras.ops.concatenate([group["ids"] + k * num_groups for k in range(copies)]),
+                    "counts": keras.ops.concatenate([group["counts"]] * copies),
+                }
+
+        if "steps" in entries:
+            steps = entries["steps"]
+            offset = keras.ops.cast(rows[node], steps["earlier"].dtype)
+            num_sequences = keras.ops.cast(keras.ops.shape(steps["counts"])[0], steps["ids"].dtype)
+            tiled[node]["steps"] = {
+                "ids": keras.ops.concatenate([steps["ids"] + k * num_sequences for k in range(copies)]),
+                "counts": keras.ops.concatenate([steps["counts"]] * copies),
+                "positions": keras.ops.concatenate([steps["positions"]] * copies),
+                "earlier": keras.ops.concatenate([steps["earlier"] + k * offset for k in range(copies)]),
+                "later": keras.ops.concatenate([steps["later"] + k * offset for k in range(copies)]),
+                "sequence_steps": steps["sequence_steps"],
+            }
+
+    return tiled
 
 
 def groups(graph: SimulationGraph, data_node: str, indices: dict[str, np.ndarray]) -> dict[str, dict]:
@@ -141,7 +256,13 @@ def steps(node: str, indices: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
     later = np.repeat(np.arange(len(ids)), positions)
     earlier = order[concatenated_ranges(starts[ids], positions)]
 
-    return {"ids": ids, "counts": counts, "positions": positions, "earlier": earlier, "later": later}
+    return {
+        "ids": ids,
+        "counts": counts,
+        "positions": positions,
+        "earlier": earlier,
+        "later": later,
+    }
 
 
 def pad(batch: dict) -> dict:

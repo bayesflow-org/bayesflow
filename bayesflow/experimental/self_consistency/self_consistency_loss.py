@@ -41,7 +41,7 @@ class SelfConsistencyLoss:
         log p(y).
     adapter : Adapter, optional
         Adapter shared across all components, used to map between the data/parameter
-        space and the adapted (network) space. If None, an identity adapter is used.
+        space and the adapted (network) space. If None, the data are used unchanged.
     gradient : sequence of {"prior", "likelihood", "posterior"}, optional
         Which components receive gradients through the SC loss. All others are
         wrapped in ``stop_gradient``. Defaults to ``["posterior"]``.
@@ -81,7 +81,7 @@ class SelfConsistencyLoss:
         self.likelihood = None
         self.posterior = None
         self.num_samples = num_samples
-        self.adapter = adapter or Adapter()
+        self.adapter = adapter
         self.gradient = gradient
         self.adapted = adapted
         self.parameter_keys = parameter_keys
@@ -129,6 +129,9 @@ class SelfConsistencyLoss:
         After reshaping, both data and samples have batch dimension ``batch * num_samples``,
         so each (observation, parameter) pair can be evaluated independently.
         """
+        if hasattr(self.posterior, "join_samples"):
+            return self.posterior.join_samples(data, samples, self.num_samples)
+
         samples = keras.tree.map_structure(lambda s: keras.ops.reshape(s, (-1, *keras.ops.shape(s)[2:])), samples)
         data = keras.tree.map_structure(lambda s: keras.ops.repeat(s, self.num_samples, axis=0), data)
 
@@ -171,7 +174,10 @@ class SelfConsistencyLoss:
         =======
         A 2-D tensor ``(batch_size, num_samples)``: Estimates of log p(y) for each (observation, parameter sample) pair.
         """
-        data, log_det_jac = self.adapter(adapted_data, inverse=True, log_det_jac=True)
+        if self.adapter is None:
+            data, log_det_jac = adapted_data, {}
+        else:
+            data, log_det_jac = self.adapter(adapted_data, inverse=True, log_det_jac=True)
 
         log_det_jac_pars, log_det_jac_data = self._collect_log_det_jac_keys(log_det_jac)
 

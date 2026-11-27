@@ -36,13 +36,13 @@ class SemiSupervisedEstimator(Estimator):
         training.
     adapter : Adapter, optional
         Shared adapter applied to all datasets before passing to estimators and semi-supervised
-        metrics. Defaults to an identity adapter.
+        metrics. If None (default), no shared adapter is used, and the data are passed on unchanged.
     """
 
     def __init__(self, estimators, adapter: Adapter = None, **kwargs):
         super().__init__(**kwargs)
         self.estimators = estimators or {}
-        self.adapter = adapter or Adapter()
+        self.adapter = adapter
         self.estimator_metrics = {}
         self.composite_metrics = {}
 
@@ -123,7 +123,9 @@ class SemiSupervisedEstimator(Estimator):
         else:
             raise AttributeError(f"estimator `{estimator}` does not have a `sample` method.")
 
-        samples = self.adapter(samples, inverse=True)
+        if self.adapter is not None:
+            samples = self.adapter(samples, inverse=True)
+
         if to_numpy:
             samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 
@@ -132,14 +134,17 @@ class SemiSupervisedEstimator(Estimator):
     def _compute_metrics_estimator(self, data: Mapping[str, Tensor], name: str, stage: str) -> Mapping[str, Tensor]:
         """Run one estimator's training metrics on a single dataset.
 
-        Applies the estimator's own adapter (if present) before calling its
-        ``compute_metrics``. Returns an empty dict if the named estimator is not
-        found or is not an ``Estimator`` instance.
+        Applies the estimator's ``adapt`` method if it has one, otherwise its own
+        adapter (if present), before calling its ``compute_metrics``. Returns an
+        empty dict if the named estimator is not found or is not an ``Estimator``
+        instance.
         """
         estimator = self.estimators.get(name)
         if not estimator or not isinstance(estimator, Estimator):
             return {}
-        if estimator.adapter:
+        if hasattr(estimator, "adapt"):
+            data = estimator.adapt(data)
+        elif estimator.adapter:
             data = estimator.adapter(data)
 
         metrics = estimator.compute_metrics(**data, stage=stage)
@@ -178,7 +183,9 @@ class SemiSupervisedEstimator(Estimator):
         for name, estimator in self.estimators.items():
             # An estimator may be a callable or an object with log_prob method, *without an adapter*.
             # in that case we don't adapt the data
-            if isinstance(estimator, Estimator):
+            if hasattr(estimator, "adapt"):
+                adapted_data[name] = estimator.adapt(data)
+            elif isinstance(estimator, Estimator):
                 adapted_data[name] = estimator.adapter(data)
             else:
                 adapted_data[name] = data

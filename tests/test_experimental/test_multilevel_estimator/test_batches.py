@@ -3,7 +3,7 @@ import numpy as np
 
 from bayesflow.adapters import Adapter
 from bayesflow.experimental.multilevel_estimator.batches import (
-    SimulationDataset,
+    MultilevelDataset,
     add_sequence_summaries,
     bucket,
     groupings,
@@ -20,7 +20,7 @@ def test_groupings(two_level_simulator, three_level_simulator, crossed_design_ir
 
 def test_groups(crossed_design_irt_simulator):
     graph = crossed_design_irt_simulator.graph.expand().invert()
-    batch = to_batch(crossed_design_irt_simulator.sample(2), graph, Adapter())
+    batch = to_batch(crossed_design_irt_simulator.sample(2), graph)
     groups = batch["observations"]["groups"]
     rows = batch["observations"]["indices"]
 
@@ -48,6 +48,21 @@ def test_steps():
     # every (earlier, later) pair of rows in the same sequence
     pairs = list(zip(result["earlier"].tolist(), result["later"].tolist()))
     assert pairs == [(0, 1), (0, 2), (1, 2), (3, 4)]
+
+
+def test_only_unpadded_batches_have_sequence_steps(survey_simulator):
+    graph = survey_simulator.graph.expand().invert()
+    samples = survey_simulator.sample(2)
+
+    unpadded = to_batch(samples, graph)
+    padded = to_batch(samples, graph, padded=True)
+    sequential = [node for node, entries in unpadded.items() if "steps" in entries]
+
+    assert sequential
+    for node in sequential:
+        counts = unpadded[node]["steps"]["counts"]
+        assert unpadded[node]["steps"]["sequence_steps"].tolist() == [list(range(max(counts)))]
+        assert "sequence_steps" not in padded[node]["steps"]
 
 
 def test_sequence_summaries():
@@ -85,8 +100,8 @@ def test_bucket():
 def test_pad(two_level_simulator):
     simulation = two_level_simulator.sample(3)
     graph = two_level_simulator.graph.expand().invert()
-    batch = to_batch(simulation, graph, Adapter())
-    padded = to_batch(simulation, graph, Adapter(), padded=True)
+    batch = to_batch(simulation, graph)
+    padded = to_batch(simulation, graph, padded=True)
 
     for node, entries in batch.items():
         rows = len(entries["indices"][node])
@@ -107,18 +122,44 @@ def test_pad(two_level_simulator):
 
 
 def test_dataset_yields_every_dataset_once_per_epoch(two_level_simulator):
-    def unchanged(simulation, padded):
-        return simulation
-
     simulation = two_level_simulator.sample(5)
-    dataset = SimulationDataset(simulation, batch_size=2, to_batch=unchanged)
+    graph = two_level_simulator.graph.expand().invert()
+    dataset = MultilevelDataset(simulation, graph, batch_size=2, padded=False)
 
     assert len(dataset) == 3
 
     for _ in range(2):
         seen = []
         for i in range(len(dataset)):
-            seen.extend(dataset[i]["hypers"].values["hyper_mean"].ravel())
+            seen.extend(dataset[i]["hypers"]["values"]["hyper_mean"].ravel())
         dataset.on_epoch_end()
 
         np.testing.assert_array_equal(np.sort(seen), np.sort(simulation["hypers"].values["hyper_mean"].ravel()))
+
+
+def test_dataset_applies_adapter_and_padding(two_level_simulator):
+    simulation = two_level_simulator.sample(3)
+    graph = two_level_simulator.graph.expand().invert()
+    adapter = Adapter().log("hyper_std")
+
+    padded = MultilevelDataset(simulation, graph, batch_size=3, adapter=adapter, padded=True)[0]
+    unpadded = MultilevelDataset(simulation, graph, batch_size=3, adapter=adapter, padded=False)[0]
+    raw = MultilevelDataset(simulation, graph, batch_size=3, padded=False)[0]
+
+    assert "weights" in padded["hypers"]
+    assert "weights" not in unpadded["hypers"]
+    assert len(unpadded["hypers"]["indices"]["dataset"]) == 3
+
+    expected = np.sort(np.log(raw["hypers"]["values"]["hyper_std"]).ravel())
+    adapted = np.sort(keras.ops.convert_to_numpy(unpadded["hypers"]["values"]["hyper_std"]).ravel())
+    np.testing.assert_allclose(adapted, expected, rtol=1e-5)
+
+
+def test_dataset_pads_only_when_batch_sizes_can_change(two_level_simulator):
+    graph = two_level_simulator.graph.expand().invert()
+    simulation = two_level_simulator.sample(4)
+
+    assert not MultilevelDataset(simulation, graph, batch_size=4).padded
+    assert MultilevelDataset(simulation, graph, batch_size=2).padded
+    assert MultilevelDataset(two_level_simulator, graph, batch_size=4, num_batches=1).padded
+    assert "weights" not in MultilevelDataset(simulation, graph, batch_size=4)[0]["hypers"]

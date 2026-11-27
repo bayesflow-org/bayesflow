@@ -6,12 +6,21 @@ from bayesflow.adapters import Adapter
 from bayesflow.estimators import Estimator
 from bayesflow.networks import ConsistencyModel, InferenceNetwork, StableConsistencyModel
 from bayesflow.networks.helpers.standardization.standardization import Standardization
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, serialize
 
-from ..multilevel_simulator.samples import GraphSamples, NodeSamples, concatenate, num_datasets, to_tensors
+from ..multilevel_simulator.samples import GraphSamples, NodeSamples, to_tensors
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import data_nodes
-from .batches import SimulationDataset, add_sequence_summaries, network_variables, node_values, to_batch
+from .batches import (
+    MultilevelDataset,
+    adapt,
+    add_sequence_summaries,
+    network_variables,
+    node_values,
+    tile_batch,
+    to_batch,
+)
 from .encoder import MultilevelEncoder, gather, segment_count, segment_mean, sum_per_dataset
 
 
@@ -127,31 +136,42 @@ class MultilevelEstimator(Estimator):
         self.encoders = encoders
 
     def sample(
-        self, *, num_samples: int, conditions: GraphSamples, format: str = "long"
-    ) -> GraphSamples | dict[str, np.ndarray]:
+        self, *, num_samples: int, conditions: GraphSamples | dict, format: str = "long", **kwargs
+    ) -> GraphSamples | dict[str, np.ndarray] | dict[str, dict[str, Tensor]]:
         """
         Draws posterior samples given observed data.
 
         The `conditions` are preprocessed using the `adapter`. Samples are
-        converted to NumPy arrays after inference.
+        returned in the original space of the variables.
 
         Parameters
         ----------
         num_samples : int
             Number of posterior samples per dataset.
-        conditions : GraphSamples
+        conditions : GraphSamples or dict
             The observed data, as returned by :py:func:`from_table`, or
             simulations of the MultilevelSimulator, as returned by its
             :py:meth:`sample` method.
+            Can also be an unadapted and unpadded batch of them, as returned by a
+            :py:class:`MultilevelDataset` without adapter that holds all observed
+            datasets in a single batch, which is the form used by the
+            self-consistency loss.
             Only the values of the data nodes are used.
         format : {"long", "tensor"}, optional
             The format of the samples (default is "long"). The long format
             works for every dataset; the tensor format only works if all
-            datasets have the same structure.
+            datasets have the same structure. Ignored for a batch.
+        **kwargs
+            Ignored, for compatibility with the sample method of other estimators.
 
         Returns
         -------
-        GraphSamples or dict[str, np.ndarray]
+        GraphSamples or dict[str, np.ndarray] or dict[str, dict[str, Tensor]]
+            For a batch, the samples of every latent node as tensors, as
+            ``{node: {variable: tensor}}``. Every dataset of the batch is
+            repeated `num_samples` times, as by :py:func:`tile_batch`, and
+            each copy holds one sample.
+
             In long format, the samples of every latent node as
             :py:class:`GraphSamples`. Each node keeps the indices of `conditions`,
             and each variable has shape `(num_rows, num_samples, dim)`.
@@ -167,20 +187,25 @@ class MultilevelEstimator(Estimator):
             If `format` is neither "long" nor "tensor", or if `format` is "tensor"
             and the datasets differ in structure. In the latter case, use the long
             format, or convert a subset of datasets with :py:func:`to_tensors`.
+            If `conditions` is a padded batch, whose padded datasets would be
+            treated as observed datasets.
         """
         if format not in ("long", "tensor"):
             raise ValueError(f"format must be 'long' or 'tensor', not '{format}'.")
 
+        is_batch = not isinstance(next(iter(conditions.values())), NodeSamples)
+        batch = conditions if is_batch else to_batch(conditions, self.graph)
+
+        if any("weights" in entries for entries in batch.values()):
+            raise ValueError(
+                "Cannot sample from a padded batch. Put the observed data in a single batch, or use padded=False."
+            )
+
         observed = {}
+        for node, entries in batch.items():
+            observed[node] = entries if node in self.data_nodes else entries | {"values": {}}
 
-        for node, samples in conditions.items():
-            if node in self.data_nodes:
-                observed[node] = samples
-            else:
-                observed[node] = NodeSamples(samples.indices, {})
-
-        batch = self.to_batch(concatenate([observed] * num_samples))
-        batch = self.standardized(batch, stage="inference")
+        batch = self.standardized(self.adapt(tile_batch(observed, num_samples)), stage="inference")
 
         for i, target_nodes in enumerate(self.networks):
             if target_nodes[0] in self.sequential:
@@ -194,45 +219,56 @@ class MultilevelEstimator(Estimator):
             for node, values in self.split_values(samples, target_nodes).items():
                 batch[node]["values"] = values
 
-        posterior = {}
-
         for target_nodes in self.networks:
             for node in target_nodes:
-                values = {}
-
                 for variable, value in batch[node]["values"].items():
-                    value = self.standardizer.maybe_standardize(value, variable, forward=False)
-                    value = keras.ops.convert_to_numpy(value)
+                    batch[node]["values"][variable] = self.standardizer.maybe_standardize(
+                        value, variable, forward=False
+                    )
 
-                    value = value.reshape(num_samples, -1, value.shape[-1])
-                    values[variable] = np.moveaxis(value, 0, 1)
+        batch = self.adapt(batch, inverse=True)
+        latent = [node for target_nodes in self.networks for node in target_nodes]
 
-                values = self.adapter(values, inverse=True, strict=False)
-                values = keras.tree.map_structure(keras.ops.convert_to_numpy, values)
-                posterior[node] = NodeSamples(conditions[node].indices, values)
+        if is_batch:
+            return {node: batch[node]["values"] for node in latent}
+
+        posterior = {}
+
+        for node in latent:
+            values = {}
+
+            for variable, value in batch[node]["values"].items():
+                value = keras.ops.convert_to_numpy(value).reshape(num_samples, -1, value.shape[-1])
+                values[variable] = np.moveaxis(value, 0, 1)
+
+            posterior[node] = NodeSamples(conditions[node].indices, values)
 
         if format == "tensor":
             return to_tensors(posterior)
 
         return posterior
 
-    def log_prob(self, data: GraphSamples) -> np.ndarray:
+    def log_prob(self, data: GraphSamples | dict, **kwargs) -> np.ndarray | Tensor:
         """
         computes the log-probability of given data under the model. The `data`
-        is preprocessed using the `adapter`. Log-probabilities are returned as
-        Numpy arrays.
+        is preprocessed using the `adapter`.
 
         Parameters
         ----------
-        data : GraphSamples
+        data : GraphSamples or dict
             Samples of every node, for example as returned by the
-            :py:meth:`sample` method of the MultilevelSimulator.
+            :py:meth:`sample` method of the MultilevelSimulator, or an
+            unadapted batch of them, as returned by a :py:class:`MultilevelDataset`
+            without adapter.
+        **kwargs
+            Ignored, for compatibility with the log_prob method of other estimators.
 
         Returns
         -------
-        np.ndarray
+        np.ndarray or Tensor
             Log-probabilities of the distribution `p(latent variables | data)`,
-            one per dataset, with shape `(num_datasets,)`. They include the
+            one per dataset, with shape `(num_datasets,)`, as a NumPy array for
+            GraphSamples and as a tensor for a batch. They include the
             log-determinants of the standardization and the adapter, so they
             refer to the variables before preprocessing.
         """
@@ -243,8 +279,15 @@ class MultilevelEstimator(Estimator):
                     "so log_prob is not available."
                 )
 
-        batch = self.to_batch(data)
-        datasets = num_datasets(data)
+        is_batch = not isinstance(next(iter(data.values())), NodeSamples)
+
+        if not is_batch:
+            data = to_batch(data, self.graph)
+
+        batch, adapter_log_det_jac = self.adapt(data, log_det_jac=True)
+        simulation_graph = self.graph.expanded_graph.simulation_graph
+        root = next(node for node in simulation_graph if simulation_graph.in_degree(node) == 0)
+        datasets = keras.ops.shape(batch[root]["indices"][root])[0]
 
         log_prob = keras.ops.zeros(datasets)
 
@@ -268,16 +311,15 @@ class MultilevelEstimator(Estimator):
             log_prob += sum_per_dataset(network_log_prob, dataset_ids, datasets)
 
             for node in target_nodes:
-                _, log_det_jac = self.adapter(data[node].values, strict=False, log_det_jac=True)
+                log_prob += adapter_log_det_jac[node]
 
-                for value in log_det_jac.values():
-                    value = keras.ops.cast(value, keras.config.floatx())
-                    log_prob += sum_per_dataset(value, dataset_ids, datasets)
+        if is_batch:
+            return log_prob
 
         return keras.ops.convert_to_numpy(log_prob)
 
     def build_dataset(self, *, simulator, batch_size, num_batches):
-        return SimulationDataset(simulator, batch_size, self.to_batch, num_batches)
+        return MultilevelDataset(simulator, self.graph, batch_size, num_batches, adapter=self.adapter)
 
     def fit(
         self,
@@ -335,10 +377,12 @@ class MultilevelEstimator(Estimator):
         """
         if isinstance(validation_data, dict):
             validation_batch_size = kwargs.pop("validation_batch_size", kwargs.get("batch_size"))
-            validation_data = SimulationDataset(validation_data, validation_batch_size, self.to_batch)
+            validation_data = MultilevelDataset(
+                validation_data, self.graph, validation_batch_size, adapter=self.adapter
+            )
 
         if isinstance(dataset, dict):
-            dataset = SimulationDataset(dataset, kwargs.pop("batch_size"), self.to_batch)
+            dataset = MultilevelDataset(dataset, self.graph, kwargs.pop("batch_size"), adapter=self.adapter)
 
         return super().fit(dataset=dataset, validation_data=validation_data, **kwargs)
 
@@ -408,7 +452,7 @@ class MultilevelEstimator(Estimator):
 
         simulation_graph = self.graph.expanded_graph.simulation_graph
         samples = placeholder_samples(simulation_graph, self.variable_dims)
-        batch = self.to_batch(samples, adapter=Adapter())
+        batch = self.to_batch(samples)
 
         for i, network in enumerate(self.inference_networks):
             if not network.built:
@@ -429,8 +473,65 @@ class MultilevelEstimator(Estimator):
 
         return variables, conditions
 
-    def to_batch(self, samples: GraphSamples, adapter: Adapter | None = None, padded: bool = False) -> dict:
-        return to_batch(samples, self.graph, adapter or self.adapter, padded)
+    def to_batch(self, samples: GraphSamples, padded: bool = False) -> dict:
+        return to_batch(samples, self.graph, self.adapter, padded)
+
+    def adapt(self, batch: dict, inverse: bool = False, log_det_jac: bool = False, **kwargs):
+        """
+        Applies the adapter to the values of every node of a batch.
+
+        Indices, groups and steps are left unchanged.
+
+        Parameters
+        ----------
+        batch : dict
+            A batch as returned by :py:meth:`to_batch`.
+        inverse : bool, optional
+            Whether to apply the inverse of the adapter (default is False).
+        log_det_jac : bool, optional
+            Whether to also return the log-determinants of the adapter
+            (default is False).
+        **kwargs
+            Additional keyword arguments passed to the adapter.
+
+        Returns
+        -------
+        dict or tuple[dict, dict[str, Tensor]]
+            The adapted batch. With `log_det_jac`, also the log-determinant of
+            every node, summed per dataset, with shape `(num_datasets,)`.
+        """
+        simulation_graph = self.graph.expanded_graph.simulation_graph
+
+        return adapt(batch, self.adapter, simulation_graph, inverse, log_det_jac, **kwargs)
+
+    def join_samples(self, data: dict, samples: dict[str, dict[str, Tensor]], num_samples: int) -> dict:
+        """
+        Combines a batch of observed data with posterior samples, for the
+        self-consistency loss.
+
+        Parameters
+        ----------
+        data : dict
+            A batch of observed data, as returned by :py:meth:`to_batch`.
+        samples : dict[str, dict[str, Tensor]]
+            Samples of every latent node, as returned by :py:meth:`sample` for
+            this batch, one row per row of the tiled batch.
+        num_samples : int
+            Number of samples per dataset.
+
+        Returns
+        -------
+        dict
+            The batch with `num_samples` copies of every dataset, as returned
+            by :py:func:`tile_batch`, holding the samples as values of the
+            latent nodes.
+        """
+        joined = tile_batch(data, num_samples)
+
+        for node, values in samples.items():
+            joined[node] = joined[node] | {"values": values}
+
+        return joined
 
     def network_conditions(self, batch: dict, i: int, training: bool = False):
         # the nodes of a network share their rows, so we access the first one
@@ -494,20 +595,22 @@ class MultilevelEstimator(Estimator):
 
     def sample_sequentially(self, batch: dict, i: int):
         node = self.networks[i][0]
-        positions = batch[node]["steps"]["positions"]
+        steps = batch[node]["steps"]
+        positions = steps["positions"]
+        rows = keras.ops.shape(positions)[0]
 
         values = {}
         for variable, dim in self.variable_dims[node].items():
-            values[variable] = keras.ops.zeros((len(positions), dim))
+            values[variable] = keras.ops.zeros((rows, dim))
 
         batch[node]["values"] = values
 
         # the conditions only change through the sequence summaries
         conditions = self.network_conditions(batch, i)
 
-        for step in range(int(np.max(positions)) + 1):
+        for step in range(keras.ops.shape(steps["sequence_steps"])[1]):
             step_conditions = add_sequence_summaries(batch, node, conditions)
-            samples = self.inference_networks[i].sample((len(positions),), conditions=step_conditions)
+            samples = self.inference_networks[i].sample((rows,), conditions=step_conditions)
             is_step = (positions == step)[:, None]
 
             for variable, value in self.split_values(samples, [node])[node].items():
@@ -526,16 +629,19 @@ class MultilevelEstimator(Estimator):
 
         return result
 
-    def build_from_data(self, batch):
+    def build(self, data_shapes):
         variable_dims = {}
 
-        for node, entries in batch.items():
+        for node, entries in data_shapes.items():
             variable_dims[node] = {}
 
-            for variable, value in entries["values"].items():
-                variable_dims[node][variable] = int(keras.ops.shape(value)[-1])
+            for variable, shape in entries["values"].items():
+                variable_dims[node][variable] = int(shape[-1])
 
         self.build_from_config({"variable_dims": variable_dims})
+
+    def build_from_data(self, batch):
+        self.build(keras.tree.map_structure(keras.ops.shape, batch))
 
     def _batch_size_from_data(self, data):
         root = self.networks[0][0]

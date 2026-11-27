@@ -60,9 +60,21 @@ def maximum_mean_discrepancy(
 
     if unbiased:
         m, n = keras.ops.shape(x)[0], keras.ops.shape(y)[0]
-        xx = (1.0 / (m * (m + 1))) * keras.ops.sum(kernel_fn(x, x, **kwargs))
-        yy = (1.0 / (n * (n + 1))) * keras.ops.sum(kernel_fn(y, y, **kwargs))
-        xy = (2.0 / (m * n)) * keras.ops.sum(kernel_fn(x, y, **kwargs))
+        if (isinstance(m, int) and m < 2) or (isinstance(n, int) and n < 2):
+            raise ValueError(
+                f"The unbiased MMD estimator requires at least 2 samples in both x and y, got m={m} and n={n}."
+            )
+        k_xx = kernel_fn(x, x, **kwargs)
+        k_yy = kernel_fn(y, y, **kwargs)
+        k_xy = kernel_fn(x, y, **kwargs)
+        dtype = keras.ops.dtype(k_xx)
+        xx = keras.ops.sum(
+            keras.ops.where(keras.ops.cast(keras.ops.eye(m), "bool"), keras.ops.zeros_like(k_xx), k_xx)
+        ) / keras.ops.cast(m * (m - 1), dtype)
+        yy = keras.ops.sum(
+            keras.ops.where(keras.ops.cast(keras.ops.eye(n), "bool"), keras.ops.zeros_like(k_yy), k_yy)
+        ) / keras.ops.cast(n * (n - 1), dtype)
+        xy = keras.ops.mean(k_xy)
     else:
         xx = keras.ops.mean(kernel_fn(x, x, **kwargs))
         yy = keras.ops.mean(kernel_fn(y, y, **kwargs))

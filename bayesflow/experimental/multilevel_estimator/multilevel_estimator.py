@@ -524,7 +524,8 @@ class MultilevelEstimator(Estimator):
 
     def sample_sequentially(self, batch: dict, i: int):
         node = self.networks[i][0]
-        positions = batch[node]["steps"]["positions"]
+        steps = batch[node]["steps"]
+        positions = steps["positions"]
 
         values = {}
         for variable, dim in self.variable_dims[node].items():
@@ -535,7 +536,7 @@ class MultilevelEstimator(Estimator):
         # the conditions only change through the sequence summaries
         conditions = self.network_conditions(batch, i)
 
-        for step in range(int(np.max(positions)) + 1):
+        for step in range(keras.ops.shape(steps["sequence_steps"])[0]):
             step_conditions = add_sequence_summaries(batch, node, conditions)
             samples = self.inference_networks[i].sample((len(positions),), conditions=step_conditions)
             is_step = (positions == step)[:, None]

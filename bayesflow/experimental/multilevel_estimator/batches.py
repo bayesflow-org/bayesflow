@@ -203,8 +203,16 @@ def steps(node: str, indices: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
     later = np.repeat(np.arange(len(ids)), positions)
     earlier = order[concatenated_ranges(starts[ids], positions)]
+    sequence_steps = np.arange(np.max(counts, initial=0))
 
-    return {"ids": ids, "counts": counts, "positions": positions, "earlier": earlier, "later": later}
+    return {
+        "ids": ids,
+        "counts": counts,
+        "positions": positions,
+        "earlier": earlier,
+        "later": later,
+        "sequence_steps": sequence_steps,
+    }
 
 
 def pad(batch: dict) -> dict:

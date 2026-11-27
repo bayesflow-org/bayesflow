@@ -7,6 +7,7 @@ from bayesflow.experimental.multilevel_estimator.batches import (
     add_sequence_summaries,
     bucket,
     groupings,
+    pad,
     steps,
     to_batch,
 )
@@ -44,10 +45,27 @@ def test_steps():
     assert result["ids"].tolist() == [0, 0, 0, 1, 1]
     assert result["counts"].tolist() == [3, 2]
     assert result["positions"].tolist() == [0, 1, 2, 0, 1]
+    assert result["sequence_steps"].tolist() == [0, 1, 2]
 
     # every (earlier, later) pair of rows in the same sequence
     pairs = list(zip(result["earlier"].tolist(), result["later"].tolist()))
     assert pairs == [(0, 1), (0, 2), (1, 2), (3, 4)]
+
+
+def test_padding_keeps_sequence_steps():
+    indices = {"dataset": np.array([0, 0, 0, 1, 1]), "questions": np.arange(5)}
+    batch = {
+        "questions": {
+            "indices": indices,
+            "values": {"difficulty": np.ones((5, 1))},
+            "steps": steps("questions", indices),
+        }
+    }
+
+    padded = pad(batch)
+
+    assert len(padded["questions"]["indices"]["questions"]) > 5
+    assert padded["questions"]["steps"]["sequence_steps"].tolist() == [0, 1, 2]
 
 
 def test_sequence_summaries():

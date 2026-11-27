@@ -32,7 +32,7 @@ class MultilevelEncoder(keras.Layer):
         self.depth = depth
         self.activation = activation
 
-    def build(self, observations_shape, groups_shape):
+    def build(self, observations_shape, groups_shape=()):
         num_groupings = len(groups_shape)
         dim = observations_shape[-1] + num_groupings
 

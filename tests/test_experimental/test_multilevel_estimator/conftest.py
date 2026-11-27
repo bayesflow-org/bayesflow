@@ -50,6 +50,25 @@ def survey_simulator():
 
 
 @pytest.fixture()
+def nested_survey_simulator():
+    from bayesflow.experimental.multilevel_simulator import MultilevelSimulator
+
+    simulator = MultilevelSimulator(meta_fn=lambda: {"num_years": 4})
+    simulator.add_node("globals", sample_fn=lambda: {"mu": np.random.normal()})
+    simulator.add_node("regions", sample_fn=lambda mu: {"alpha_region": np.random.normal(mu)}, reps=3)
+    simulator.add_node("squares", sample_fn=lambda alpha_region: {"alpha": np.random.normal(alpha_region)}, reps=2)
+    simulator.add_node("years", sample_fn=lambda: {"beta": np.random.normal()}, reps="num_years")
+    simulator.add_node("obs", sample_fn=lambda alpha, beta: {"count": np.random.normal(alpha + beta)}, reps=surveyed)
+    simulator.add_edge("globals", "regions")
+    simulator.add_edge("regions", "squares")
+    simulator.add_edge("globals", "years")
+    simulator.add_edge("squares", "obs")
+    simulator.add_edge("years", "obs")
+
+    return simulator
+
+
+@pytest.fixture()
 def survey_estimator(survey_simulator):
     return estimator_for(survey_simulator)
 

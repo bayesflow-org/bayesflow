@@ -36,13 +36,13 @@ class SemiSupervisedEstimator(Estimator):
         training.
     adapter : Adapter, optional
         Shared adapter applied to all datasets before passing to estimators and semi-supervised
-        metrics. Defaults to an identity adapter.
+        metrics. If None (default), no shared adapter is used, and the data are passed on unchanged.
     """
 
     def __init__(self, estimators, adapter: Adapter = None, **kwargs):
         super().__init__(**kwargs)
         self.estimators = estimators or {}
-        self.adapter = adapter or Adapter()
+        self.adapter = adapter
         self.estimator_metrics = {}
         self.composite_metrics = {}
 
@@ -123,7 +123,9 @@ class SemiSupervisedEstimator(Estimator):
         else:
             raise AttributeError(f"estimator `{estimator}` does not have a `sample` method.")
 
-        samples = self.adapter(samples, inverse=True)
+        if self.adapter is not None:
+            samples = self.adapter(samples, inverse=True)
+
         if to_numpy:
             samples = keras.tree.map_structure(keras.ops.convert_to_numpy, samples)
 

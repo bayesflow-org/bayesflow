@@ -626,16 +626,19 @@ class MultilevelEstimator(Estimator):
 
         return result
 
-    def build_from_data(self, batch):
+    def build(self, data_shapes):
         variable_dims = {}
 
-        for node, entries in batch.items():
+        for node, entries in data_shapes.items():
             variable_dims[node] = {}
 
-            for variable, value in entries["values"].items():
-                variable_dims[node][variable] = int(keras.ops.shape(value)[-1])
+            for variable, shape in entries["values"].items():
+                variable_dims[node][variable] = int(shape[-1])
 
         self.build_from_config({"variable_dims": variable_dims})
+
+    def build_from_data(self, batch):
+        self.build(keras.tree.map_structure(keras.ops.shape, batch))
 
     def _batch_size_from_data(self, data):
         root = self.networks[0][0]

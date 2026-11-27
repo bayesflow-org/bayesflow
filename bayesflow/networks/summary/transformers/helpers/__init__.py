@@ -1,2 +1,4 @@
 from .downsample import Downsample
+from .factorized_space_time_block import FactorizedSpaceTimeBlock
+from .spatial_position_embedding import SpatialPositionEmbedding
 from .summary_token import SummaryToken

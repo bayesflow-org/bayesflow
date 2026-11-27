@@ -47,7 +47,8 @@ def test_build_from_shapes_matches_build_from_data(simulator):
 def test_fit_with_unbuilt_posterior(simulator):
     graph = simulator.graph.expand().invert()
     adapter = Adapter().log(["hyper_std", "shared_std"]) if "hypers" in simulator.graph else Adapter()
-    posterior = MultilevelEstimator(graph, inference_networks=[CouplingFlow() for _ in graph.networks()], adapter=adapter)
+    inference_networks = [CouplingFlow() for _ in graph.networks()]
+    posterior = MultilevelEstimator(graph, inference_networks=inference_networks, adapter=adapter)
     estimator = SemiSupervisedEstimator(estimators=densities(simulator) | {"posterior": posterior})
     estimator.compile(
         optimizer=keras.optimizers.Adam(1e-4),

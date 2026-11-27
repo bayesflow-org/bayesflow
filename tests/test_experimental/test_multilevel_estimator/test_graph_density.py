@@ -25,9 +25,9 @@ def expected_log_probs(data):
         locals_.values["local_mean"], hyper_mean[locals_.indices["hypers"]], hyper_std[locals_.indices["hypers"]]
     )
     shared_lp = stats.halfnorm.logpdf(shared.values["shared_std"])
-    y_lp = stats.norm.logpdf(
-        y.values["y"], locals_.values["local_mean"][y.indices["locals"]], shared.values["shared_std"][y.indices["shared"]]
-    )
+    local_mean = locals_.values["local_mean"][y.indices["locals"]]
+    shared_std = shared.values["shared_std"][y.indices["shared"]]
+    y_lp = stats.norm.logpdf(y.values["y"], local_mean, shared_std)
 
     prior = per_dataset(hypers_lp, hypers) + per_dataset(locals_lp, locals_) + per_dataset(shared_lp, shared)
     likelihood = per_dataset(y_lp, y)

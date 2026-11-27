@@ -6,6 +6,7 @@ from bayesflow.adapters import Adapter
 from bayesflow.experimental.multilevel_estimator import MultilevelDataset, MultilevelEstimator
 from bayesflow.experimental.self_consistency import MultiDataset, SelfConsistencyLoss, SemiSupervisedEstimator
 from bayesflow.networks import CouplingFlow
+from tests.utils import assert_models_equal
 
 from .conftest import estimator_for
 
@@ -32,6 +33,14 @@ def densities(simulator):
     return {"prior": density, "likelihood": density}
 
 
+def posterior_for(simulator):
+    graph = simulator.graph.expand().invert()
+    adapter = Adapter().log(["hyper_std", "shared_std"]) if "hypers" in simulator.graph else Adapter()
+    inference_networks = [CouplingFlow() for _ in graph.networks()]
+
+    return MultilevelEstimator(graph, inference_networks=inference_networks, adapter=adapter)
+
+
 def test_build_from_shapes_matches_build_from_data(simulator):
     batch = estimator_for(simulator).to_batch(simulator.sample(2))
 
@@ -45,10 +54,7 @@ def test_build_from_shapes_matches_build_from_data(simulator):
 
 
 def test_fit_with_unbuilt_posterior(simulator):
-    graph = simulator.graph.expand().invert()
-    adapter = Adapter().log(["hyper_std", "shared_std"]) if "hypers" in simulator.graph else Adapter()
-    inference_networks = [CouplingFlow() for _ in graph.networks()]
-    posterior = MultilevelEstimator(graph, inference_networks=inference_networks, adapter=adapter)
+    posterior = posterior_for(simulator)
     estimator = SemiSupervisedEstimator(estimators=densities(simulator) | {"posterior": posterior})
     estimator.compile(
         optimizer=keras.optimizers.Adam(1e-4),
@@ -64,3 +70,37 @@ def test_fit_with_unbuilt_posterior(simulator):
 
     assert posterior.built
     assert all(np.all(np.isfinite(values)) for values in history.history.values())
+
+
+def test_save_and_load(tmp_path, two_level_simulator):
+    posterior = posterior_for(two_level_simulator)
+    sc_estimator = SemiSupervisedEstimator(
+        estimators={
+            "prior": two_level_simulator.prior,
+            "likelihood": two_level_simulator.likelihood,
+            "posterior": posterior,
+        }
+    )
+    dataset = MultiDataset(
+        labeled=MultilevelDataset(two_level_simulator.sample(8), posterior.graph, batch_size=4),
+        unlabeled=MultilevelDataset(two_level_simulator.sample(2), posterior.graph, batch_size=2),
+    )
+
+    sc_estimator.compile(
+        keras.optimizers.Adam(),
+        estimator_metrics={"labeled": ["posterior"]},
+        composite_metrics={"unlabeled": SelfConsistencyLoss(num_samples=16)},
+    )
+    sc_estimator.fit(dataset=dataset, epochs=1)
+
+    keras.saving.save_model(sc_estimator, tmp_path / "model.keras")
+    loaded = keras.saving.load_model(tmp_path / "model.keras")
+
+    assert_models_equal(sc_estimator, loaded)
+
+    batch = posterior.to_batch(two_level_simulator.sample(2))
+    for name in ("prior", "likelihood"):
+        np.testing.assert_allclose(
+            keras.ops.convert_to_numpy(loaded.estimators[name].log_prob(**batch)),
+            keras.ops.convert_to_numpy(sc_estimator.estimators[name].log_prob(**batch)),
+        )

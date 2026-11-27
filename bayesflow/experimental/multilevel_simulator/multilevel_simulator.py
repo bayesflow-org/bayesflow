@@ -5,7 +5,10 @@ import keras
 import networkx as nx
 import numpy as np
 
+from bayesflow.utils.serialization import serializable
+
 from ..graphs import SimulationGraph
+from ..graphs.inverted_graph import function_reference, import_function
 from ..graphs.simulation_graph import data_nodes
 from .indexing_helpers import group_ids, join
 from .samples import GraphSamples, NodeSamples, num_rows
@@ -156,6 +159,7 @@ class MultilevelSimulator:
         return simulation
 
 
+@serializable("bayesflow.experimental")
 class GraphDensity:
     """
     The joint density of some nodes of a MultilevelSimulator, given their parents.
@@ -167,7 +171,9 @@ class GraphDensity:
     graph : SimulationGraph
         The graph of the simulator.
     nodes : list[str]
-        The nodes whose ``log_prob_fn`` are summed.
+        The nodes whose ``log_prob_fn`` are summed. To save the density, for
+        example as part of a SemiSupervisedEstimator, their ``log_prob_fn``
+        must be top-level functions.
     """
 
     def __init__(self, graph: SimulationGraph, nodes: list[str]):
@@ -210,6 +216,33 @@ class GraphDensity:
             log_prob += keras.ops.segment_sum(row_log_prob, indices["dataset"], num_segments=num_datasets)
 
         return log_prob
+
+    def get_config(self):
+        log_prob_fns = {}
+        for node in self.nodes:
+            log_prob_fns[node] = function_reference(self.graph.nodes[node]["log_prob_fn"])
+
+        return {
+            "nodes": self.nodes,
+            "graph_nodes": list(self.graph),
+            "edges": list(self.graph.edges),
+            "log_prob_fns": log_prob_fns,
+        }
+
+    @classmethod
+    def from_config(cls, config, custom_objects=None):
+        graph = SimulationGraph()
+
+        for node in config["graph_nodes"]:
+            graph.add_node(node)
+
+        for node, reference in config["log_prob_fns"].items():
+            graph.nodes[node]["log_prob_fn"] = import_function(reference)
+
+        for parent, child in config["edges"]:
+            graph.add_edge(parent, child)
+
+        return cls(graph, config["nodes"])
 
 
 def from_table(graph: SimulationGraph, table, groups: dict[str, str]) -> GraphSamples:

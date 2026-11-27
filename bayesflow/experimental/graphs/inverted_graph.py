@@ -177,7 +177,7 @@ def function_reference(fn) -> str:
     module = sys.modules[fn.__module__]
 
     if getattr(module, fn.__name__, None) is not fn:
-        raise ValueError(f"Cannot serialize {fn}: callable reps must be top-level functions.")
+        raise ValueError(f"Cannot serialize {fn}: only top-level functions can be saved.")
 
     return f"{fn.__module__}:{fn.__name__}"
 

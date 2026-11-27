@@ -6,12 +6,21 @@ from bayesflow.adapters import Adapter
 from bayesflow.estimators import Estimator
 from bayesflow.networks import ConsistencyModel, InferenceNetwork, StableConsistencyModel
 from bayesflow.networks.helpers.standardization.standardization import Standardization
+from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, serialize
 
 from ..multilevel_simulator.samples import GraphSamples, NodeSamples, concatenate, num_datasets, to_tensors
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import data_nodes
-from .batches import MultilevelDataset, adapt, add_sequence_summaries, network_variables, node_values, to_batch
+from .batches import (
+    MultilevelDataset,
+    adapt,
+    add_sequence_summaries,
+    network_variables,
+    node_values,
+    tile_batch,
+    to_batch,
+)
 from .encoder import MultilevelEncoder, gather, segment_count, segment_mean, sum_per_dataset
 
 
@@ -461,6 +470,35 @@ class MultilevelEstimator(Estimator):
         simulation_graph = self.graph.expanded_graph.simulation_graph
 
         return adapt(batch, self.adapter, simulation_graph, inverse, log_det_jac, **kwargs)
+
+    def join_samples(self, data: dict, samples: dict[str, dict[str, Tensor]], num_samples: int) -> dict:
+        """
+        Combines a batch of observed data with posterior samples, for the
+        self-consistency loss.
+
+        Parameters
+        ----------
+        data : dict
+            A batch of observed data, as returned by :py:meth:`to_batch`.
+        samples : dict[str, dict[str, Tensor]]
+            Samples of every latent node, as returned by :py:meth:`sample` for
+            this batch, one row per row of the tiled batch.
+        num_samples : int
+            Number of samples per dataset.
+
+        Returns
+        -------
+        dict
+            The batch with `num_samples` copies of every dataset, as returned
+            by :py:func:`tile_batch`, holding the samples as values of the
+            latent nodes.
+        """
+        joined = tile_batch(data, num_samples)
+
+        for node, values in samples.items():
+            joined[node] = joined[node] | {"values": values}
+
+        return joined
 
     def network_conditions(self, batch: dict, i: int, training: bool = False):
         # the nodes of a network share their rows, so we access the first one

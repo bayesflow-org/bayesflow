@@ -129,6 +129,9 @@ class SelfConsistencyLoss:
         After reshaping, both data and samples have batch dimension ``batch * num_samples``,
         so each (observation, parameter) pair can be evaluated independently.
         """
+        if hasattr(self.posterior, "join_samples"):
+            return self.posterior.join_samples(data, samples, self.num_samples)
+
         samples = keras.tree.map_structure(lambda s: keras.ops.reshape(s, (-1, *keras.ops.shape(s)[2:])), samples)
         data = keras.tree.map_structure(lambda s: keras.ops.repeat(s, self.num_samples, axis=0), data)
 

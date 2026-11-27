@@ -9,7 +9,7 @@ from bayesflow.networks.helpers.standardization.standardization import Standardi
 from bayesflow.types import Tensor
 from bayesflow.utils.serialization import serializable, serialize
 
-from ..multilevel_simulator.samples import GraphSamples, NodeSamples, concatenate, num_datasets, to_tensors
+from ..multilevel_simulator.samples import GraphSamples, NodeSamples, to_tensors
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import data_nodes
 from .batches import (
@@ -136,31 +136,41 @@ class MultilevelEstimator(Estimator):
         self.encoders = encoders
 
     def sample(
-        self, *, num_samples: int, conditions: GraphSamples, format: str = "long"
-    ) -> GraphSamples | dict[str, np.ndarray]:
+        self, *, num_samples: int, conditions: GraphSamples | dict, format: str = "long", **kwargs
+    ) -> GraphSamples | dict[str, np.ndarray] | dict[str, dict[str, Tensor]]:
         """
         Draws posterior samples given observed data.
 
         The `conditions` are preprocessed using the `adapter`. Samples are
-        converted to NumPy arrays after inference.
+        returned in the original space of the variables.
 
         Parameters
         ----------
         num_samples : int
             Number of posterior samples per dataset.
-        conditions : GraphSamples
+        conditions : GraphSamples or dict
             The observed data, as returned by :py:func:`from_table`, or
             simulations of the MultilevelSimulator, as returned by its
             :py:meth:`sample` method.
+            Can also be an unadapted and unpadded batch of them, as returned by a
+            :py:class:`MultilevelDataset` without adapter and with ``padded=False``,
+            which is the form used by the self-consistency loss.
             Only the values of the data nodes are used.
         format : {"long", "tensor"}, optional
             The format of the samples (default is "long"). The long format
             works for every dataset; the tensor format only works if all
-            datasets have the same structure.
+            datasets have the same structure. Ignored for a batch.
+        **kwargs
+            Ignored, for compatibility with the sample method of other estimators.
 
         Returns
         -------
-        GraphSamples or dict[str, np.ndarray]
+        GraphSamples or dict[str, np.ndarray] or dict[str, dict[str, Tensor]]
+            For a batch, the samples of every latent node as tensors, as
+            ``{node: {variable: tensor}}``. Every dataset of the batch is
+            repeated `num_samples` times, as by :py:func:`tile_batch`, and
+            each copy holds one sample.
+
             In long format, the samples of every latent node as
             :py:class:`GraphSamples`. Each node keeps the indices of `conditions`,
             and each variable has shape `(num_rows, num_samples, dim)`.
@@ -176,20 +186,23 @@ class MultilevelEstimator(Estimator):
             If `format` is neither "long" nor "tensor", or if `format` is "tensor"
             and the datasets differ in structure. In the latter case, use the long
             format, or convert a subset of datasets with :py:func:`to_tensors`.
+            If `conditions` is a padded batch, whose padded datasets would be
+            treated as observed datasets.
         """
         if format not in ("long", "tensor"):
             raise ValueError(f"format must be 'long' or 'tensor', not '{format}'.")
 
+        is_batch = not isinstance(next(iter(conditions.values())), NodeSamples)
+        batch = conditions if is_batch else to_batch(conditions, self.graph)
+
+        if any("weights" in entries for entries in batch.values()):
+            raise ValueError("Cannot sample from a padded batch. Use a MultilevelDataset with padded=False.")
+
         observed = {}
+        for node, entries in batch.items():
+            observed[node] = entries if node in self.data_nodes else entries | {"values": {}}
 
-        for node, samples in conditions.items():
-            if node in self.data_nodes:
-                observed[node] = samples
-            else:
-                observed[node] = NodeSamples(samples.indices, {})
-
-        batch = self.to_batch(concatenate([observed] * num_samples))
-        batch = self.standardized(batch, stage="inference")
+        batch = self.standardized(self.adapt(tile_batch(observed, num_samples)), stage="inference")
 
         for i, target_nodes in enumerate(self.networks):
             if target_nodes[0] in self.sequential:
@@ -203,45 +216,56 @@ class MultilevelEstimator(Estimator):
             for node, values in self.split_values(samples, target_nodes).items():
                 batch[node]["values"] = values
 
-        posterior = {}
-
         for target_nodes in self.networks:
             for node in target_nodes:
-                values = {}
-
                 for variable, value in batch[node]["values"].items():
-                    value = self.standardizer.maybe_standardize(value, variable, forward=False)
-                    value = keras.ops.convert_to_numpy(value)
+                    batch[node]["values"][variable] = self.standardizer.maybe_standardize(
+                        value, variable, forward=False
+                    )
 
-                    value = value.reshape(num_samples, -1, value.shape[-1])
-                    values[variable] = np.moveaxis(value, 0, 1)
+        batch = self.adapt(batch, inverse=True)
+        latent = [node for target_nodes in self.networks for node in target_nodes]
 
-                values = self.adapter(values, inverse=True, strict=False)
-                values = keras.tree.map_structure(keras.ops.convert_to_numpy, values)
-                posterior[node] = NodeSamples(conditions[node].indices, values)
+        if is_batch:
+            return {node: batch[node]["values"] for node in latent}
+
+        posterior = {}
+
+        for node in latent:
+            values = {}
+
+            for variable, value in batch[node]["values"].items():
+                value = keras.ops.convert_to_numpy(value).reshape(num_samples, -1, value.shape[-1])
+                values[variable] = np.moveaxis(value, 0, 1)
+
+            posterior[node] = NodeSamples(conditions[node].indices, values)
 
         if format == "tensor":
             return to_tensors(posterior)
 
         return posterior
 
-    def log_prob(self, data: GraphSamples) -> np.ndarray:
+    def log_prob(self, data: GraphSamples | dict, **kwargs) -> np.ndarray | Tensor:
         """
         computes the log-probability of given data under the model. The `data`
-        is preprocessed using the `adapter`. Log-probabilities are returned as
-        Numpy arrays.
+        is preprocessed using the `adapter`.
 
         Parameters
         ----------
-        data : GraphSamples
+        data : GraphSamples or dict
             Samples of every node, for example as returned by the
-            :py:meth:`sample` method of the MultilevelSimulator.
+            :py:meth:`sample` method of the MultilevelSimulator, or an
+            unadapted batch of them, as returned by a :py:class:`MultilevelDataset`
+            without adapter.
+        **kwargs
+            Ignored, for compatibility with the log_prob method of other estimators.
 
         Returns
         -------
-        np.ndarray
+        np.ndarray or Tensor
             Log-probabilities of the distribution `p(latent variables | data)`,
-            one per dataset, with shape `(num_datasets,)`. They include the
+            one per dataset, with shape `(num_datasets,)`, as a NumPy array for
+            GraphSamples and as a tensor for a batch. They include the
             log-determinants of the standardization and the adapter, so they
             refer to the variables before preprocessing.
         """
@@ -252,8 +276,15 @@ class MultilevelEstimator(Estimator):
                     "so log_prob is not available."
                 )
 
-        batch = self.to_batch(data)
-        datasets = num_datasets(data)
+        is_batch = not isinstance(next(iter(data.values())), NodeSamples)
+
+        if not is_batch:
+            data = to_batch(data, self.graph)
+
+        batch, adapter_log_det_jac = self.adapt(data, log_det_jac=True)
+        simulation_graph = self.graph.expanded_graph.simulation_graph
+        root = next(node for node in simulation_graph if simulation_graph.in_degree(node) == 0)
+        datasets = keras.ops.shape(batch[root]["indices"][root])[0]
 
         log_prob = keras.ops.zeros(datasets)
 
@@ -277,11 +308,10 @@ class MultilevelEstimator(Estimator):
             log_prob += sum_per_dataset(network_log_prob, dataset_ids, datasets)
 
             for node in target_nodes:
-                _, log_det_jac = self.adapter(data[node].values, strict=False, log_det_jac=True)
+                log_prob += adapter_log_det_jac[node]
 
-                for value in log_det_jac.values():
-                    value = keras.ops.cast(value, keras.config.floatx())
-                    log_prob += sum_per_dataset(value, dataset_ids, datasets)
+        if is_batch:
+            return log_prob
 
         return keras.ops.convert_to_numpy(log_prob)
 
@@ -564,19 +594,20 @@ class MultilevelEstimator(Estimator):
         node = self.networks[i][0]
         steps = batch[node]["steps"]
         positions = steps["positions"]
+        rows = keras.ops.shape(positions)[0]
 
         values = {}
         for variable, dim in self.variable_dims[node].items():
-            values[variable] = keras.ops.zeros((len(positions), dim))
+            values[variable] = keras.ops.zeros((rows, dim))
 
         batch[node]["values"] = values
 
         # the conditions only change through the sequence summaries
         conditions = self.network_conditions(batch, i)
 
-        for step in range(keras.ops.shape(steps["sequence_steps"])[0]):
+        for step in range(keras.ops.shape(steps["sequence_steps"])[1]):
             step_conditions = add_sequence_summaries(batch, node, conditions)
-            samples = self.inference_networks[i].sample((len(positions),), conditions=step_conditions)
+            samples = self.inference_networks[i].sample((rows,), conditions=step_conditions)
             is_step = (positions == step)[:, None]
 
             for variable, value in self.split_values(samples, [node])[node].items():

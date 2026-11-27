@@ -7,7 +7,6 @@ from bayesflow.experimental.multilevel_estimator.batches import (
     add_sequence_summaries,
     bucket,
     groupings,
-    pad,
     steps,
     to_batch,
 )
@@ -45,27 +44,25 @@ def test_steps():
     assert result["ids"].tolist() == [0, 0, 0, 1, 1]
     assert result["counts"].tolist() == [3, 2]
     assert result["positions"].tolist() == [0, 1, 2, 0, 1]
-    assert result["sequence_steps"].tolist() == [0, 1, 2]
 
     # every (earlier, later) pair of rows in the same sequence
     pairs = list(zip(result["earlier"].tolist(), result["later"].tolist()))
     assert pairs == [(0, 1), (0, 2), (1, 2), (3, 4)]
 
 
-def test_padding_keeps_sequence_steps():
-    indices = {"dataset": np.array([0, 0, 0, 1, 1]), "questions": np.arange(5)}
-    batch = {
-        "questions": {
-            "indices": indices,
-            "values": {"difficulty": np.ones((5, 1))},
-            "steps": steps("questions", indices),
-        }
-    }
+def test_only_unpadded_batches_have_sequence_steps(survey_simulator):
+    graph = survey_simulator.graph.expand().invert()
+    samples = survey_simulator.sample(2)
 
-    padded = pad(batch)
+    unpadded = to_batch(samples, graph)
+    padded = to_batch(samples, graph, padded=True)
+    sequential = [node for node, entries in unpadded.items() if "steps" in entries]
 
-    assert len(padded["questions"]["indices"]["questions"]) > 5
-    assert padded["questions"]["steps"]["sequence_steps"].tolist() == [0, 1, 2]
+    assert sequential
+    for node in sequential:
+        counts = unpadded[node]["steps"]["counts"]
+        assert unpadded[node]["steps"]["sequence_steps"].tolist() == [list(range(max(counts)))]
+        assert "sequence_steps" not in padded[node]["steps"]
 
 
 def test_sequence_summaries():

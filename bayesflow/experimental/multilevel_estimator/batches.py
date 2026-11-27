@@ -101,6 +101,9 @@ def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter | Non
             batch[node]["groups"] = groups(simulation_graph, node, node_samples.indices)
         elif not graph.is_amortizable(node):
             batch[node]["steps"] = steps(node, node_samples.indices)
+            if not padded:
+                counts = batch[node]["steps"]["counts"]
+                batch[node]["steps"]["sequence_steps"] = np.arange(np.max(counts, initial=0))[None]
 
     if padded:
         batch = pad(batch)
@@ -143,7 +146,7 @@ def adapt(
 
 def tile_batch(batch: dict, copies: int) -> dict:
     # Repeats every dataset of the batch, so that copy k of dataset d becomes dataset d * copies + k.
-    # The other index columns, groups and sequences of every copy are shifted past those of the earlier copies.
+    batch = keras.tree.map_structure(keras.ops.convert_to_tensor, batch)
     rows = {node: keras.ops.shape(entries["indices"][node])[0] for node, entries in batch.items()}
     tiled = {}
 
@@ -153,7 +156,8 @@ def tile_batch(batch: dict, copies: int) -> dict:
             if column == "dataset":
                 indices[column] = keras.ops.concatenate([ids * copies + k for k in range(copies)])
             else:
-                indices[column] = keras.ops.concatenate([ids + k * rows[column] for k in range(copies)])
+                offset = keras.ops.cast(rows[column], ids.dtype)
+                indices[column] = keras.ops.concatenate([ids + k * offset for k in range(copies)])
 
         values = {}
         for variable, value in entries["values"].items():
@@ -164,27 +168,26 @@ def tile_batch(batch: dict, copies: int) -> dict:
         if "groups" in entries:
             tiled[node]["groups"] = {}
             for name, group in entries["groups"].items():
-                tiled[node]["groups"][name] = tile_numbering(group, copies)
+                num_groups = keras.ops.cast(keras.ops.shape(group["counts"])[0], group["ids"].dtype)
+                tiled[node]["groups"][name] = {
+                    "ids": keras.ops.concatenate([group["ids"] + k * num_groups for k in range(copies)]),
+                    "counts": keras.ops.concatenate([group["counts"]] * copies),
+                }
 
         if "steps" in entries:
             steps = entries["steps"]
-            tiled[node]["steps"] = tile_numbering(steps, copies) | {
+            offset = keras.ops.cast(rows[node], steps["earlier"].dtype)
+            num_sequences = keras.ops.cast(keras.ops.shape(steps["counts"])[0], steps["ids"].dtype)
+            tiled[node]["steps"] = {
+                "ids": keras.ops.concatenate([steps["ids"] + k * num_sequences for k in range(copies)]),
+                "counts": keras.ops.concatenate([steps["counts"]] * copies),
                 "positions": keras.ops.concatenate([steps["positions"]] * copies),
-                "earlier": keras.ops.concatenate([steps["earlier"] + k * rows[node] for k in range(copies)]),
-                "later": keras.ops.concatenate([steps["later"] + k * rows[node] for k in range(copies)]),
+                "earlier": keras.ops.concatenate([steps["earlier"] + k * offset for k in range(copies)]),
+                "later": keras.ops.concatenate([steps["later"] + k * offset for k in range(copies)]),
                 "sequence_steps": steps["sequence_steps"],
             }
 
     return tiled
-
-
-def tile_numbering(numbering: dict, copies: int) -> dict:
-    # Repeats the ids and counts of groups or sequences, shifting the ids of every copy past those of the earlier copies
-    num_groups = keras.ops.shape(numbering["counts"])[0]
-    ids = keras.ops.concatenate([numbering["ids"] + k * num_groups for k in range(copies)])
-    counts = keras.ops.concatenate([numbering["counts"]] * copies)
-
-    return {"ids": ids, "counts": counts}
 
 
 def groups(graph: SimulationGraph, data_node: str, indices: dict[str, np.ndarray]) -> dict[str, dict]:
@@ -249,7 +252,6 @@ def steps(node: str, indices: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
 
     later = np.repeat(np.arange(len(ids)), positions)
     earlier = order[concatenated_ranges(starts[ids], positions)]
-    sequence_steps = np.arange(np.max(counts, initial=0))
 
     return {
         "ids": ids,
@@ -257,7 +259,6 @@ def steps(node: str, indices: dict[str, np.ndarray]) -> dict[str, np.ndarray]:
         "positions": positions,
         "earlier": earlier,
         "later": later,
-        "sequence_steps": sequence_steps,
     }
 
 

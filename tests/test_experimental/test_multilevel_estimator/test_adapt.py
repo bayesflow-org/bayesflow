@@ -82,3 +82,15 @@ def test_works_on_tensors(batch, estimator):
 
         for ids in entries["indices"].values():
             assert "int" in keras.backend.standardize_dtype(ids.dtype)
+
+
+def test_to_batch_with_adapter_matches_adapt(estimator, adapter, two_level_simulator):
+    simulation = two_level_simulator.sample(3)
+    expected = estimator.adapt(to_batch(simulation, estimator.graph))
+    adapted = to_batch(simulation, estimator.graph, adapter)
+
+    for node, entries in expected.items():
+        for variable, value in entries["values"].items():
+            np.testing.assert_allclose(
+                keras.ops.convert_to_numpy(adapted[node]["values"][variable]), keras.ops.convert_to_numpy(value)
+            )

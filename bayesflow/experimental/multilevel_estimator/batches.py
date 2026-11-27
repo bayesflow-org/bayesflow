@@ -1,32 +1,67 @@
 import itertools
 import math
-from typing import Callable
 
 import keras
 import networkx as nx
 import numpy as np
+
+from bayesflow.adapters import Adapter
 
 from ..multilevel_simulator import MultilevelSimulator
 from ..multilevel_simulator.indexing_helpers import concatenated_ranges, group_ids
 from ..multilevel_simulator.samples import GraphSamples, num_datasets, select
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import is_exchangeable, is_interior
-from .encoder import gather, segment_mean
+from .encoder import gather, segment_mean, sum_per_dataset
 
 
-class SimulationDataset(keras.utils.PyDataset):
+class MultilevelDataset(keras.utils.PyDataset):
+    """
+    Batches of simulations or observed data for the MultilevelEstimator.
+
+    Each batch holds the rows of `batch_size` datasets, with the indices,
+    groups and steps that the MultilevelEstimator needs, as returned by
+    :py:func:`to_batch`.
+
+    Parameters
+    ----------
+    source : MultilevelSimulator or GraphSamples
+        A simulator, which draws new datasets for every batch, or fixed
+        datasets, which are shuffled before every epoch.
+    graph : InvertedGraph
+        The graph of the MultilevelEstimator, usually ``estimator.graph``.
+    batch_size : int
+        Number of datasets per batch.
+    num_batches : int, optional
+        Number of batches per epoch. Required if `source` is a simulator.
+    adapter : Adapter, optional
+        Applied to the values of every node. If None (default), the values
+        are left unchanged, for example when an estimator adapts the batches
+        itself.
+    padded : bool, optional
+        Whether to pad the batches to a few sizes, so that compiled training
+        steps are reused (default is True). Use False for observed data in
+        self-consistency training, where padded datasets would enter the loss.
+    **kwargs
+        Additional keyword arguments passed to :py:class:`keras.utils.PyDataset`.
+    """
+
     def __init__(
         self,
         source: MultilevelSimulator | GraphSamples,
+        graph: InvertedGraph,
         batch_size: int,
-        to_batch: Callable[[GraphSamples], dict],
         num_batches: int | None = None,
+        adapter: Adapter | None = None,
+        padded: bool = True,
         **kwargs,
     ):
         super().__init__(**kwargs)
         self.source = source
+        self.graph = graph
         self.batch_size = batch_size
-        self.to_batch = to_batch
+        self.adapter = adapter
+        self.padded = padded
 
         if isinstance(source, MultilevelSimulator):
             self.length = num_batches
@@ -41,19 +76,19 @@ class SimulationDataset(keras.utils.PyDataset):
     def __getitem__(self, i: int) -> dict:
         if isinstance(self.source, MultilevelSimulator):
             simulation = self.source.sample(self.batch_size)
-            return self.to_batch(simulation, padded=True)
+            return to_batch(simulation, self.graph, self.adapter, self.padded)
 
         datasets = self.order[i * self.batch_size : (i + 1) * self.batch_size]
         simulation = select(self.source, datasets)
 
-        return self.to_batch(simulation, padded=True)
+        return to_batch(simulation, self.graph, self.adapter, self.padded)
 
     def on_epoch_end(self) -> None:
         if not isinstance(self.source, MultilevelSimulator):
             self.order = np.random.permutation(num_datasets(self.source))
 
 
-def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter=None, padded: bool = False) -> dict:
+def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter: Adapter | None = None, padded: bool = False) -> dict:
     # Adds groups and steps to the samples and runs the adapter.
     # This is the input that inference networks use
     simulation_graph = graph.expanded_graph.simulation_graph
@@ -71,9 +106,39 @@ def to_batch(samples: GraphSamples, graph: InvertedGraph, adapter=None, padded: 
         batch = pad(batch)
 
     if adapter is not None:
-        batch = adapter(batch)
+        batch = adapt(batch, adapter, simulation_graph)
 
     return batch
+
+
+def adapt(
+    batch: dict, adapter: Adapter, graph: SimulationGraph, inverse: bool = False, log_det_jac: bool = False, **kwargs
+):
+    # Applies the adapter to the values of every node, and sums the log-determinants per node and dataset
+    root = next(node for node in graph if graph.in_degree(node) == 0)
+    datasets = keras.ops.shape(batch[root]["indices"][root])[0]
+    result = {}
+    jacobians = {}
+
+    for node, entries in batch.items():
+        if log_det_jac:
+            values, node_jacobians = adapter(
+                entries["values"], inverse=inverse, strict=False, log_det_jac=True, **kwargs
+            )
+            jacobians[node] = keras.ops.zeros(datasets)
+
+            for value in node_jacobians.values():
+                value = keras.ops.cast(value, keras.config.floatx())
+                jacobians[node] += sum_per_dataset(value, entries["indices"]["dataset"], datasets)
+        else:
+            values = adapter(entries["values"], inverse=inverse, strict=False, **kwargs)
+
+        result[node] = entries | {"values": values}
+
+    if log_det_jac:
+        return result, jacobians
+
+    return result
 
 
 def groups(graph: SimulationGraph, data_node: str, indices: dict[str, np.ndarray]) -> dict[str, dict]:

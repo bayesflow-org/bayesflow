@@ -11,7 +11,7 @@ from bayesflow.utils.serialization import serializable, serialize
 from ..multilevel_simulator.samples import GraphSamples, NodeSamples, concatenate, num_datasets, to_tensors
 from ..graphs import InvertedGraph, SimulationGraph
 from ..graphs.simulation_graph import data_nodes
-from .batches import SimulationDataset, add_sequence_summaries, network_variables, node_values, to_batch
+from .batches import MultilevelDataset, adapt, add_sequence_summaries, network_variables, node_values, to_batch
 from .encoder import MultilevelEncoder, gather, segment_count, segment_mean, sum_per_dataset
 
 
@@ -277,7 +277,7 @@ class MultilevelEstimator(Estimator):
         return keras.ops.convert_to_numpy(log_prob)
 
     def build_dataset(self, *, simulator, batch_size, num_batches):
-        return SimulationDataset(simulator, batch_size, self.to_batch, num_batches)
+        return MultilevelDataset(simulator, self.graph, batch_size, num_batches, adapter=self.adapter)
 
     def fit(
         self,
@@ -335,10 +335,12 @@ class MultilevelEstimator(Estimator):
         """
         if isinstance(validation_data, dict):
             validation_batch_size = kwargs.pop("validation_batch_size", kwargs.get("batch_size"))
-            validation_data = SimulationDataset(validation_data, validation_batch_size, self.to_batch)
+            validation_data = MultilevelDataset(
+                validation_data, self.graph, validation_batch_size, adapter=self.adapter
+            )
 
         if isinstance(dataset, dict):
-            dataset = SimulationDataset(dataset, kwargs.pop("batch_size"), self.to_batch)
+            dataset = MultilevelDataset(dataset, self.graph, kwargs.pop("batch_size"), adapter=self.adapter)
 
         return super().fit(dataset=dataset, validation_data=validation_data, **kwargs)
 
@@ -430,7 +432,7 @@ class MultilevelEstimator(Estimator):
         return variables, conditions
 
     def to_batch(self, samples: GraphSamples, padded: bool = False) -> dict:
-        return to_batch(samples, self.graph, self.adapt, padded)
+        return to_batch(samples, self.graph, self.adapter, padded)
 
     def adapt(self, batch: dict, inverse: bool = False, log_det_jac: bool = False, **kwargs):
         """
@@ -457,30 +459,8 @@ class MultilevelEstimator(Estimator):
             every node, summed per dataset, with shape `(num_datasets,)`.
         """
         simulation_graph = self.graph.expanded_graph.simulation_graph
-        root = next(node for node in simulation_graph if simulation_graph.in_degree(node) == 0)
-        datasets = keras.ops.shape(batch[root]["indices"][root])[0]
-        result = {}
-        jacobians = {}
 
-        for node, entries in batch.items():
-            if log_det_jac:
-                values, node_jacobians = self.adapter(
-                    entries["values"], inverse=inverse, strict=False, log_det_jac=True, **kwargs
-                )
-                jacobians[node] = keras.ops.zeros(datasets)
-
-                for value in node_jacobians.values():
-                    value = keras.ops.cast(value, keras.config.floatx())
-                    jacobians[node] += sum_per_dataset(value, entries["indices"]["dataset"], datasets)
-            else:
-                values = self.adapter(entries["values"], inverse=inverse, strict=False, **kwargs)
-
-            result[node] = entries | {"values": values}
-
-        if log_det_jac:
-            return result, jacobians
-
-        return result
+        return adapt(batch, self.adapter, simulation_graph, inverse, log_det_jac, **kwargs)
 
     def network_conditions(self, batch: dict, i: int, training: bool = False):
         # the nodes of a network share their rows, so we access the first one
